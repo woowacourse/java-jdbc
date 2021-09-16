@@ -1,0 +1,59 @@
+plugins {
+    id 'application'
+    id 'org.sonarqube' version '3.3'
+    id 'idea'
+}
+
+application {
+    mainClass = 'com.techcourse.JwpApplication'
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir file("webapp/WEB-INF/classes")
+    }
+}
+
+group = 'nextstep.jwp'
+version = '1.0'
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':mvc')
+    implementation project(':jdbc')
+
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+    implementation 'com.google.guava:guava:29.0-jre'
+
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.0.10'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.0.10'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+
+    implementation 'com.h2database:h2:1.4.200'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.3'
+    testImplementation 'org.mockito:mockito-core:3.12.3'
+    testImplementation 'org.assertj:assertj-core:3.20.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+sonarqube {
+    properties {
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
+        property "sonar.organization", "woowacourse"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
