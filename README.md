@@ -3,8 +3,8 @@
 ## 🚀 1단계 - JDBC 라이브러리 구현하기
 ## 🚀 2단계 - 리팩터링
 
-- [ ] UserDao의 insert(), update() 메서드 분리
-- [ ] UserDao의 insert(), update() 각 메서드를 InsertJdbcTemplate, UpdateJdbcTemplate 클래스로 분리
+- [x] UserDao의 insert(), update() 메서드 분리
+- [x] UserDao의 insert(), update() 각 메서드를 InsertJdbcTemplate, UpdateJdbcTemplate 클래스로 분리
 - [ ] InsertJdbcTemplate, UpdateJdbcTemplate을 추상 클래스 JdbcTemplate으로 통합 및 추상화
 - [ ] JdbcTemplate의 User 객체에 대한 의존도 제거
 - [ ] UserDao의 select() 메서드를 SelectJdbcTemplate 클래스로 분리
