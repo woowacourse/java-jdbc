@@ -12,42 +12,23 @@ public abstract class JdbcTemplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update() {
-        final String sql = createQuery();
-
-        final DataSource dataSource = this.getDataSource();
-        try (final Connection conn = dataSource.getConnection();
-            final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            LOG.debug("query : {}", sql);
-
-            setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        return pstmt.executeQuery();
     }
-
-    protected abstract String createQuery();
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
-
-    public Object query() {
-        final String sql = createQuery();
+    public Object query(String sql, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) {
 
         final DataSource dataSource = this.getDataSource();
         ResultSet rs = null;
         try (final Connection conn = dataSource.getConnection();
             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setValues(pstmt);
+            pstmtSetter.setValues(pstmt);
             rs = executeQuery(pstmt);
             LOG.debug("query : {}", sql);
-            return mapRow(rs);
-
+            return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -61,9 +42,19 @@ public abstract class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
 
-    protected abstract Object mapRow(ResultSet rs) throws SQLException;
+        final DataSource dataSource = this.getDataSource();
+        try (final Connection conn = dataSource.getConnection();
+            final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmtSetter.setValues(pstmt);
+            LOG.debug("query : {}", sql);
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            LOG.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }

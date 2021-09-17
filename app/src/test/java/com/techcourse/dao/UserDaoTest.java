@@ -30,18 +30,18 @@ class UserDaoTest {
     }
 
     @Test
-    void findById() {
-        final User user = userDao.findById(1L);
-
-        assertThat(user.getAccount()).isEqualTo("gugu");
-    }
-
-    @Test
     void findByAccount() {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findById() {
+        final User user = userDao.findById(1L);
+
+        assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test

@@ -1,9 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.dao.jdbc.template.JdbcTemplate;
+import com.techcourse.dao.jdbc.template.PreparedStatementSetter;
+import com.techcourse.dao.jdbc.template.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,169 +21,130 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
-        };
-
-        jdbcTemplate.update();
-    }
-
-    private DataSource getDataSource() {
-        return this.dataSource;
-    }
-
-    public void update(User user) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.setLong(4, user.getId());
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
-        };
-
-        jdbcTemplate.update();
-    }
-
     public List<User> findAll() {
         final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users";
-            }
-
-            @Override
             protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                final List<User> users = new ArrayList<>();
-                while (rs.next()) {
-                    final User user = new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                    users.add(user);
-                }
-                return users;
+                return UserDao.this.dataSource;
             }
         };
 
-        return (List<User>) jdbcTemplate.query();
-    }
-
-    public User findById(Long id) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
+        final String sql = "select id, account, password, email from users";
+        final PreparedStatementSetter pstmtSetter = pstmt -> {
+        };
+        final RowMapper rowMapper = rs -> {
+            final List<User> users = new ArrayList<>();
+            while (rs.next()) {
+                final User user = new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
+                users.add(user);
             }
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                return null;
-            }
+            return users;
         };
 
-        return (User) jdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
     }
 
     public User findByAccount(String account) {
         final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
             protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, account);
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                return null;
+                return UserDao.this.dataSource;
             }
         };
 
-        return (User) jdbcTemplate.query();
+        final String sql = "select id, account, password, email from users where account = ?";
+        final PreparedStatementSetter pstmtSetter = pstmt -> {
+            try {
+                pstmt.setString(1, account);
+            } catch (SQLException ignored) {
+            }
+        };
+        final RowMapper rowMapper = rs -> {
+            if (rs.next()) {
+                return new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
+            }
+            return null;
+        };
+
+        return (User) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+    }
+
+    public User findById(Long id) {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        final String sql = "select id, account, password, email from users where id = ?";
+        final PreparedStatementSetter pstmtSetter = pstmt -> {
+            try {
+                pstmt.setLong(1, id);
+            } catch (SQLException ignored) {
+            }
+        };
+        final RowMapper rowMapper = rs -> {
+            if (rs.next()) {
+                return new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
+            }
+            return null;
+        };
+
+        return (User) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+    }
+
+    public void insert(User user) {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final PreparedStatementSetter pstmtSetter = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        };
+
+        jdbcTemplate.update(sql, pstmtSetter);
+    }
+
+    public void update(User user) {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final PreparedStatementSetter pstmtSetter = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        };
+
+        jdbcTemplate.update(sql, pstmtSetter);
     }
 }
