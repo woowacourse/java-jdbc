@@ -4,16 +4,11 @@ import com.techcourse.dao.jdbc.template.JdbcTemplate;
 import com.techcourse.dao.jdbc.template.PreparedStatementSetter;
 import com.techcourse.dao.jdbc.template.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
 
@@ -59,12 +54,7 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where account = ?";
-        final PreparedStatementSetter pstmtSetter = pstmt -> {
-            try {
-                pstmt.setString(1, account);
-            } catch (SQLException ignored) {
-            }
-        };
+        final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setString(1, account);
         final RowMapper rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
@@ -89,12 +79,7 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where id = ?";
-        final PreparedStatementSetter pstmtSetter = pstmt -> {
-            try {
-                pstmt.setLong(1, id);
-            } catch (SQLException ignored) {
-            }
-        };
+        final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setLong(1, id);
         final RowMapper rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
