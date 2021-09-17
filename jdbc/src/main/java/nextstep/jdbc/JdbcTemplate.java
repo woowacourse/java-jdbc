@@ -22,13 +22,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... objects) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < objects.length; i++) {
@@ -39,24 +35,10 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    public <T> T queryObject(String sql, Class<T> requiredType, Object... objects) {
+    public <T> T queryForObject(String sql, Class<T> requiredType, Object... objects) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -110,25 +92,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPstmt(PreparedStatement pstmt, int i, Object object) throws SQLException {
-        if (object instanceof Long) {
-            pstmt.setLong(i, (Long) object);
-            return;
-        }
-        pstmt.setString(i, (String) object);
-    }
-
     public <T> List<T> query(String sql, Class<T> requiredType) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         List<T> users = new ArrayList<>();
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            rs = pstmt.executeQuery();
-
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(
+                sql); ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
             while (rs.next()) {
@@ -144,27 +112,14 @@ public class JdbcTemplate {
         } catch (SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
+    }
+
+    private void setPstmt(PreparedStatement pstmt, int i, Object object) throws SQLException {
+        if (object instanceof Long) {
+            pstmt.setLong(i, (Long) object);
+            return;
+        }
+        pstmt.setString(i, (String) object);
     }
 }

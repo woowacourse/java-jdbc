@@ -42,11 +42,11 @@ public class UserDao {
 
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return Optional.ofNullable(jdbcTemplate.queryObject(sql, User.class, id));
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, User.class, id));
     }
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return Optional.ofNullable(jdbcTemplate.queryObject(sql, User.class, account));
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, User.class, account));
     }
 }
