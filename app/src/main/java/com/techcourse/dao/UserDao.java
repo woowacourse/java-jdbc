@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
-import com.techcourse.dao.jdbc.template.InsertJdbcTemplate;
-import com.techcourse.dao.jdbc.template.UpdateJdbcTemplate;
+import com.techcourse.dao.jdbc.template.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,21 +16,66 @@ public class UserDao {
     private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final InsertJdbcTemplate insertJdbcTemplate;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
+    private final JdbcTemplate insertJdbcTemplate;
+    private final JdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.insertJdbcTemplate = new InsertJdbcTemplate();
-        this.updateJdbcTemplate = new UpdateJdbcTemplate();
+        this.insertJdbcTemplate = getInsertJdbcTemplate();
+        this.updateJdbcTemplate = getUpdateJdbcTemplate();
+    }
+
+    private JdbcTemplate getInsertJdbcTemplate() {
+        return new JdbcTemplate() {
+
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+    }
+
+    private JdbcTemplate getUpdateJdbcTemplate() {
+        return new JdbcTemplate() {
+
+            @Override
+            protected String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
     }
 
     public void insert(User user) {
-        insertJdbcTemplate.insert(user, this);
+        insertJdbcTemplate.update(user);
     }
 
     public void update(User user) {
-        updateJdbcTemplate.update(user, this);
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
@@ -93,7 +137,7 @@ public class UserDao {
         return null;
     }
 
-    public DataSource getDataSource() {
+    DataSource getDataSource() {
         return this.dataSource;
     }
 }
