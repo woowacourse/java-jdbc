@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.dao.jdbc.template.JdbcTemplate;
-import com.techcourse.dao.jdbc.template.SelectJdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,6 +39,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         insertJdbcTemplate.update();
@@ -69,6 +73,11 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         updateJdbcTemplate.update();
@@ -80,7 +89,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        final SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        final JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {

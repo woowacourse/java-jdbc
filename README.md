@@ -8,7 +8,7 @@
 - [x] InsertJdbcTemplate, UpdateJdbcTemplate을 추상 클래스 JdbcTemplate으로 통합 및 추상화
 - [x] JdbcTemplate의 User 객체에 대한 의존도 제거
 - [x] UserDao의 select() 메서드를 SelectJdbcTemplate 클래스로 분리
-- [ ] SelectJdbcTemplate를 JdbcTemplate에 통합
+- [x] SelectJdbcTemplate를 JdbcTemplate에 통합
 - [ ] mapRow(), setValues() 메서드를 인터페이스로 분리
 - [ ] SQLException을 catch해서 Unchecked Custom Exception으로 다시 throw하도록 수정
 - [ ] RowMapper 인터페이스에 제네릭을 사용해 캐스팅 제거
