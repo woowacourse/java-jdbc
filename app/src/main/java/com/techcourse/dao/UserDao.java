@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.ArrayList;
+import nextstep.jdbc.InsertJdbcTemplate;
+import nextstep.jdbc.UpdateJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

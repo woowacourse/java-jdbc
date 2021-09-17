@@ -1,5 +1,6 @@
-package com.techcourse.dao;
+package nextstep.jdbc;
 
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

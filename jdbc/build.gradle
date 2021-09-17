@@ -21,3 +21,9 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+project(':jdbc') {
+    dependencies {
+        compile project(':app')
+    }
+}
