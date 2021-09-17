@@ -1,8 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.dao.jdbc.template.JdbcTemplate;
+import com.techcourse.dao.jdbc.template.SelectJdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -80,52 +80,37 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
+        final SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            LOG.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
             }
-            return null;
-        } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setLong(1, id);
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                if (rs.next()) {
+                    return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
                 }
-            } catch (SQLException ignored) {
+                return null;
             }
+        };
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return (User) selectJdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
