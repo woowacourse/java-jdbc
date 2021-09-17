@@ -3,8 +3,11 @@ package com.techcourse.dao.jdbc.template;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-@FunctionalInterface
 public interface PreparedStatementSetter {
 
-    void setValues(PreparedStatement pstmt) throws SQLException;
+    static void setValues(PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+    }
 }

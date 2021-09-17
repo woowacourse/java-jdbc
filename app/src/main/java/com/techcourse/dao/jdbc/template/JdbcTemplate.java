@@ -23,14 +23,14 @@ public abstract class JdbcTemplate<T> {
 
     protected abstract DataSource getDataSource();
 
-    public T query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+    public T query(String sql, RowMapper<T> rowMapper, Object... params) {
 
         final DataSource dataSource = this.getDataSource();
         ResultSet rs = null;
         try (final Connection conn = dataSource.getConnection();
             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmtSetter.setValues(pstmt);
+            PreparedStatementSetter.setValues(pstmt, params);
             rs = executeQuery(pstmt);
             LOG.debug("query : {}", sql);
             return rowMapper.mapRow(rs);
@@ -57,13 +57,13 @@ public abstract class JdbcTemplate<T> {
         }
     }
 
-    public void update(String sql, PreparedStatementSetter pstmtSetter) {
+    public void update(String sql, Object... params) {
 
         final DataSource dataSource = this.getDataSource();
         try (final Connection conn = dataSource.getConnection();
             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmtSetter.setValues(pstmt);
+            PreparedStatementSetter.setValues(pstmt, params);
             LOG.debug("query : {}", sql);
 
             pstmt.executeUpdate();

@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.dao.jdbc.template.JdbcTemplate;
-import com.techcourse.dao.jdbc.template.PreparedStatementSetter;
 import com.techcourse.dao.jdbc.template.RowMapper;
 import com.techcourse.domain.User;
 import java.util.ArrayList;
@@ -26,8 +25,6 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users";
-        final PreparedStatementSetter pstmtSetter = pstmt -> {
-        };
         final RowMapper<List<User>> rowMapper = rs -> {
             final List<User> users = new ArrayList<>();
             while (rs.next()) {
@@ -41,7 +38,7 @@ public class UserDao {
             return users;
         };
 
-        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findByAccount(String account) {
@@ -54,7 +51,6 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where account = ?";
-        final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setString(1, account);
         final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
@@ -66,7 +62,7 @@ public class UserDao {
             return null;
         };
 
-        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper, account);
     }
 
     public User findById(Long id) {
@@ -79,7 +75,6 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where id = ?";
-        final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setLong(1, id);
         final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
@@ -91,7 +86,7 @@ public class UserDao {
             return null;
         };
 
-        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper, id);
     }
 
     public void insert(User user) {
@@ -104,13 +99,12 @@ public class UserDao {
         };
 
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pstmtSetter = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-        };
 
-        jdbcTemplate.update(sql, pstmtSetter);
+        jdbcTemplate.update(sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail()
+        );
     }
 
     public void update(User user) {
@@ -123,13 +117,12 @@ public class UserDao {
         };
 
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final PreparedStatementSetter pstmtSetter = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-        };
 
-        jdbcTemplate.update(sql, pstmtSetter);
+        jdbcTemplate.update(sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail(),
+            user.getId()
+        );
     }
 }

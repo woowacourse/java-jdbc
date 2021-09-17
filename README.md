@@ -13,6 +13,6 @@
 - [x] mapRow(), setValues() 메서드를 인터페이스로 분리
 - [x] SQLException을 catch해서 Unchecked Custom Exception으로 다시 throw하도록 수정
 - [x] 제네릭을 사용해 캐스팅 제거
-- [ ] 가변인자를 사용해 PreparedStatementSetter 인터페이스 구현의 번거로움 낮추기
+- [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 구현의 번거로움 낮추기
 - [ ] 람다식을 사용해서 코드량 줄이기
   
