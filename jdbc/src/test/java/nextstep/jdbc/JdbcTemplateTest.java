@@ -72,7 +72,7 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where id = ?";
         final Long id = 1L;
 
-        final User dbUser = jdbcTemplate.queryObject(sql, id);
+        final User dbUser = jdbcTemplate.queryObject(sql, User.class, id);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where account = ?";
         final String account = "account";
 
-        final User dbUser = jdbcTemplate.queryObject(sql, account);
+        final User dbUser = jdbcTemplate.queryObject(sql, User.class, account);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -106,7 +106,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(insertSql, user3.getAccount(), user3.getPassword(), user3.getEmail());
         final String sql = "select id, account, password, email from users";
 
-        List<User> dbUsers = jdbcTemplate.query(sql);
+        List<User> dbUsers = jdbcTemplate.query(sql, User.class);
 
         assertThat(dbUsers.size()).isEqualTo(users.size());
     }

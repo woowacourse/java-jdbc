@@ -1,6 +1,6 @@
 package nextstep.jdbc;
 
-import com.techcourse.domain.User;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,7 +56,7 @@ public class JdbcTemplate {
         }
     }
 
-    public User queryObject(String sql, Object... objects) {
+    public <T> T queryObject(String sql, Class<T> requiredType, Object... objects) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -74,15 +74,16 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                return requiredType.getDeclaredConstructor(long.class, String.class, String.class, String.class)
+                        .newInstance(
+                                rs.getLong(1),
+                                rs.getString(2),
+                                rs.getString(3),
+                                rs.getString(4));
             }
 
             return null;
-        } catch (SQLException e) {
+        } catch (SQLException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -117,11 +118,11 @@ public class JdbcTemplate {
         pstmt.setString(i, (String) object);
     }
 
-    public List<User> query(String sql) {
+    public <T> List<T> query(String sql, Class<T> requiredType) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        List<User> users = new ArrayList<>();
+        List<T> users = new ArrayList<>();
 
         try {
             conn = dataSource.getConnection();
@@ -131,15 +132,16 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             while (rs.next()) {
-                users.add(new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)));
+                users.add(requiredType.getDeclaredConstructor(long.class, String.class, String.class, String.class)
+                        .newInstance(
+                                rs.getLong(1),
+                                rs.getString(2),
+                                rs.getString(3),
+                                rs.getString(4)));
             }
 
             return users;
-        } catch (SQLException e) {
+        } catch (SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
