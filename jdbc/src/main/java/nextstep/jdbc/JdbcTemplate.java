@@ -47,5 +47,5 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(PreparedStatement pstmt);
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 }
