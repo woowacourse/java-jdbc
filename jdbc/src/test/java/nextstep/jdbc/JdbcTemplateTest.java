@@ -21,6 +21,11 @@ import org.slf4j.LoggerFactory;
 class JdbcTemplateTest {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplateTest.class);
+    private static final RowMapper<User> userRowMapper = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4));
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
@@ -72,7 +77,7 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where id = ?";
         final Long id = 1L;
 
-        final User dbUser = jdbcTemplate.queryForObject(sql, User.class, id);
+        final User dbUser = jdbcTemplate.queryForObject(sql, userRowMapper, id);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -85,7 +90,7 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where account = ?";
         final String account = "account";
 
-        final User dbUser = jdbcTemplate.queryForObject(sql, User.class, account);
+        final User dbUser = jdbcTemplate.queryForObject(sql, userRowMapper, account);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -106,7 +111,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(insertSql, user3.getAccount(), user3.getPassword(), user3.getEmail());
         final String sql = "select id, account, password, email from users";
 
-        List<User> dbUsers = jdbcTemplate.query(sql, User.class);
+        List<User> dbUsers = jdbcTemplate.query(sql, userRowMapper);
 
         assertThat(dbUsers.size()).isEqualTo(users.size());
     }

@@ -7,8 +7,15 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
+
+    private static final RowMapper<User> userRowMapper = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4));
 
     private static UserDao userDao;
 
@@ -20,7 +27,7 @@ public class UserDao {
 
     public static UserDao getInstance() {
         if (Objects.isNull(userDao)) {
-            return new UserDao(DataSourceConfig.getInstance());
+            userDao = new UserDao(DataSourceConfig.getInstance());
         }
         return userDao;
     }
@@ -37,16 +44,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, User.class);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, User.class, id));
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id));
     }
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, User.class, account));
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account));
     }
 }

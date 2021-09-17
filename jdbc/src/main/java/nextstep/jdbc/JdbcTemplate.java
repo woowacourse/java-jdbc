@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -38,7 +37,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... objects) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -56,16 +55,11 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return requiredType.getDeclaredConstructor(long.class, String.class, String.class, String.class)
-                        .newInstance(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4));
+                return rowMapper.mapRow(rs);
             }
 
             return null;
-        } catch (SQLException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -92,7 +86,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, Class<T> requiredType) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         List<T> users = new ArrayList<>();
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(
@@ -100,16 +94,11 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             while (rs.next()) {
-                users.add(requiredType.getDeclaredConstructor(long.class, String.class, String.class, String.class)
-                        .newInstance(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4)));
+                users.add(rowMapper.mapRow(rs));
             }
 
             return users;
-        } catch (SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
