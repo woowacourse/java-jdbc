@@ -16,17 +16,13 @@ public class UserDao {
     private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final JdbcTemplate insertJdbcTemplate;
-    private final JdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.insertJdbcTemplate = getInsertJdbcTemplate();
-        this.updateJdbcTemplate = getUpdateJdbcTemplate();
     }
 
-    private JdbcTemplate getInsertJdbcTemplate() {
-        return new JdbcTemplate() {
+    public void insert(User user) {
+        final JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {
@@ -39,16 +35,22 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
         };
+
+        insertJdbcTemplate.update();
     }
 
-    private JdbcTemplate getUpdateJdbcTemplate() {
-        return new JdbcTemplate() {
+    private DataSource getDataSource() {
+        return this.dataSource;
+    }
+
+    public void update(User user) {
+        final JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {
@@ -61,21 +63,15 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
         };
-    }
 
-    public void insert(User user) {
-        insertJdbcTemplate.update(user);
-    }
-
-    public void update(User user) {
-        updateJdbcTemplate.update(user);
+        updateJdbcTemplate.update();
     }
 
     public List<User> findAll() {
@@ -135,9 +131,5 @@ public class UserDao {
     public User findByAccount(String account) {
         // todo
         return null;
-    }
-
-    DataSource getDataSource() {
-        return this.dataSource;
     }
 }
