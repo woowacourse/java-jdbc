@@ -8,6 +8,8 @@ public class DataSourceConfig {
 
     private static javax.sql.DataSource INSTANCE;
 
+    private DataSourceConfig() {}
+
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
@@ -22,6 +24,4 @@ public class DataSourceConfig {
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }
