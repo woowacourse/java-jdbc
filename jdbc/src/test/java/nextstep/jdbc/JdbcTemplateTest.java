@@ -140,7 +140,7 @@ class JdbcTemplateTest {
                         rs.getString(4));
             }
 
-            return null;
+            throw new SQLException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

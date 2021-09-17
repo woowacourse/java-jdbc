@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
 
-public class RowMapperTest {
+class RowMapperTest {
 
     @Test
     void rowMap() throws SQLException {
