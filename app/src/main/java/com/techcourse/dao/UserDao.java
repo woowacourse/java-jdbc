@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {
@@ -46,7 +47,7 @@ public class UserDao {
             }
         };
 
-        insertJdbcTemplate.update();
+        jdbcTemplate.update();
     }
 
     private DataSource getDataSource() {
@@ -54,7 +55,7 @@ public class UserDao {
     }
 
     public void update(User user) {
-        final JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {
@@ -80,16 +81,46 @@ public class UserDao {
             }
         };
 
-        updateJdbcTemplate.update();
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                final List<User> users = new ArrayList<>();
+                while (rs.next()) {
+                    final User user = new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
+                    users.add(user);
+                }
+                return users;
+            }
+        };
+
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        final JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {
@@ -119,11 +150,40 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
-        // todo
-        return null;
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where account = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, account);
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                if (rs.next()) {
+                    return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
+                }
+                return null;
+            }
+        };
+
+        return (User) jdbcTemplate.query();
     }
 }
