@@ -3,6 +3,8 @@ package com.techcourse.dao;
 import com.techcourse.dao.jdbc.template.JdbcTemplate;
 import com.techcourse.dao.jdbc.template.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -28,17 +30,32 @@ public class UserDao {
         final RowMapper<List<User>> rowMapper = rs -> {
             final List<User> users = new ArrayList<>();
             while (rs.next()) {
-                final User user = new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
+                final User user = getUserSetWithResultValues(rs);
                 users.add(user);
             }
             return users;
         };
 
         return jdbcTemplate.query(sql, rowMapper);
+    }
+
+    private User getUserSetWithResultValues(ResultSet rs) throws SQLException {
+        return new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4));
+    }
+
+    private RowMapper<User> getRowMapperForOnlyOneUserResult() {
+        return this::getUserMappedByResultSet;
+    }
+
+    private User getUserMappedByResultSet(ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            return getUserSetWithResultValues(rs);
+        }
+        return null;
     }
 
     public User findByAccount(String account) {
@@ -51,16 +68,7 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where account = ?";
-        final RowMapper<User> rowMapper = rs -> {
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        };
+        final RowMapper<User> rowMapper = getRowMapperForOnlyOneUserResult();
 
         return jdbcTemplate.query(sql, rowMapper, account);
     }
@@ -75,16 +83,7 @@ public class UserDao {
         };
 
         final String sql = "select id, account, password, email from users where id = ?";
-        final RowMapper<User> rowMapper = rs -> {
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        };
+        final RowMapper<User> rowMapper = getRowMapperForOnlyOneUserResult();
 
         return jdbcTemplate.query(sql, rowMapper, id);
     }

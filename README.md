@@ -14,5 +14,4 @@
 - [x] SQLException을 catch해서 Unchecked Custom Exception으로 다시 throw하도록 수정
 - [x] 제네릭을 사용해 캐스팅 제거
 - [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 구현의 번거로움 낮추기
-- [ ] 람다식을 사용해서 코드량 줄이기
-  
+- [x] 함수 분리 및 정리
