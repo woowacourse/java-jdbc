@@ -1,7 +1,7 @@
 package com.techcourse.dao;
 
-import com.techcourse.dao.jdbc.template.JdbcTemplate;
-import com.techcourse.dao.jdbc.template.RowMapper;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;

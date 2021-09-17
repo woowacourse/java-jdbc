@@ -1,4 +1,4 @@
-package com.techcourse.dao.jdbc.template;
+package nextstep.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

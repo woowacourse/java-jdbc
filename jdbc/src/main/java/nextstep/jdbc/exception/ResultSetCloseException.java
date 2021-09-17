@@ -1,4 +1,4 @@
-package com.techcourse.dao.jdbc.template.exception;
+package nextstep.jdbc.exception;
 
 public class ResultSetCloseException extends RuntimeException {
 
