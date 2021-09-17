@@ -17,7 +17,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate<List<User>> jdbcTemplate = new JdbcTemplate<>() {
 
             @Override
             protected DataSource getDataSource() {
@@ -28,7 +28,7 @@ public class UserDao {
         final String sql = "select id, account, password, email from users";
         final PreparedStatementSetter pstmtSetter = pstmt -> {
         };
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<List<User>> rowMapper = rs -> {
             final List<User> users = new ArrayList<>();
             while (rs.next()) {
                 final User user = new User(
@@ -41,11 +41,11 @@ public class UserDao {
             return users;
         };
 
-        return (List<User>) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
     }
 
     public User findByAccount(String account) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate<User> jdbcTemplate = new JdbcTemplate<>() {
 
             @Override
             protected DataSource getDataSource() {
@@ -55,7 +55,7 @@ public class UserDao {
 
         final String sql = "select id, account, password, email from users where account = ?";
         final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setString(1, account);
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
                     rs.getLong(1),
@@ -66,11 +66,11 @@ public class UserDao {
             return null;
         };
 
-        return (User) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
     }
 
     public User findById(Long id) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate<User> jdbcTemplate = new JdbcTemplate<>() {
 
             @Override
             protected DataSource getDataSource() {
@@ -80,7 +80,7 @@ public class UserDao {
 
         final String sql = "select id, account, password, email from users where id = ?";
         final PreparedStatementSetter pstmtSetter = pstmt -> pstmt.setLong(1, id);
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
                     rs.getLong(1),
@@ -91,11 +91,11 @@ public class UserDao {
             return null;
         };
 
-        return (User) jdbcTemplate.query(sql, pstmtSetter, rowMapper);
+        return jdbcTemplate.query(sql, pstmtSetter, rowMapper);
     }
 
     public void insert(User user) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate<User> jdbcTemplate = new JdbcTemplate<>() {
 
             @Override
             protected DataSource getDataSource() {
@@ -114,7 +114,7 @@ public class UserDao {
     }
 
     public void update(User user) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        final JdbcTemplate<Void> jdbcTemplate = new JdbcTemplate<>() {
 
             @Override
             protected DataSource getDataSource() {

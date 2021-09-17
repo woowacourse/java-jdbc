@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public abstract class JdbcTemplate<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String EXECUTE_QUERY_EXCEPTION_MESSAGE = "executeQuery() 실행에 실패했습니다.";
@@ -23,7 +23,7 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    public Object query(String sql, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) {
+    public T query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
 
         final DataSource dataSource = this.getDataSource();
         ResultSet rs = null;
