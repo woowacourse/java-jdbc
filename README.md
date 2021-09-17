@@ -15,3 +15,4 @@
 - [x] 제네릭을 사용해 캐스팅 제거
 - [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 구현의 번거로움 낮추기
 - [x] 함수 분리 및 정리
+- [x] DatabasePopulatorUtils 리팩터링
