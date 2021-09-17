@@ -12,10 +12,10 @@ import nextstep.jdbc.RowMapper;
 public class UserDao {
 
     private static final RowMapper<User> userRowMapper = rs -> new User(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4));
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     private static UserDao userDao;
 

@@ -14,15 +14,15 @@ public class RowMapperTest {
     @Test
     void rowMap() throws SQLException {
         RowMapper<User> userRowMapper = rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
         ResultSet rs = mock(ResultSet.class);
-        when(rs.getLong(1)).thenReturn(1L);
-        when(rs.getString(2)).thenReturn("account");
-        when(rs.getString(3)).thenReturn("password");
-        when(rs.getString(4)).thenReturn("email@email.com");
+        when(rs.getLong("id")).thenReturn(1L);
+        when(rs.getString("account")).thenReturn("account");
+        when(rs.getString("password")).thenReturn("password");
+        when(rs.getString("email")).thenReturn("email@email.com");
 
         User user = userRowMapper.mapRow(rs);
 
