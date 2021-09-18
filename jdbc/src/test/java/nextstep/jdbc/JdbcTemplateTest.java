@@ -5,10 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +57,9 @@ class JdbcTemplateTest {
 
         jdbcTemplate.update(sql, newUser.getAccount(), newUser.getPassword(), newUser.getEmail());
 
-        User dbUser = Optional.ofNullable(findUserByIdUsingJdbc(2L)).orElseThrow(IllegalArgumentException::new);
+        final String selectSql = "select id, account, password, email from users where id = ?";
+        User dbUser = Optional.ofNullable(jdbcTemplate.queryForObject(selectSql, userRowMapper, 2L))
+                .orElseThrow(IllegalArgumentException::new);
         assertThat(dbUser.getAccount()).isEqualTo(newUser.getAccount());
         assertThat(dbUser.getPassword()).isEqualTo(newUser.getPassword());
         assertThat(dbUser.getEmail()).isEqualTo(newUser.getEmail());
@@ -74,7 +72,9 @@ class JdbcTemplateTest {
 
         jdbcTemplate.update(sql, newPassword, user.getId());
 
-        User dbUser = Optional.ofNullable(findUserByIdUsingJdbc(1L)).orElseThrow(IllegalArgumentException::new);
+        final String selectSql = "select id, account, password, email from users where id = ?";
+        User dbUser = Optional.ofNullable(jdbcTemplate.queryForObject(selectSql, userRowMapper, 1L))
+                .orElseThrow(IllegalArgumentException::new);
         assertThat(dbUser.getPassword()).isEqualTo(newPassword);
     }
 
@@ -122,57 +122,5 @@ class JdbcTemplateTest {
         List<User> dbUsers = jdbcTemplate.query(sql, userRowMapper);
 
         assertThat(dbUsers.size()).isEqualTo(users.size());
-    }
-
-
-    private User findUserByIdUsingJdbc(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
     }
 }
