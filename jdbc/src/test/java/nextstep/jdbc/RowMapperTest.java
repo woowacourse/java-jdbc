@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import nextstep.jdbc.fixture.User;
 import org.junit.jupiter.api.Test;
 
 class RowMapperTest {

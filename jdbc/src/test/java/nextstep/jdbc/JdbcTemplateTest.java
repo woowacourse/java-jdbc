@@ -2,13 +2,13 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
+import nextstep.jdbc.fixture.DataSourceConfig;
+import nextstep.jdbc.fixture.DatabasePopulatorUtils;
+import nextstep.jdbc.fixture.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
