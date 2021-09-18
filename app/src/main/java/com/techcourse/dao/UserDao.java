@@ -22,7 +22,12 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     private UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcTemplate = new JdbcTemplate() {
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
+        };
     }
 
     public static UserDao getInstance() {

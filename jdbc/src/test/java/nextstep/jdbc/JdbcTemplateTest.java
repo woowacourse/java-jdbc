@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,12 @@ class JdbcTemplateTest {
     void setup() {
         dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate() {
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
+        };
 
         user = new User(1L, "account", "password", "email@email.com");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -55,7 +61,7 @@ class JdbcTemplateTest {
 
         jdbcTemplate.update(sql, newUser.getAccount(), newUser.getPassword(), newUser.getEmail());
 
-        User dbUser = findUserByIdUsingJdbc(2L);
+        User dbUser = Optional.ofNullable(findUserByIdUsingJdbc(2L)).orElseThrow(IllegalArgumentException::new);
         assertThat(dbUser.getAccount()).isEqualTo(newUser.getAccount());
         assertThat(dbUser.getPassword()).isEqualTo(newUser.getPassword());
         assertThat(dbUser.getEmail()).isEqualTo(newUser.getEmail());
@@ -68,7 +74,7 @@ class JdbcTemplateTest {
 
         jdbcTemplate.update(sql, newPassword, user.getId());
 
-        User dbUser = findUserByIdUsingJdbc(1L);
+        User dbUser = Optional.ofNullable(findUserByIdUsingJdbc(1L)).orElseThrow(IllegalArgumentException::new);
         assertThat(dbUser.getPassword()).isEqualTo(newPassword);
     }
 
@@ -77,7 +83,8 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where id = ?";
         final Long id = 1L;
 
-        final User dbUser = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        final User dbUser = Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id))
+                .orElseThrow(IllegalArgumentException::new);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -90,7 +97,8 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where account = ?";
         final String account = "account";
 
-        final User dbUser = jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        final User dbUser = Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account))
+                .orElseThrow(IllegalArgumentException::new);
 
         assertThat(dbUser.getId()).isEqualTo(user.getId());
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
@@ -140,7 +148,7 @@ class JdbcTemplateTest {
                         rs.getString(4));
             }
 
-            throw new SQLException();
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

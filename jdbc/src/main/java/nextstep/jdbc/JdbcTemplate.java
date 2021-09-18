@@ -10,19 +10,15 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate {
+public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    public abstract DataSource getDataSource();
 
-    public JdbcTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    public final void update(String sql, Object... objects) {
 
-    public void update(String sql, Object... objects) {
-
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -33,17 +29,17 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("Cannot update");
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
+    public final <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
         try {
-            conn = dataSource.getConnection();
+            conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
 
             for (int i = 0; i < objects.length; i++) {
@@ -58,10 +54,10 @@ public class JdbcTemplate {
                 return rowMapper.mapRow(rs);
             }
 
-            throw new SQLException();
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("Cannot query for object");
         } finally {
             try {
                 if (rs != null) {
@@ -86,10 +82,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public final <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         List<T> users = new ArrayList<>();
 
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(
+        try (Connection conn = getDataSource().getConnection(); PreparedStatement pstmt = conn.prepareStatement(
                 sql); ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
@@ -100,7 +96,7 @@ public class JdbcTemplate {
             return users;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("Cannot query");
         }
     }
 
