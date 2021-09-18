@@ -22,10 +22,7 @@ public abstract class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < objects.length; i++) {
-                setPstmt(pstmt, i + 1, objects[i]);
-            }
-
+            setPstmt(pstmt, objects);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -34,20 +31,9 @@ public abstract class JdbcTemplate {
     }
 
     public final <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = getDataSource().getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            for (int i = 0; i < objects.length; i++) {
-                setPstmt(pstmt, i + 1, objects[i]);
-            }
-
-            rs = pstmt.executeQuery();
-
+        try (Connection conn = getDataSource().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = executeQuery(pstmt, objects)) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -58,50 +44,39 @@ public abstract class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException("Cannot query for object");
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public final <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        List<T> users = new ArrayList<>();
 
-        try (Connection conn = getDataSource().getConnection(); PreparedStatement pstmt = conn.prepareStatement(
-                sql); ResultSet rs = pstmt.executeQuery()) {
+        try (Connection conn = getDataSource().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
+            List<T> entities = new ArrayList<>();
+
             while (rs.next()) {
-                users.add(rowMapper.mapRow(rs));
+                entities.add(rowMapper.mapRow(rs));
             }
 
-            return users;
+            return entities;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException("Cannot query");
         }
     }
 
-    private void setPstmt(PreparedStatement pstmt, int i, Object object) throws SQLException {
-        PreparedStatementSetter pstmts = SqlParameterValue.findSetter(object.getClass());
-        pstmts.setValue(pstmt, i, object);
+    private ResultSet executeQuery(PreparedStatement pstmt, Object[] objects) throws SQLException {
+        setPstmt(pstmt, objects);
+        return pstmt.executeQuery();
+    }
+
+    private void setPstmt(PreparedStatement pstmt, Object[] objects) throws SQLException {
+        for (int i = 0; i < objects.length; i++) {
+            Object object = objects[i];
+            PreparedStatementSetter pstmts = SqlParameterValue.findSetter(object.getClass());
+            pstmts.setValue(pstmt, i + 1, object);
+        }
     }
 }
