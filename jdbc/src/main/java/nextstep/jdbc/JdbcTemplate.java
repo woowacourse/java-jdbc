@@ -57,7 +57,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql,
                                 ResultSetToObjectMapper<T> mapper,
                                 PreparedStatementParameterResolver resolver) {
-        return execute(sql, resolver, QueryForOneExecutor(mapper));
+        return execute(sql, resolver, queryForOneExecutor(mapper));
     }
 
     public <T> T queryForObject(String sql,
@@ -82,7 +82,7 @@ public class JdbcTemplate {
         };
     }
 
-    private <T> QueryExecutor<T> QueryForOneExecutor(ResultSetToObjectMapper<T> mapper) {
+    private <T> QueryExecutor<T> queryForOneExecutor(ResultSetToObjectMapper<T> mapper) {
         return preparedStatement -> {
             preparedStatement.executeQuery();
             ResultSet rs = preparedStatement.getResultSet();
@@ -96,7 +96,7 @@ public class JdbcTemplate {
     public <T> List<T> queryForMany(String sql,
                                     ResultSetToObjectMapper<T> mapper) {
         return execute(sql, PreparedStatementParameterResolver::identity,
-            QueryForAllExecutor(mapper));
+            queryForAllExecutor(mapper));
     }
 
     public <T> T queryForMany(String sql,
@@ -105,7 +105,7 @@ public class JdbcTemplate {
         return queryForObject(sql, mapper, multiParameterBinding(parameters));
     }
 
-    private <T> QueryExecutor<List<T>> QueryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
+    private <T> QueryExecutor<List<T>> queryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
         return preparedStatement -> {
             preparedStatement.executeQuery();
             ResultSet rs = preparedStatement.getResultSet();
