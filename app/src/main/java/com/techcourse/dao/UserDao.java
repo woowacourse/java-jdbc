@@ -1,11 +1,10 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
+import com.techcourse.config.JdbcTemplateConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
@@ -21,18 +20,13 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+    private UserDao() {
+        this.jdbcTemplate = JdbcTemplateConfig.getInstance();
     }
 
     public static UserDao getInstance() {
         if (Objects.isNull(userDao)) {
-            userDao = new UserDao(DataSourceConfig.getInstance());
+            userDao = new UserDao();
         }
         return userDao;
     }
