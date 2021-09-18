@@ -101,10 +101,7 @@ public abstract class JdbcTemplate {
     }
 
     private void setPstmt(PreparedStatement pstmt, int i, Object object) throws SQLException {
-        if (object instanceof Long) {
-            pstmt.setLong(i, (Long) object);
-            return;
-        }
-        pstmt.setString(i, (String) object);
+        PreparedStatementSetter pstmts = SqlParameterValue.findSetter(object.getClass());
+        pstmts.setValue(pstmt, i, object);
     }
 }
