@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int ADD_ONE_INDEX = 1;
 
     private final DbConnector dbConnector;
     private MultiParameterResolvers multiParameterResolvers;
@@ -76,7 +77,7 @@ public class JdbcTemplate {
                 Object parameter = parameters[i];
                 MultiParameterResolver properResolver = multiParameterResolvers
                     .findProperResolver(parameter);
-                properResolver.resolve(preparedStatement, i + 1, parameter);
+                properResolver.resolve(preparedStatement, i + ADD_ONE_INDEX, parameter);
             }
         };
     }
