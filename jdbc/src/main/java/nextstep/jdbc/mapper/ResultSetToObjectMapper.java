@@ -1,4 +1,4 @@
-package nextstep.jdbc.functional.mapper;
+package nextstep.jdbc.mapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

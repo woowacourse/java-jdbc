@@ -1,4 +1,4 @@
-package nextstep.jdbc.functional.executor;
+package nextstep.jdbc.executor;
 
 public class QueryExecuteResult {
 

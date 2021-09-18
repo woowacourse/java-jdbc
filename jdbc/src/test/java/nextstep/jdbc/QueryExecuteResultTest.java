@@ -2,7 +2,7 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import nextstep.jdbc.functional.executor.QueryExecuteResult;
+import nextstep.jdbc.executor.QueryExecuteResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

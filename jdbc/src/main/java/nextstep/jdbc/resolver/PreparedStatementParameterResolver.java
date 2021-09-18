@@ -1,4 +1,4 @@
-package nextstep.jdbc.functional.resolver;
+package nextstep.jdbc.resolver;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

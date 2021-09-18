@@ -4,7 +4,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.functional.mapper.ResultSetToObjectMapper;
+import nextstep.jdbc.mapper.ResultSetToObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,11 +30,10 @@ public class UserDao {
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.executeInsertOrUpdateOrDelete(sql, (pstmt) -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-        });
+        jdbcTemplate.executeInsertOrUpdateOrDelete(sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail());
 
     }
 
@@ -52,15 +51,15 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.queryForAll(sql, USER_MAPPER);
+        return jdbcTemplate.queryForMany(sql, USER_MAPPER);
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql
-            , pstmt -> pstmt.setLong(1, id)
             , USER_MAPPER
+            , pstmt -> pstmt.setLong(1, id)
         );
     }
 
@@ -68,8 +67,8 @@ public class UserDao {
         final String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql,
-            preparedStatement -> preparedStatement.setString(1, account),
-            USER_MAPPER
+            USER_MAPPER,
+            preparedStatement -> preparedStatement.setString(1, account)
         );
     }
 }

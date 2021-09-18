@@ -3,7 +3,7 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import nextstep.jdbc.functional.mapper.ResultSetToObjectMapper;
+import nextstep.jdbc.mapper.ResultSetToObjectMapper;
 import nextstep.jdbc.test.DatabasePopulatorUtils;
 import nextstep.jdbc.test.User;
 import org.h2.jdbcx.JdbcDataSource;
@@ -120,7 +120,7 @@ class JdbcTemplateTest {
 
     private List<User> findAll() {
         String sql = "select * from users";
-        return jdbcTemplate.queryForAll(sql, USER_MAPPER);
+        return jdbcTemplate.queryForMany(sql, USER_MAPPER);
     }
 
     private void deleteAll() {

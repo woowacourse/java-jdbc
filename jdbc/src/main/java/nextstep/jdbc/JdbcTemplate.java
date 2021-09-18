@@ -9,10 +9,14 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.connector.DbConnector;
 import nextstep.jdbc.connector.DbConnectorImpl;
-import nextstep.jdbc.functional.resolver.PreparedStatementParameterResolver;
-import nextstep.jdbc.functional.executor.QueryExecuteResult;
-import nextstep.jdbc.functional.executor.QueryExecutor;
-import nextstep.jdbc.functional.mapper.ResultSetToObjectMapper;
+import nextstep.jdbc.executor.QueryExecuteResult;
+import nextstep.jdbc.executor.QueryExecutor;
+import nextstep.jdbc.mapper.ResultSetToObjectMapper;
+import nextstep.jdbc.resolver.IntMultiParameterResolver;
+import nextstep.jdbc.resolver.MultiParameterResolver;
+import nextstep.jdbc.resolver.MultiParameterResolvers;
+import nextstep.jdbc.resolver.PreparedStatementParameterResolver;
+import nextstep.jdbc.resolver.StringMultiParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +25,18 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DbConnector dbConnector;
+    private MultiParameterResolvers multiParameterResolvers;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dbConnector = new DbConnectorImpl(dataSource);
+        init();
+    }
+
+    private void init() {
+        multiParameterResolvers = new MultiParameterResolvers(
+            new StringMultiParameterResolver(),
+            new IntMultiParameterResolver()
+        );
     }
 
     public QueryExecuteResult executeInsertOrUpdateOrDelete(String sql,
@@ -31,19 +44,41 @@ public class JdbcTemplate {
         return execute(sql, resolver);
     }
 
+    public QueryExecuteResult executeInsertOrUpdateOrDelete(String sql,
+                                                            Object... parameters) {
+        return execute(sql, multiParameterBinding(parameters));
+    }
+
     public QueryExecuteResult executeInsertOrUpdateOrDelete(String sql) {
         return executeInsertOrUpdateOrDelete(sql, PreparedStatementParameterResolver::identity);
     }
 
     public <T> T queryForObject(String sql,
-                                PreparedStatementParameterResolver resolver,
-                                ResultSetToObjectMapper<T> mapper) {
+                                ResultSetToObjectMapper<T> mapper,
+                                PreparedStatementParameterResolver resolver) {
         return execute(sql, resolver, QueryForOneExecutor(mapper));
     }
 
     public <T> T queryForObject(String sql,
                                 ResultSetToObjectMapper<T> mapper) {
-        return queryForObject(sql, PreparedStatementParameterResolver::identity, mapper);
+        return queryForObject(sql, mapper, PreparedStatementParameterResolver::identity);
+    }
+
+    public <T> T queryForObject(String sql,
+                                ResultSetToObjectMapper<T> mapper,
+                                Object... parameters) {
+        return queryForObject(sql, mapper, multiParameterBinding(parameters));
+    }
+
+    private PreparedStatementParameterResolver multiParameterBinding(Object[] parameters) {
+        return preparedStatement -> {
+            for (int i = 0; i < parameters.length; i++) {
+                Object parameter = parameters[i];
+                MultiParameterResolver properResolver = multiParameterResolvers
+                    .findProperResolver(parameter);
+                properResolver.resolve(preparedStatement, i + 1, parameter);
+            }
+        };
     }
 
     private <T> QueryExecutor<T> QueryForOneExecutor(ResultSetToObjectMapper<T> mapper) {
@@ -57,9 +92,16 @@ public class JdbcTemplate {
         };
     }
 
-    public <T> List<T> queryForAll(String sql,
-                                   ResultSetToObjectMapper<T> mapper) {
-        return execute(sql, PreparedStatementParameterResolver::identity, QueryForAllExecutor(mapper));
+    public <T> List<T> queryForMany(String sql,
+                                    ResultSetToObjectMapper<T> mapper) {
+        return execute(sql, PreparedStatementParameterResolver::identity,
+            QueryForAllExecutor(mapper));
+    }
+
+    public <T> T queryForMany(String sql,
+                              ResultSetToObjectMapper<T> mapper,
+                              Object... parameters) {
+        return queryForObject(sql, mapper, multiParameterBinding(parameters));
     }
 
     private <T> QueryExecutor<List<T>> QueryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
