@@ -7,5 +7,7 @@
     - [x] 필요한 유틸성 클래스를 만든다.
          - [x] Datasource를 받아 DB와 연결해주는 Connector
     - [ ] 중복코드를 리팩토링한다.
+         - [x] SQL을 입력받는 로직 
+         - [x] connection을 받아오고 close 하는 로직
     - [ ] 외부 모듈로 분리한다.
     
