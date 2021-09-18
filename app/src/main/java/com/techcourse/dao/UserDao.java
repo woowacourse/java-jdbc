@@ -1,17 +1,16 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -28,7 +27,7 @@ public class UserDao {
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.insert(sql, (pstmt) -> {
+        jdbcTemplate.executeInsertOrUpdate(sql, (pstmt) -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
@@ -39,34 +38,12 @@ public class UserDao {
     public void update(User user) {
         final String sql = "update users set account=?, password=?, email=? where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
+        jdbcTemplate.executeInsertOrUpdate(sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        });
     }
 
     public List<User> findAll() {
@@ -100,19 +77,22 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -132,10 +112,10 @@ public class UserDao {
 
             if (rs.next()) {
                 return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
             }
             return null;
         } catch (SQLException e) {
@@ -146,19 +126,22 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -192,19 +175,22 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 }

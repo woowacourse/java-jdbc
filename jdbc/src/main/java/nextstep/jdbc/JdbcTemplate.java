@@ -20,17 +20,17 @@ public class JdbcTemplate {
         this.dbConnector = new DbConnectorImpl(dataSource);
     }
 
-    public void insert(String sql, PstmtParameterResolver resolver) {
-        execute(sql, resolver);
+    public QueryExecuteResult executeInsertOrUpdate(String sql, PstmtParameterResolver resolver) {
+        return execute(sql, resolver);
     }
 
-    private void execute(String sql, PstmtParameterResolver resolver) {
+    private QueryExecuteResult execute(String sql, PstmtParameterResolver resolver) {
         try (Connection connection = dbConnector.getConnection();
             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             resolver.resolve(pstmt);
-            pstmt.executeUpdate();
+            return new QueryExecuteResult(pstmt.executeUpdate());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new IllegalStateException("DML 처리 중 오류가 발생했습니다.", e);

@@ -9,5 +9,6 @@
     - [ ] 중복코드를 리팩토링한다.
          - [x] SQL을 입력받는 로직 
          - [x] connection을 받아오고 close 하는 로직
+         - [x] update query 처리와 insert query 처리의 중복 로직
     - [ ] 외부 모듈로 분리한다.
     

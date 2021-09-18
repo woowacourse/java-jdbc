@@ -30,7 +30,7 @@ class JdbcTemplateTest {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         //when
-        jdbcTemplate.insert(sql, pstmt -> {
+        jdbcTemplate.executeInsertOrUpdate(sql, pstmt -> {
             pstmt.setString(1, "gugu");
             pstmt.setString(2, "password");
             pstmt.setString(3, "hkkang@woowahan.com");
