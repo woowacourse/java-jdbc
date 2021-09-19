@@ -89,20 +89,26 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return mapper.map(rs);
             }
-            throw new IllegalStateException("queryForInt의 결과값이 없습니다.");
+            throw new IllegalStateException("queryForOne의 결과값이 없습니다.");
         };
     }
 
     public <T> List<T> queryForMany(String sql,
                                     ResultSetToObjectMapper<T> mapper) {
-        return execute(sql, PreparedStatementParameterResolver::identity,
-            queryForAllExecutor(mapper));
+        return queryForMany(sql, mapper,
+            PreparedStatementParameterResolver::identity);
     }
 
-    public <T> T queryForMany(String sql,
+    public <T> List<T> queryForMany(String sql,
                               ResultSetToObjectMapper<T> mapper,
                               Object... parameters) {
-        return queryForObject(sql, mapper, multiParameterBinding(parameters));
+        return queryForMany(sql, mapper, multiParameterBinding(parameters));
+    }
+
+    public <T> List<T> queryForMany(String sql,
+                                    ResultSetToObjectMapper<T> mapper,
+                                    PreparedStatementParameterResolver preparedStatementParameterResolver) {
+        return execute(sql, preparedStatementParameterResolver, queryForAllExecutor(mapper));
     }
 
     private <T> QueryExecutor<List<T>> queryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
@@ -113,7 +119,7 @@ public class JdbcTemplate {
             while (rs.next()) {
                 results.add(mapper.map(rs));
             }
-            log.info("결과 개수 : {}", results.size());
+            log.debug("결과 개수 : {}", results.size());
             return results;
         };
     }
@@ -136,7 +142,7 @@ public class JdbcTemplate {
             return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new IllegalStateException("DML 처리 중 오류가 발생했습니다.", e);
+            throw new IllegalStateException("SQL 처리 중 오류가 발생했습니다.", e);
         }
     }
 

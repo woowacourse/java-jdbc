@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import nextstep.jdbc.mapper.ResultSetToObjectMapper;
@@ -46,6 +47,16 @@ class JdbcTemplateTest {
         deleteAll();
     }
 
+    private void 구구를_DB에_영속화한다() {
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        jdbcTemplate.executeInsertOrUpdateOrDelete(sql, pstmt -> {
+            pstmt.setString(1, gugu.getAccount());
+            pstmt.setString(2, gugu.getPassword());
+            pstmt.setString(3, gugu.getEmail());
+        });
+    }
+
     @DisplayName("입력 기능을 테스트")
     @Test
     void pstmtInsertTest() {
@@ -63,16 +74,6 @@ class JdbcTemplateTest {
         assertThat(user.getEmail()).isEqualTo(EMAIL);
     }
 
-    private void 구구를_DB에_영속화한다() {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.executeInsertOrUpdateOrDelete(sql, pstmt -> {
-            pstmt.setString(1, gugu.getAccount());
-            pstmt.setString(2, gugu.getPassword());
-            pstmt.setString(3, gugu.getEmail());
-        });
-    }
-
     @DisplayName("단일 조회 기능을 테스트")
     @Test
     void queryForOneTest() {
@@ -85,6 +86,52 @@ class JdbcTemplateTest {
         assertThat(user.getEmail()).isEqualTo(EMAIL);
         assertThat(user.getAccount()).isEqualTo(ACCOUNT);
         assertThat(user.getPassword()).isEqualTo(PASSWORD);
+    }
+
+    @DisplayName("단일 조회 기능 다중 인자 테스트")
+    @Test
+    void queryForOneVarargsTest() {
+        //given
+        구구를_DB에_영속화한다();
+        //when
+        String sql = "select * from users where account = ? and email = ? and password = ?";
+        User user = jdbcTemplate.queryForObject(sql, USER_MAPPER, ACCOUNT, EMAIL, PASSWORD);
+        //then
+        assertThat(user.getEmail()).isEqualTo(EMAIL);
+        assertThat(user.getAccount()).isEqualTo(ACCOUNT);
+        assertThat(user.getPassword()).isEqualTo(PASSWORD);
+    }
+
+    @DisplayName("전체 조회 기능을 테스트")
+    @Test
+    void queryForManyTest() {
+        //given
+        int size = 4;
+        for (int i = 0; i < size; i++) {
+            구구를_DB에_영속화한다();
+        }
+        //when
+        String sql = "select * from users";
+        List<User> users = jdbcTemplate.queryForMany(sql, USER_MAPPER);
+
+        //then
+        assertThat(users.size()).isEqualTo(size);
+    }
+
+    @DisplayName("전체 조회 기능 다중 인자 테스트")
+    @Test
+    void queryForManyVarargsTest() {
+        //given
+        int size = 4;
+        for (int i = 0; i < size; i++) {
+            구구를_DB에_영속화한다();
+        }
+        //when
+        String sql = "select * from users where account = ? and email = ? and password = ?";
+        List<User> users = jdbcTemplate.queryForMany(sql, USER_MAPPER, ACCOUNT, EMAIL, PASSWORD);
+
+        //then
+        assertThat(users.size()).isEqualTo(size);
     }
 
     @DisplayName("수정 기능을 테스트")
@@ -111,6 +158,17 @@ class JdbcTemplateTest {
         assertThat(user.getEmail()).isEqualTo(expectedEmail);
         assertThat(user.getAccount()).isEqualTo(expectedAccount);
         assertThat(user.getPassword()).isEqualTo(PASSWORD);
+    }
+
+    @DisplayName("잘못된 SQL이 입력되면 예외를 반환하는 기능 테스트")
+    @Test
+    void sqlErrorTest() {
+        //given
+        String sql = "street women fighter = 필수 시청, 빨리 안보면 인생 낭비";
+        //when
+        //then
+        assertThatThrownBy(() -> jdbcTemplate.executeInsertOrUpdateOrDelete(sql))
+                .hasMessageContaining("SQL 처리 중 오류가 발생했습니다.");
     }
 
     private User 유저를_조회한다() {

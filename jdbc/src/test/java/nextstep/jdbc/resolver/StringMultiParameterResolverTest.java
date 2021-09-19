@@ -1,6 +1,7 @@
 package nextstep.jdbc.resolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -10,17 +11,17 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class IntMultiParameterResolverTest {
+class StringMultiParameterResolverTest {
 
-    @DisplayName("int타입으로 파라미터 리졸버에 true가 반환되는지 확인")
+    @DisplayName("String타입으로 파라미터 리졸버에 true가 반환되는지 확인")
     @Test
     void supportTest() {
         //given
-        IntMultiParameterResolver intMultiParameterResolver = new IntMultiParameterResolver();
+        StringMultiParameterResolver stringMultiParameterResolver = new StringMultiParameterResolver();
         //when
         //then
-        assertThat(intMultiParameterResolver.support(1)).isTrue();
-        assertThat(intMultiParameterResolver.support("우웨")).isFalse();
+        assertThat(stringMultiParameterResolver.support("우웨")).isTrue();
+        assertThat(stringMultiParameterResolver.support(1)).isFalse();
     }
 
     @DisplayName("resolve 기능 테스트")
@@ -30,8 +31,8 @@ class IntMultiParameterResolverTest {
         PreparedStatement mock = mock(PreparedStatement.class);
         //when
         IntMultiParameterResolver intMultiParameterResolver = new IntMultiParameterResolver();
-        intMultiParameterResolver.resolve(mock,1, 5);
+        intMultiParameterResolver.resolve(mock,1, "data");
         //then
-        verify(mock, atLeastOnce()).setInt(1, 5);
+        verify(mock, atLeastOnce()).setString(1, "data");
     }
 }
