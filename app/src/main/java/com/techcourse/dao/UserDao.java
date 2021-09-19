@@ -22,14 +22,13 @@ public class UserDao {
     private static final String EMAIL = "email";
 
     private final DataSource dataSource;
-    private JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public void insert(User user) {
-        jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate<Void> jdbcTemplate = new JdbcTemplate<>() {
             @Override
             protected String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
@@ -48,7 +47,7 @@ public class UserDao {
             }
 
             @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
+            public Void mapRow(final ResultSet rs) {
                 return null;
             }
         };
@@ -56,7 +55,7 @@ public class UserDao {
     }
 
     public void update(User user) {
-        jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate<Void> jdbcTemplate = new JdbcTemplate<>() {
             @Override
             protected String createQuery() {
                 return "update users set account=?, password=?, email=? where id = ?";
@@ -76,7 +75,7 @@ public class UserDao {
             }
 
             @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
+            public Void mapRow(final ResultSet rs) {
                 return null;
             }
         };
@@ -84,7 +83,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate<List<User>> jdbcTemplate = new JdbcTemplate<>() {
             @Override
             protected String createQuery() {
                 return "select * from users";
@@ -118,7 +117,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate<User> jdbcTemplate = new JdbcTemplate<>() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -150,7 +149,7 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate<User> jdbcTemplate = new JdbcTemplate<>() {
             @Override
             protected String createQuery() {
                 return "select * from users where account = ?";

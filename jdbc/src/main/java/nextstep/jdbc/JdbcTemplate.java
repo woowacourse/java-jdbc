@@ -9,14 +9,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate implements RowMapper, PreparedStatementSetter {
+public abstract class JdbcTemplate<T> implements RowMapper<T>, PreparedStatementSetter {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     protected abstract String createQuery();
 
     protected abstract DataSource getDataSource();
-
 
     public void update() {
         try (Connection conn = getDataSource().getConnection();
@@ -28,7 +27,7 @@ public abstract class JdbcTemplate implements RowMapper, PreparedStatementSetter
         }
     }
 
-    public <T> T query() {
+    public T query() {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
             setValues(pstmt);
