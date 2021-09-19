@@ -55,11 +55,42 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+            pstmt.executeUpdate();
+
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public List<User> findAll() {
         // todo
+
         return null;
     }
 
@@ -110,7 +141,6 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        // todo
         final String sql = "select id, account, password, email from users where account = ?";
 
         Connection conn = null;
