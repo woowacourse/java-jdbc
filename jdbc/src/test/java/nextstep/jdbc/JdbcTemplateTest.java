@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import nextstep.jdbc.mapper.ResultSetToObjectMapper;
-import nextstep.jdbc.test.DatabasePopulatorUtils;
 import nextstep.jdbc.test.User;
+import nextstep.jdbc.util.DatabasePopulatorUtils;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

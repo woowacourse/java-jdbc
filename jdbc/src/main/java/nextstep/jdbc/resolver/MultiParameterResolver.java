@@ -3,9 +3,9 @@ package nextstep.jdbc.resolver;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public interface MultiParameterResolver<T> {
+public class MultiParameterResolver {
 
-    boolean support(Object obj);
-
-    void resolve(PreparedStatement preparedStatement, int index, T data) throws SQLException;
+    public void resolve(PreparedStatement preparedStatement, int index, Object data) throws SQLException {
+        preparedStatement.setObject(index, data);
+    }
 }

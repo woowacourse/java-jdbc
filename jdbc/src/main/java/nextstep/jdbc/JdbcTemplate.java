@@ -12,32 +12,21 @@ import nextstep.jdbc.connector.DbConnectorImpl;
 import nextstep.jdbc.executor.QueryExecuteResult;
 import nextstep.jdbc.executor.QueryExecutor;
 import nextstep.jdbc.mapper.ResultSetToObjectMapper;
-import nextstep.jdbc.resolver.IntMultiParameterResolver;
 import nextstep.jdbc.resolver.MultiParameterResolver;
-import nextstep.jdbc.resolver.MultiParameterResolvers;
 import nextstep.jdbc.resolver.PreparedStatementParameterResolver;
-import nextstep.jdbc.resolver.StringMultiParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final MultiParameterResolver MULTI_PARAMETER_RESOLVER = new MultiParameterResolver();
     private static final int ADD_ONE_INDEX = 1;
 
     private final DbConnector dbConnector;
-    private MultiParameterResolvers multiParameterResolvers;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dbConnector = new DbConnectorImpl(dataSource);
-        init();
-    }
-
-    private void init() {
-        multiParameterResolvers = new MultiParameterResolvers(
-            new StringMultiParameterResolver(),
-            new IntMultiParameterResolver()
-        );
     }
 
     public QueryExecuteResult executeInsertOrUpdateOrDelete(String sql,
@@ -52,6 +41,10 @@ public class JdbcTemplate {
 
     public QueryExecuteResult executeInsertOrUpdateOrDelete(String sql) {
         return executeInsertOrUpdateOrDelete(sql, PreparedStatementParameterResolver::identity);
+    }
+
+    public QueryExecuteResult executeDDL(String sql) {
+        return execute(sql, PreparedStatementParameterResolver::identity);
     }
 
     public <T> T queryForObject(String sql,
@@ -75,9 +68,7 @@ public class JdbcTemplate {
         return preparedStatement -> {
             for (int i = 0; i < parameters.length; i++) {
                 Object parameter = parameters[i];
-                MultiParameterResolver properResolver = multiParameterResolvers
-                    .findProperResolver(parameter);
-                properResolver.resolve(preparedStatement, i + ADD_ONE_INDEX, parameter);
+                MULTI_PARAMETER_RESOLVER.resolve(preparedStatement, i + ADD_ONE_INDEX, parameter);
             }
         };
     }
@@ -109,10 +100,10 @@ public class JdbcTemplate {
     public <T> List<T> queryForMany(String sql,
                                     ResultSetToObjectMapper<T> mapper,
                                     PreparedStatementParameterResolver preparedStatementParameterResolver) {
-        return execute(sql, preparedStatementParameterResolver, queryForAllExecutor(mapper));
+        return execute(sql, preparedStatementParameterResolver, queryForManyExecutor(mapper));
     }
 
-    private <T> QueryExecutor<List<T>> queryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
+    private <T> QueryExecutor<List<T>> queryForManyExecutor(ResultSetToObjectMapper<T> mapper) {
         return preparedStatement -> {
             preparedStatement.executeQuery();
             try (ResultSet rs = preparedStatement.getResultSet()) {

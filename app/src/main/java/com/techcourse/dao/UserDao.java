@@ -19,11 +19,9 @@ public class UserDao {
             rs.getString(4)
         );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -33,19 +31,19 @@ public class UserDao {
         jdbcTemplate.executeInsertOrUpdateOrDelete(sql,
             user.getAccount(),
             user.getPassword(),
-            user.getEmail());
-
+            user.getEmail()
+        );
     }
 
     public void update(User user) {
         final String sql = "update users set account=?, password=?, email=? where id = ?";
 
-        jdbcTemplate.executeInsertOrUpdateOrDelete(sql, pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-        });
+        jdbcTemplate.executeInsertOrUpdateOrDelete(sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail(),
+            user.getId()
+        );
     }
 
     public List<User> findAll() {
@@ -57,9 +55,9 @@ public class UserDao {
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql
-            , USER_MAPPER
-            , pstmt -> pstmt.setLong(1, id)
+        return jdbcTemplate.queryForObject(sql,
+            USER_MAPPER,
+            id
         );
     }
 
@@ -68,7 +66,7 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql,
             USER_MAPPER,
-            preparedStatement -> preparedStatement.setString(1, account)
+            account
         );
     }
 }
