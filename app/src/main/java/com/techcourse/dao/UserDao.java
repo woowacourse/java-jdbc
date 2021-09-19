@@ -101,7 +101,7 @@ public class UserDao {
             }
 
             @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
+            public List<User> mapRow(final ResultSet rs) throws SQLException {
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {
                     long id = rs.getLong(ID);
@@ -114,7 +114,7 @@ public class UserDao {
                 return users;
             }
         };
-        return (List<User>) jdbcTemplate.query();
+        return jdbcTemplate.query();
     }
 
     public User findById(Long id) {
@@ -135,7 +135,7 @@ public class UserDao {
             }
 
             @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
+            public User mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     return new User(
                             rs.getLong(ID),
@@ -146,8 +146,8 @@ public class UserDao {
                 return null;
             }
         };
-        return (User) jdbcTemplate.query();
-}
+        return jdbcTemplate.query();
+    }
 
     public User findByAccount(String account) {
         jdbcTemplate = new JdbcTemplate() {
@@ -167,7 +167,7 @@ public class UserDao {
             }
 
             @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
+            public User mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     long id = rs.getLong(ID);
                     String password = rs.getString(PASSWORD);
@@ -177,6 +177,6 @@ public class UserDao {
                 return null;
             }
         };
-        return (User) jdbcTemplate.query();
+        return jdbcTemplate.query();
     }
 }

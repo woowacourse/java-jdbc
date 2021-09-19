@@ -28,7 +28,7 @@ public abstract class JdbcTemplate implements RowMapper, PreparedStatementSetter
         }
     }
 
-    public Object query() {
+    public <T> T query() {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
             setValues(pstmt);
