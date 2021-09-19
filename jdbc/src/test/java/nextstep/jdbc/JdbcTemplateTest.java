@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -107,5 +108,18 @@ class JdbcTemplateTest {
         verify(conn).close();
         verify(pstmt).close();
         verify(rs).close();
+    }
+
+    @DisplayName("잘못된 sql 경우 예외가 발생한다.")
+    @Test
+    void updateException() throws SQLException {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement(any())).thenThrow(SQLException.class);
+
+        assertThatThrownBy(() ->jdbcTemplate.update("wrong sql"))
+                .isInstanceOf(RuntimeException.class);
+
+        verify(conn).close();
     }
 }
