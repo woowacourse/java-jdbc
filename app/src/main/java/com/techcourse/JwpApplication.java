@@ -1,13 +1,12 @@
 package com.techcourse;
 
+import java.io.File;
+import java.util.stream.Stream;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.stream.Stream;
 
 public class JwpApplication {
 
@@ -31,9 +30,9 @@ public class JwpApplication {
 
     private static int defaultPortIfNull(String[] args) {
         return Stream.of(args)
-                .findFirst()
-                .map(Integer::parseInt)
-                .orElse(DEFAULT_PORT);
+            .findFirst()
+            .map(Integer::parseInt)
+            .orElse(DEFAULT_PORT);
     }
 
     private static Context addWebapp(Tomcat tomcat) {
