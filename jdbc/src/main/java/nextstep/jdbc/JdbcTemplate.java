@@ -85,11 +85,12 @@ public class JdbcTemplate {
     private <T> QueryExecutor<T> queryForOneExecutor(ResultSetToObjectMapper<T> mapper) {
         return preparedStatement -> {
             preparedStatement.executeQuery();
-            ResultSet rs = preparedStatement.getResultSet();
-            if (rs.next()) {
-                return mapper.map(rs);
+            try (ResultSet rs = preparedStatement.getResultSet()) {
+                if (rs.next()) {
+                    return mapper.map(rs);
+                }
+                throw new IllegalStateException("queryForOne의 결과값이 없습니다.");
             }
-            throw new IllegalStateException("queryForOne의 결과값이 없습니다.");
         };
     }
 
@@ -100,8 +101,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForMany(String sql,
-                              ResultSetToObjectMapper<T> mapper,
-                              Object... parameters) {
+                                    ResultSetToObjectMapper<T> mapper,
+                                    Object... parameters) {
         return queryForMany(sql, mapper, multiParameterBinding(parameters));
     }
 
@@ -114,13 +115,14 @@ public class JdbcTemplate {
     private <T> QueryExecutor<List<T>> queryForAllExecutor(ResultSetToObjectMapper<T> mapper) {
         return preparedStatement -> {
             preparedStatement.executeQuery();
-            ResultSet rs = preparedStatement.getResultSet();
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(mapper.map(rs));
+            try (ResultSet rs = preparedStatement.getResultSet()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapper.map(rs));
+                }
+                log.debug("결과 개수 : {}", results.size());
+                return results;
             }
-            log.debug("결과 개수 : {}", results.size());
-            return results;
         };
     }
 
