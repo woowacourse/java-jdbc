@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
+import nextstep.jdbc.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;

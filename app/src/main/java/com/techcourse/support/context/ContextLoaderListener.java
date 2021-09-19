@@ -1,6 +1,6 @@
 package com.techcourse.support.context;
 
-import com.techcourse.config.DataSourceConfig;
+import nextstep.jdbc.DataSourceConfig;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
