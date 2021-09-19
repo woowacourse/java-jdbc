@@ -87,16 +87,7 @@ public class JdbcTemplate {
 
     private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... args) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        int index = 1;
-        for (Object arg : args) {
-            if (arg instanceof Long) {
-                pstmt.setLong(index, (Long) arg);
-            }
-            if (arg instanceof String) {
-                pstmt.setString(index, (String) arg);
-            }
-            index += 1;
-        }
+        setPreparedStatement(pstmt, args);
         return pstmt;
     }
 }
