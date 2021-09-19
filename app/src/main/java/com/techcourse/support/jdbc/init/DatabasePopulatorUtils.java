@@ -33,6 +33,7 @@ public class DatabasePopulatorUtils {
             final Statement statement = connection.createStatement()) {
 
             statement.execute(sql);
+            LOG.debug("query : {}", sql);
 
         } catch (SQLException e) {
             LOG.error(SCHEMA_SQL_EXECUTE_EXCEPTION_MESSAGE, e);
