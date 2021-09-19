@@ -12,14 +12,14 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
-    public void update(User user) {
+    public void update() {
         String sql = createQuery();
         try (Connection conn = getDataSource().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setValues(user, pstmt);
+            setValues(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
