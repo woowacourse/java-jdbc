@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,42 +24,68 @@ public class UserDao {
     private static final String EMAIL = "email";
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+//        KeyHolder keyHolder = new GeneratedKeyHolder();
+//        jdbcTemplate.update(conn -> {
+//            try (PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"id"})) {
+//                pstmt.setString(1, user.getAccount());
+//                pstmt.setString(2, user.getPassword());
+//                pstmt.setString(3, user.getEmail());
+//                return pstmt;
+//            }
+//        }, keyHolder);
+//        Number keyValue = keyHolder.getKey();
+//        log.debug("Number {} insert success ", keyValue.longValue());
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug(QUERY_LOG, sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+             PreparedStatement pstmt = conn.prepareStatement(createQueryForInsert())) {
+            setValueForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             handleUserDaoException(e);
         }
     }
 
+    private String createQueryForInsert() {
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        log.debug(QUERY_LOG, sql);
+        return sql;
+    }
+
+    private void setValueForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
     public void update(User user) {
-        final String sql = "update users set account=?, password=?, email=? where id = ?";
-
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug(QUERY_LOG, sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
+             PreparedStatement pstmt = conn.prepareStatement(createQueryForUpdate())) {
+            setValueForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             handleUserDaoException(e);
         }
+    }
+
+    private String createQueryForUpdate() {
+        String sql = "update users set account=?, password=?, email=? where id = ?";
+        log.debug(QUERY_LOG, sql);
+        return sql;
+    }
+
+    private void setValueForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
     }
 
     public List<User> findAll() {
