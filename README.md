@@ -17,3 +17,17 @@
 - [x] 함수 분리 및 정리
 - [x] DatabasePopulatorUtils 리팩터링
 - [x] jdbc 패키지 jdbc 모듈로 이동
+
+
+## 1차 코드리뷰 - 구구, 케빈
+
+- [ ] PreparedStatementSetter의 default 메서드가 필요한 상황인지 고려해보기.
+- [ ] JdbcTemplate을 사용하기 위해서 매번 구현하지 않도록 수정
+  - [ ] 매번 DataSource 반환해야 하는 부분 제거
+  - [ ] 싱글톤 빈 제공 고려
+- [ ] 반복문을 라이브러리에 감출 방법 고려해 보기.
+  - [ ] 사용자는 단순히 1개의 Row에서 데이터를 추출해 인스턴스화 하는 방법만 고려하도록 하기.
+- [ ] `getUserSetWithResultValues(), getRowMapperForOnlyOneUserResult()` 메서드 분리의 필요성을 고민해 보기.
+  - [ ] RowMapper 중복 사용 제거를 고민해 보기.
+- [ ] `getUserMappedByResultSet()` JDBC 라이브러리로 옮기기.
+- [ ] JdbcTemplate의 ResultSet을 try-with-resources로 처리하도록 수정.
