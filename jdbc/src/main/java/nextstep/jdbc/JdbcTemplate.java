@@ -66,7 +66,7 @@ public class JdbcTemplate {
     ) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
-            preparedStatement.setString(i + 1, (String) args[i]);
+            preparedStatement.setString(i + 1, String.valueOf(args[i]));
         }
         return preparedStatement;
     }
