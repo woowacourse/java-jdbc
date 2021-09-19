@@ -1,9 +1,12 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
@@ -23,8 +26,13 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        final User user = InMemoryUserRepository.findByAccount(account)
-                .orElseThrow();
+        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+
+        final User user = userDao.findByAccount(account);
+
+        if (Objects.isNull(user)) {
+            throw new IllegalArgumentException();
+        }
 
         modelAndView.addObject("user", user);
         return modelAndView;

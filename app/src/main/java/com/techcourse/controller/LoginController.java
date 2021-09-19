@@ -1,10 +1,13 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Objects;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
@@ -34,12 +37,12 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
-                .map(user -> {
-                    log.info("User : {}", user);
-                    return login(request, user);
-                })
-                .orElse(redirect("/401.jsp"));
+        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+        User user = userDao.findByAccount(request.getParameter("account"));
+        if (Objects.isNull(user)) {
+            return redirect("/401.jsp");
+        }
+        return login(request, user);
     }
 
     private ModelAndView login(HttpServletRequest request, User user) {

@@ -1,5 +1,7 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +21,9 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        InMemoryUserRepository.save(user);
+
+        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao.insert(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
