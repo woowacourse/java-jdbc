@@ -20,7 +20,6 @@ class IntMultiParameterResolverTest {
         //when
         //then
         assertThat(intMultiParameterResolver.support(1)).isTrue();
-        assertThat(intMultiParameterResolver.support("우웨")).isFalse();
     }
 
     @DisplayName("resolve 기능 테스트")

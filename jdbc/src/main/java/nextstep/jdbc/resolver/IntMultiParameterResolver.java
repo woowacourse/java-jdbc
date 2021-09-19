@@ -3,16 +3,16 @@ package nextstep.jdbc.resolver;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class IntMultiParameterResolver implements MultiParameterResolver {
+public class IntMultiParameterResolver implements MultiParameterResolver<Integer> {
 
     @Override
-    public <T> boolean support(T t) {
-        return t instanceof Integer;
+    public boolean support(Object obj) {
+        return obj instanceof Integer;
     }
 
     @Override
-    public <T> void resolve(PreparedStatement preparedStatement, int index, T data)
+    public void resolve(PreparedStatement preparedStatement, int index, Integer data)
         throws SQLException {
-        preparedStatement.setInt(index, (int) data);
+        preparedStatement.setInt(index, data);
     }
 }

@@ -21,7 +21,6 @@ class StringMultiParameterResolverTest {
         //when
         //then
         assertThat(stringMultiParameterResolver.support("우웨")).isTrue();
-        assertThat(stringMultiParameterResolver.support(1)).isFalse();
     }
 
     @DisplayName("resolve 기능 테스트")
@@ -30,8 +29,8 @@ class StringMultiParameterResolverTest {
         //given
         PreparedStatement mock = mock(PreparedStatement.class);
         //when
-        IntMultiParameterResolver intMultiParameterResolver = new IntMultiParameterResolver();
-        intMultiParameterResolver.resolve(mock,1, "data");
+        StringMultiParameterResolver stringMultiParameterResolver = new StringMultiParameterResolver();
+        stringMultiParameterResolver.resolve(mock,1, "data");
         //then
         verify(mock, atLeastOnce()).setString(1, "data");
     }
