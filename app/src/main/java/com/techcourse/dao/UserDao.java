@@ -18,22 +18,57 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final InsertJdbcTemplate insertJdbcTemplate;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.insertJdbcTemplate = new InsertJdbcTemplate();
-        this.updateJdbcTemplate = new UpdateJdbcTemplate();
     }
 
     public void insert(User user) {
-        insertJdbcTemplate.insert(user, this);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.executeUpdate();
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
 
     public void update(User user) {
-       updateJdbcTemplate.update(user, this);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set password = ?, email = ? where account = ? ";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getPassword());
+                pstmt.setString(2, user.getEmail());
+                pstmt.setString(3, user.getAccount());
+                pstmt.executeUpdate();
+            }
+        };
+        jdbcTemplate.update(user);
+
     }
 
     public List<User> findAll() {
