@@ -28,4 +28,4 @@
 - [x] `getUserSetWithResultValues(), getRowMapperForOnlyOneUserResult()` 메서드 분리의 필요성을 고민해 보기.
   - [x] RowMapper 중복 사용 제거를 고민해 보기.
 - [x] `getUserMappedByResultSet()` JDBC 라이브러리로 옮기기.
-- [ ] JdbcTemplate의 ResultSet을 try-with-resources로 처리하도록 수정.
+- [x] JdbcTemplate의 ResultSet을 try-with-resources로 처리하도록 수정.
