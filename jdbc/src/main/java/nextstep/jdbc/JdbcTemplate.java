@@ -9,6 +9,8 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.ExecuteQueryException;
 import nextstep.jdbc.preparedstatementsetter.ArgumentPreparedStatementSetter;
 import nextstep.jdbc.preparedstatementsetter.PreparedStatementSetter;
+import nextstep.jdbc.rowmapper.RowMapper;
+import nextstep.jdbc.rowmapper.RowMapperResultSetExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

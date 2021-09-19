@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.rowmapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
