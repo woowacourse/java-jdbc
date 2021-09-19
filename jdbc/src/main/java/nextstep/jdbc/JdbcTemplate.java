@@ -14,7 +14,7 @@ import nextstep.jdbc.rowmapper.RowMapperResultSetExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate<T> {
+public class JdbcTemplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String EXECUTE_QUERY_EXCEPTION_MESSAGE = "executeQuery() 실행에 실패했습니다.";
@@ -29,7 +29,7 @@ public class JdbcTemplate<T> {
         this.dataSource = dataSource;
     }
 
-    public T query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
 
         try (final Connection conn = dataSource.getConnection();
             final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
@@ -46,7 +46,7 @@ public class JdbcTemplate<T> {
         }
     }
 
-    public List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
 
         try (final Connection conn = dataSource.getConnection();
             final PreparedStatement pstmt = conn.prepareStatement(sql);

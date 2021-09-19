@@ -8,17 +8,18 @@ import nextstep.jdbc.rowmapper.RowMapper;
 
 public class UserDao {
 
-    private final JdbcTemplate<User> jdbcTemplate;
-
     private static final RowMapper<User> rowMapper = resultSet ->
         new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
-            resultSet.getString("email"));
+            resultSet.getString("email")
+        );
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate<>(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public List<User> findAll() {
