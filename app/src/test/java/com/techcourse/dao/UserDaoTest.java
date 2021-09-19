@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -43,6 +44,14 @@ class UserDaoTest {
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @DisplayName("없는 account 로 찾으면 null 을 리턴한다.")
+    @Test
+    void findByAccountFail() {
+        final String account = "gugu11";
+
+        assertThat(userDao.findByAccount(account)).isNull();
     }
 
     @Test
