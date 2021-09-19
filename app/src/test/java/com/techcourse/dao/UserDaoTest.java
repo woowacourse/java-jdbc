@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,21 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+    }
+
+    @DisplayName("findAll 에서 내부의 값을 확인한다.")
+    @Test
+    void findAllItems() {
+        User better = new User("better", "password", "better@email.com");
+        userDao.insert(better);
+
+        final List<User> users = userDao.findAll();
+        List<String> userNames = users.stream()
+                .map(User::getAccount)
+                .collect(Collectors.toList());
+
+        assertThat(users).isNotEmpty();
+        assertThat(userNames).contains("gugu", "better");
     }
 
     @Test
