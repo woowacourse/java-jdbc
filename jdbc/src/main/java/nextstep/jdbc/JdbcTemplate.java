@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate<T> implements RowMapper<T>, PreparedStatementSetter {
+public abstract class JdbcTemplate<T> implements RowMapper<T> {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -17,20 +17,20 @@ public abstract class JdbcTemplate<T> implements RowMapper<T>, PreparedStatement
 
     protected abstract DataSource getDataSource();
 
-    public void update() {
+    public void update(Object... args) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
-            setValues(pstmt);
+            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
         }
     }
 
-    public T query() {
+    public T query(Object... args) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
-            setValues(pstmt);
+            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
             return mapRow(executeQuery(pstmt));
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
