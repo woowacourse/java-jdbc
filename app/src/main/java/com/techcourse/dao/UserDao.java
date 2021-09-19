@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,33 +23,55 @@ public class UserDao {
     private static final String EMAIL = "email";
 
     private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
+    private JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
-//        KeyHolder keyHolder = new GeneratedKeyHolder();
-//        jdbcTemplate.update(conn -> {
-//            try (PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"id"})) {
-//                pstmt.setString(1, user.getAccount());
-//                pstmt.setString(2, user.getPassword());
-//                pstmt.setString(3, user.getEmail());
-//                return pstmt;
-//            }
-//        }, keyHolder);
-//        Number keyValue = keyHolder.getKey();
-//        log.debug("Number {} insert success ", keyValue.longValue());
+        jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
 
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate();
-        insertJdbcTemplate.insert(user, this);
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+        jdbcTemplate.update();
     }
 
     public void update(User user) {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate();
-        updateJdbcTemplate.update(user, this);
+        jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set account=?, password=?, email=? where id = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {
