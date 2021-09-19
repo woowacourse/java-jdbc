@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(PreparedStatement psmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
     public void update() {
         try (Connection conn = getDataSource().getConnection();
@@ -24,13 +24,12 @@ public abstract class JdbcTemplate {
             setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            handleUserDaoException(e);
+            handleJdbcTemplateException(e);
         }
     }
 
-    private void handleUserDaoException(final SQLException e) {
+    private void handleJdbcTemplateException(final SQLException e) {
         log.error(e.getMessage(), e);
-        throw new UserDaoException(e);
+        throw new JdbcTemplateException(e);
     }
-
 }
