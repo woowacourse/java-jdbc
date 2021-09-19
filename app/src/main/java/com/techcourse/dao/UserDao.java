@@ -90,7 +90,6 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
         final String sql = "select * from users";
 
         Connection conn = null;
@@ -215,6 +214,36 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
 
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
+    }
+
+    public void removeAll(){
+        final String sql = "delete from users";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
             try {
                 if (pstmt != null) {
                     pstmt.close();
