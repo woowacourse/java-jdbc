@@ -15,6 +15,12 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private static final List<PreparedStatementSetter> pstmtSetters = new ArrayList<>();
+
+    static {
+        pstmtSetters.add(new StringSetter());
+        pstmtSetters.add(new LongSetter());
+    }
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -74,11 +80,8 @@ public class JdbcTemplate {
     private void setPreparedStatement(PreparedStatement pstmt, Object[] args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
-            if (arg instanceof String) {
-                pstmt.setString(index, (String) arg);
-            }
-            if (arg instanceof Long) {
-                pstmt.setLong(index, (Long) arg);
+            for (PreparedStatementSetter setter : pstmtSetters) {
+                setter.set(pstmt, index, arg);
             }
             index += 1;
         }
