@@ -44,48 +44,13 @@ public class UserDao {
 //        Number keyValue = keyHolder.getKey();
 //        log.debug("Number {} insert success ", keyValue.longValue());
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(createQueryForInsert())) {
-            setValueForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            handleUserDaoException(e);
-        }
-    }
-
-    private String createQueryForInsert() {
-        String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        log.debug(QUERY_LOG, sql);
-        return sql;
-    }
-
-    private void setValueForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate();
+        insertJdbcTemplate.insert(user, this);
     }
 
     public void update(User user) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(createQueryForUpdate())) {
-            setValueForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            handleUserDaoException(e);
-        }
-    }
-
-    private String createQueryForUpdate() {
-        String sql = "update users set account=?, password=?, email=? where id = ?";
-        log.debug(QUERY_LOG, sql);
-        return sql;
-    }
-
-    private void setValueForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
+        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate();
+        updateJdbcTemplate.update(user, this);
     }
 
     public List<User> findAll() {
@@ -150,13 +115,17 @@ public class UserDao {
                 return new User(id, account, password, email);
             }
         } catch (SQLException e) {
-            return handleUserDaoException(e);
+            handleUserDaoException(e);
         }
         return null;
     }
 
-    private User handleUserDaoException(final SQLException e) {
+    private void handleUserDaoException(final SQLException e) {
         log.error(e.getMessage(), e);
         throw new UserDaoException(e);
+    }
+
+    public DataSource getDataSource() {
+        return this.dataSource;
     }
 }
