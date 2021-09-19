@@ -85,15 +85,10 @@ public class UserDao {
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = createPreparedStatement(conn, sql, id);
+                ResultSet rs = pstmt.executeQuery()
+        ) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -107,41 +102,15 @@ public class UserDao {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = createPreparedStatement(conn, sql, account);
+                ResultSet rs = pstmt.executeQuery()) {
 
             log.debug("query : {}", sql);
 
@@ -156,27 +125,6 @@ public class UserDao {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
@@ -193,5 +141,20 @@ public class UserDao {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... args) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        int index = 1;
+        for (Object arg : args) {
+            if (arg instanceof Long) {
+                pstmt.setLong(index, (Long) arg);
+            }
+            if (arg instanceof String) {
+                pstmt.setString(index, (String) arg);
+            }
+            index += 1;
+        }
+        return pstmt;
     }
 }
