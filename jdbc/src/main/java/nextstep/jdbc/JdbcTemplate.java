@@ -40,10 +40,12 @@ public class JdbcTemplate {
             final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
             final List<T> results = rowMapperResultSetExtractor.extractData(rs);
 
-            if (results.size() != 1) {
+            if (results.size() > 1) {
                 throw new IncorrectResultSizeDataAccessException("query 결과가 1개가 아닌, " + results.size() + "개 입니다.");
             }
-
+            if (results.isEmpty()) {
+                return null;
+            }
             return results.get(0);
 
         } catch (SQLException e) {

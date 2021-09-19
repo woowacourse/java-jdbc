@@ -94,9 +94,10 @@ class UserDaoTest {
     void findByAccount_Exception_When_ResultIsEmpty() {
         // given
         // when
+        final User foundUser = userDao.findByAccount("test-account");
+
         // then
-        assertThatThrownBy(() -> userDao.findByAccount("test-account"))
-            .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+        assertThat(foundUser).isNull();
     }
 
     @DisplayName("findByAccount() 테스트 - 예외 발생 - 조회 결과가 1개보다 많을 때")
@@ -134,9 +135,10 @@ class UserDaoTest {
     void findById_Exception_When_ResultIsEmpty() {
         // given
         // when
+        final User foundUser = userDao.findById(1L);
+
         // then
-        assertThatThrownBy(() -> userDao.findById(1L))
-            .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+        assertThat(foundUser).isNull();
     }
 
     @DisplayName("insert() 테스트 - 성공")
