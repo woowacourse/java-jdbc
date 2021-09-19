@@ -6,9 +6,10 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate {
+public abstract class JdbcTemplate implements RowMapper, PreparedStatementSetter {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -16,7 +17,6 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
     public void update() {
         try (Connection conn = getDataSource().getConnection();
@@ -26,6 +26,26 @@ public abstract class JdbcTemplate {
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
         }
+    }
+
+    public Object query() {
+        try (Connection conn = getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+            setValues(pstmt);
+            return mapRow(executeQuery(pstmt));
+        } catch (SQLException e) {
+            handleJdbcTemplateException(e);
+        }
+        return null;
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt) {
+        try {
+            return pstmt.executeQuery();
+        } catch (SQLException e) {
+            handleJdbcTemplateException(e);
+        }
+        return null;
     }
 
     private void handleJdbcTemplateException(final SQLException e) {

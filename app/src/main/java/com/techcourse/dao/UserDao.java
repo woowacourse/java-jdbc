@@ -2,13 +2,10 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.JdbcTemplateException;
-import nextstep.jdbc.SelectJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -44,10 +41,15 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
+            }
+
+            @Override
+            public Object mapRow(final ResultSet rs) throws SQLException {
+                return null;
             }
         };
         jdbcTemplate.update();
@@ -66,18 +68,23 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
+            }
+
+            @Override
+            public Object mapRow(final ResultSet rs) throws SQLException {
+                return null;
             }
         };
         jdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select * from users";
@@ -89,7 +96,12 @@ public class UserDao {
             }
 
             @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) {
+                // Do nothing...
+            }
+
+            @Override
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {
                     long id = rs.getLong(ID);
@@ -101,17 +113,12 @@ public class UserDao {
                 }
                 return users;
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) {
-                // Do nothing...
-            }
         };
         return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -123,7 +130,12 @@ public class UserDao {
             }
 
             @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setLong(1, id);
+            }
+
+            @Override
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     return new User(
                             rs.getLong(ID),
@@ -133,17 +145,12 @@ public class UserDao {
                 }
                 return null;
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
         };
         return (User) jdbcTemplate.query();
 }
 
     public User findByAccount(String account) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select * from users where account = ?";
@@ -155,7 +162,12 @@ public class UserDao {
             }
 
             @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, account);
+            }
+
+            @Override
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     long id = rs.getLong(ID);
                     String password = rs.getString(PASSWORD);
@@ -163,11 +175,6 @@ public class UserDao {
                     return new User(id, account, password, email);
                 }
                 return null;
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, account);
             }
         };
         return (User) jdbcTemplate.query();
