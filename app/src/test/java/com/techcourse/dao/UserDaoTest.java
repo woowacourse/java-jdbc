@@ -34,6 +34,7 @@ class UserDaoTest {
     void findById() {
         final User user = userDao.findById(1L);
 
+        assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
@@ -47,25 +48,43 @@ class UserDaoTest {
 
     @Test
     void insert() {
+        // given
         final String account = "insert-gugu";
-        final User user = new User(account, "password", "hkkang@woowahan.com");
+        final String password = "password";
+        final String email = "hkkang@woowahan.com";
+        final User user = new User(account, password, email);
+
+        // when
         userDao.insert(user);
 
+        // then
         final User actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
+        checkSameUserInfo(account, password, email, actual);
     }
 
     @Test
     void update() {
+        // given
         final String newPassword = "password99";
         final User user = userDao.findById(1L);
-        user.changePassword(newPassword);
 
+        // when
+        user.changePassword(newPassword);
         userDao.update(user);
 
+        // then
         final User actual = userDao.findById(1L);
+        checkSameUserInfo(user, actual);
+    }
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    private void checkSameUserInfo(final User user, final User actual) {
+        assertThat(user).usingRecursiveComparison().isEqualTo(actual);
+    }
+
+    private void checkSameUserInfo(final String account, final String password, final String email, final User actual) {
+        assertThat(actual.getId()).isEqualTo(2L);
+        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.getPassword()).isEqualTo(password);
+        assertThat(actual.getEmail()).isEqualTo(email);
     }
 }
