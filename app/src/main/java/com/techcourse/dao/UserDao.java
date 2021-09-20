@@ -30,7 +30,7 @@ public class UserDao {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            log.debug("query : {}", sql);
+            printQueryLog(sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -55,7 +55,37 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            printQueryLog(sql);
+
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public List<User> findAll() {
@@ -75,7 +105,7 @@ public class UserDao {
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
+            printQueryLog(sql);
 
             if (rs.next()) {
                 return new User(
@@ -112,5 +142,9 @@ public class UserDao {
     public User findByAccount(String account) {
         // todo
         return null;
+    }
+
+    private void printQueryLog(String sql) {
+        log.debug("query : {}", sql);
     }
 }
