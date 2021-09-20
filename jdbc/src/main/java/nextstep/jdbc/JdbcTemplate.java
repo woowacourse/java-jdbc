@@ -40,17 +40,6 @@ public class JdbcTemplate {
         return null;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
-            return rowMapper.mapRow(pstmt.executeQuery());
-        } catch (SQLException e) {
-            handleJdbcTemplateException(e);
-        }
-        return null;
-    }
-
     private void handleJdbcTemplateException(final SQLException e) {
         log.error(e.getMessage(), e);
         throw new JdbcTemplateException(e);

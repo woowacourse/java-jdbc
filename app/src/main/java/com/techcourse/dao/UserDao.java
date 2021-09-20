@@ -41,7 +41,11 @@ public class UserDao {
         String sql = "select * from users";
         log.debug(QUERY_SQL, sql);
 
-        return jdbcTemplate.query(sql, rs -> {
+        return jdbcTemplate.query(sql, getListRowMapper());
+    }
+
+    private RowMapper<List<User>> getListRowMapper() {
+        return rs -> {
             List<User> users = new ArrayList<>();
             while (rs.next()) {
                 long id = rs.getLong(ID);
@@ -52,21 +56,19 @@ public class UserDao {
                 users.add(user);
             }
             return users;
-        });
+        };
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug(QUERY_SQL, sql);
-
         return jdbcTemplate.query(sql, getUserRowMapper(), id);
     }
 
     public User findByAccount(String account) {
         String sql = "select * from users where account = ?";
         log.debug(QUERY_SQL, sql);
-
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+        return jdbcTemplate.query(sql, getUserRowMapper(), account);
     }
 
     private RowMapper<User> getUserRowMapper() {
