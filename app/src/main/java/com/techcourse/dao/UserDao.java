@@ -40,7 +40,6 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select * from users";
         log.debug(QUERY_SQL, sql);
-
         return jdbcTemplate.query(sql, getListRowMapper());
     }
 
