@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -14,7 +13,6 @@ public class UserDao {
     private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final RowMapper<User> userRowMapper = getUserRowMapper();
-    private final RowMapper<List<User>> usersRowMapper = getUsersRowMapper();
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
@@ -44,43 +42,26 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, usersRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id)
+            .orElseThrow();
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account)
+            .orElseThrow();
     }
 
     private RowMapper<User> getUserRowMapper() {
-        return resultSet -> {
-            if (resultSet.next()) {
-                return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
-            }
-            return null;
-        };
-    }
-
-    private RowMapper<List<User>> getUsersRowMapper() {
-        return resultSet -> {
-            List<User> users = new ArrayList<>();
-            if (resultSet.next()) {
-                users.add(new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4)));
-            }
-            return users;
-        };
+        return resultSet -> new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4));
     }
 }
