@@ -1,6 +1,6 @@
 package nextstep.jdbc.exception;
 
-public class ResultSizeExceedException extends RuntimeException {
+public class ResultSizeExceedException extends DataAccessException {
 
     public ResultSizeExceedException() {
     }

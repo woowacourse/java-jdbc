@@ -1,6 +1,6 @@
 package nextstep.jdbc.exception;
 
-public class EmptyResultException extends RuntimeException {
+public class EmptyResultException extends DataAccessException {
 
     public EmptyResultException() {
     }

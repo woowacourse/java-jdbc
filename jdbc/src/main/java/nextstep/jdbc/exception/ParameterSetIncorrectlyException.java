@@ -1,6 +1,6 @@
 package nextstep.jdbc.exception;
 
-public class ParameterSetIncorrectlyException extends RuntimeException {
+public class ParameterSetIncorrectlyException extends DataAccessException {
 
     public ParameterSetIncorrectlyException() {
     }

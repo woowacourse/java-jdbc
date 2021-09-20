@@ -1,6 +1,6 @@
 package nextstep.jdbc.exception;
 
-public class NotSupportedSqlTypeException extends RuntimeException {
+public class NotSupportedSqlTypeException extends DataAccessException {
 
     public NotSupportedSqlTypeException() {
     }
