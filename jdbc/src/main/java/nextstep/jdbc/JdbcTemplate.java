@@ -17,7 +17,6 @@ public abstract class JdbcTemplate {
     public abstract DataSource getDataSource();
 
     public final void update(String sql, Object... objects) {
-
         try (Connection conn = getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -31,27 +30,20 @@ public abstract class JdbcTemplate {
     }
 
     public final <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
+        List<T> results = query(sql, rowMapper, objects);
+        if (results.isEmpty()) {
+            throw new JdbcException("Cannot query object");
+        }
+        if (results.size() > 1) {
+            throw new JdbcException("Incorrect result size");
+        }
+        return results.iterator().next();
+    }
+
+    public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
         try (Connection conn = getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
                 ResultSet rs = executeQuery(pstmt, objects)) {
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException("Cannot query for object");
-        }
-    }
-
-    public final <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-
-        try (Connection conn = getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
             List<T> entities = new ArrayList<>();

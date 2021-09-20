@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import nextstep.jdbc.JdbcException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
@@ -48,11 +49,19 @@ public class UserDao {
 
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id));
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id));
+        } catch (JdbcException e) {
+            return Optional.empty();
+        }
     }
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account));
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account));
+        } catch (JdbcException e) {
+            return Optional.empty();
+        }
     }
 }

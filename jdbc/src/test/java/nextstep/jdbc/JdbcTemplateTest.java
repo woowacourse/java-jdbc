@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,6 +105,30 @@ class JdbcTemplateTest {
         assertThat(dbUser.getAccount()).isEqualTo(user.getAccount());
         assertThat(dbUser.getPassword()).isEqualTo(user.getPassword());
         assertThat(dbUser.getEmail()).isEqualTo(user.getEmail());
+    }
+
+    @Test
+    void findByAccountNoResult() {
+        final String sql = "select id, account, password, email from users where account = ?";
+        final String account = "notAccount";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper, account))
+                .isInstanceOf(JdbcException.class)
+                .hasMessage("Cannot query object");
+    }
+
+    @Test
+    void findByAccountMultipleResults() {
+        final User sameAccountUser = new User("account", "password", "email@email.com");
+        final String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(insertSql, sameAccountUser.getAccount(), sameAccountUser.getPassword(),
+                sameAccountUser.getEmail());
+        final String sql = "select id, account, password, email from users where account = ?";
+        final String account = "account";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper, account))
+                .isInstanceOf(JdbcException.class)
+                .hasMessage("Incorrect result size");
     }
 
     @Test
