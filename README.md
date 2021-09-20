@@ -10,4 +10,4 @@
 - [x] mapRow, setValues 인터페이스 분리 
 - [x] SQLException Unchecked Exception으로 관리 
 - [x] RowMapper 제네릭 사용
-- [ ] PreparedStatementSetter 가변인자 사용
+- [x] PreparedStatementSetter 가변인자 사용
