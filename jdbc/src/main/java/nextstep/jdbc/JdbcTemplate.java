@@ -33,10 +33,6 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... objects) {
 
         ResultSet resultSet = null;
@@ -58,5 +54,9 @@ public class JdbcTemplate {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        return pstmt.executeQuery();
     }
 }
