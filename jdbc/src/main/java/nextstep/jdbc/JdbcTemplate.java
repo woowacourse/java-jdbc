@@ -5,25 +5,31 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.exception.SqlQueryException;
+import nextstep.exception.SqlUpdateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
+    private final DataSource dataSource;
 
-        try (Connection conn = getDataSource().getConnection(); PreparedStatement pstmt = conn
-            .prepareStatement(sql)) {
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void update(String sql, Object... objects) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             LOG.debug("query : {}", sql);
 
-            preparedStatementSetter.setValues(pstmt);
+            PreparedStatementSetter.setValues(pstmt, objects);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SqlUpdateException(e);
         }
     }
 
@@ -31,20 +37,19 @@ public abstract class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-    public Object query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) {
+    public Object query(String sql, RowMapper rowMapper, Object... objects) {
 
         ResultSet resultSet = null;
-        try (Connection conn = getDataSource().getConnection();
+        try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            preparedStatementSetter.setValues(pstmt);
+            PreparedStatementSetter.setValues(pstmt, objects);
 
             LOG.debug("query : {}", sql);
             resultSet = executeQuery(pstmt);
             return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SqlQueryException(e);
         } finally {
             try {
                 if (resultSet != null) {
@@ -54,6 +59,4 @@ public abstract class JdbcTemplate {
             }
         }
     }
-
-    protected abstract DataSource getDataSource();
 }

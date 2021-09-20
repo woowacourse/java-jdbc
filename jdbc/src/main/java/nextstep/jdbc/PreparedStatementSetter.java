@@ -3,7 +3,14 @@ package nextstep.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public interface PreparedStatementSetter {
+public class PreparedStatementSetter {
 
-    void setValues(PreparedStatement pstmt) throws SQLException;
+    private PreparedStatementSetter() {}
+
+    public static void setValues(PreparedStatement pstmt, Object... objects) throws SQLException {
+        int i = 1;
+        for (Object object : objects) {
+            pstmt.setObject(i++, object);
+        }
+    }
 }

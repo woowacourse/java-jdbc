@@ -15,37 +15,33 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-        });
+        jdbcTemplate.update(
+            sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail()
+        );
     }
 
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-        });
+        jdbcTemplate.update(
+            sql,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail(),
+            user.getId()
+        );
     }
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
         return (List<User>) jdbcTemplate.query(sql,
-            pstmt -> {},
             resultSet -> {
                 List<User> users = new ArrayList<>();
                 if (resultSet.next()) {
@@ -64,7 +60,6 @@ public class UserDao {
         String sql = "select id, account, password, email from users where id = ?";
         return (User) jdbcTemplate.query(
             sql,
-            pstmt -> pstmt.setLong(1, id),
             resultSet -> {
                 if (resultSet.next()) {
                     return new User(
@@ -74,7 +69,8 @@ public class UserDao {
                         resultSet.getString(4));
                 }
                 return null;
-            }
+            },
+            id
         );
     }
 
@@ -82,7 +78,6 @@ public class UserDao {
         String sql = "select id, account, password, email from users where account = ?";
         return (User) jdbcTemplate.query(
             sql,
-            pstmt -> pstmt.setString(1, account),
             resultSet -> {
                 if (resultSet.next()) {
                     return new User(
@@ -92,7 +87,8 @@ public class UserDao {
                         resultSet.getString(4));
                 }
                 return null;
-            }
+            },
+            account
         );
     }
 }
