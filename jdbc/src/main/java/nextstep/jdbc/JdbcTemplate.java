@@ -22,56 +22,49 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
+        PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
+        execute(sql, pstmt -> {
             setter.setValues(pstmt);
-
-            log.debug("query : {}", sql);
-
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
+            return null;
+        });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
-        RowMapperResultSetExtractor<T> extractor = new RowMapperResultSetExtractor<>(mapper);
+        return query(sql, args, new RowMapperResultSetExtractor<>(mapper));
+    }
 
+    private <T> List<T> query(String sql, Object[] args, RowMapperResultSetExtractor<T> extractor) {
+        PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
+        return execute(sql, pstmt -> {
+            ResultSet resultSet = null;
+            try {
+                setter.setValues(pstmt);
+                resultSet = pstmt.executeQuery();
+                return extractor.extractData(resultSet);
+            } finally {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet resultSet = executeQuery(argumentPreparedStatementSetter(args), pstmt)) {
-
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
-            return extractor.extractData(resultSet);
+            return callback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet resultSet = executeQuery(argumentPreparedStatementSetter(args), pstmt)) {
-
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return mapper.mapRow(resultSet);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
-        setter.setValues(pstmt);
-        return pstmt.executeQuery();
+        return query(sql, args, new RowMapperResultSetExtractor<>(mapper))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new DataAccessException("존재하지 않는 데이터입니다."));
     }
 
     private PreparedStatementSetter argumentPreparedStatementSetter(Object[] args) {
