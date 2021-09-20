@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
 
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,30 +20,21 @@ public class DatabasePopulatorUtils {
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
     public static void execute(DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final File file = Paths.get(url.toURI()).toFile();
-            final String sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             Statement statement = conn.createStatement()) {
+            final String sql = getInitSchema();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException | URISyntaxException e) {
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        } catch (URISyntaxException | IOException e) {
             log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
         }
+    }
+
+    private static String getInitSchema() throws URISyntaxException, IOException {
+        final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+        final File file = Paths.get(url.toURI()).toFile();
+        return Files.readString(file.toPath());
     }
 
     private DatabasePopulatorUtils() {}
