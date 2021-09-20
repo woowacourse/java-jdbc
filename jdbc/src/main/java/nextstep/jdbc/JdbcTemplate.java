@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.ExecuteQueryException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
@@ -24,40 +25,27 @@ public class JdbcTemplate {
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
-        if (dataSource == null) {
+        if (Objects.isNull(dataSource)) {
             throw new IllegalArgumentException("Property 'dataSource' is required");
         }
         this.dataSource = dataSource;
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        final List<T> results = this.query(sql, rowMapper, params);
 
-        try (final Connection conn = dataSource.getConnection();
-            final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
-            final ResultSet rs = executeQuery(pstmt)) {
-
-            LOG.debug("query : {}", sql);
-            final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
-            final List<T> results = rowMapperResultSetExtractor.extractData(rs);
-
-            if (results.size() > 1) {
-                throw new IncorrectResultSizeDataAccessException("query 결과가 1개가 아닌, " + results.size() + "개 입니다.");
-            }
-            if (results.isEmpty()) {
-                return null;
-            }
-            return results.get(0);
-
-        } catch (SQLException e) {
-            LOG.error(EXECUTE_QUERY_EXCEPTION_MESSAGE, e);
-            throw new ExecuteQueryException(EXECUTE_QUERY_EXCEPTION_MESSAGE, e);
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("query 결과가 1개가 아닌, " + results.size() + "개 입니다.");
         }
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (final Connection conn = dataSource.getConnection();
-            final PreparedStatement pstmt = conn.prepareStatement(sql);
+            final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
             final ResultSet rs = executeQuery(pstmt)) {
 
             LOG.debug("query : {}", sql);
