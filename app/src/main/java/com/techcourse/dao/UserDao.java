@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,18 @@ public class UserDao {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug(QUERY_SQL, sql);
 
-        return jdbcTemplate.query(sql, rs -> {
+        return jdbcTemplate.query(sql, getUserRowMapper(), id);
+    }
+
+    public User findByAccount(String account) {
+        String sql = "select * from users where account = ?";
+        log.debug(QUERY_SQL, sql);
+
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+    }
+
+    private RowMapper<User> getUserRowMapper() {
+        return rs -> {
             if (rs.next()) {
                 return new User(
                         rs.getLong(ID),
@@ -67,21 +79,6 @@ public class UserDao {
                         rs.getString(EMAIL));
             }
             return null;
-        }, id);
-    }
-
-    public User findByAccount(String account) {
-        String sql = "select * from users where account = ?";
-        log.debug(QUERY_SQL, sql);
-
-        return jdbcTemplate.query(sql, rs -> {
-            if (rs.next()) {
-                long id = rs.getLong(ID);
-                String password = rs.getString(PASSWORD);
-                String email = rs.getString(EMAIL);
-                return new User(id, account, password, email);
-            }
-            return null;
-        }, account);
+        };
     }
 }
