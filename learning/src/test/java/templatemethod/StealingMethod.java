@@ -13,7 +13,7 @@ public abstract class StealingMethod {
 
     protected abstract void stealTheItem(String target);
 
-    public void steal() {
+    public final void steal() {
         final String target = pickTarget();
         LOG.info("The target has been chosen as {}.", target);
         confuseTarget(target);

@@ -2,16 +2,13 @@ package com.techcourse.config;
 
 import org.h2.jdbcx.JdbcDataSource;
 
-import java.util.Objects;
-
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static final javax.sql.DataSource INSTANCE = createJdbcDataSource();
+
+    private DataSourceConfig() {}
 
     public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
-        }
         return INSTANCE;
     }
 
@@ -22,6 +19,4 @@ public class DataSourceConfig {
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }
