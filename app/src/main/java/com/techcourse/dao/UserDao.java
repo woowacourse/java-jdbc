@@ -33,9 +33,7 @@ public class UserDao {
 
             LOG.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             LOG.error(e.getMessage(), e);
@@ -66,10 +64,7 @@ public class UserDao {
 
             LOG.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             LOG.error(e.getMessage(), e);
@@ -224,5 +219,18 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
     }
 }
