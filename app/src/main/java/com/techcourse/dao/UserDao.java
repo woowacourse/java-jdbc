@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.SelectJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,6 @@ public class UserDao {
 
     private final DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
-    private SelectJdbcTemplate selectJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -28,6 +26,11 @@ public class UserDao {
 
     public void insert(User user) {
         jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
             @Override
             protected String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
@@ -41,8 +44,8 @@ public class UserDao {
             }
 
             @Override
-            protected DataSource getDataSource() {
-                return dataSource;
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
             }
         };
         jdbcTemplate.update();
@@ -50,6 +53,11 @@ public class UserDao {
 
     public void update(User user) {
         jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
             @Override
             protected String createQuery() {
                 return "update users set account = ?, password = ?, email = ? where id = ?";
@@ -64,15 +72,15 @@ public class UserDao {
             }
 
             @Override
-            protected DataSource getDataSource() {
-                return dataSource;
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
             }
         };
         jdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        selectJdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
                 return dataSource;
@@ -100,11 +108,11 @@ public class UserDao {
                 return users;
             }
         };
-        return (List<User>) selectJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        selectJdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
                 return dataSource;
@@ -132,11 +140,11 @@ public class UserDao {
                 return null;
             }
         };
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
-        selectJdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
                 return dataSource;
@@ -164,6 +172,6 @@ public class UserDao {
                 return null;
             }
         };
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 }
