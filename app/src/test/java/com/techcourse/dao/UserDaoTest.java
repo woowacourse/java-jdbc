@@ -74,6 +74,16 @@ class UserDaoTest {
     }
 
     @Test
+    void findAllByAccount() {
+        final User user = new User("gugu", "password1", "hkkang2@woowahan.com");
+        userDao.insert(user);
+
+        List<User> users = userDao.findAllByAccount("gugu");
+
+        assertThat(users).hasSize(2);
+    }
+
+    @Test
     void insert() {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");

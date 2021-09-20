@@ -1,6 +1,9 @@
 package nextstep.jdbc;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -34,12 +37,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> mapper) {
+    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
         RowMapperResultSetExtractor<T> extractor = new RowMapperResultSetExtractor<>(mapper);
 
         try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet resultSet = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet resultSet = executeQuery(argumentPreparedStatementSetter(args), pstmt)) {
+
+            log.debug("query : {}", sql);
+
             return extractor.extractData(resultSet);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
@@ -49,12 +55,12 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(argumentPreparedStatementSetter(args), pstmt)) {
+             ResultSet resultSet = executeQuery(argumentPreparedStatementSetter(args), pstmt)) {
 
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return mapper.mapRow(rs);
+            if (resultSet.next()) {
+                return mapper.mapRow(resultSet);
             }
             return null;
         } catch (SQLException e) {
