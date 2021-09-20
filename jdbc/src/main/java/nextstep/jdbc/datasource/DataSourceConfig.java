@@ -24,18 +24,24 @@ public class DataSourceConfig {
 
     private static DataSourceProperty dataSourceBuild() {
         try {
-            final Properties properties = new Properties();
-            final URL url = DataSourceConfig.class.getClassLoader().getResource("application.properties");
-            final File file = Paths.get(url.toURI()).toFile();
-            final FileReader fileReader = new FileReader(file);
-            properties.load(fileReader);
-            return new DataSourceProperty(
-                    properties.getProperty("datasource.url"),
-                    properties.getProperty("datasource.username"),
-                    properties.getProperty("datasource.password"));
+            final Properties properties = getDataSourceProperty();
+            return new DataSourceProperty.Builder()
+                    .url(properties.getProperty("datasource.url"))
+                    .username(properties.getProperty("datasource.username"))
+                    .password(properties.getProperty("datasource.password"))
+                    .build();
         } catch (IOException | URISyntaxException exception) {
             throw new RuntimeException();
         }
+    }
+
+    private static Properties getDataSourceProperty() throws URISyntaxException, IOException {
+        final Properties properties = new Properties();
+        final URL url = DataSourceConfig.class.getClassLoader().getResource("application.properties");
+        final File file = Paths.get(url.toURI()).toFile();
+        final FileReader fileReader = new FileReader(file);
+        properties.load(fileReader);
+        return properties;
     }
 
     private static JdbcDataSource createJdbcDataSource(DataSourceProperty dataSourceProperty) {
