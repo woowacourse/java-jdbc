@@ -24,6 +24,10 @@ public class User {
         return this.password.equals(password);
     }
 
+    public boolean equalsId(long id) {
+        return this.id == id;
+    }
+
     public void changePassword(String password) {
         this.password = password;
     }
@@ -42,6 +46,10 @@ public class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     @Override

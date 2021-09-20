@@ -1,4 +1,4 @@
-package nextstep.mvc;
+package nextstep.mvc.adapter;
 
 import nextstep.mvc.view.ModelAndView;
 

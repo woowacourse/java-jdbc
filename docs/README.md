@@ -17,8 +17,8 @@
     - [x] Object에서 제너릭으로 개선하기
     - [x] preparedStatementSetter를 가변인자로 변경
     - [ ] 람다식을 이용하여 코드량 줄이기
-- [ ] DI 구현
-- [ ] controller service Repository 분리
-- [ ] pages enum 구현 후 분리
+- [x] DI 구현
+- [x] controller service Repository 분리
+- [x] pages enum 구현 후 분리
 - [ ] 테스트 코드 작성
 

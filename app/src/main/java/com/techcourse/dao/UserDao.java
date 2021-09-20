@@ -1,22 +1,21 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.mvc.exception.BadRequestException;
+import nextstep.web.annotation.Repository;
 
+@Repository
 public class UserDao {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final RowMapper<User> userRowMapper = getUserRowMapper();
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao() {
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     }
 
     public void insert(User user) {
@@ -48,13 +47,13 @@ public class UserDao {
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper, id)
-            .orElseThrow();
+            .orElseThrow(BadRequestException::new);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper, account)
-            .orElseThrow();
+            .orElseThrow(BadRequestException::new);
     }
 
     private RowMapper<User> getUserRowMapper() {

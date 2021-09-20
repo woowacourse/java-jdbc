@@ -1,7 +1,8 @@
-package nextstep.mvc;
+package nextstep.mvc.registry;
 
 import java.util.ArrayList;
 import java.util.List;
+import nextstep.mvc.adapter.HandlerAdapter;
 
 public class HandlerAdapterRegistry {
 
