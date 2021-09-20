@@ -30,7 +30,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter setter, RowMapper mapper) {
+    public <T> T query(String sql, PreparedStatementSetter setter, RowMapper<T> mapper) {
         final DataSource dataSource = getDataSource();
 
         try (Connection conn = dataSource.getConnection();

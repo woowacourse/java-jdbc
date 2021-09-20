@@ -51,7 +51,7 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        return (List<User>) jdbcTemplate.query(sql, pstmt -> {},
+        return jdbcTemplate.query(sql, pstmt -> {},
                 resultSet -> {
                     List<User> users = new ArrayList<>();
                     if (resultSet.next()) {
@@ -68,7 +68,7 @@ public class UserDao {
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return (User) jdbcTemplate.query(sql, pstmt -> pstmt.setLong(1, id),
+        return jdbcTemplate.query(sql, pstmt -> pstmt.setLong(1, id),
                 resultSet -> {
                     if (resultSet.next()) {
                         return new User(
@@ -84,7 +84,7 @@ public class UserDao {
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return (User) jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account),
+        return jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account),
                 resultSet -> {
                     if (resultSet.next()) {
                         return new User(
