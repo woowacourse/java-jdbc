@@ -1,16 +1,14 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -40,6 +38,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
+            }
         };
         jdbcTemplate.update();
     }
@@ -63,12 +66,17 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
+            }
         };
         jdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users";
@@ -101,7 +109,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -133,7 +141,7 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where account = ?";
