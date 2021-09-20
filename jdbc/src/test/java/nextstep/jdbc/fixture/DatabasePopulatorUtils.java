@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.init;
+package nextstep.jdbc.fixture;
 
 import java.io.File;
 import java.io.IOException;
