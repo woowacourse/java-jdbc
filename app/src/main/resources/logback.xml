@@ -8,6 +8,7 @@
     </appender>
 
     <logger name="nextstep" level="DEBUG" />
+    <logger name="com.techcourse" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
