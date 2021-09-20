@@ -2,12 +2,12 @@ package nextstep.mvc.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import nextstep.mvc.exception.InternalServerException;
 import nextstep.mvc.view.ModelAndView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class HandlerExecution {
 
@@ -24,9 +24,10 @@ public class HandlerExecution {
     public ModelAndView handle(HttpServletRequest request, HttpServletResponse response) {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             LOG.error("{} method invoke fail. error message : {}", method, e.getMessage());
-            throw new RuntimeException(e);
+            throw new InternalServerException();
         }
     }
 }

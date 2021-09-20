@@ -3,19 +3,24 @@ package nextstep.mvc.registry;
 import java.util.ArrayList;
 import java.util.List;
 import nextstep.mvc.adapter.HandlerAdapter;
+import nextstep.mvc.exception.BadRequestException;
 
 public class HandlerAdapterRegistry {
 
-    private final List<HandlerAdapter> handlerAdapters = new ArrayList<>();
+    private final List<HandlerAdapter> handlerAdapters;
+
+    public HandlerAdapterRegistry() {
+        this.handlerAdapters = new ArrayList<>();
+    }
 
     public void addHandlerAdapter(HandlerAdapter handlerAdapter) {
         handlerAdapters.add(handlerAdapter);
     }
 
-    public HandlerAdapter getHandlerAdapter(Object handler) {
+    public HandlerAdapter getHandlerAdapter(Object handle) {
         return handlerAdapters.stream()
-                .filter(ha -> ha.supports(handler))
-                .findFirst()
-                .orElseThrow(IllegalArgumentException::new);
+            .filter(handlerAdapter -> handlerAdapter.supports(handle))
+            .findFirst()
+            .orElseThrow(BadRequestException::new);
     }
 }
