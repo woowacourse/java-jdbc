@@ -3,23 +3,25 @@ package nextstep.jdbc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate<T> implements RowMapper<T> {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected abstract String createQuery();
+    private final DataSource dataSource;
 
-    protected abstract DataSource getDataSource();
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
-    public void update(Object... args) {
-        try (Connection conn = getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+    public void update(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             new ArgumentPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -27,20 +29,11 @@ public abstract class JdbcTemplate<T> implements RowMapper<T> {
         }
     }
 
-    public T query(Object... args) {
-        try (Connection conn = getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             new ArgumentPreparedStatementSetter(args).setValues(pstmt);
-            return mapRow(executeQuery(pstmt));
-        } catch (SQLException e) {
-            handleJdbcTemplateException(e);
-        }
-        return null;
-    }
-
-    private ResultSet executeQuery(PreparedStatement pstmt) {
-        try {
-            return pstmt.executeQuery();
+            return rowMapper.mapRow(pstmt.executeQuery());
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
         }
