@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 
 public class HandlerExecution {
 
-    private static final Logger log = LoggerFactory.getLogger(HandlerExecution.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HandlerExecution.class);
 
     private final Object declaredObject;
     private final Method method;
@@ -25,7 +25,7 @@ public class HandlerExecution {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            log.error("{} method invoke fail. error message : {}", method, e.getMessage());
+            LOG.error("{} method invoke fail. error message : {}", method, e.getMessage());
             throw new RuntimeException(e);
         }
     }

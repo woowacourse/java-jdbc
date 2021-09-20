@@ -14,7 +14,7 @@ import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
     public static void execute(DataSource dataSource) {
         Connection connection = null;
@@ -27,7 +27,7 @@ public class DatabasePopulatorUtils {
             statement = connection.createStatement();
             statement.execute(sql);
         } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
         } finally {
             try {
                 if (statement != null) {

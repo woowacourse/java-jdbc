@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
-    private static final Logger log = LoggerFactory.getLogger(AppWebApplicationInitializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AppWebApplicationInitializer.class);
 
     @Override
     public void onStartup(ServletContext servletContext) {
@@ -27,6 +27,6 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
         dispatcher.setLoadOnStartup(1);
         dispatcher.addMapping("/");
 
-        log.info("Start AppWebApplication Initializer");
+        LOG.info("Start AppWebApplication Initializer");
     }
 }

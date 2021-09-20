@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public class HitAndRunMethod extends StealingMethod {
 
-    private static final Logger log = LoggerFactory.getLogger(HitAndRunMethod.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HitAndRunMethod.class);
 
     @Override
     protected String pickTarget() {
@@ -14,11 +14,11 @@ public class HitAndRunMethod extends StealingMethod {
 
     @Override
     protected void confuseTarget(String target) {
-        log.info("Approach the {} from behind.", target);
+        LOG.info("Approach the {} from behind.", target);
     }
 
     @Override
     protected void stealTheItem(String target) {
-        log.info("Grab the wallet and run away fast!");
+        LOG.info("Grab the wallet and run away fast!");
     }
 }

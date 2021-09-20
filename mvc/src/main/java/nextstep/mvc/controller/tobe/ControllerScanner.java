@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class ControllerScanner {
 
-    private static final Logger log = LoggerFactory.getLogger(ControllerScanner.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ControllerScanner.class);
 
     private final Reflections reflections;
 
@@ -32,7 +32,7 @@ public class ControllerScanner {
                 controllers.put(clazz, clazz.getDeclaredConstructor().newInstance());
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
 
         return controllers;

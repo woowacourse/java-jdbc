@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class StealingMethod {
 
-    private static final Logger log = LoggerFactory.getLogger(StealingMethod.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StealingMethod.class);
 
     protected abstract String pickTarget();
 
@@ -15,7 +15,7 @@ public abstract class StealingMethod {
 
     public void steal() {
         final String target = pickTarget();
-        log.info("The target has been chosen as {}.", target);
+        LOG.info("The target has been chosen as {}.", target);
         confuseTarget(target);
         stealTheItem(target);
     }

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
 
-    private static final Logger log = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
 
     private final Object[] basePackage;
     private final Map<HandlerKey, HandlerExecution> handlerExecutions;
@@ -31,11 +31,11 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         final Set<Method> methods = getRequestMappingMethods(controllers.keySet());
         for (Method method : methods) {
             final RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
-            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
+            LOG.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
             addHandlerExecutions(controllers, method, requestMapping);
         }
 
-        log.info("Initialized AnnotationHandlerMapping!");
+        LOG.info("Initialized AnnotationHandlerMapping!");
     }
 
     private void addHandlerExecutions(Map<Class<?>, Object> controllers, Method method, RequestMapping rm) {
@@ -69,7 +69,7 @@ public class AnnotationHandlerMapping implements HandlerMapping {
     public Object getHandler(HttpServletRequest request) {
         final String requestUri = request.getRequestURI();
         final RequestMethod requestMethod = RequestMethod.valueOf(request.getMethod().toUpperCase());
-        log.debug("requestUri : {}, requestMethod : {}", requestUri, requestMethod);
+        LOG.debug("requestUri : {}, requestMethod : {}", requestUri, requestMethod);
         return handlerExecutions.get(new HandlerKey(requestUri, requestMethod));
     }
 }

@@ -16,13 +16,13 @@ import org.slf4j.LoggerFactory;
 @Controller
 public class LoginController {
 
-    private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
         return UserSession.getUserFrom(request.getSession())
                 .map(user -> {
-                    log.info("logged in {}", user.getAccount());
+                    LOG.info("logged in {}", user.getAccount());
                     return redirect("/index.jsp");
                 })
                 .orElse(new ModelAndView(new JspView("/login.jsp")));
@@ -36,7 +36,7 @@ public class LoginController {
 
         return InMemoryUserRepository.findByAccount(request.getParameter("account"))
                 .map(user -> {
-                    log.info("User : {}", user);
+                    LOG.info("User : {}", user);
                     return login(request, user);
                 })
                 .orElse(redirect("/401.jsp"));

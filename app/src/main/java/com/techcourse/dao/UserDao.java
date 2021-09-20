@@ -13,7 +13,7 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
 
@@ -30,14 +30,14 @@ public class UserDao {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
@@ -75,7 +75,7 @@ public class UserDao {
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             if (rs.next()) {
                 return new User(
@@ -86,7 +86,7 @@ public class UserDao {
             }
             return null;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {

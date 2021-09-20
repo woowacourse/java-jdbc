@@ -14,7 +14,7 @@ import java.util.Optional;
 public class DispatcherServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DispatcherServlet.class);
 
     private final HandlerMappingRegistry handlerMappingRegistry;
     private final HandlerAdapterRegistry handlerAdapterRegistry;
@@ -40,7 +40,7 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException {
-        log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
+        LOG.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
 
         try {
             final Optional<Object> handler = handlerMappingRegistry.getHandler(request);
@@ -52,7 +52,7 @@ public class DispatcherServlet extends HttpServlet {
             final ModelAndView modelAndView = handlerExecutor.handle(request, response, handler.get());
             render(modelAndView, request, response);
         } catch (Throwable e) {
-            log.error("Exception : {}", e.getMessage(), e);
+            LOG.error("Exception : {}", e.getMessage(), e);
             throw new ServletException(e.getMessage());
         }
     }
