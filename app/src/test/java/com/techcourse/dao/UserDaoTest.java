@@ -66,6 +66,14 @@ class UserDaoTest {
     }
 
     @Test
+    void findByEmail() {
+        final String email = "hkkang@woowahan.com";
+        final User user = userDao.findByEmail(email);
+
+        assertThat(user.getEmail()).isEqualTo(email);
+    }
+
+    @Test
     void insert() {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
