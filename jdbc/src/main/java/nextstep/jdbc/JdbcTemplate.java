@@ -37,7 +37,7 @@ public class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-    public Object query(String sql, RowMapper rowMapper, Object... objects) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... objects) {
 
         ResultSet resultSet = null;
         try (Connection conn = dataSource.getConnection();
