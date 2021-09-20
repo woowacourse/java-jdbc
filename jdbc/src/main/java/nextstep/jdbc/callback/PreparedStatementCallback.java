@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface StatementCallback {
+public interface PreparedStatementCallback {
 
     PreparedStatement makePrepareStatement(Connection connection) throws SQLException;
 }
