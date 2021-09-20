@@ -5,7 +5,7 @@
 - [x] update, insert 메서드 분리 
 - [x] UpdateJdbcTemplate, InsertJdbcTemplate 클래스 분리
 - [x] UpdateJdbcTemplate, InsertJdbcTemplate 중복 추상클래스로 제거
-- [ ] SelectJdbcTemplate 클래스 분리
+- [x] SelectJdbcTemplate 클래스 분리
 - [ ] mapRow, setValues 인터페이스 분리 
 - [ ] SQLException Unchecked Exception으로 관리 
 - [ ] RowMapper 제네릭 사용
