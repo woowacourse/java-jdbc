@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.datasource;
 
 public class DataSourceProperty {
     private String url;

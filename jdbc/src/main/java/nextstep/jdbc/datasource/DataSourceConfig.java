@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.datasource;
 
 import java.io.File;
 import java.io.FileReader;
