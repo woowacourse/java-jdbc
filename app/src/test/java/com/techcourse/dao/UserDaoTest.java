@@ -3,7 +3,9 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,13 +21,17 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final User user1 = new User("gugu", "password", "hkkang@woowahan.com");
+        final User user2 = new User("nabom", "password", "nabom@woowahan.com");
+        userDao.insert(user1);
+        userDao.insert(user2);
     }
 
     @Test
     void findAll() {
         final List<User> users = userDao.findAll();
+
+        users.forEach(a -> System.out.println(a.getAccount()));
 
         assertThat(users).isNotEmpty();
     }

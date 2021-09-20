@@ -1,24 +1,27 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.templates.SelectJdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final SelectJdbcTemplate selectJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.selectJdbcTemplate = new SelectJdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
@@ -59,8 +62,12 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        try {
+            final String sql = "select * from users";
+            return selectJdbcTemplate.queryForList(sql, User.class);
+        } catch (SQLException sqlException) {
+            return new ArrayList<>();
+        }
     }
 
     public User findById(Long id) {
