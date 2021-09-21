@@ -71,141 +71,108 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final String sql = "select id, account, password, email from users";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            List<User> result = new ArrayList<>();
-
-            while(rs.next()) {
-                result.add(new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)));
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            public String createQuery() {
+                return "select id, account, password, email from users";
             }
 
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
 
-            try {
-                if (conn != null) {
-                    conn.close();
+            @Override
+            public void setValues(PreparedStatement pstmt) throws SQLException {
+
+            }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                List<User> result = new ArrayList<>();
+
+                while(rs.next()) {
+                    result.add(new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4)));
                 }
-            } catch (SQLException ignored) {}
-        }
+
+                return result;
+            }
+        };
+
+        return (List<User>) selectJdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            public String createQuery() {
+                return "select id, account, password, email from users where id = ?";
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
 
-            try {
-                if (conn != null) {
-                    conn.close();
+            @Override
+            public void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setLong(1, id);
+            }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                if(rs.next()) {
+                    return new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4));
                 }
-            } catch (SQLException ignored) {}
-        }
+
+                return null;
+            }
+        };
+
+        return (User) selectJdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
-        final String sql = "select id, account, password, email from users where account = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if(rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)
-                );
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            public String createQuery() {
+                return "select id, account, password, email from users where account = ?";
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
-    }
+            @Override
+            public void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, account);
+            }
 
-    public DataSource getDataSource() {
-        return dataSource;
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                if(rs.next()) {
+                    return new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4));
+                }
+
+                return null;
+            }
+        };
+
+        return (User) selectJdbcTemplate.query();
     }
 }
