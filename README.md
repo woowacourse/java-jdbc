@@ -30,7 +30,7 @@
 
 - [ ] 추가 리팩토링
     - [ ] application.properties에 DB 관련 정보 저장하여 app 모듈에 DataSource 코드 제거
-    - [ ] `resultSet`에서 `rowMapper`나 `queryForObject` 사용 시 객체 생성 및 반환
+    - [x] `resultSet`에서 `rowMapper`나 `queryForObject` 사용 시 객체 생성 및 반환
     
 
 ## 고민할 점 
