@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
@@ -64,10 +65,10 @@ public class UserDao {
         return jdbcTemplate.query(sql, getUserRowMapper(), id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select * from users where account = ?";
         log.debug(QUERY_SQL, sql);
-        return jdbcTemplate.query(sql, getUserRowMapper(), account);
+        return Optional.of(jdbcTemplate.query(sql, getUserRowMapper(), account));
     }
 
     private RowMapper<User> getUserRowMapper() {

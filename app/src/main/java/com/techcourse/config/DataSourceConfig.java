@@ -1,5 +1,6 @@
 package com.techcourse.config;
 
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
@@ -11,6 +12,7 @@ public class DataSourceConfig {
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
+            DatabasePopulatorUtils.execute(INSTANCE);
         }
         return INSTANCE;
     }

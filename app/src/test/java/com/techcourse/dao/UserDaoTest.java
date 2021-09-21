@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,9 +42,9 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final Optional<User> user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.get().getAccount()).isEqualTo(account);
     }
 
     @Test

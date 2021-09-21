@@ -17,6 +17,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
+        DatabasePopulatorTestUtils.execute(DataSourceTestConfig.getInstance());
         this.jdbcTemplate = new JdbcTemplate(DataSourceTestConfig.getInstance());
     }
 
