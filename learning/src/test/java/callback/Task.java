@@ -10,5 +10,11 @@ public abstract class Task {
                 .ifPresent(Callback::call);
     }
 
+    final void executeAdd(AddMethod addMethod, int a, int b) {
+        execute();
+        Optional.ofNullable(addMethod)
+                .ifPresent(it -> it.add(a, b));
+    }
+
     public abstract void execute();
 }
