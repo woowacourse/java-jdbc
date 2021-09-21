@@ -37,7 +37,11 @@ public class JdbcTemplate {
             LOG.debug("query : {}", sql);
 
             PreparedStatementSetter.setValues(pstmt, objects);
-            pstmt.executeUpdate();
+            int i = pstmt.executeUpdate();
+            LOG.info("update Size : {}", i);
+            if (i == 0) {
+                throw new SQLException();
+            }
         } catch (SQLException e) {
             throw new SqlUpdateException(e);
         }
@@ -46,7 +50,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         List<T> results = query(sql, rowMapper, objects);
         if (results.size() > 1) {
-            throw new IllegalArgumentException();
+            throw new SqlQueryException();
         }
         if (results.isEmpty()) {
             return Optional.empty();
@@ -69,12 +73,16 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new SqlQueryException(e);
         } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
+            tryCloseResultSet(resultSet);
+        }
+    }
+
+    private void tryCloseResultSet(ResultSet resultSet) {
+        try {
+            if (resultSet != null) {
+                resultSet.close();
             }
+        } catch (SQLException ignored) {
         }
     }
 }
