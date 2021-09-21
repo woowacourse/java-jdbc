@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import nextstep.exception.DataAccessException;
 import org.slf4j.Logger;
@@ -36,7 +38,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(String query, RowMapper<T> rowMapper, Object... values) {
+    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... values) {
 
         PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
 
@@ -47,7 +49,31 @@ public class JdbcTemplate {
 
             pstmtSetter.setValues(pstmt);
             ResultSet rs = executeQuery(pstmt);
+            rs.next();
             return rowMapper.mapRow(rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
+    }
+
+    public <T> List<T> queryForList(String query, RowMapper<T> rowMapper, Object... values) {
+        PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(query)){
+
+            log.debug("query : {}", query);
+
+            pstmtSetter.setValues(pstmt);
+            ResultSet rs = executeQuery(pstmt);
+
+            List<T> result = new ArrayList<>();
+
+            while(rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
