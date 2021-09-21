@@ -58,31 +58,37 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql,(rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)));
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4))
+                );
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), id);
+        return jdbcTemplate.queryForObject(sql,
+                (rs, rowNum) -> new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)),
+                id);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), account);
+        return jdbcTemplate.queryForObject(sql,
+                (rs, rowNum) -> new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)),
+                account);
     }
 
 }

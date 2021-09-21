@@ -21,29 +21,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(PreparedStatementCreator preparedStatementCreator) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStatementCreator.createPreparedStatement(conn);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+    public int update(PreparedStatementCreator preparedStatementCreator) {
+        return execute(preparedStatementCreator, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object ... args) {
@@ -54,7 +33,7 @@ public class JdbcTemplate {
                 pstmt.setObject(index++, arg);
             }
             return pstmt;
-        }), new ResultSetExtractor<T>(rowMapper));
+        }), new ResultSetExtractor<>(rowMapper));
         return result.get(0);
     }
 
@@ -63,28 +42,40 @@ public class JdbcTemplate {
         return query((connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             return pstmt;
-        }), new ResultSetExtractor<T>(rowMapper));
+        }), new ResultSetExtractor<>(rowMapper));
     }
 
-    public <T> List<T> query(PreparedStatementCreator preparedStatementCreator, ResultSetExtractor<T> resultSetExtractor) {
+    public <T> List<T> query(PreparedStatementCreator preparedStatementCreator,
+                             ResultSetExtractor<T> resultSetExtractor) {
+        return execute(preparedStatementCreator, (pstmt -> {
+            ResultSet rs = null;
+            try {
+                rs = pstmt.executeQuery();
+                return resultSetExtractor.extract(rs);
+            } finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                } catch (SQLException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }));
+    }
+
+    public <T> T execute(PreparedStatementCreator preparedStatementCreator,
+                         PreparedStatementCallback<T> preparedStatementCallback) {
         Connection conn = null;
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
             pstmt = preparedStatementCreator.createPreparedStatement(conn);
-            rs = pstmt.executeQuery();
-            return resultSetExtractor.extract(rs);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
             try {
                 if (pstmt != null) {
                     pstmt.close();
@@ -97,6 +88,5 @@ public class JdbcTemplate {
                 }
             } catch (SQLException ignored) {}
         }
-
     }
 }
