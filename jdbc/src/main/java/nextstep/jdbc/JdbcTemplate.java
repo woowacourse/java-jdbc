@@ -6,6 +6,7 @@ import nextstep.jdbc.core.RowMapper;
 import nextstep.jdbc.core.RowMapperResultSetExtractor;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.NotSingleResultDataException;
+import nextstep.jdbc.util.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +46,7 @@ public class JdbcTemplate<T> {
 
     public T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        validateSingle(results);
-        return results.iterator().next();
+        return DataAccessUtils.nullableSingleResult(results);
     }
 
     public List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
