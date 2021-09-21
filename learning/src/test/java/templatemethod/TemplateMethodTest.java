@@ -37,4 +37,10 @@ class TemplateMethodTest {
 
         ghostMethod.steal();
     }
+
+    @Test
+    void moreSteal() {
+        final HalflingThief thief = new HalflingThief(new LayDownMethod());
+        thief.steal();
+    }
 }
