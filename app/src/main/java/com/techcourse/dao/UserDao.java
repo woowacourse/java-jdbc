@@ -1,13 +1,12 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import nextstep.web.annotation.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.util.List;
 
 @Repository
@@ -17,8 +16,8 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao() {
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     }
 
     private final RowMapper<User> userRowMapper = rs -> new User(

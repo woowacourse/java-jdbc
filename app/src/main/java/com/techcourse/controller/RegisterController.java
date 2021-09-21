@@ -22,7 +22,7 @@ public class RegisterController {
                 request.getParameter("password"),
                 request.getParameter("email"));
 
-        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+        UserDao userDao = new UserDao();
         userDao.insert(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));

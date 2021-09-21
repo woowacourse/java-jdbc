@@ -25,7 +25,7 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+        UserDao userDao = new UserDao();
 
         final User user = userDao.findByAccount(account);
 
