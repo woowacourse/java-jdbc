@@ -1,11 +1,7 @@
 package nextstep.jdbc;
 
-import nextstep.jdbc.core.ArgumentPreparedStatementSetter;
-import nextstep.jdbc.core.PreparedStatementSetter;
-import nextstep.jdbc.core.RowMapper;
-import nextstep.jdbc.core.RowMapperResultSetExtractor;
+import nextstep.jdbc.core.*;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.exception.NotSingleResultDataException;
 import nextstep.jdbc.util.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,20 +24,17 @@ public class JdbcTemplate<T> {
         this.dataSource = Objects.requireNonNull(dataSource, "DataSource is required");
     }
 
-    public void update(String sql, Object... args) {
-        update(sql, new ArgumentPreparedStatementSetter(args));
+    public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    private void update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private int update(String sql, PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
             pss.setValues(pstmt);
-            pstmt.executeUpdate();
-            log.debug("query : {}", sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
+            int count = pstmt.executeUpdate();
+            log.debug("update affected rows count : {}", count);
+            return count;
+        });
     }
 
     public T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -54,29 +47,22 @@ public class JdbcTemplate<T> {
     }
 
     private List<T> query(String sql, RowMapperResultSetExtractor<T> extractor, PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractor.extractData(rs);
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(sql, pss, conn);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            return extractor.extractData(rs);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    private PreparedStatement createPreparedStatement(String sql, PreparedStatementSetter pss, Connection conn) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pss.setValues(pstmt);
-        return pstmt;
-    }
-
-    private void validateSingle(List<T> results) {
-        if (Objects.isNull(results) || results.isEmpty()) {
-            throw new NotSingleResultDataException("Result is Empty");
-        }
-        if (results.size() > 1) {
-            throw new NotSingleResultDataException("Result size is " + results.size());
         }
     }
 }

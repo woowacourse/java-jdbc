@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
-    private AtomicLong seq = new AtomicLong(1);
+    private final AtomicLong seq = new AtomicLong(1);
 
     @BeforeEach
     void setup() {
