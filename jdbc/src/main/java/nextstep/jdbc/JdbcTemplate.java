@@ -12,24 +12,17 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public abstract String createQuery();
-
     public abstract DataSource getDataSource();
 
-    public abstract void setValues(PreparedStatement pstmt) throws SQLException;
-
-    public abstract Object mapRow(ResultSet rs) throws SQLException;
-
-    public void update() {
+    public void update(String query, PreparedStatementSetter pstmtSetter) {
         final DataSource dataSource = getDataSource();
-        final String query = createQuery();
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(query)){
 
             log.debug("query : {}", query);
 
-            setValues(pstmt);
+            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -37,8 +30,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query() {
-        String query = createQuery();
+    public Object query(String query, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) {
         DataSource dataSource = getDataSource();
 
         try (Connection conn = dataSource.getConnection();
@@ -46,10 +38,10 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", query);
 
-            setValues(pstmt);
+            pstmtSetter.setValues(pstmt);
             ResultSet rs = executeQuery(pstmt);
 
-            return mapRow(rs);
+            return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

@@ -3,6 +3,8 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.ArrayList;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.PreparedStatementSetter;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,45 +26,38 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
 
+        String query = "insert into users (account, password, email) values (?, ?, ?)";
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        jdbcTemplate.update(query, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
-
-            @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
-        };
-
-        jdbcTemplate.update();
+        });
     }
 
     public void update(User user) {
+
+        String query = "update users set account=?, password=?, email=? where id=?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public String createQuery() {
-                return "update users set account=?, password=?, email=? where id=?";
-            }
 
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        jdbcTemplate.update(query, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
@@ -70,34 +65,27 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
-
-            @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
-        };
-
-        jdbcTemplate.update();
+        });
     }
 
     public List<User> findAll() {
 
+        String query = "select id, account, password, email from users";
+
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users";
-            }
 
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        return (List<User>) jdbcTemplate.query(query, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
 
             }
-
+        }, new RowMapper() {
             @Override
             public Object mapRow(ResultSet rs) throws SQLException {
                 List<User> result = new ArrayList<>();
@@ -112,28 +100,26 @@ public class UserDao {
 
                 return result;
             }
-        };
-
-        return (List<User>) jdbcTemplate.query();
+        });
     }
 
     public User findById(Long id) {
+        String query = "select id, account, password, email from users where id = ?";
+
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
 
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        return (User) jdbcTemplate.query(query, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
             }
-
+        }, new RowMapper() {
             @Override
             public Object mapRow(ResultSet rs) throws SQLException {
                 if(rs.next()) {
@@ -146,29 +132,26 @@ public class UserDao {
 
                 return null;
             }
-        };
-
-        return (User) jdbcTemplate.query();
+        });
     }
 
     public User findByAccount(String account) {
+        String query = "select id, account, password, email from users where account = ?";
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
 
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        return (User) jdbcTemplate.query(query, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
             }
-
+        }, new RowMapper() {
             @Override
             public Object mapRow(ResultSet rs) throws SQLException {
                 if(rs.next()) {
@@ -181,8 +164,6 @@ public class UserDao {
 
                 return null;
             }
-        };
-
-        return (User) jdbcTemplate.query();
+        });
     }
 }
