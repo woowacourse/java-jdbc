@@ -19,151 +19,83 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
 
         String query = "insert into users (account, password, email) values (?, ?, ?)";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+        String account = user.getAccount();
+        String password = user.getPassword();
+        String email = user.getEmail();
 
-        jdbcTemplate.update(query, new PreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            }
-        });
+        jdbcTemplate.update(query, account, password, email);
     }
 
     public void update(User user) {
 
         String query = "update users set account=?, password=?, email=? where id=?";
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
 
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+        String account = user.getAccount();
+        String password = user.getPassword();
+        String email = user.getEmail();
+        Long id = user.getId();
 
-        jdbcTemplate.update(query, new PreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.setLong(4, user.getId());
-            }
-        });
+        jdbcTemplate.update(query, account, password, email, id);
     }
 
     public List<User> findAll() {
 
         String query = "select id, account, password, email from users";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        return jdbcTemplate.query(query, rs -> {
+            List<User> result = new ArrayList<>();
 
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
+            while(rs.next()) {
+                result.add(new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)));
             }
-        };
 
-        return (List<User>) jdbcTemplate.query(query, new PreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                List<User> result = new ArrayList<>();
-
-                while(rs.next()) {
-                    result.add(new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4)));
-                }
-
-                return result;
-            }
+            return result;
         });
     }
 
     public User findById(Long id) {
         String query = "select id, account, password, email from users where id = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
+        return jdbcTemplate.query(query, rs -> {
+            if(rs.next()) {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
             }
-        };
 
-        return (User) jdbcTemplate.query(query, new PreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                if(rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
-                }
-
-                return null;
-            }
-        });
+            return null;
+        }, id);
     }
 
     public User findByAccount(String account) {
         String query = "select id, account, password, email from users where account = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
+        return jdbcTemplate.query(query, rs -> {
+            if(rs.next()) {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
             }
-        };
 
-        return (User) jdbcTemplate.query(query, new PreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, account);
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                if(rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
-                }
-
-                return null;
-            }
-        });
+            return null;
+        }, account);
     }
 }
