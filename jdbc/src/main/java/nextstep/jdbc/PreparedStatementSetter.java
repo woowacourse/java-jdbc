@@ -5,7 +5,8 @@ import java.sql.SQLException;
 
 public class PreparedStatementSetter {
 
-    private PreparedStatementSetter() {}
+    private PreparedStatementSetter() {
+    }
 
     public static void setValues(PreparedStatement pstmt, Object... objects) throws SQLException {
         int i = 1;

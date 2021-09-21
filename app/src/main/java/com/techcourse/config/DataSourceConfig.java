@@ -6,7 +6,8 @@ public class DataSourceConfig {
 
     private static final javax.sql.DataSource INSTANCE = createJdbcDataSource();
 
-    private DataSourceConfig() {}
+    private DataSourceConfig() {
+    }
 
     public static javax.sql.DataSource getInstance() {
         return INSTANCE;

@@ -24,8 +24,7 @@ public class HandlerExecution {
     public ModelAndView handle(HttpServletRequest request, HttpServletResponse response) {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
-        }
-        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             LOG.error("{} method invoke fail. error message : {}", method, e.getMessage());
             throw new InternalServerException();
         }

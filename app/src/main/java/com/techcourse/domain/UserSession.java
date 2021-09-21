@@ -7,7 +7,8 @@ public class UserSession {
 
     public static final String SESSION_KEY = "user";
 
-    private UserSession() {}
+    private UserSession() {
+    }
 
     public static Optional<User> getUserFrom(HttpSession session) {
         final User user = (User) session.getAttribute(SESSION_KEY);

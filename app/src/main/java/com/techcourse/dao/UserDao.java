@@ -58,9 +58,9 @@ public class UserDao {
 
     private RowMapper<User> getUserRowMapper() {
         return resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4));
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4));
     }
 }

@@ -3,11 +3,10 @@ package nextstep.mvc.view;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JspView implements View {
 
@@ -22,7 +21,8 @@ public class JspView implements View {
     }
 
     @Override
-    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public void render(Map<String, ?> model, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
         LOG.debug("ViewName : {}", viewName);
         if (viewName.startsWith(REDIRECT_PREFIX)) {
             response.sendRedirect(viewName.substring(REDIRECT_PREFIX.length()));
