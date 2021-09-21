@@ -4,11 +4,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractJdbcTemplate implements RowMapper {
+public abstract class AbstractJdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractJdbcTemplate.class);
 
@@ -28,27 +30,24 @@ public abstract class AbstractJdbcTemplate implements RowMapper {
         }
     }
 
-    public <T> T query() {
+    public <T> List<T> query(RowMapper<T> rowMapper) {
         final String sql = createQuery();
-        ResultSet rs = null;
         try (Connection conn = getDataSource().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            rs = executeQuery(pstmt);
+            ResultSet rs = executeQuery(pstmt)) {
 
-            return (T) mapRow(rs);
+            List<T> list = new ArrayList<>();
+            while (rs.next()) {
+                list.add(rowMapper.mapRow(rs));
+            }
+
+            return list;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
-    public <T> T queryForObject(PreparedStatementSetter preparedStatementSetter) {
+    public <T> T queryForObject(PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         final String sql = createQuery();
         ResultSet rs = null;
         try (Connection conn = getDataSource().getConnection();
@@ -57,7 +56,10 @@ public abstract class AbstractJdbcTemplate implements RowMapper {
             preparedStatementSetter.setValues(pstmt);
             rs = executeQuery(pstmt);
 
-            return (T) mapRow(rs);
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            throw new IllegalArgumentException();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {

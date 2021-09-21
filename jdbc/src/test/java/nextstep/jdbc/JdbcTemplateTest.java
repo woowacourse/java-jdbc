@@ -15,7 +15,7 @@ class JdbcTemplateTest {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     }
 
-    private RowMapper<User> userRowMapper = (rs -> new User(
+    private final RowMapper<User> userRowMapper = (rs -> new User(
         rs.getLong("id"),
         rs.getString("account"),
         rs.getString("password"),
