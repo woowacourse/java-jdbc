@@ -26,7 +26,8 @@ class UserDaoTest {
     @Test
     void findAll() {
         final List<User> users = userDao.findAll();
-
+        User gugu = users.get(0);
+        assertThat(gugu.getAccount()).isEqualTo("gugu");
         assertThat(users).isNotEmpty();
     }
 

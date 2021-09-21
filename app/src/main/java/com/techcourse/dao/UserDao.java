@@ -1,7 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
+import nextstep.jdbc.AbstractJdbcTemplate;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,159 +23,44 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
+    private final RowMapper<User> userRowMapper = rs -> new User(
+        rs.getLong("id"),
+        rs.getString("account"),
+        rs.getString("password"),
+        rs.getString("email")
+    );
+
+
+
     public void insert(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.executeUpdate();
-            }
-        };
-        jdbcTemplate.update();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
 
     public void update(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "update users set password = ?, email = ? where account = ? ";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getPassword());
-                pstmt.setString(2, user.getEmail());
-                pstmt.setString(3, user.getAccount());
-                pstmt.executeUpdate();
-            }
-        };
-        jdbcTemplate.update();
-
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "update users set password = ?, email = ? where account = ? ";
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                List<User> users = new ArrayList<>();
-                while (rs.next()) {
-                    users.add(new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)));
-                }
-                return users;
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-
-            }
-        };
-        return (List<User>) jdbcTemplate.query();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "select id, account, password, email from users";
+        return (List<User>) jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(Long id) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                throw new IllegalArgumentException();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
-        };
-        return (User) jdbcTemplate.query();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "select id, account, password, email from users where id = ?";
+        return (User) jdbcTemplate.query(sql, userRowMapper, id);
     }
 
     public User findByAccount(String account) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                throw new IllegalArgumentException();
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, account);
-            }
-        };
-        return (User) jdbcTemplate.query();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "select id, account, password, email from users where account = ?";
+        return (User) jdbcTemplate.query(sql, userRowMapper, account);
     }
 
 }

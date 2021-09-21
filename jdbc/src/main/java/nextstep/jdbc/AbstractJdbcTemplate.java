@@ -1,25 +1,20 @@
-package com.techcourse.dao;
+package nextstep.jdbc;
 
-import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, RowMapper {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractJdbcTemplate.class);
 
     protected abstract String createQuery();
 
     protected abstract DataSource getDataSource();
-
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
-    protected abstract Object mapRow(ResultSet rs) throws SQLException;
-
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
     public void update() {
         String sql = createQuery();
@@ -51,5 +46,14 @@ public abstract class JdbcTemplate {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        return pstmt.executeQuery();
+    }
+
+    @Override
+    public void setValues(PreparedStatement pstmt) throws SQLException {
+
     }
 }
