@@ -44,7 +44,7 @@ public class DispatcherServlet extends HttpServlet {
 
         try {
             final Optional<Object> handler = handlerMappingRegistry.getHandler(request);
-            if (!handler.isPresent()) {
+            if (handler.isEmpty()) {
                 response.setStatus(404);
                 return;
             }
