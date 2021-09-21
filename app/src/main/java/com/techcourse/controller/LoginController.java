@@ -5,7 +5,6 @@ import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.util.Objects;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
@@ -43,11 +42,8 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-//        UserDao userDao = new UserDao();
         User user = userDao.findByAccount(request.getParameter("account"));
-        if (Objects.isNull(user)) {
-            return redirect("/401.jsp");
-        }
+
         return login(request, user);
     }
 

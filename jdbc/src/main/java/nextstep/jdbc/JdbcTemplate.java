@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.exception.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -24,13 +25,14 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... parameters) {
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetterImpl(parameters);
         ResultSet rs = null;
+
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
@@ -42,7 +44,7 @@ public class JdbcTemplate {
             }
             throw new IllegalArgumentException();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         } finally {
             try {
                 if (rs != null) {
@@ -64,7 +66,7 @@ public class JdbcTemplate {
 
             return list;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 }
