@@ -9,7 +9,7 @@ import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -18,7 +18,7 @@ public class JdbcTemplate {
     public void update(String sql, Object ... parameters) {
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public Object mapRow(ResultSet rs) {
                 return null;
             }
 
@@ -43,10 +43,10 @@ public class JdbcTemplate {
         abstractJdbcTemplate.update();
     }
 
-    public Object query(String sql, RowMapper<?> rowMapper, Object ... parameters) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object ... parameters) {
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public T mapRow(ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
@@ -73,7 +73,7 @@ public class JdbcTemplate {
         return abstractJdbcTemplate.query();
     }
 
-    public Object query(String sql, RowMapper<?> rowMapper) {
+    public <T> List<T> query (String sql, RowMapper<T> rowMapper) {
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
@@ -86,8 +86,8 @@ public class JdbcTemplate {
             }
 
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
-                List users = new ArrayList<>();
+            public List<T> mapRow(ResultSet rs) throws SQLException {
+                List<T> users = new ArrayList<>();
                 while(rs.next()) {
                     users.add(rowMapper.mapRow(rs));
                 }

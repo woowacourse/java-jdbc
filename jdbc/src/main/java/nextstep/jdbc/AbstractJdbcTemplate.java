@@ -27,7 +27,7 @@ public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, R
         }
     }
 
-    public Object query() {
+    public <T> T query() {
         final String sql = createQuery();
         ResultSet rs = null;
         try (Connection conn = getDataSource().getConnection();
@@ -36,7 +36,7 @@ public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, R
             setValues(pstmt);
             rs = executeQuery(pstmt);
 
-            return mapRow(rs);
+            return (T) mapRow(rs);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {

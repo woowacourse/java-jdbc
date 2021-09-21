@@ -40,17 +40,17 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return (List<User>) jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.query(sql, userRowMapper, id);
+        return jdbcTemplate.query(sql, userRowMapper, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.query(sql, userRowMapper, account);
+        return jdbcTemplate.query(sql, userRowMapper, account);
     }
 
 }
