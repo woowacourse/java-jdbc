@@ -49,11 +49,6 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
-    public List<User> findAllByAccount(String account) {
-        final String sql = "select * from users where account = ?";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
-    }
-
     public User findByEmail(String email) {
         final String sql = "select id, account, password, email from users where email = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, email);
