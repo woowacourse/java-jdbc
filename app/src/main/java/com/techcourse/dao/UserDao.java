@@ -16,16 +16,15 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
         jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
 
@@ -40,8 +39,8 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
         jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
 
@@ -57,22 +56,33 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users";
+
+        return jdbcTemplate.query(sql,(rs, rowNum) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4)));
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, ((rs, rowNum) -> new User(
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
-                rs.getString(4))), id);
+                rs.getString(4)), id);
     }
 
     public User findByAccount(String account) {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4)), account);
     }
+
 }
