@@ -20,7 +20,7 @@ public class DataAccessUtils {
         return results.iterator().next();
     }
 
-    public static <T> T nullableSingleResult(Collection<T> results) throws DataAccessException {
+    public static <T> T notNullSingleResult(Collection<T> results) throws DataAccessException {
         if (Objects.isNull(results) || results.isEmpty()) {
             throw new NotSingleResultDataException("Result is Empty");
         }

@@ -4,8 +4,6 @@ import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.core.RowMapper;
 import nextstep.jdbc.util.DataAccessUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.List;

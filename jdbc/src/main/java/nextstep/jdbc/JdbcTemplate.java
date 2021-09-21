@@ -39,7 +39,7 @@ public class JdbcTemplate<T> {
 
     public T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        return DataAccessUtils.nullableSingleResult(results);
+        return DataAccessUtils.notNullSingleResult(results);
     }
 
     public List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
