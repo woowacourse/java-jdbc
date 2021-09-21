@@ -75,4 +75,14 @@ class JdbcTemplateTest {
 
         assertThat(users).hasSize(2);
     }
+
+    @DisplayName("update 를 통해 영향을 받은 행의 개수 반환")
+    @Test
+    void update() {
+        int result1 = jdbcTemplate.update("insert into users (account, password, email) values ('junroot3', 'rootzzang1234', 'rootjjang@gmail.com')");
+        assertThat(result1).isEqualTo(1);
+
+        int result2 = jdbcTemplate.update("update users set account = 'root123' where email = 'rootjjang@gmail.com'");
+        assertThat(result2).isEqualTo(2);
+    }
 }

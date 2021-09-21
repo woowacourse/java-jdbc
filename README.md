@@ -10,7 +10,7 @@
   - [x] query()
   - [x] queryForList()
   - [] execute()
-  - [] update()
+  - [x] update()
   - [] batchUpdate()
   - [] Connection Pool 사용해보기 (Optional)
 - [] JdbcTemplate로 마이그레이션

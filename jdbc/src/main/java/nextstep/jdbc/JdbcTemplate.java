@@ -22,40 +22,49 @@ public class JdbcTemplate {
     }
 
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        JdbcCallback<T> jdbcCallback = resultSet -> {
-            if (!resultSet.next()) {
-                throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.\nsql:(%s)\n", sql));
+        JdbcCallback<T> jdbcCallback = preparedStatement -> {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.\nsql:(%s)\n", sql));
+                }
+                return rowMapper.map(resultSet);
             }
-            return rowMapper.map(resultSet);
         };
-        return executeAndThen(sql, jdbcCallback, arguments);
+
+        return prepareStatementAndThen(sql, jdbcCallback, arguments);
     }
 
     public <T> List<T> queryAsList(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        JdbcCallback<List<T>> jdbcCallback = resultSet -> {
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.map(resultSet));
+        JdbcCallback<List<T>> jdbcCallback = preparedStatement -> {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.map(resultSet));
+                }
+                return results;
             }
-
-            return results;
         };
-        return executeAndThen(sql, jdbcCallback, arguments);
+
+        return prepareStatementAndThen(sql, jdbcCallback, arguments);
     }
 
-    private <T> T executeAndThen(final String sql, final JdbcCallback<T> jdbcCallback, final Object... arguments) {
+    public int update(final String sql, final Object... arguments) {
+        return prepareStatementAndThen(sql, PreparedStatement::executeUpdate, arguments);
+    }
+
+    private <T> T prepareStatementAndThen(final String sql, final JdbcCallback<T> jdbcCallback, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            ResultSet resultSet = getResultSet(preparedStatement, arguments)) {
+            PreparedStatement preparedStatement = getPreparedStatement(connection, sql, arguments)) {
             log.debug("query : {}", sql);
-            return jdbcCallback.call(resultSet);
+            return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private ResultSet getResultSet(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
+    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... arguments) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
             preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
             log.debug("binding parameter [{}] as [{}] - [{}]",
@@ -64,6 +73,6 @@ public class JdbcTemplate {
                 arguments[argumentIndex - 1]);
         }
 
-        return preparedStatement.executeQuery();
+        return preparedStatement;
     }
 }
