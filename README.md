@@ -8,7 +8,7 @@
   - [x] findByAccount()
 - [] JdbcTemplate 구현하기
   - [x] query()
-  - [] queryForList()
+  - [x] queryForList()
   - [] execute()
   - [] update()
   - [] batchUpdate()

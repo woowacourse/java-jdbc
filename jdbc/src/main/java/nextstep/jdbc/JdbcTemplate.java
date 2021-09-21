@@ -58,6 +58,10 @@ public class JdbcTemplate {
     private ResultSet getResultSet(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
         for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
             preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
+            log.debug("binding parameter [{}] as [{}] - [{}]",
+                argumentIndex,
+                preparedStatement.getParameterMetaData().getParameterTypeName(argumentIndex),
+                arguments[argumentIndex - 1]);
         }
 
         return preparedStatement.executeQuery();
