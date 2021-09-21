@@ -34,7 +34,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "password99", "email2", "gugu");
 
         String querySql = "select id, account, password, email from users where account = ?";
-        User updateUser = jdbcTemplate.query(querySql, userRowMapper, "gugu");
+        User updateUser = jdbcTemplate.queryForObject(querySql, userRowMapper, "gugu");
 
         assertThat(updateUser.getPassword()).isEqualTo("password99");
     }
@@ -42,7 +42,7 @@ class JdbcTemplateTest {
     @Test
     void findById() {
         String sql = "select id, account, password, email from users where id = ?";
-        User findUser = jdbcTemplate.query(sql, userRowMapper, 1L);
+        User findUser = jdbcTemplate.queryForObject(sql, userRowMapper, 1L);
 
         assertThat(findUser.getAccount()).isEqualTo("gugu");
     }
@@ -50,7 +50,7 @@ class JdbcTemplateTest {
     @Test
     void findByAccount() {
         String sql = "select id, account, password, email from users where account = ?";
-        User findUser = jdbcTemplate.query(sql, userRowMapper, "gugu");
+        User findUser = jdbcTemplate.queryForObject(sql, userRowMapper, "gugu");
 
         assertThat(findUser.getAccount()).isEqualTo("gugu");
     }

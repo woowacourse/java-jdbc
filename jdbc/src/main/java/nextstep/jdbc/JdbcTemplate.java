@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,6 +15,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object ... parameters) {
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetterImpl(parameters);
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
             public Object mapRow(ResultSet rs) {
@@ -32,18 +32,12 @@ public class JdbcTemplate {
                 return dataSource;
             }
 
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                for (int i=0;i<parameters.length;i++) {
-                    pstmt.setObject(i+1, parameters[i]);
-                }
-                pstmt.executeUpdate();
-            }
         };
-        abstractJdbcTemplate.update();
+        abstractJdbcTemplate.update(preparedStatementSetter);
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object ... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... parameters) {
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetterImpl(parameters);
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
             public T mapRow(ResultSet rs) throws SQLException {
@@ -63,17 +57,11 @@ public class JdbcTemplate {
                 return dataSource;
             }
 
-            @Override
-            public void setValues(PreparedStatement pstmt) throws SQLException {
-                for (int i=0;i<parameters.length;i++) {
-                    pstmt.setObject(i+1, parameters[i]);
-                }
-            }
         };
-        return abstractJdbcTemplate.query();
+        return abstractJdbcTemplate.queryForObject(preparedStatementSetter);
     }
 
-    public <T> List<T> query (String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         AbstractJdbcTemplate abstractJdbcTemplate = new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {

@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, RowMapper {
+public abstract class AbstractJdbcTemplate implements RowMapper {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractJdbcTemplate.class);
 
@@ -16,12 +16,13 @@ public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, R
 
     protected abstract DataSource getDataSource();
 
-    public void update() {
+    public void update(PreparedStatementSetter preparedStatementSetter) {
         String sql = createQuery();
         try (Connection conn = getDataSource().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setValues(pstmt);
+            preparedStatementSetter.setValues(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -33,7 +34,27 @@ public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, R
         try (Connection conn = getDataSource().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setValues(pstmt);
+            rs = executeQuery(pstmt);
+
+            return (T) mapRow(rs);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {}
+        }
+    }
+
+    public <T> T queryForObject(PreparedStatementSetter preparedStatementSetter) {
+        final String sql = createQuery();
+        ResultSet rs = null;
+        try (Connection conn = getDataSource().getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            preparedStatementSetter.setValues(pstmt);
             rs = executeQuery(pstmt);
 
             return (T) mapRow(rs);
@@ -50,10 +71,5 @@ public abstract class AbstractJdbcTemplate implements PreparedStatementSetter, R
 
     private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
         return pstmt.executeQuery();
-    }
-
-    @Override
-    public void setValues(PreparedStatement pstmt) throws SQLException {
-
     }
 }
