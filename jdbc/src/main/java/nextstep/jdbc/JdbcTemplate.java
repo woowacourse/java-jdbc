@@ -54,19 +54,21 @@ public class JdbcTemplate<T> {
     }
 
     private List<T> query(String sql, RowMapperResultSetExtractor<T> extractor, PreparedStatementSetter pss) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pss.setValues(pstmt);
-            rs = pstmt.executeQuery();
+             PreparedStatement pstmt = createPreparedStatement(sql, pss, conn);
+             ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             return extractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        } finally {
-            closeResultSet(rs);
         }
+    }
+
+    private PreparedStatement createPreparedStatement(String sql, PreparedStatementSetter pss, Connection conn) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pss.setValues(pstmt);
+        return pstmt;
     }
 
     private void validateSingle(List<T> results) {
@@ -75,15 +77,6 @@ public class JdbcTemplate<T> {
         }
         if (results.size() > 1) {
             throw new NotSingleResultDataException("Result size is " + results.size());
-        }
-    }
-
-    private void closeResultSet(ResultSet rs) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException ignored) {
         }
     }
 }
