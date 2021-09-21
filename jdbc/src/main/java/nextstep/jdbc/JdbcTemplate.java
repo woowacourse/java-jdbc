@@ -30,10 +30,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
-        return query(sql, args, new RowMapperResultSetExtractor<>(mapper));
-    }
-
-    private <T> List<T> query(String sql, Object[] args, RowMapperResultSetExtractor<T> extractor) {
+        RowMapperResultSetExtractor<T> extractor = new RowMapperResultSetExtractor<>(mapper);
         PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
         return execute(sql, pstmt -> {
             ResultSet resultSet = null;
@@ -60,7 +57,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
-        return query(sql, args, new RowMapperResultSetExtractor<>(mapper))
+        return query(sql, mapper, args)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new DataAccessException("존재하지 않는 데이터입니다."));
