@@ -30,6 +30,7 @@ public class DatabasePopulatorUtils {
 
             statement.execute(sql);
         } catch (NullPointerException | SQLException e) {
+            LOG.error("schema sql init fail!!");
             throw new SqlInitException(e);
         }
     }
