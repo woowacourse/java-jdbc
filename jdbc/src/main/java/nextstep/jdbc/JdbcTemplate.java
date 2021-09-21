@@ -13,34 +13,26 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final JdbcResources jdbcResources;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcResources = new JdbcResources(dataSource);
     }
 
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = getResultSet(pstmt, arguments)) {
-
+        try {
             log.debug("query : {}", sql);
+            ResultSet resultSet = jdbcResources.getResultSet(sql, arguments);
 
-            if (!rs.next()) {
+            if (!resultSet.next()) {
                 throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.\nsql:(%s)\n", sql));
             }
-            return rowMapper.map(rs);
+            return rowMapper.map(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            jdbcResources.closeAll();
         }
-    }
-
-    private ResultSet getResultSet(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
-        for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
-            preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
-        }
-
-        return preparedStatement.executeQuery();
     }
 }
