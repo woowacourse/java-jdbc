@@ -41,6 +41,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         jdbcTemplate.update();
@@ -65,6 +70,11 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         jdbcTemplate.update();
@@ -72,7 +82,7 @@ public class UserDao {
 
     public List<User> findAll() {
 
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users";
@@ -104,11 +114,11 @@ public class UserDao {
             }
         };
 
-        return (List<User>) selectJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -138,12 +148,12 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
 
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users where account = ?";
@@ -173,6 +183,6 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 }
