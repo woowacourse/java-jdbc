@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import nextstep.jdbc.exception.JdbcNotFoundException;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,35 +19,42 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private JdbcDataSource dataSource;
+    private static final TestUserRowMapper TEST_USER_ROW_MAPPER = new TestUserRowMapper();
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException, IOException {
-        dataSource = new JdbcDataSource();
-        dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        dataSource.setUser("");
-        dataSource.setPassword("");
+        JdbcDataSource dataSource = getJdbcDataSource();
 
-        final URL url = getClass().getClassLoader().getResource("schema.sql");
-        final File file = new File(url.getFile());
-        final String sql = Files.readString(file.toPath());
-        final String sql2 = "insert into users (account, password, email) values ('junroot', 'rootzzang123', 'rootjjang@gmail.com')";
+        final String sql = readSqlFile();
 
         try (Connection conn = dataSource.getConnection();
-            Statement statement = conn.createStatement();
-            Statement statement2 = conn.createStatement()) {
+            Statement statement = conn.createStatement()) {
             statement.execute(sql);
-            statement2.execute(sql2);
         }
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    @DisplayName("sql문을 통해 데이터를 조회")
+    private String readSqlFile() throws IOException {
+        final URL url = getClass().getClassLoader().getResource("schema.sql");
+        final File file = new File(url.getFile());
+        final String sql = Files.readString(file.toPath());
+        return sql;
+    }
+
+    private JdbcDataSource getJdbcDataSource() {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+        dataSource.setUser("");
+        dataSource.setPassword("");
+        return dataSource;
+    }
+
+    @DisplayName("sql문을 통해 단일 데이터 조회")
     @Test
     void query() {
-        TestUser user = jdbcTemplate.query("select id, account, password, email from users where account = ?", new TestUserRowMapper(), "junroot");
+        TestUser user = jdbcTemplate.query("select id, account, password, email from users where account = ?", TEST_USER_ROW_MAPPER, "junroot");
 
         assertThat(user.getAccount()).isEqualTo("junroot");
         assertThat(user.getPassword()).isEqualTo("rootzzang123");
@@ -58,5 +66,13 @@ class JdbcTemplateTest {
     void InvalidQuery() {
         assertThatThrownBy(() -> jdbcTemplate.query("select id, account, password, email from users where account = ?", new TestUserRowMapper(), "junriot"))
             .isExactlyInstanceOf(JdbcNotFoundException.class);
+    }
+
+    @DisplayName("sql문을 통해 데이터 전체 조회")
+    @Test
+    void queryAsList() {
+        List<TestUser> users = jdbcTemplate.queryAsList("select id, account, password, email from users", TEST_USER_ROW_MAPPER);
+
+        assertThat(users).hasSize(2);
     }
 }
