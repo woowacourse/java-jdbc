@@ -25,8 +25,7 @@ public class JdbcTemplate {
         PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
         execute(sql, pstmt -> {
             setter.setValues(pstmt);
-            pstmt.executeUpdate();
-            return null;
+            return pstmt.executeUpdate();
         });
     }
 
