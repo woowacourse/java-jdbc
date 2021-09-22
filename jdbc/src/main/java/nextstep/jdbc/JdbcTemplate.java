@@ -49,18 +49,21 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql,
                                 ResultSetToObjectMapper<T> mapper,
-                                PreparedStatementParameterResolver resolver) {
+                                PreparedStatementParameterResolver resolver
+    ) {
         return execute(sql, resolver, queryForOneExecutor(mapper));
     }
 
     public <T> T queryForObject(String sql,
-                                ResultSetToObjectMapper<T> mapper) {
+                                ResultSetToObjectMapper<T> mapper
+    ) {
         return queryForObject(sql, mapper, PreparedStatementParameterResolver::identity);
     }
 
     public <T> T queryForObject(String sql,
                                 ResultSetToObjectMapper<T> mapper,
-                                Object... parameters) {
+                                Object... parameters
+    ) {
         return queryForObject(sql, mapper, multiParameterBinding(parameters));
     }
 
@@ -85,21 +88,22 @@ public class JdbcTemplate {
         };
     }
 
-    public <T> List<T> queryForMany(String sql,
-                                    ResultSetToObjectMapper<T> mapper) {
+    public <T> List<T> queryForMany(String sql, ResultSetToObjectMapper<T> mapper) {
         return queryForMany(sql, mapper,
             PreparedStatementParameterResolver::identity);
     }
 
     public <T> List<T> queryForMany(String sql,
                                     ResultSetToObjectMapper<T> mapper,
-                                    Object... parameters) {
+                                    Object... parameters
+    ) {
         return queryForMany(sql, mapper, multiParameterBinding(parameters));
     }
 
     public <T> List<T> queryForMany(String sql,
                                     ResultSetToObjectMapper<T> mapper,
-                                    PreparedStatementParameterResolver preparedStatementParameterResolver) {
+                                    PreparedStatementParameterResolver preparedStatementParameterResolver
+    ) {
         return execute(sql, preparedStatementParameterResolver, queryForManyExecutor(mapper));
     }
 
@@ -126,7 +130,8 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql,
                           PreparedStatementParameterResolver resolver,
-                          QueryExecutor<T> queryExecutor) {
+                          QueryExecutor<T> queryExecutor
+    ) {
         try (Connection connection = dbConnector.getConnection();
             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);

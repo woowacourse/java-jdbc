@@ -6,6 +6,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.executor.QueryExecuteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,8 @@ public class DatabasePopulatorUtils {
             final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
             final File file = new File(url.getFile());
             final String sql = Files.readString(file.toPath());
-            jdbcTemplate.executeDDL(sql);
+            QueryExecuteResult queryExecuteResult = jdbcTemplate.executeDDL(sql);
+            log.info("영향받은 row 수 : {}", queryExecuteResult.effectedRow());
         } catch (NullPointerException | IOException e) {
             log.error(e.getMessage(), e);
         }

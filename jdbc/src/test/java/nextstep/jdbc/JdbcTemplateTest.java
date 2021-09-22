@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import nextstep.jdbc.executor.QueryExecuteResult;
 import nextstep.jdbc.mapper.ResultSetToObjectMapper;
 import nextstep.jdbc.test.User;
 import nextstep.jdbc.util.DatabasePopulatorUtils;
@@ -12,9 +13,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class JdbcTemplateTest {
 
+    private static final Logger log = LoggerFactory.getLogger(JdbcTemplateTest.class);
     private static final ResultSetToObjectMapper<User> USER_MAPPER = rs ->
         new User(
             rs.getLong(1),
@@ -69,9 +73,7 @@ class JdbcTemplateTest {
         assertThat(users).hasSize(1);
 
         User user = users.get(0);
-        assertThat(user.getAccount()).isEqualTo(ACCOUNT);
-        assertThat(user.getPassword()).isEqualTo(PASSWORD);
-        assertThat(user.getEmail()).isEqualTo(EMAIL);
+        assertSameUser(user, ACCOUNT, PASSWORD, EMAIL);
     }
 
     @DisplayName("단일 조회 기능을 테스트")
@@ -83,9 +85,7 @@ class JdbcTemplateTest {
         //when
         User user = 유저를_조회한다();
         //then
-        assertThat(user.getEmail()).isEqualTo(EMAIL);
-        assertThat(user.getAccount()).isEqualTo(ACCOUNT);
-        assertThat(user.getPassword()).isEqualTo(PASSWORD);
+        assertSameUser(user, ACCOUNT, PASSWORD, EMAIL);
     }
 
     @DisplayName("단일 조회 기능 다중 인자 테스트")
@@ -97,9 +97,7 @@ class JdbcTemplateTest {
         String sql = "select * from users where account = ? and email = ? and password = ?";
         User user = jdbcTemplate.queryForObject(sql, USER_MAPPER, ACCOUNT, EMAIL, PASSWORD);
         //then
-        assertThat(user.getEmail()).isEqualTo(EMAIL);
-        assertThat(user.getAccount()).isEqualTo(ACCOUNT);
-        assertThat(user.getPassword()).isEqualTo(PASSWORD);
+        assertSameUser(user, ACCOUNT, PASSWORD, EMAIL);
     }
 
     @DisplayName("전체 조회 기능을 테스트")
@@ -155,9 +153,27 @@ class JdbcTemplateTest {
         //then
         user = 유저를_조회한다();
         assertThat(user.getId()).isEqualTo(id);
-        assertThat(user.getEmail()).isEqualTo(expectedEmail);
-        assertThat(user.getAccount()).isEqualTo(expectedAccount);
-        assertThat(user.getPassword()).isEqualTo(PASSWORD);
+        assertSameUser(user, expectedAccount, PASSWORD, expectedEmail);
+    }
+
+    @DisplayName("수정 기능 다중 인자 테스트")
+    @Test
+    void updateMultiVaragsTest() {
+        //given
+        구구를_DB에_영속화한다();
+        String expectedAccount = "wedge";
+        String expectedEmail = "fjzjqhdl@gmail.com";
+
+        //when
+        User user = 유저를_조회한다();
+        long id = user.getId();
+        String updateSql = "update users set account=?, email=? where id = ?";
+        jdbcTemplate.executeInsertOrUpdateOrDelete(updateSql, expectedAccount, expectedEmail, id);
+
+        //then
+        user = 유저를_조회한다();
+        assertThat(user.getId()).isEqualTo(id);
+        assertSameUser(user, expectedAccount, PASSWORD, expectedEmail);
     }
 
     @DisplayName("잘못된 SQL이 입력되면 예외를 반환하는 기능 테스트")
@@ -168,7 +184,7 @@ class JdbcTemplateTest {
         //when
         //then
         assertThatThrownBy(() -> jdbcTemplate.executeInsertOrUpdateOrDelete(sql))
-                .hasMessageContaining("SQL 처리 중 오류가 발생했습니다.");
+            .hasMessageContaining("SQL 처리 중 오류가 발생했습니다.");
     }
 
     private User 유저를_조회한다() {
@@ -183,6 +199,13 @@ class JdbcTemplateTest {
 
     private void deleteAll() {
         String sql = "delete from users";
-        jdbcTemplate.executeInsertOrUpdateOrDelete(sql);
+        QueryExecuteResult queryExecuteResult = jdbcTemplate.executeInsertOrUpdateOrDelete(sql);
+        log.info("삭제된 row 수 : {}", queryExecuteResult.effectedRow());
+    }
+
+    private void assertSameUser(User user, String expectedAccount, String expectedPassword, String expectedEmail) {
+        assertThat(user.getAccount()).isEqualTo(expectedAccount);
+        assertThat(user.getPassword()).isEqualTo(expectedPassword);
+        assertThat(user.getEmail()).isEqualTo(expectedEmail);
     }
 }
