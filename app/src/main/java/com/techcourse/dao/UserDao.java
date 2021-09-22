@@ -1,11 +1,11 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.jdbc.InsertJdbcTemplate;
+import com.techcourse.dao.jdbc.UpdateJdbcTemplate;
 import com.techcourse.domain.User;
 import com.techcourse.exception.dao.FindAllException;
 import com.techcourse.exception.dao.FindByAccountException;
 import com.techcourse.exception.dao.FindByIdException;
-import com.techcourse.exception.dao.InsertException;
-import com.techcourse.exception.dao.UpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,96 +21,21 @@ public class UserDao {
     private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.insertJdbcTemplate = new InsertJdbcTemplate();
+        this.updateJdbcTemplate = new UpdateJdbcTemplate();
     }
 
     public void insert(User user) {
-        final String sql = createQueryForInsert();
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            LOG.debug("query: {}", sql);
-
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-
-            throw new InsertException();
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+        insertJdbcTemplate.insert(user, this);
     }
 
     public void update(User user) {
-        final String sql = createQueryForUpdate();
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            LOG.debug("query: {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-
-            throw new UpdateException();
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set password = ? where id = ?";
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getPassword());
-        pstmt.setLong(2, user.getId());
+        updateJdbcTemplate.update(user, this);
     }
 
     public List<User> findAll() {
@@ -264,5 +189,9 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
