@@ -3,9 +3,11 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,20 +15,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
+        jdbcTemplate = new JdbcTemplate();
+        JdbcTemplate.dataSource = DataSourceConfig.getInstance();
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
-    void findAll() {
+    void findAll() throws SQLException {
         final List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
+
+        User user = new User("bepoz", "1234", "wow@gmail.com");
+        userDao.insert(user);
+
+        List<String> accounts = jdbcTemplate.query("select account from users", ((rs, rowNum) -> rs.getString("account")));
+        assertThat(accounts).containsExactlyInAnyOrder("bepoz", "gugu");
     }
 
     @Test
