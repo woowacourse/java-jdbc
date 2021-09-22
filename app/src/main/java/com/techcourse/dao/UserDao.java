@@ -9,22 +9,13 @@ import nextstep.jdbc.JdbcTemplate;
 
 public class UserDao {
 
-    private final DataSource dataSource;
-
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, pstmt -> {
@@ -35,13 +26,6 @@ public class UserDao {
     }
 
     public void update(User user) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-
         String sql = "update users set password = ? where id = ?";
 
         jdbcTemplate.update(sql, pstmt -> {
@@ -51,26 +35,12 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-
         String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, this::getUser);
     }
 
     public User findById(Long id) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-
         String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(
@@ -85,13 +55,6 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            public DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-
         String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(

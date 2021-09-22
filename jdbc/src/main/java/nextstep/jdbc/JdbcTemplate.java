@@ -11,13 +11,19 @@ import nextstep.jdbc.exception.UpdateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
         try (
-            Connection conn = getDataSource().getConnection();
+            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             logQuery(sql);
@@ -33,7 +39,7 @@ public abstract class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (
-            Connection conn = getDataSource().getConnection();
+            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = executeQuery(pstmt)
         ) {
@@ -59,7 +65,7 @@ public abstract class JdbcTemplate {
         ResultSet rs = null;
 
         try (
-            Connection conn = getDataSource().getConnection();
+            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             logQuery(sql);
@@ -93,6 +99,4 @@ public abstract class JdbcTemplate {
     private void logQuery(String sql) {
         LOG.debug("query: {}", sql);
     }
-
-    public abstract DataSource getDataSource();
 }
