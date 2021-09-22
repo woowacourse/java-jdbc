@@ -69,7 +69,10 @@ class JdbcTemplateTest {
     @DisplayName("만족하는 데이터가 없는 경우 예외 처리")
     @Test
     void InvalidQuery() {
-        assertThatThrownBy(() -> jdbcTemplate.query("select id, account, password, email from users where account = ?", new TestUserRowMapper(), "junriot"))
+        assertThatThrownBy(() -> {
+            TestUserRowMapper rowMapper = new TestUserRowMapper();
+            jdbcTemplate.query("select id, account, password, email from users where account = ?", rowMapper, "junriot");
+        })
             .isExactlyInstanceOf(JdbcNotFoundException.class);
     }
 
@@ -108,7 +111,7 @@ class JdbcTemplateTest {
             });
 
         assertThat(row.get("id")).isNotNull();
-        assertThat(row.get("name")).isEqualTo("junroot");
+        assertThat(row).containsEntry("name", "junroot");
     }
 
     @AfterEach
