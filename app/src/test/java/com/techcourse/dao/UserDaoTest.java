@@ -25,47 +25,54 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        //given
         final List<User> users = userDao.findAll();
-
+        //when
+        //then
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
+        //given
         final User user = userDao.findById(1L);
-
+        //when
+        //then
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
+        //given
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
-
+        //when
+        //then
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
     void insert() {
+        //given
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
+        //when
         userDao.insert(user);
-
         final User actual = userDao.findById(2L);
-
+        //then
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
+        //given
         final String newPassword = "password99";
+        //when
         final User user = userDao.findById(1L);
         user.changePassword(newPassword);
-
         userDao.update(user);
-
         final User actual = userDao.findById(1L);
-
+        //then
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 }
