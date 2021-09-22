@@ -16,12 +16,6 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private static final List<PreparedStatementSetter> pstmtSetters = new ArrayList<>();
-
-    static {
-        pstmtSetters.add(new StringSetter());
-        pstmtSetters.add(new LongSetter());
-    }
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -29,11 +23,9 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+                PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
 
-            setPreparedStatement(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -87,9 +79,7 @@ public class JdbcTemplate {
     private void setPreparedStatement(PreparedStatement pstmt, Object[] args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
-            for (PreparedStatementSetter setter : pstmtSetters) {
-                setter.set(pstmt, index, arg);
-            }
+            pstmt.setObject(index, arg);
             index += 1;
         }
     }
