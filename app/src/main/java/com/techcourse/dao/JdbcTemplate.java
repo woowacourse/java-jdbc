@@ -16,9 +16,9 @@ public abstract class JdbcTemplate {
 
     abstract DataSource getDataSource();
 
-    abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
-    public void update(User user) {
+    public void update() {
         final DataSource dataSource = getDataSource();
         final String sql = createQuery();
 
@@ -30,7 +30,7 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setValues(user, pstmt);
+            setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

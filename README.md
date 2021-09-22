@@ -8,7 +8,7 @@
   - [x] 메서드 추출
   - [x] UpdateJdbcTemplate, InsertJdbcTemplate 클래스 추출
   - [x] 템플릿 메서드 패턴 적용
-  - [ ] 도메인 의존도 제거
+  - [x] 도메인 의존도 제거
   - [ ] SelectJdbcTemplate 클래스 추출
   - [ ] mapRow, setValues 인터페이스로 분리
   - [ ] Unchecked Exception 추가

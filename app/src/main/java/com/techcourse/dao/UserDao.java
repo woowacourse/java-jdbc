@@ -17,12 +17,13 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final JdbcTemplate insertJdbcTemplate;
-    private final JdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.insertJdbcTemplate = new JdbcTemplate() {
+    }
+
+    public void insert(User user) {
+        JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
             @Override
             String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
@@ -34,13 +35,18 @@ public class UserDao {
             }
 
             @Override
-            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
         };
-        this.updateJdbcTemplate = new JdbcTemplate() {
+
+        insertJdbcTemplate.update();
+    }
+
+    public void update(User user) {
+        JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
             @Override
             String createQuery() {
                 return "update users set account=?, password=?, email=? where id=?";
@@ -52,21 +58,15 @@ public class UserDao {
             }
 
             @Override
-            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
         };
-    }
 
-    public void insert(User user) {
-        insertJdbcTemplate.update(user);
-    }
-
-    public void update(User user) {
-        updateJdbcTemplate.update(user);
+        updateJdbcTemplate.update();
     }
 
     public List<User> findAll() {
