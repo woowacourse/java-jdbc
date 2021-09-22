@@ -16,7 +16,7 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         userDao = new UserDao(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -24,20 +24,20 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() throws SQLException  {
+    void findAll()  {
         final List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
     }
 
     @Test
-    void findById() throws SQLException  {
+    void findById() {
         final User user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findByAccount() throws SQLException  {
+    void findByAccount() {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
@@ -45,7 +45,7 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() throws SQLException {
+    void insert() {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -56,7 +56,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException  {
+    void update() {
         final String newPassword = "password99";
         final User user = userDao.findById(1L);
         user.changePassword(newPassword);

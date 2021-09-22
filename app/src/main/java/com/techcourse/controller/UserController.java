@@ -14,8 +14,6 @@ import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-
 @Controller
 public class UserController {
 
@@ -29,14 +27,9 @@ public class UserController {
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
 
-        try {
-            final User user = userDao.findByAccount(account);
-            modelAndView.addObject("user", user);
-            return modelAndView;
-        } catch (SQLException e) {
-            log.error(e.getMessage());
-            return redirect("/401.jsp");
-        }
+        final User user = userDao.findByAccount(account);
+        modelAndView.addObject("user", user);
+        return modelAndView;
     }
 
     private ModelAndView redirect(String path) {

@@ -38,11 +38,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        try {
-            return login(request, userDao.findByAccount(request.getParameter("account")));
-        } catch (SQLException e) {
-            return redirect("/401.jsp");
-        }
+        return login(request, userDao.findByAccount(request.getParameter("account")));
     }
 
     private ModelAndView login(HttpServletRequest request, User user) {

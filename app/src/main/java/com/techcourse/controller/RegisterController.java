@@ -13,8 +13,6 @@ import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
-
 @Controller
 public class RegisterController {
 
@@ -28,13 +26,8 @@ public class RegisterController {
                 request.getParameter("password"),
                 request.getParameter("email"));
 
-        try {
-            userDao.insert(user);
-            return redirect("/index.jsp");
-        } catch (SQLException e) {
-            log.error(e.getMessage());
-            return redirect("/register.jsp");
-        }
+        userDao.insert(user);
+        return redirect("/index.jsp");
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
