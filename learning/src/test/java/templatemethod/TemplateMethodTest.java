@@ -34,7 +34,7 @@ class TemplateMethodTest {
                 log.info("Steal a real person's watch");
             }
         };
-
-        ghostMethod.steal();
+        final HalflingThief thief = new HalflingThief(ghostMethod);
+        thief.steal();
     }
 }
