@@ -31,3 +31,4 @@
 - [x] 불필요한 mapRow() 제거
   - `PreparedStatementSetter` (interface), `RowMapper` (interface)
 - [ ] 라이브러리 확장
+  - `RowMapper` (interface)에 제네릭 사용

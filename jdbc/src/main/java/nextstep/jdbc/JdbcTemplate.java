@@ -3,6 +3,8 @@ package nextstep.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.QueryException;
 import nextstep.jdbc.exception.UpdateException;
@@ -29,7 +31,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, RowMapper rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (
             Connection conn = getDataSource().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -37,7 +39,11 @@ public abstract class JdbcTemplate {
         ) {
             logQuery(sql);
 
-            return rowMapper.mapRow(rs);
+            List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                objects.add(rowMapper.mapRow(rs));
+            }
+            return objects;
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
 
@@ -45,10 +51,10 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(
+    public <T> T queryForObject(
         String sql,
         PreparedStatementSetter pstmtSetter,
-        RowMapper rowMapper
+        RowMapper<T> rowMapper
     ) {
         ResultSet rs = null;
 

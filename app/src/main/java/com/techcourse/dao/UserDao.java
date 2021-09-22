@@ -1,7 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -59,22 +60,7 @@ public class UserDao {
 
         String sql = "select id, account, password, email from users";
 
-        return (List<User>) jdbcTemplate.query(
-            sql,
-            rs -> {
-                List<User> users = new ArrayList<>();
-
-                while (rs.next()) {
-                    users.add(new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                    ));
-                }
-
-                return users;
-            });
+        return jdbcTemplate.query(sql, this::getUser);
     }
 
     public User findById(Long id) {
@@ -87,16 +73,12 @@ public class UserDao {
 
         String sql = "select id, account, password, email from users where id = ?";
 
-        return (User) jdbcTemplate.queryForObject(
+        return jdbcTemplate.queryForObject(
             sql,
             pstmt -> pstmt.setLong(1, id),
             rs -> {
                 if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                    return getUser(rs);
                 }
                 return null;
             });
@@ -112,18 +94,22 @@ public class UserDao {
 
         String sql = "select id, account, password, email from users where account = ?";
 
-        return (User) jdbcTemplate.queryForObject(
+        return jdbcTemplate.queryForObject(
             sql,
             pstmt -> pstmt.setString(1, account),
             rs -> {
                 if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                    return getUser(rs);
                 }
                 return null;
             });
+    }
+
+    private User getUser(ResultSet rs) throws SQLException {
+        return new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
     }
 }
