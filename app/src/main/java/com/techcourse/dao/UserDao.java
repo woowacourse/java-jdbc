@@ -8,18 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.SelectJdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
 
     private JdbcTemplate jdbcTemplate;
-    private SelectJdbcTemplate selectJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -43,6 +37,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         jdbcTemplate.update();
@@ -65,13 +64,18 @@ public class UserDao {
                 pstmt.setString(1, user.getPassword());
                 pstmt.setLong(2, user.getId());
             }
+
+            @Override
+            public Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         jdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        this.selectJdbcTemplate = new SelectJdbcTemplate() {
+        this.jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users";
@@ -103,11 +107,11 @@ public class UserDao {
             }
         };
 
-        return (List<User>) selectJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
-        this.selectJdbcTemplate = new SelectJdbcTemplate() {
+        this.jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -136,11 +140,11 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
-        this.selectJdbcTemplate = new SelectJdbcTemplate() {
+        this.jdbcTemplate = new JdbcTemplate() {
             @Override
             public String createQuery() {
                 return "select id, account, password, email from users where account = ?";
@@ -169,6 +173,6 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 }

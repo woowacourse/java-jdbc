@@ -26,6 +26,7 @@
 - [x] 도메인 의존도 제거
 - [x] 클래스 추출
   - `SelectJdbcTemplate`
-- [ ] 템플릿 메소드 패턴 적용
+- [x] 템플릿 메소드 패턴 적용
+  - `JdbcTemplate` (abstract)
 - [ ] 불필요한 mapRow() 제거
 - [ ] 라이브러리 확장
