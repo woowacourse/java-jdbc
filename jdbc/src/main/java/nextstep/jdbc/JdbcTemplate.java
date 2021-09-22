@@ -40,6 +40,10 @@ public class JdbcTemplate {
         }
     }
 
+    public void delete(String sql, Object... args) {
+        update(sql, args);
+    }
+
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = createPreparedStatement(conn, sql, args);

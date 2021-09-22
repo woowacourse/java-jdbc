@@ -54,7 +54,7 @@ public class UserDao {
     public void removeAll() {
         final String sql = "delete from users";
 
-        jdbcTemplate.update(sql);
+        jdbcTemplate.delete(sql);
     }
 
     private RowMapper<User> userRowMapper() {
