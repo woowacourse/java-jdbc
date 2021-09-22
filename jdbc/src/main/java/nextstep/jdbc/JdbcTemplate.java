@@ -21,12 +21,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, PreparedStatementSetter pstmtSetter) {
+    public void update(String sql, Object... args) {
+        PreparedStatementSetter pstmtSetter = new ArgumentPreparedStatementSetter(args);
+
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            logQuery(sql);
+            LOG.debug("query: {}", sql);
 
             pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
@@ -43,7 +45,7 @@ public class JdbcTemplate {
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = executeQuery(pstmt)
         ) {
-            logQuery(sql);
+            LOG.debug("query: {}", sql);
 
             List<T> objects = new ArrayList<>();
             while (rs.next()) {
@@ -57,23 +59,23 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(
-        String sql,
-        PreparedStatementSetter pstmtSetter,
-        RowMapper<T> rowMapper
-    ) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        PreparedStatementSetter pstmtSetter = new ArgumentPreparedStatementSetter(args);
         ResultSet rs = null;
 
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            logQuery(sql);
+            LOG.debug("query: {}", sql);
 
             pstmtSetter.setValues(pstmt);
             rs = executeQuery(pstmt);
 
-            return rowMapper.mapRow(rs);
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
 
@@ -94,9 +96,5 @@ public class JdbcTemplate {
         } catch (Exception e) {
             throw new QueryException();
         }
-    }
-
-    private void logQuery(String sql) {
-        LOG.debug("query: {}", sql);
     }
 }
