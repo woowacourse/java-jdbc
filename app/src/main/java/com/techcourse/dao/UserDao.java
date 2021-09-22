@@ -27,7 +27,7 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String sql = createQueryForInsert();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -37,9 +37,7 @@ public class UserDao {
 
             LOG.debug("query: {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -62,8 +60,18 @@ public class UserDao {
         }
     }
 
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
     public void update(User user) {
-        final String sql = "update users set password = ? where id = ?";
+        final String sql = createQueryForUpdate();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -73,8 +81,7 @@ public class UserDao {
 
             LOG.debug("query: {}", sql);
 
-            pstmt.setString(1, user.getPassword());
-            pstmt.setLong(2, user.getId());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -95,6 +102,15 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set password = ? where id = ?";
+    }
+
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getPassword());
+        pstmt.setLong(2, user.getId());
     }
 
     public List<User> findAll() {

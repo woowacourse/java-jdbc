@@ -1,7 +1,6 @@
 package com.techcourse.support.jdbc.init;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.sql.Connection;
@@ -13,7 +12,10 @@ import org.slf4j.LoggerFactory;
 
 public class DatabasePopulatorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+
+    private DatabasePopulatorUtils() {
+    }
 
     public static void execute(DataSource dataSource) {
         Connection connection = null;
@@ -26,8 +28,8 @@ public class DatabasePopulatorUtils {
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
         } finally {
             try {
                 if (statement != null) {
@@ -43,8 +45,5 @@ public class DatabasePopulatorUtils {
             } catch (SQLException ignored) {
             }
         }
-    }
-
-    private DatabasePopulatorUtils() {
     }
 }
