@@ -43,7 +43,7 @@ public class JdbcTemplate {
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = executeQuery(pstmt)
+            ResultSet rs = pstmt.executeQuery()
         ) {
             LOG.debug("query: {}", sql);
 
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             LOG.debug("query: {}", sql);
 
             pstmtSetter.setValues(pstmt);
-            rs = executeQuery(pstmt);
+            rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -87,14 +87,6 @@ public class JdbcTemplate {
                 }
             } catch (Exception ignored) {
             }
-        }
-    }
-
-    private ResultSet executeQuery(PreparedStatement pstmt) {
-        try {
-            return pstmt.executeQuery();
-        } catch (Exception e) {
-            throw new QueryException();
         }
     }
 }
