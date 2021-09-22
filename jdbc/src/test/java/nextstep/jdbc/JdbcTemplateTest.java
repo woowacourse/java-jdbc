@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private static final JdbcDataSource JDBC_DATA_SOURCE = new JdbcDataSource();
-    private static final RowMapper<User> ROW_MAPPER = (resultSet, rowNum) -> {
+    private static final RowMapper<User> ROW_MAPPER = (resultSet) -> {
         long id = resultSet.getLong("id");
         String account = resultSet.getString("account");
         String password = resultSet.getString("password");

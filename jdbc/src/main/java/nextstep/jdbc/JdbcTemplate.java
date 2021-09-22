@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.EmptyResultDataException;
@@ -39,7 +40,7 @@ public class JdbcTemplate {
             ResultSet rs = pstmt.executeQuery()) {
             List<T> list = new ArrayList<>();
             while (rs.next()) {
-                list.add(rowMapper.mapRow(rs, rs.getRow()));
+                list.add(rowMapper.mapRow(rs));
             }
             return list;
         } catch (SQLException sqlException) {
@@ -64,9 +65,10 @@ public class JdbcTemplate {
         Connection connection,
         Object... args
     ) throws SQLException {
+        Objects.requireNonNull(args);
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
-            preparedStatement.setString(i + 1, String.valueOf(args[i]));
+            preparedStatement.setObject(i + 1, args[i]);
         }
         return preparedStatement;
     }
@@ -78,7 +80,7 @@ public class JdbcTemplate {
         if (!resultSet.next()) {
             throw new EmptyResultDataException();
         }
-        T target = rowMapper.mapRow(resultSet, resultSet.getRow());
+        T target = rowMapper.mapRow(resultSet);
         if (resultSet.next()) {
             throw new IncorrectResultSizeDataAccessException();
         }
