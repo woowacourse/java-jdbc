@@ -67,7 +67,6 @@ class JdbcTemplateTest {
         //given
         //when
         구구를_DB에_영속화한다();
-
         //then
         List<User> users = findAll();
         assertThat(users).hasSize(1);
