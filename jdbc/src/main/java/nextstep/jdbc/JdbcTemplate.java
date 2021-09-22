@@ -58,7 +58,8 @@ public class JdbcTemplate {
 
     private <T> T prepareStatementAndThen(final String sql, final JdbcCallback<T> jdbcCallback, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = getPreparedStatement(connection, sql, arguments)) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            bindParameter(preparedStatement, arguments);
             log.debug("query : {}", sql);
             return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
@@ -67,8 +68,7 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... arguments) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+    private void bindParameter(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
         for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
             preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
             log.debug("binding parameter [{}] as [{}] - [{}]",
@@ -76,7 +76,5 @@ public class JdbcTemplate {
                 preparedStatement.getParameterMetaData().getParameterTypeName(argumentIndex),
                 arguments[argumentIndex - 1]);
         }
-
-        return preparedStatement;
     }
 }
