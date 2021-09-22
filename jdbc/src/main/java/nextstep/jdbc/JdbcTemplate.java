@@ -40,6 +40,10 @@ public class JdbcTemplate {
         }
     }
 
+    public void insert(String sql, Object... args){
+        update(sql, args);
+    }
+
     public void delete(String sql, Object... args) {
         update(sql, args);
     }
