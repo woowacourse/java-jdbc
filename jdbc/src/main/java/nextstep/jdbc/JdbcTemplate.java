@@ -29,10 +29,10 @@ public class JdbcTemplate {
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        CallBack<T> execution = (pstm -> {
+        CallBack<T> execution = pstm -> {
             ResultSet rs = pstm.executeQuery();
             return rowMapper.apply(rs);
-        });
+        };
 
         return execute(sql, args, execution);
     }

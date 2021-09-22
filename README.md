@@ -37,3 +37,4 @@
 - setString, setLong vs. setObject in preparedStatement
 
 ## 학습 내용
+- [동작파라미터화](https://prolog.techcourse.co.kr/posts/1671)

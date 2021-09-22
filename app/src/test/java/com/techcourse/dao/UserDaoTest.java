@@ -23,7 +23,6 @@ class UserDaoTest {
 
         userDao.insert(user);
         userDao.insert(another);
-
     }
 
     @Test
@@ -58,6 +57,7 @@ class UserDaoTest {
         final User actual = userDao.findById(3L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(userDao.findAll()).hasSize(3);
     }
 
     @Test
