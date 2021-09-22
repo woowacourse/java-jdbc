@@ -85,7 +85,7 @@ class UserDaoTest {
 
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            PreparedStatement pstmt2 = conn.prepareStatement(sql2);) {
+            PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
             pstmt.executeUpdate();
             pstmt2.executeUpdate();
         } catch (SQLException e) {
