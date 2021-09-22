@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,39 +14,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
-    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         userDao = new UserDao(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate();
-        JdbcTemplate.dataSource = DataSourceConfig.getInstance();
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
-    void findAll() throws SQLException {
+    void findAll() throws SQLException  {
         final List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
-
-        User user = new User("bepoz", "1234", "wow@gmail.com");
-        userDao.insert(user);
-
-        List<String> accounts = jdbcTemplate.query("select account from users", ((rs, rowNum) -> rs.getString("account")));
-        assertThat(accounts).containsExactlyInAnyOrder("bepoz", "gugu");
     }
 
     @Test
-    void findById() {
+    void findById() throws SQLException  {
         final User user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findByAccount() {
+    void findByAccount() throws SQLException  {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
@@ -55,7 +45,7 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() {
+    void insert() throws SQLException {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -66,7 +56,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException  {
         final String newPassword = "password99";
         final User user = userDao.findById(1L);
         user.changePassword(newPassword);

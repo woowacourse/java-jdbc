@@ -13,6 +13,5 @@ public class ContextLoaderListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        JdbcTemplate.dataSource = DataSourceConfig.getInstance();
     }
 }
