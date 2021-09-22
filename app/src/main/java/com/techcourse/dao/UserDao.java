@@ -17,21 +17,56 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
-    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final JdbcTemplate insertJdbcTemplate;
+    private final JdbcTemplate updateJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.updateJdbcTemplate = new UpdateJdbcTemplate();
-        this.insertJdbcTemplate = new InsertJdbcTemplate();
+        this.insertJdbcTemplate = new JdbcTemplate() {
+            @Override
+            String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+        this.updateJdbcTemplate = new JdbcTemplate() {
+            @Override
+            String createQuery() {
+                return "update users set account=?, password=?, email=? where id=?";
+            }
+
+            @Override
+            DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
     }
 
     public void insert(User user) {
-        insertJdbcTemplate.insert(user, this);
+        insertJdbcTemplate.update(user);
     }
 
     public void update(User user) {
-        updateJdbcTemplate.update(user, this);
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
@@ -172,9 +207,5 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

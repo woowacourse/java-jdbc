@@ -9,33 +9,29 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class InsertJdbcTemplate {
+public abstract class JdbcTemplate {
+    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private static final Logger log = LoggerFactory.getLogger(InsertJdbcTemplate.class);
+    abstract String createQuery();
 
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
+    abstract DataSource getDataSource();
 
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.executeUpdate();
-    }
+    abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
 
-    public void insert(User user, UserDao userDao) {
+    public void update(User user) {
+        final DataSource dataSource = getDataSource();
+        final String sql = createQuery();
+
         Connection conn = null;
         PreparedStatement pstmt = null;
-        DataSource dataSource = userDao.getDataSource();
         try {
-            String sql = createQueryForInsert();
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
-            setValuesForInsert(user, pstmt);
+            setValues(user, pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -45,7 +41,6 @@ public class InsertJdbcTemplate {
                     pstmt.close();
                 }
             } catch (SQLException ignored) {}
-
             try {
                 if (conn != null) {
                     conn.close();
