@@ -76,7 +76,6 @@ public class JdbcTemplate {
         }
     }
 
-
     private void setPreparedStatement(PreparedStatement pstmt, Object[] args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
@@ -86,7 +85,6 @@ public class JdbcTemplate {
             index += 1;
         }
     }
-
 
     private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... args) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
