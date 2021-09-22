@@ -22,21 +22,40 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
 
+    private String createQueryForUpdate() {
+        return "update users set account=?, password=?, email=? where id=?";
+    }
+
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.executeUpdate();
+    }
+
+    private void setValueForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
+        pstmt.executeUpdate();
+    }
+
+    public void insert(User user) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
+            String sql = createQueryForInsert();
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
+            setValuesForInsert(user, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -56,21 +75,16 @@ public class UserDao {
     }
 
     public void update(User user) {
-        final String sql = "update users set account=?, password=?, email=? where id=?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
+            String sql = createQueryForUpdate();
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
+            setValueForUpdate(user, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
