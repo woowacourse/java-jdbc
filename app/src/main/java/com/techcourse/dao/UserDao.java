@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -35,7 +32,6 @@ public class UserDao {
             pstmt.setString(3, user.getEmail());
             return pstmt;
         });
-
     }
 
     public void update(User user) {
@@ -52,7 +48,6 @@ public class UserDao {
             pstmt.setLong(4, user.getId());
             return pstmt;
         });
-
     }
 
     public List<User> findAll() {

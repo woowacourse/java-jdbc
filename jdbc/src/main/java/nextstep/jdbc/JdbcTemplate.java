@@ -37,7 +37,6 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return query((connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
@@ -48,45 +47,22 @@ public class JdbcTemplate {
     public <T> List<T> query(PreparedStatementCreator preparedStatementCreator,
                              ResultSetExtractor<T> resultSetExtractor) {
         return execute(preparedStatementCreator, (pstmt -> {
-            ResultSet rs = null;
-            try {
-                rs = pstmt.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()){
                 return resultSetExtractor.extract(rs);
-            } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                } catch (SQLException e) {
-                    log.error(e.getMessage(), e);
-                }
             }
         }));
     }
 
     public <T> T execute(PreparedStatementCreator preparedStatementCreator,
                          PreparedStatementCallback<T> preparedStatementCallback) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStatementCreator.createPreparedStatement(conn);
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn))
+        {
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
+
 }
