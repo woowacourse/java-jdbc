@@ -28,5 +28,6 @@
   - `SelectJdbcTemplate`
 - [x] 템플릿 메소드 패턴 적용
   - `JdbcTemplate` (abstract)
-- [ ] 불필요한 mapRow() 제거
+- [x] 불필요한 mapRow() 제거
+  - `PreparedStatementSetter` (interface), `RowMapper` (interface)
 - [ ] 라이브러리 확장
