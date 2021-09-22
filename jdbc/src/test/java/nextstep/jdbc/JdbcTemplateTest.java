@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import nextstep.jdbc.exception.JdbcNotFoundException;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,19 +38,19 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    private String readSqlFile() throws IOException {
-        final URL url = getClass().getClassLoader().getResource("schema.sql");
-        final File file = new File(url.getFile());
-        final String sql = Files.readString(file.toPath());
-        return sql;
-    }
-
     private JdbcDataSource getJdbcDataSource() {
         JdbcDataSource dataSource = new JdbcDataSource();
         dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         dataSource.setUser("");
         dataSource.setPassword("");
         return dataSource;
+    }
+
+    private String readSqlFile() throws IOException {
+        final URL url = getClass().getClassLoader().getResource("schema.sql");
+        final File file = new File(url.getFile());
+        final String sql = Files.readString(file.toPath());
+        return sql;
     }
 
     @DisplayName("sql문을 통해 단일 데이터 조회")
@@ -76,7 +78,7 @@ class JdbcTemplateTest {
         assertThat(users).hasSize(2);
     }
 
-    @DisplayName("update 를 통해 영향을 받은 행의 개수 반환")
+    @DisplayName("update를 통해 영향을 받은 행의 개수 반환")
     @Test
     void update() {
         int result1 = jdbcTemplate.update("insert into users (account, password, email) values ('junroot3', 'rootzzang1234', 'rootjjang@gmail.com')");
@@ -84,5 +86,25 @@ class JdbcTemplateTest {
 
         int result2 = jdbcTemplate.update("update users set account = 'root123' where email = 'rootjjang@gmail.com'");
         assertThat(result2).isEqualTo(2);
+    }
+
+    @DisplayName("execute를 통해 DDL 실행")
+    @Test
+    void execute() {
+        jdbcTemplate.execute("create table test_table (id bigint auto_increment, name varchar(100) not null)");
+
+        int updatedRow = jdbcTemplate.update("insert into test_table (name) values ('junroot')");
+        assertThat(updatedRow).isEqualTo(1);
+
+        Map<String, Object> row = jdbcTemplate.query("select * from test_table",
+            resultSet -> {
+                HashMap<String, Object> results = new HashMap<>();
+                results.put("id", resultSet.getLong(1));
+                results.put("name", resultSet.getString(2));
+                return results;
+            });
+
+        assertThat(row.get("id")).isNotNull();
+        assertThat(row.get("name")).isEqualTo("junroot");
     }
 }

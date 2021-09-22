@@ -9,7 +9,7 @@
 - [] JdbcTemplate 구현하기
   - [x] query()
   - [x] queryForList()
-  - [] execute()
+  - [x] execute()
   - [x] update()
   - [] batchUpdate()
   - [] Connection Pool 사용해보기 (Optional)

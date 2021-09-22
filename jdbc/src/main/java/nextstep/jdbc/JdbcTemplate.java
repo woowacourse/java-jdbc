@@ -52,6 +52,10 @@ public class JdbcTemplate {
         return prepareStatementAndThen(sql, PreparedStatement::executeUpdate, arguments);
     }
 
+    public void execute(final String sql, final Object... arguments) {
+        prepareStatementAndThen(sql, PreparedStatement::execute, arguments);
+    }
+
     private <T> T prepareStatementAndThen(final String sql, final JdbcCallback<T> jdbcCallback, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = getPreparedStatement(connection, sql, arguments)) {
