@@ -9,5 +9,5 @@
 
 <br/>
 
-- [ ] `UserDao` 구현 👉 `UserDaoTest` 활용하여 진행
+- [x] `UserDao` 구현 👉 `UserDaoTest` 활용하여 진행
 - [ ] `JdbcTemplate` 구현 👉 중복을 제거하기 위한 라이브러리
