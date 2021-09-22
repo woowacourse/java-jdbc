@@ -2,9 +2,11 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.exception.JdbcNotFoundException;
 
 public class UserDao {
 
@@ -39,15 +41,23 @@ public class UserDao {
         return jdbcTemplate.queryAsList(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, id);
+        try {
+            return Optional.of(jdbcTemplate.query(sql, USER_ROW_MAPPER, id));
+        } catch (JdbcNotFoundException exception) {
+            return Optional.empty();
+        }
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
+        try {
+            return Optional.of(jdbcTemplate.query(sql, USER_ROW_MAPPER, account));
+        } catch (JdbcNotFoundException exception) {
+            return Optional.empty();
+        }
     }
 }

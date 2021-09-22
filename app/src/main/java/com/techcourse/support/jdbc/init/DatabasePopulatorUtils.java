@@ -41,6 +41,7 @@ public class DatabasePopulatorUtils {
                 }
             } catch (SQLException ignored) {
             }
+            log.debug("Initialized database.");
         }
     }
 

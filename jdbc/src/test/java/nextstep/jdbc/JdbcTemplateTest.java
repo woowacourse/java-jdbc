@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import nextstep.jdbc.exception.JdbcNotFoundException;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,10 +25,11 @@ class JdbcTemplateTest {
 
     private static final TestUserRowMapper TEST_USER_ROW_MAPPER = new TestUserRowMapper();
     private JdbcTemplate jdbcTemplate;
+    private JdbcDataSource dataSource;
 
     @BeforeEach
     void setUp() throws SQLException, IOException {
-        JdbcDataSource dataSource = getJdbcDataSource();
+        dataSource = getJdbcDataSource();
 
         final String sql = readSqlFile();
 
@@ -106,5 +109,20 @@ class JdbcTemplateTest {
 
         assertThat(row.get("id")).isNotNull();
         assertThat(row.get("name")).isEqualTo("junroot");
+    }
+
+    @AfterEach
+    void tearDown() {
+        final String sql = "truncate table users";
+        final String sql2 = "alter table users alter column id restart with 1;";
+
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            PreparedStatement pstmt2 = conn.prepareStatement(sql2)) {
+            pstmt.executeUpdate();
+            pstmt2.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

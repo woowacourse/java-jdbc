@@ -41,7 +41,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -49,7 +49,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -60,7 +60,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -68,12 +68,12 @@ class UserDaoTest {
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).orElseThrow();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -83,34 +83,13 @@ class UserDaoTest {
         final String sql = "truncate table users";
         final String sql2 = "alter table users alter column id restart with 1;";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        PreparedStatement pstmt2 = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            PreparedStatement pstmt2 = conn.prepareStatement(sql2);) {
             pstmt.executeUpdate();
-            pstmt2 = conn.prepareStatement(sql2);
             pstmt2.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-                if (pstmt2 != null) {
-                    pstmt2.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 }

@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,8 @@ public class JwpApplication {
 
     private static Context addWebapp(Tomcat tomcat) {
         final String docBase = new File("app/webapp/").getAbsolutePath();
-        final Context context = tomcat.addWebapp("/", docBase);
+        final Context context = tomcat.addWebapp("", docBase);
+        context.addApplicationListener("com.techcourse.support.context.ContextLoaderListener");
         log.info("configuring app with basedir: {}", docBase);
         return context;
     }
