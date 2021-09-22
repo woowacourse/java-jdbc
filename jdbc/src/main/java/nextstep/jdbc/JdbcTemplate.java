@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 public class JdbcTemplate {
 
@@ -21,43 +22,71 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(PreparedStatementCreator preparedStatementCreator) {
-        return execute(preparedStatementCreator, PreparedStatement::executeUpdate);
+    public int update(String sql, @Nullable Object... args) {
+        return update(connection -> connection.prepareStatement(sql),
+                new ArgumentTypePreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object ... args) {
-        List<T> result = query((connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            int index = 1;
-            for (Object arg : args) {
-                pstmt.setObject(index++, arg);
+    public int update(PreparedStatementCreator preparedStatementCreator) {
+        return update(preparedStatementCreator, null);
+    }
+
+    public int update(PreparedStatementCreator preparedStatementCreator,
+                      PreparedStatementSetter preparedStatementSetter) {
+        return execute(preparedStatementCreator, pstmt -> {
+            if (Objects.nonNull(preparedStatementSetter)) {
+                preparedStatementSetter.setValue(pstmt);
             }
-            return pstmt;
-        }), new ResultSetExtractor<>(rowMapper));
-        return result.get(0);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
+        List<T> results = query(connection -> connection.prepareStatement(sql),
+                new ArgumentTypePreparedStatementSetter(args),
+                new ResultSetExtractor<>(rowMapper));
+        return results.stream()
+                .findFirst()
+                .orElseThrow(DataAccessException::new);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query((connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            return pstmt;
-        }), new ResultSetExtractor<>(rowMapper));
+        return query((connection -> connection.prepareStatement(sql)),
+                null,
+                new ResultSetExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(PreparedStatementCreator preparedStatementCreator,
+                             PreparedStatementSetter preparedStatementSetter,
                              ResultSetExtractor<T> resultSetExtractor) {
         return execute(preparedStatementCreator, (pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()){
+            ResultSet rs = null;
+            try {
+                if (Objects.nonNull(preparedStatementSetter)) {
+                    preparedStatementSetter.setValue(pstmt);
+                }
+                rs = pstmt.executeQuery();
                 return resultSetExtractor.extract(rs);
+            } finally {
+                closeResultSet(rs);
             }
         }));
     }
 
-    public <T> T execute(PreparedStatementCreator preparedStatementCreator,
-                         PreparedStatementCallback<T> preparedStatementCallback) {
+    private void closeResultSet(ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(PreparedStatementCreator preparedStatementCreator,
+                          PreparedStatementCallback<T> preparedStatementCallback) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn))
-        {
+             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn)) {
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
