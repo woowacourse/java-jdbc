@@ -14,14 +14,11 @@ public abstract class JdbcTemplate {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
 
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            conn = getDataSource().getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            LOG.debug("query: {}", sql);
+        try (
+            Connection conn = getDataSource().getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            logQuery(sql);
 
             pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
@@ -29,61 +26,22 @@ public abstract class JdbcTemplate {
             LOG.error(e.getMessage(), e);
 
             throw new UpdateException();
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception ignored) {
-            }
         }
     }
 
     public Object query(String sql, RowMapper rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = getDataSource().getConnection();
-            pstmt = conn.prepareStatement(sql);
-            rs = executeQuery(pstmt);
-
-            LOG.debug("query: {}", sql);
+        try (
+            Connection conn = getDataSource().getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = executeQuery(pstmt)
+        ) {
+            logQuery(sql);
 
             return rowMapper.mapRow(rs);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
 
             throw new QueryException();
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception ignored) {
-            }
         }
     }
 
@@ -92,17 +50,16 @@ public abstract class JdbcTemplate {
         PreparedStatementSetter pstmtSetter,
         RowMapper rowMapper
     ) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        try {
-            conn = getDataSource().getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (
+            Connection conn = getDataSource().getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            logQuery(sql);
+
             pstmtSetter.setValues(pstmt);
             rs = executeQuery(pstmt);
-
-            LOG.debug("query: {}", sql);
 
             return rowMapper.mapRow(rs);
         } catch (Exception e) {
@@ -113,20 +70,6 @@ public abstract class JdbcTemplate {
             try {
                 if (rs != null) {
                     rs.close();
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (Exception ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (Exception ignored) {
             }
@@ -139,6 +82,10 @@ public abstract class JdbcTemplate {
         } catch (Exception e) {
             throw new QueryException();
         }
+    }
+
+    private void logQuery(String sql) {
+        LOG.debug("query: {}", sql);
     }
 
     public abstract DataSource getDataSource();
