@@ -33,22 +33,19 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select * from users";
 
-        return jdbcTemplate.queryForList(sql,
-                userRowMapper());
+        return jdbcTemplate.queryForList(sql, userRowMapper());
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql,
-                userRowMapper(), id);
+        return jdbcTemplate.query(sql, userRowMapper(), id);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql,
-                userRowMapper(), account);
+        return jdbcTemplate.query(sql, userRowMapper(), account);
     }
 
     public void removeAll() {
