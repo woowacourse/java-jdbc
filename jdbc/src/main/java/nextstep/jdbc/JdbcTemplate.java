@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.JdbcNotFoundException;
+import nextstep.jdbc.exception.JdbcSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
         JdbcCallback<T> jdbcCallback = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (!resultSet.next()) {
-                    throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.\nsql:(%s)\n", sql));
+                    throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.%nsql:(%s)%n", sql));
                 }
                 return rowMapper.map(resultSet);
             }
@@ -62,9 +63,9 @@ public class JdbcTemplate {
             bindParameter(preparedStatement, arguments);
             log.debug("query : {}", sql);
             return jdbcCallback.call(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage());
+            throw new JdbcSqlException("SQL을 실행하는 중에 문제가 발생했습니다.", exception);
         }
     }
 
