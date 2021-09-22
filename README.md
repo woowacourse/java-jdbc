@@ -21,8 +21,9 @@
   - setValuesForInsert(User, PreparedStatement), setValuesForUpdate(User, PreparedStatement)
 - [x] 클래스 추출
   - `InsertJdbcTemplate`, `UpdateJdbcTemplate`
-- [ ] 템플릿 메소드 패턴 적용
-- [ ] 도메인 의존도 제거
+- [x] 템플릿 메소드 패턴 적용
+  - `JdbcTemplate` (abstract)
+- [x] 도메인 의존도 제거
 - [ ] 클래스 추출
 - [ ] 템플릿 메소드 패턴 적용
 - [ ] 불필요한 mapRow() 제거
