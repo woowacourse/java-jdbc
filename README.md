@@ -1,9 +1,7 @@
 # jwp-dashboard-jdbc
 
 ## 1단계 기능 요구사항
-- [ ] JDBC 라이브러리 구현하기
-- [ ] UserDaoTest를 이용해 리팩터링
-- [ ] JdbcTemplate 클래스 구현을 통해 중복 제거
+- [x] JDBC 라이브러리 구현하기
 
 ## 2단계 기능 요구사항
 - [ ] 리팩터링 힌트
