@@ -69,8 +69,8 @@ class JdbcTemplateTest {
     @DisplayName("만족하는 데이터가 없는 경우 예외 처리")
     @Test
     void InvalidQuery() {
+        TestUserRowMapper rowMapper = new TestUserRowMapper();
         assertThatThrownBy(() -> {
-            TestUserRowMapper rowMapper = new TestUserRowMapper();
             jdbcTemplate.query("select id, account, password, email from users where account = ?", rowMapper, "junriot");
         })
             .isExactlyInstanceOf(JdbcNotFoundException.class);
