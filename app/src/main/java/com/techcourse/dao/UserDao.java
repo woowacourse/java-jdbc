@@ -40,6 +40,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         insertJdbcTemplate.update();
@@ -64,13 +69,18 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         updateJdbcTemplate.update();
     }
 
     public List<User> findAll() {
-        SelectJdbcTemplate selectAllJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectAllJdbcTemplate = new JdbcTemplate() {
             @Override
             String createQuery() {
                 return "select id, account, password, email from users";
@@ -105,7 +115,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate selectByIdJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectByIdJdbcTemplate = new JdbcTemplate() {
             @Override
             String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -138,7 +148,7 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        SelectJdbcTemplate selectByIdJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectByIdJdbcTemplate = new JdbcTemplate() {
             @Override
             String createQuery() {
                 return "select id, account, password, email from users where account = ?";
