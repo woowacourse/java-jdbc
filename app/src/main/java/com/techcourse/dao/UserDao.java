@@ -17,90 +17,21 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
+    private final InsertJdbcTemplate insertJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account=?, password=?, email=? where id=?";
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.executeUpdate();
-    }
-
-    private void setValueForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
-        pstmt.executeUpdate();
+        this.updateJdbcTemplate = new UpdateJdbcTemplate();
+        this.insertJdbcTemplate = new InsertJdbcTemplate();
     }
 
     public void insert(User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            String sql = createQueryForInsert();
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setValuesForInsert(user, pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        insertJdbcTemplate.insert(user, this);
     }
 
     public void update(User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            String sql = createQueryForUpdate();
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setValueForUpdate(user, pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        updateJdbcTemplate.update(user, this);
     }
 
     public List<User> findAll() {
@@ -241,5 +172,9 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
