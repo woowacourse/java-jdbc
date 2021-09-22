@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -40,7 +41,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void insert(String sql, Object... args){
+    public void insert(String sql, Object... args) {
         update(sql, args);
     }
 
@@ -49,39 +50,38 @@ public class JdbcTemplate {
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = createPreparedStatement(conn, sql, args);
-                ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+        class QueryState implements StateCallBack<T> {
+            @Override
+            public T doInStatement(Statement stmt, ResultSet rs) throws SQLException {
+                log.debug("query : {}", sql);
+
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
+
+        return execute(new QueryState(), sql, args);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
 
-            log.debug("query : {}", sql);
+        class QueryForList implements StateCallBack<List<T>> {
+            @Override
+            public List<T> doInStatement(Statement stmt, ResultSet rs) throws SQLException {
+                log.debug("query : {}", sql);
 
-            List<T> users = new ArrayList<>();
-            while (rs.next()) {
-                T t = rowMapper.mapRow(rs);
-                users.add(t);
+                List<T> users = new ArrayList<>();
+                while (rs.next()) {
+                    T t = rowMapper.mapRow(rs);
+                    users.add(t);
+                }
+                return users;
             }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
+        return execute(new QueryForList(), sql);
     }
 
     private void setPreparedStatement(PreparedStatement pstmt, Object[] args) throws SQLException {
@@ -98,5 +98,17 @@ public class JdbcTemplate {
         PreparedStatement pstmt = conn.prepareStatement(sql);
         setPreparedStatement(pstmt, args);
         return pstmt;
+    }
+
+    private <T> T execute(StateCallBack<T> action, String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = createPreparedStatement(conn, sql, args);
+                ResultSet rs = pstmt.executeQuery()
+        ) {
+            return action.doInStatement(pstmt, rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
