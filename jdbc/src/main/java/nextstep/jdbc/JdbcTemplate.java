@@ -27,7 +27,7 @@ public class JdbcTemplate {
 
         try(connection; statement) {
             for (int i = 0; i < args.length; i++) {
-                statement.setObject(i, args[0]);
+                statement.setObject(i + 1, args[i]);
             }
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
@@ -46,7 +46,7 @@ public class JdbcTemplate {
 
         try(connection; statement) {
             for (int i = 0; i < args.length; i++) {
-                statement.setObject(i, args[0]);
+                statement.setObject(i + 1, args[i]);
             }
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
@@ -64,7 +64,7 @@ public class JdbcTemplate {
 
         try(connection; statement) {
             for (int i = 0; i < args.length; i++) {
-                statement.setObject(i, args[0]);
+                statement.setObject(i + 1, args[i]);
             }
             statement.executeUpdate();
         }
