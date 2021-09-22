@@ -19,25 +19,21 @@ public class DatabasePopulatorUtils {
     private DatabasePopulatorUtils() {
     }
 
-    public static void execute(DataSource dataSource) {
-        execute(dataSource, "schema.sql");
-    }
-
-    public static void execute(DataSource dataSource, String fileName) {
+    public static void execute(DataSource dataSource, URL url) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final Statement statement = connection.createStatement()
         ) {
-            String sql = readSql(fileName);
+            String sql = readSql(url);
+            log.debug("query : {}", sql);
             statement.execute(sql);
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e);
         }
     }
 
-    private static String readSql(String fileName) throws IOException {
-        final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
-        final File file = new File(url.getFile());
+    private static String readSql(URL url) throws IOException {
+        File file = new File(url.getFile());
         return Files.readString(file.toPath());
     }
 }
