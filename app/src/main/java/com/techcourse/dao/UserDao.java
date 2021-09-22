@@ -44,7 +44,7 @@ public class UserDao {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
@@ -88,8 +88,8 @@ public class UserDao {
 
         ResultSet rs = null;
 
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
@@ -120,8 +120,8 @@ public class UserDao {
 
         ResultSet rs = null;
 
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, account);
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
