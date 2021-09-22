@@ -1,10 +1,12 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
+import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
@@ -12,10 +14,13 @@ import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
+
 @Controller
 public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
+    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
@@ -23,10 +28,18 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        final User user = InMemoryUserRepository.findByAccount(account)
-                .orElseThrow();
 
-        modelAndView.addObject("user", user);
-        return modelAndView;
+        try {
+            final User user = userDao.findByAccount(account);
+            modelAndView.addObject("user", user);
+            return modelAndView;
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            return redirect("/401.jsp");
+        }
+    }
+
+    private ModelAndView redirect(String path) {
+        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }
