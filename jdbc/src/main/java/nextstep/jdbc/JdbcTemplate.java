@@ -22,18 +22,27 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("jdbcTemplate queryForObject method - query : " + sql);
-        return execute(sql, args, pstmt -> rowMapper.mapRow(pstmt.executeQuery()));
+        return execute(sql, args, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                T result = null;
+                while (rs.next()) {
+                    result = rowMapper.mapRow(rs);
+                }
+                return result;
+            }
+        });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("jdbcTemplate query method - query : " + sql);
         return execute(sql, args, pstmt -> {
             List<T> results = new ArrayList<>();
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
             }
-            return results;
         });
     }
 
