@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
+import nextstep.jdbc.utils.ConnectionUtils;
 import nextstep.jdbc.utils.preparestatement.PreparedStatementCallback;
 import nextstep.jdbc.utils.preparestatement.PreparedStatementCreator;
 import nextstep.jdbc.utils.statement.StatementCallback;
@@ -18,25 +19,34 @@ public abstract class BaseJdbcTemplate {
     }
 
     protected <T> T execute(StatementCallback<T> action) throws SQLException {
-        try (Connection con = dataSource.getConnection();
-            Statement stmt = con.createStatement()) {
-
+        final Connection connection = ConnectionUtils.getConnection(dataSource);
+        try (Statement stmt = connection.createStatement()) {
             stmt.setQueryTimeout(30);
-
-            return action.getResult(stmt);
+            final T result = action.getResult(stmt);
+            if (ConnectionUtils.isTransactionStarted()) {
+                connection.setAutoCommit(false);
+                return result;
+            }
+            ConnectionUtils.closeConnection();
+            return result;
         }
     }
 
     protected <T> T execute(PreparedStatementCreator preparedStatementCreator,
                             PreparedStatementCallback<T> action) throws SQLException {
-
-        try (Connection con = dataSource.getConnection();
-            PreparedStatement preparedStatement =
-                preparedStatementCreator.createPreparedStatement(con)) {
+        final Connection connection = ConnectionUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement =
+            preparedStatementCreator.createPreparedStatement(connection)) {
 
             preparedStatement.setQueryTimeout(30);
 
-            return action.getResult(preparedStatement);
+            final T result = action.getResult(preparedStatement);
+            if (ConnectionUtils.isTransactionStarted()) {
+                connection.setAutoCommit(false);
+                return result;
+            }
+            ConnectionUtils.closeConnection();
+            return result;
         }
     }
 }
