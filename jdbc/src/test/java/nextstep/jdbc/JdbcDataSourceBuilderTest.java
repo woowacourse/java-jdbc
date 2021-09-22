@@ -4,6 +4,12 @@ import nextstep.datasource.DataSourceType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 class JdbcDataSourceBuilderTest {
@@ -16,31 +22,33 @@ class JdbcDataSourceBuilderTest {
         String user = "";
         String password = "";
 
-        // when, then
-        assertThatCode(
-                () -> JdbcDataSourceBuilder.create(DataSourceType.H2)
-                        .url(url)
-                        .user(user)
-                        .password(password)
-                        .build()
-        ).doesNotThrowAnyException();
+        // when
+        DataSource dataSource = JdbcDataSourceBuilder.create(DataSourceType.H2)
+                .url(url)
+                .user(user)
+                .password(password)
+                .build();
+
+        // then
+        assertThatCode(dataSource::getConnection).doesNotThrowAnyException();
     }
 
     @DisplayName("DataSourceBuilder 를 이용하여 MysqlJdbcDataSource 를 생성한다.")
     @Test
-    void buildMySqlDataSource() {
+    void buildMySqlDataSource() throws SQLException {
         // given
         String url = "jdbc:mysql://localhost:13306/jwp_dashboard?userSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8";
         String user = "root";
         String password = "root";
 
-        // when, then
-        assertThatCode(
-                () -> JdbcDataSourceBuilder.create(DataSourceType.MYSQL)
-                        .url(url)
-                        .user(user)
-                        .password(password)
-                        .build()
-        ).doesNotThrowAnyException();
+        // when
+        DataSource dataSource = JdbcDataSourceBuilder.create(DataSourceType.MYSQL)
+                .url(url)
+                .user(user)
+                .password(password)
+                .build();
+
+        // then
+        assertThatCode(dataSource::getConnection).doesNotThrowAnyException();
     }
 }

@@ -6,11 +6,14 @@ import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import nextstep.datasource.DatabasePopulatorUtils;
 
+import java.net.URL;
+
 @WebListener
 public class ContextLoaderListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        URL sqlUrl = getClass().getClassLoader().getResource("schema.sql");
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), sqlUrl);
     }
 }

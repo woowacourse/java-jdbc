@@ -7,6 +7,7 @@ import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,7 +18,8 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        URL url = getClass().getClassLoader().getResource("schema.sql");
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), url);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userDao = new UserDao(jdbcTemplate);
         final User user = new User("gugu", "password", "hkkang@woowahan.com");

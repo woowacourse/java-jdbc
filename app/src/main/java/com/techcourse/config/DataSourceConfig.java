@@ -1,6 +1,7 @@
 package com.techcourse.config;
 
-import org.h2.jdbcx.JdbcDataSource;
+import nextstep.datasource.DataSourceType;
+import nextstep.jdbc.JdbcDataSourceBuilder;
 
 import javax.sql.DataSource;
 import java.util.Objects;
@@ -9,6 +10,9 @@ public class DataSourceConfig {
 
     private static DataSource INSTANCE;
 
+    private DataSourceConfig() {
+    }
+
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
@@ -16,13 +20,15 @@ public class DataSourceConfig {
         return INSTANCE;
     }
 
-    private static JdbcDataSource createJdbcDataSource() {
-        final JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
-    }
+    private static DataSource createJdbcDataSource() {
+        String url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;";
+        String user = "";
+        String password = "";
 
-    private DataSourceConfig() {}
+        return JdbcDataSourceBuilder.create(DataSourceType.H2)
+                .url(url)
+                .user(user)
+                .password(password)
+                .build();
+    }
 }
