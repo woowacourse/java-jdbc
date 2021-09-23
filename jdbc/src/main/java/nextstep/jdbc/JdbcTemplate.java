@@ -19,6 +19,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(String sql, Object... args) {
+        return connect(sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return connect(sql, pstmt -> {
             ResultSet resultSet = pstmt.executeQuery();
