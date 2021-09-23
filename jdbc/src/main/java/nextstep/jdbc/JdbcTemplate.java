@@ -6,7 +6,10 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -23,10 +26,8 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
+            setValues(pstmt, args);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -34,19 +35,59 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object ... args) {
+    public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
+            setValues(pstmt, args);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public List<?> query(String sql, RowMapper<?> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);) {
+            log.debug("query : {}", sql);
+
+            ResultSet rs = pstmt.executeQuery();
+            List<Object> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Object queryObject(String sql, RowMapper<?> rowMapper, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug("query : {}", sql);
+            setValues(pstmt, args);
+
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
