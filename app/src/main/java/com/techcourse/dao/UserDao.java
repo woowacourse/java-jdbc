@@ -30,6 +30,11 @@ public class UserDao {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
             }
+
+            @Override
+            Object mapFromRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.execute(sql);
@@ -44,13 +49,18 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            Object mapFromRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.execute(sql);
     }
 
     public List<User> findAll() {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate(dataSource) {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             void setParams(PreparedStatement pstmt) {
             }
@@ -73,7 +83,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate(dataSource) {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             void setParams(PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
@@ -93,7 +103,7 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate(dataSource) {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             void setParams(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
@@ -116,6 +126,11 @@ public class UserDao {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             void setParams(PreparedStatement pstmt) {
+            }
+
+            @Override
+            Object mapFromRow(ResultSet rs) throws SQLException {
+                return null;
             }
         };
         String sql = "drop table users";
