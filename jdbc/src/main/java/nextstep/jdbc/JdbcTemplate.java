@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.util.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,11 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> result = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
+        return DataAccessUtils.singleResult(result);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
      return result(query(sql, new RowMapperResultSetExtractor<>(rowMapper)));
     }
@@ -39,17 +45,12 @@ public class JdbcTemplate {
         return query;
     }
 
-    public <T> List<T> query(final String sql, final RowMapperResultSetExtractor<T> rse) {
-        return execute(conn -> conn.prepareStatement(sql), rse);
-    }
-
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> result = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
-        return DataAccessUtils.singleResult(result);
-    }
-
     private <T> List<T> query(String sql, Object[] args, RowMapperResultSetExtractor<T> rse) {
         return query(sql, new ArgumentPreparedStatementSetter(args), rse);
+    }
+
+    private <T> List<T> query(final String sql, final RowMapperResultSetExtractor<T> rse) {
+        return execute(conn -> conn.prepareStatement(sql), rse);
     }
 
     private <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapperResultSetExtractor<T> rse) {

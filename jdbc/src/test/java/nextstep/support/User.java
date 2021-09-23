@@ -1,4 +1,4 @@
-package com.techcourse.domain;
+package nextstep.support;
 
 public class User {
 

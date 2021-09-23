@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.util;
 
 import exception.DataAccessException;
 import exception.IncorrectDataSizeException;
