@@ -18,5 +18,6 @@ public class UserSession {
         return getUserFrom(session).isPresent();
     }
 
-    private UserSession() {}
+    private UserSession() {
+    }
 }

@@ -24,7 +24,7 @@ public class JdbcDataSourceBuilder implements DataSourceBuilder {
     public DataSource build() {
         return dataSourceType.generate(dataSourceProperties);
     }
-    
+
     @Override
     public DataSourceBuilder url(String url) {
         dataSourceProperties.url(url);

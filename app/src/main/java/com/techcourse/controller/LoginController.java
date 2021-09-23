@@ -2,7 +2,6 @@ package com.techcourse.controller;
 
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;

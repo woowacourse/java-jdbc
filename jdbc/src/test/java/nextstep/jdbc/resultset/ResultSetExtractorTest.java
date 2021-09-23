@@ -1,6 +1,5 @@
 package nextstep.jdbc.resultset;
 
-import nextstep.exception.resultset.ResultSetEmptyException;
 import nextstep.exception.resultset.ResultSetExtractFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
