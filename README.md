@@ -11,5 +11,5 @@
     - [x] findById()
     - [x] findByAccount()
     - [x] findAll()
-    - [ ] update
+    - [x] update
     - [ ] delete
