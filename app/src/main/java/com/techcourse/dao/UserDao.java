@@ -57,7 +57,7 @@ public class UserDao {
         };
 
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource);
-        return (List<User>) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (List<User>) selectJdbcTemplate.query(sql, rowMapper, pss);
     }
 
     public User findById(Long id) {
@@ -71,7 +71,7 @@ public class UserDao {
         };
 
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource);
-        return (User) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (User) selectJdbcTemplate.query(sql, rowMapper, pss);
     }
 
     public User findByAccount(String account) {
@@ -86,7 +86,7 @@ public class UserDao {
         };
 
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource);
-        return (User) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (User) selectJdbcTemplate.query(sql, rowMapper, pss);
     }
 
     private User mapToUser(ResultSet rs) throws SQLException {

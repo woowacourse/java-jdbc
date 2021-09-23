@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.support.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,42 +21,23 @@ public class JdbcTemplate {
     }
 
 
-    public void execute(String sql, PreparedStatementSetter pss) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+    public void execute(String sql, PreparedStatementSetter pss) throws DataAccessException {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setParams(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            throw new DataAccessException(e.getMessage());
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter pss, RowMapper rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    public Object query(String sql, RowMapper rowMapper, PreparedStatementSetter pss) throws DataAccessException {
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pss.setParams(pstmt);
             rs = pstmt.executeQuery();
 
@@ -64,23 +46,11 @@ public class JdbcTemplate {
             return rowMapper.map(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (SQLException ignored) {}
         }
