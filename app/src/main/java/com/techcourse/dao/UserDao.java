@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,44 +18,18 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private JdbcTemplate jdbcContext;
 
     public UserDao(DataSource dataSource) {
+        this.jdbcContext = new JdbcTemplate();
+        this.jdbcContext.setDataSource(dataSource);
         this.dataSource = dataSource;
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        this.jdbcContext.queryDML(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        log.debug("query : {}", sql);
     }
 
     public void update(User user) {
@@ -235,5 +210,12 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    public void deleteAll() {
+        final String sql = "delete from users";
+        jdbcContext.queryDML(sql);
+
+        log.debug("query : {}", sql);
     }
 }

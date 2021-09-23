@@ -19,6 +19,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
+
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -26,8 +27,8 @@ class UserDaoTest {
     @Test
     void findAll() {
         //given
-        final List<User> users = userDao.findAll();
         //when
+        final List<User> users = userDao.findAll();
         //then
         assertThat(users).isNotEmpty();
     }
@@ -35,8 +36,8 @@ class UserDaoTest {
     @Test
     void findById() {
         //given
-        final User user = userDao.findById(1L);
         //when
+        final User user = userDao.findById(1L);
         //then
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -45,8 +46,8 @@ class UserDaoTest {
     void findByAccount() {
         //given
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
         //when
+        final User user = userDao.findByAccount(account);
         //then
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -74,5 +75,15 @@ class UserDaoTest {
         final User actual = userDao.findById(1L);
         //then
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void deleteAll() {
+        //given
+        //when
+        userDao.deleteAll();
+        final List<User> users = userDao.findAll();
+        //then
+        assertThat(users).isEmpty();
     }
 }
