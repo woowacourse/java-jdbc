@@ -13,7 +13,14 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void execute(User user, DataSource dataSource) {
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+
+    public void execute(Object... values) {
         final String sql = createQuery();
 
         Connection conn = null;
@@ -24,7 +31,7 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setValues(user, pstmt);
+            setValues(pstmt, values);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -46,5 +53,5 @@ public abstract class JdbcTemplate {
 
     abstract String createQuery();
 
-    abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    abstract void setValues(PreparedStatement pstmt, Object... values) throws SQLException;
 }

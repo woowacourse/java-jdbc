@@ -24,38 +24,39 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
             }
 
             @Override
-            void setValues(User user, PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
+            void setValues(PreparedStatement pstmt, Object... values) throws SQLException {
+                int cnt = 1;
+                for (Object value : values) {
+                    pstmt.setObject(cnt++, value);
+                }
             }
         };
-        jdbcTemplate.execute(user, dataSource);
+        jdbcTemplate.execute(user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             String createQuery() {
                 return "update users set account = ?, password = ?, email = ? where id = ?";
             }
 
             @Override
-            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            void setValues(PreparedStatement pstmt, Object... values) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
         };
-        jdbcTemplate.execute(user, dataSource);
+        jdbcTemplate.execute(user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -199,17 +200,16 @@ public class UserDao {
     }
 
     public void clear() {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             String createQuery() {
                 return "drop table users";
             }
 
             @Override
-            void setValues(User user, PreparedStatement pstmt) {
-
+            void setValues(PreparedStatement pstmt, Object... values) {
             }
         };
-        jdbcTemplate.execute(null, dataSource);
+        jdbcTemplate.execute();
     }
 }
