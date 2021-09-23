@@ -1,15 +1,12 @@
 package nextstep.jdbc;
 
 import nextstep.datasource.DataSourceType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 class JdbcDataSourceBuilderTest {
@@ -33,9 +30,10 @@ class JdbcDataSourceBuilderTest {
         assertThatCode(dataSource::getConnection).doesNotThrowAnyException();
     }
 
+    @Disabled
     @DisplayName("DataSourceBuilder 를 이용하여 MysqlJdbcDataSource 를 생성한다.")
     @Test
-    void buildMySqlDataSource() throws SQLException {
+    void buildMySqlDataSource() {
         // given
         String url = "jdbc:mysql://localhost:13306/jwp_dashboard?userSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8";
         String user = "root";
