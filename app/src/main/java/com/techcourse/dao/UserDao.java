@@ -6,10 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -26,7 +22,7 @@ public class UserDao {
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        this.jdbcTemplate.executeUpdate(
+        this.jdbcTemplate.update(
             sql,
             user.getAccount(),
             user.getPassword(),
@@ -37,7 +33,7 @@ public class UserDao {
 
     public void update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        this.jdbcTemplate.executeUpdate(
+        this.jdbcTemplate.update(
             sql,
             user.getAccount(),
             user.getPassword(),
