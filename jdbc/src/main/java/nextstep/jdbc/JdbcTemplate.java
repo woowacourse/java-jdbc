@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -20,13 +21,33 @@ public class JdbcTemplate {
     public void update(String sql, Object... args) {
         try (
             Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
             }
 
-            preparedStatement.executeUpdate();
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException();
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement pstmt = connection.prepareStatement(sql)
+        ) {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            ResultSet rs = pstmt.executeQuery();
+
+            if (!rs.next()) {
+                throw new SQLException("no result!");
+            }
+            return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException();
