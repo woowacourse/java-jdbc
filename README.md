@@ -10,6 +10,6 @@
     - [x] insert()
     - [x] findById()
     - [x] findByAccount()
-    - [ ] findAll()
+    - [x] findAll()
     - [ ] update
     - [ ] delete

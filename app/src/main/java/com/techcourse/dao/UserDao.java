@@ -40,13 +40,13 @@ public class UserDao {
         return jdbcTemplate.executeForObject(sql, userMapper, account);
     }
 
-    public void update(User user) {
-        // todo
+    public List<User> findAll() {
+        final String sql = "select id, account, password, email from users";
+        return jdbcTemplate.executeForList(sql, userMapper);
     }
 
-    public List<User> findAll() {
+    public void update(User user) {
         // todo
-        return null;
     }
 
 
