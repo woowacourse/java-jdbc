@@ -72,4 +72,13 @@ class UserDaoTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
+
+    @Test
+    void deleteById() {
+        final long id = 1L;
+
+        final int affectedResult = userDao.deleteById(1L);
+
+        assertThat(affectedResult).isEqualTo(1);
+    }
 }

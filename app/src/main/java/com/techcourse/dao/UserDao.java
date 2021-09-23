@@ -58,4 +58,9 @@ public class UserDao {
             throw new DaoMethodExecutionFailureException("유저 정보 업데이트에 실패했습니다.");
         }
     }
+
+    public int deleteById(long id) {
+        final String sql = "delete from users where id = ?";
+        return jdbcTemplate.execute(sql, id);
+    }
 }
