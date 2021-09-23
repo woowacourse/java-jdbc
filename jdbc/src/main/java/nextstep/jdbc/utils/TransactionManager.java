@@ -15,6 +15,7 @@ public class TransactionManager {
     public static void rollback() {
         try {
             ConnectionUtils.getConnection().rollback();
+            ConnectionUtils.endTransaction();
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
         }
