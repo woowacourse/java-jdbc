@@ -1,5 +1,6 @@
 package nextstep.jdbc.resultset;
 
+import nextstep.exception.resultset.ResultSetEmptyException;
 import nextstep.exception.resultset.ResultSetExtractFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +68,7 @@ class ResultSetExtractorTest {
         assertThat(user.getId()).isEqualTo(1L);
     }
 
-    @DisplayName("비어있는 ResultSet 에서 단일 객체를 추출하여 예외가 발생한다. ")
+    @DisplayName("비어있는 ResultSet 에서 단일 객체를 추출하면 null 을 반환한다.")
     @Test
     void extractSingleObjectWhenEmptyResultSet() throws SQLException {
         // given
@@ -76,11 +77,11 @@ class ResultSetExtractorTest {
         List<User> emptyList = Collections.emptyList();
         willReturn(emptyList).given(resultSetExtractor).extractList(resultSet);
 
-        // when, when
-        assertThatThrownBy(() -> resultSetExtractor.extractSingleObject(resultSet))
-                .isInstanceOf(ResultSetExtractFailureException.class)
-                .hasMessageContaining("ResultSet 이 비어있어 객체를 추출하는데 실패했습니다");
+        // when
+        User user = resultSetExtractor.extractSingleObject(resultSet);
 
+        // then
+        assertThat(user).isNull();
         then(resultSetExtractor).should(times(1)).extractList(resultSet);
     }
 
