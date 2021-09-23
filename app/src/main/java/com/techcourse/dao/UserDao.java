@@ -21,63 +21,36 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            StatementStrategy statementStrategy = new InsertStatement(user);
-            pstmt = statementStrategy.makePreparedStatement(conn);
+    public void insert(final User user) {
+        jdbcContextWithStatementStrategy(connection -> {
+            final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            final PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+            log.info("query : {}", sql);
+
+            return pstmt;
+        });
     }
 
-    public void update(User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            StatementStrategy statementStrategy = new UpdateStatement(user);
+    public void update(final User user) {
+        jdbcContextWithStatementStrategy(connection -> {
+            final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-            pstmt = statementStrategy.makePreparedStatement(conn);
+            final PreparedStatement pstmt = connection.prepareStatement(sql);
 
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+            log.info("query : {}", sql);
+
+            return pstmt;
+        });
     }
 
     public List<User> findAll() {
@@ -207,6 +180,34 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
 
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    private void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = statementStrategy.makePreparedStatement(conn);
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
             try {
                 if (pstmt != null) {
                     pstmt.close();
