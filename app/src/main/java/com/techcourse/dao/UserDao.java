@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.DeleteAllStatement;
+import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +34,7 @@ public class UserDao {
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -56,6 +56,12 @@ public class UserDao {
         }
     }
 
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
     public void update(User user) {
         final String sql = "update users set password = ? where email = ?";
 
@@ -67,8 +73,7 @@ public class UserDao {
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getPassword());
-            pstmt.setString(2, user.getEmail());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -88,6 +93,11 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getPassword());
+        pstmt.setString(2, user.getEmail());
     }
 
     public List<User> findAll() {
@@ -242,10 +252,10 @@ public class UserDao {
 
         Connection conn = null;
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            final StatementStrategy statement = new DeleteAllStatement();
+            pstmt = statement.makePreparedStatement(conn);
             pstmt.executeUpdate();
 
             log.debug("query : {}", sql);

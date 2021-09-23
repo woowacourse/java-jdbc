@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import java.sql.PreparedStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
