@@ -55,6 +55,7 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(1);
     }
 
     @Test

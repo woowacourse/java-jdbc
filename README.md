@@ -2,7 +2,7 @@
 
 - [ ] UserDaoTest 통과하기
   - [x] update
-  - [ ] findAll
+  - [x] findAll
   - [ ] findByAccount
 
 
