@@ -99,58 +99,21 @@ public class UserDao {
 
     public User findById(Long id) throws SQLException {
         final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection connection = dataSource.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ResultSet resultSet;
-        try (connection; preparedStatement) {
-            preparedStatement.setLong(1, id);
-            resultSet = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                String account = resultSet.getString(2);
-                String password = resultSet.getString(3);
-                String email = resultSet.getString(4);
-                log.info("유저 find - id: {}, account: {}, password: {}, email: {}", id, account, password, email);
-                return new User(
-                        id,
-                        account,
-                        password,
-                        email);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return (User) jdbcTemplate.queryForObject(sql,
+                (resultSet, rowNum) -> new User(
+                        resultSet.getLong("id"),
+                        resultSet.getString("account"),
+                        resultSet.getString("password"),
+                        resultSet.getString("email")), id);
     }
 
     public User findByAccount(String account) throws SQLException {
         final String sql = "select id, account, password, email from users where account = ?";
-        Connection connection = dataSource.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ResultSet resultSet;
-        try (connection; preparedStatement) {
-            preparedStatement.setString(1, account);
-            resultSet = preparedStatement.executeQuery();
-            log.debug("query : {}", sql);
-            if (resultSet.next()) {
-                Long id = resultSet.getLong(1);
-                String password = resultSet.getString(3);
-                String email = resultSet.getString(4);
-                log.info("유저 find - id: {}, account: {}, password: {}, email: {}", id, account, password, email);
-                return new User(
-                        resultSet.getLong(1),
-                        account,
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return (User) jdbcTemplate.queryForObject(sql,
+                (resultSet, rowNum) -> new User(
+                        resultSet.getLong("id"),
+                        resultSet.getString("account"),
+                        resultSet.getString("password"),
+                        resultSet.getString("email")), account);
     }
 }
