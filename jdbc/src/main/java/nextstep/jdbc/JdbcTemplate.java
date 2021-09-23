@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -19,7 +21,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Object queryForObject(String query, RowMapper rowMapper, Object... args) throws SQLException {
+    public void update(String query, Object... args) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query);
+        try (connection; statement) {
+            int index = 1;
+            for (Object arg : args) {
+                statement.setObject(index++, arg);
+            }
+            statement.executeUpdate();
+        }
+    }
+
+    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
         Connection connection = dataSource.getConnection();
         PreparedStatement statement = connection.prepareStatement(query);
 
@@ -30,7 +44,26 @@ public class JdbcTemplate {
             }
 
             ResultSet resultSet = statement.executeQuery();
-            while (resultSet.next()) {
+            List<T> result = new ArrayList<>();
+            if (resultSet.next()) {
+                result.add(rowMapper.map(resultSet, resultSet.getRow()));
+            }
+            return result;
+        }
+    }
+
+    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement statement = connection.prepareStatement(query);
+
+        try (connection; statement) {
+            int index = 1;
+            for (Object arg : args) {
+                statement.setObject(index++, arg);
+            }
+
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
                 return rowMapper.map(resultSet, resultSet.getRow());
             }
         }
