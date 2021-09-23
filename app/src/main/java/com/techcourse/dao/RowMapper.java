@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface RowMapper {
+public interface RowMapper<T> {
 
-    Object map(ResultSet rs) throws SQLException;
+    T map(ResultSet rs) throws SQLException;
 }
