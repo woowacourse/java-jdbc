@@ -3,22 +3,25 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+    private static UserDao userDao = new UserDao(DataSourceConfig.getInstance());
 
-    @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    @BeforeAll
+    static void setup() {
+        DataSource instance = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(instance);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
