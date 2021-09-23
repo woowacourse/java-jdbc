@@ -55,7 +55,35 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set password = ? where email = ?";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getEmail());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public List<User> findAll() {

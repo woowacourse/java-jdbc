@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -21,6 +22,32 @@ class UserDaoTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @Test
+    @DisplayName("user를 삽입한다.")
+    void insert() {
+        final String account = "insert-gugu";
+        final User user = new User(account, "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
+        final User actual = userDao.findById(2L);
+
+        assertThat(actual.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    @DisplayName("user의 비밀번호를 수정한다.")
+    void update() {
+        final String newPassword = "password99";
+        final User user = userDao.findById(1L);
+        user.changePassword(newPassword);
+
+        userDao.update(user);
+
+        final User actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
@@ -43,29 +70,5 @@ class UserDaoTest {
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
-    }
-
-    @Test
-    void insert() {
-        final String account = "insert-gugu";
-        final User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
-
-        final User actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
-    }
-
-    @Test
-    void update() {
-        final String newPassword = "password99";
-        final User user = userDao.findById(1L);
-        user.changePassword(newPassword);
-
-        userDao.update(user);
-
-        final User actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 }
