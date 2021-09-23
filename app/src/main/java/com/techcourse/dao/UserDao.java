@@ -35,6 +35,11 @@ public class UserDao {
         return jdbcTemplate.executeForObject(sql, userMapper, id);
     }
 
+    public User findByAccount(String account) {
+        final String sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.executeForObject(sql, userMapper, account);
+    }
+
     public void update(User user) {
         // todo
     }
@@ -44,8 +49,5 @@ public class UserDao {
         return null;
     }
 
-    public User findByAccount(String account) {
-        // todo
-        return null;
-    }
+
 }

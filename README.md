@@ -9,7 +9,7 @@
 - [ ] UserDao JdbcTemplate 사용하는 방향으로 구현
     - [x] insert()
     - [x] findById()
+    - [x] findByAccount()
     - [ ] findAll()
-    - [ ] findByAccount()
     - [ ] update
     - [ ] delete

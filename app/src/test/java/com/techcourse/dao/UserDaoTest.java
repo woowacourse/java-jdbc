@@ -46,18 +46,18 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() {
-        final List<User> users = userDao.findAll();
-
-        assertThat(users).isNotEmpty();
-    }
-
-    @Test
     void findByAccount() {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findAll() {
+        final List<User> users = userDao.findAll();
+
+        assertThat(users).isNotEmpty();
     }
 
     @Test
