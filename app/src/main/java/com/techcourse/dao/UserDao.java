@@ -22,61 +22,26 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        class InsertStatement implements StatementStrategy {
-            public PreparedStatement makePreparedStatement(Connection conn) throws SQLException {
-                PreparedStatement pstmt = conn.prepareStatement("insert into users (account, password, email) values (?, ?, ?)");
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                return pstmt;
-            }
-        }
-
-        jdbcContextWithStatementStrategy(new InsertStatement());
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+        jdbcContextWithStatementStrategy(conn -> {
+            String sql = "insert into users (account, password, email) values (?, ?, ?)";
+            log.debug("query : {}", sql);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            return pstmt;
+        });
     }
 
     public void update(User user) {
-        final String sql = "update users set password = ? where email = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        jdbcContextWithStatementStrategy(conn -> {
+            String sql = "update users set password = ? where email = ?";
             log.debug("query : {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getPassword());
-        pstmt.setString(2, user.getEmail());
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getEmail());
+            return pstmt;
+        });
     }
 
     public List<User> findAll() {
@@ -227,7 +192,11 @@ public class UserDao {
     }
 
     public void deleteAll() {
-       jdbcContextWithStatementStrategy(new DeleteAllStatement());
+        jdbcContextWithStatementStrategy(conn -> {
+            String sql = "delete from users";
+            log.debug("query : {}", sql);
+            return conn.prepareStatement(sql);
+        });
     }
 
     public void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) {
