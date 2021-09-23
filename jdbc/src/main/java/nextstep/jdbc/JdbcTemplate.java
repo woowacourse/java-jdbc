@@ -8,11 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 public class JdbcTemplate {
 
@@ -22,6 +17,18 @@ public class JdbcTemplate {
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return connect(sql, pstmt -> {
+            ResultSet resultSet = pstmt.executeQuery();
+
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet, 0);
+            }
+
+            return null;
+        }, args);
     }
 
     private <T> T connect(String sql, Logic<T> logic, Object... args) {
