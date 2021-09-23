@@ -30,6 +30,27 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... params){
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            int index = 1;
+            for (Object param : params) {
+                pstmt.setObject(index++, param);
+            }
+
+            List<T> results = new ArrayList<>();
+            ResultSet resultSet = pstmt.executeQuery();
+            while (resultSet.next()) {
+                results.add(mapper.mapRow(resultSet));
+            }
+            return results;
+        } catch (SQLException sqlException) {
+            log.error(sqlException.getMessage());
+            throw new JdbcTemplateException();
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {

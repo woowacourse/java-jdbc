@@ -16,8 +16,6 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private final DataSource dataSource;
 
     public UserDao(DataSource dataSource) {
@@ -38,44 +36,8 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select * from users";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        List<User> users = new ArrayList<>();
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                User user = new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                users.add(user);
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return jdbcTemplate.query(sql, userRowMapper());
     }
 
     public User findById(Long id) {
