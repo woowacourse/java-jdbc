@@ -12,14 +12,14 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
-    private UserDao userDao;
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+
+    private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance(), jdbcTemplate);
+        userDao = new UserDao(jdbcTemplate);
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
