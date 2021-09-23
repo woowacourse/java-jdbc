@@ -27,10 +27,15 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() {
-        final List<User> users = userDao.findAll();
+    void insert() {
+        final String account = "insert-gugu";
+        final User user = new User(account, "password", "hkkang@woowahan.com");
+        int affectedCount = userDao.insert(user);
 
-        assertThat(users).isNotEmpty();
+        final User actual = userDao.findById(2L);
+
+        assertThat(affectedCount).isEqualTo(1);
+        assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -41,22 +46,18 @@ class UserDaoTest {
     }
 
     @Test
+    void findAll() {
+        final List<User> users = userDao.findAll();
+
+        assertThat(users).isNotEmpty();
+    }
+
+    @Test
     void findByAccount() {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
-    }
-
-    @Test
-    void insert() {
-        final String account = "insert-gugu";
-        final User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
-
-        final User actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
