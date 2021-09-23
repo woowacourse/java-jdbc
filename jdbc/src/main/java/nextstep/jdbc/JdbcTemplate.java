@@ -18,34 +18,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void insert(String sql, Object ... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+    public void insert(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i+1, args[i]);
+                pstmt.setObject(i + 1, args[i]);
             }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 }
