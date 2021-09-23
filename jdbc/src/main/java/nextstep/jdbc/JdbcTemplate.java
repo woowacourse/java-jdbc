@@ -39,21 +39,20 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return connect(sql, pstmt -> {
-            ResultSet resultSet = pstmt.executeQuery();
+        List<T> results = queryForList(sql, rowMapper, args);
 
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, 0);
-            }
+        if(results.size() == 1) {
+            return results.get(0);
+        }
 
-            return null;
-        }, args);
+        throw new IllegalStateException("결과가 한개가 아닙니다.");
     }
 
     private <T> T connect(String sql, Logic<T> logic, Object... args) {
         try (
                 Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                ResultSet resultSet = preparedStatement.getResultSet();
         ) {
             for (int i = 1; i <= args.length; i++) {
                 preparedStatement.setObject(i, args[i - 1]);
