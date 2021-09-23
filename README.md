@@ -13,7 +13,7 @@
     - [x] update
     - [x] delete
 - [x] ResultSetExtractorTest 테스트
-- [ ] Controller 에서 Dao 사용하는 방향으로 리팩터링
+- [x] Controller 에서 Dao 사용하는 방향으로 리팩터링
 
 ## 리팩터링 예정
 - [ ] JdbcTemplate 테스트

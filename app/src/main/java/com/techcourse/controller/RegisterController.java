@@ -1,5 +1,6 @@
 package com.techcourse.controller;
 
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,13 +14,15 @@ import nextstep.web.support.RequestMethod;
 @Controller
 public class RegisterController {
 
+    private final UserDao userDao = UserDao.getInstance();
+
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {
-        final User user = new User(2,
+        final User user = new User(0L,
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        InMemoryUserRepository.save(user);
+        userDao.insert(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
