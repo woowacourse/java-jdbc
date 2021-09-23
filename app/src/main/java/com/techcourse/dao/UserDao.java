@@ -22,19 +22,13 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            StatementStrategy statementStrategy = new InsertStatement(user);
+            pstmt = statementStrategy.makePreparedStatement(conn);
 
-            log.info("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -57,19 +51,14 @@ public class UserDao {
     }
 
     public void update(User user) {
-        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            log.info("query : {}", sql);
+            StatementStrategy statementStrategy = new UpdateStatement(user);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
+            pstmt = statementStrategy.makePreparedStatement(conn);
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -92,17 +81,17 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final String sql = "select id, account, password, email from users";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            StatementStrategy statementStrategy = new FindAllStatement();
+
+            pstmt = statementStrategy.makePreparedStatement(conn);
             rs = pstmt.executeQuery();
 
-            log.info("query : {}", sql);
             List<User> users = new ArrayList<>();
 
             while (rs.next()) {
@@ -143,18 +132,15 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
+            StatementStrategy statementStrategy = new FindByIdStatement(id);
 
-            log.info("query : {}", sql);
+            pstmt = statementStrategy.makePreparedStatement(conn);
+            rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return new User(
@@ -192,18 +178,15 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        final String sql = "select id, account, password, email from users where account = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
+            StatementStrategy statementStrategy = new FindByAccountStatement(account);
 
-            log.info("query : {}", sql);
+            pstmt = statementStrategy.makePreparedStatement(conn);
+            rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return new User(
