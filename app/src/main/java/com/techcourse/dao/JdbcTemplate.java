@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,12 +53,13 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) throws DataAccessException {
-        List<T> result = query(sql, rowMapper, values);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws DataAccessException {
+        List<T> result = query(sql, rowMapper, params);
         if (result.isEmpty()) {
             return null;
         }
