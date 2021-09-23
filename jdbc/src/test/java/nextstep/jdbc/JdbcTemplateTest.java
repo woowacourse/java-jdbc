@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -12,20 +13,48 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JdbcTemplateTest {
+
+    private final RowMapper<TestEntity> rowMapper = rs -> new TestEntity(rs.getInt("age"), rs.getString("name"));
+    private final TestEntity testEntity = new TestEntity(25, "ecsimsw");
 
     @DisplayName("queryForObject로 단일 조회 쿼리를 시행한다")
     @Test
     void queryForObject() throws SQLException {
         String selectQuery = "select * from user where name = ?";
 
-        TestEntity persistedData = new TestEntity(25, "ecsimsw");
-        RowMapper<TestEntity> rowMapper = rs -> new TestEntity(rs.getInt(1), rs.getString(2));
+        DataSource mockSource = Mockito.mock(DataSource.class);
+        ResultSet resultSet = getMockResultFromDataSource(selectQuery, mockSource);
+
+        Mockito.when(resultSet.next()).thenReturn(true).thenReturn(false);
+        Mockito.when(resultSet.getInt("age")).thenReturn(testEntity.age);
+        Mockito.when(resultSet.getString("name")).thenReturn(testEntity.name);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockSource);
+        TestEntity result = jdbcTemplate.queryForObject(selectQuery, rowMapper, testEntity.name);
+        assertThat(testEntity).isEqualTo(result);
+    }
+
+    @DisplayName("조회 결과가 1개가 아닌 경우 예외를 반환한다")
+    @Test
+    void queryForObjectWithInvalidSize() throws SQLException {
+        String selectQuery = "select * from user where name = ?";
 
         DataSource mockSource = Mockito.mock(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockSource);
+        ResultSet resultSet = getMockResultFromDataSource(selectQuery, mockSource);
 
+        Mockito.when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+        Mockito.when(resultSet.getInt("age")).thenReturn(testEntity.age);
+        Mockito.when(resultSet.getString("name")).thenReturn(testEntity.name);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockSource);
+        assertThatThrownBy(()-> jdbcTemplate.queryForObject(selectQuery, rowMapper, testEntity.name))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+    }
+
+    private ResultSet getMockResultFromDataSource(String selectQuery, DataSource mockSource) throws SQLException {
         Connection connection = Mockito.mock(Connection.class);
         Mockito.when(mockSource.getConnection()).thenReturn(connection);
 
@@ -34,14 +63,9 @@ class JdbcTemplateTest {
 
         ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
-
-        Mockito.when(resultSet.next()).thenReturn(true).thenReturn(false);
-        Mockito.when(resultSet.getInt(1)).thenReturn(persistedData.age);
-        Mockito.when(resultSet.getString(2)).thenReturn(persistedData.name);
-
-        TestEntity testEntity = jdbcTemplate.queryForObject(selectQuery, rowMapper, persistedData.name);
-        assertThat(testEntity).isEqualTo(persistedData);
+        return resultSet;
     }
+
 }
 
 class TestEntity {
