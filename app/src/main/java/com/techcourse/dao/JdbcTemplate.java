@@ -9,7 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -20,7 +20,7 @@ public abstract class JdbcTemplate {
     }
 
 
-    public void execute(String sql) {
+    public void execute(String sql, PreparedStatementSetter pss) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -29,7 +29,7 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setParams(pstmt);
+            pss.setParams(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -49,22 +49,19 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql) {
+    public Object query(String sql, PreparedStatementSetter pss, RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
-            setParams(pstmt);
+            pss.setParams(pstmt);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
 
-            if (!rs.next()) {
-                return null;
-            }
-            return mapFromRow(rs);
+            return rowMapper.map(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -88,8 +85,4 @@ public abstract class JdbcTemplate {
             } catch (SQLException ignored) {}
         }
     }
-
-    abstract void setParams(PreparedStatement pstmt) throws SQLException;
-
-    abstract Object mapFromRow(ResultSet rs) throws SQLException;
 }
