@@ -24,13 +24,38 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate();
-        insertJdbcTemplate.insert(user, dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+        jdbcTemplate.execute(user, dataSource);
     }
 
     public void update(User user) {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate();
-        updateJdbcTemplate.update(user, dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
+        jdbcTemplate.execute(user, dataSource);
     }
 
     public List<User> findAll() {
@@ -174,32 +199,17 @@ public class UserDao {
     }
 
     public void clear() {
-        final String sql = "drop table users";;
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            String createQuery() {
+                return "drop table users";
+            }
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            @Override
+            void setValues(User user, PreparedStatement pstmt) {
 
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+            }
+        };
+        jdbcTemplate.execute(null, dataSource);
     }
 }
