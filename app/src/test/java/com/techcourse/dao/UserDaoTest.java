@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ class UserDaoTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws SQLException {
         userDao.deleteAll();
     }
 
@@ -83,7 +84,7 @@ class UserDaoTest {
 
     @DisplayName("등록된 모든 user를 삭제한다.")
     @Test
-    void deleteAll() {
+    void deleteAll() throws SQLException {
         // given
         assertThat(userDao.findAll()).isNotEmpty();
 

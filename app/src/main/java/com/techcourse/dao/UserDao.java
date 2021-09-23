@@ -247,18 +247,17 @@ public class UserDao {
         }
     }
 
-    public void deleteAll() {
-        final String sql = "delete from users";
+    public void deleteAll() throws SQLException {
+       jdbcContextWithStatementStrategy(new DeleteAllStatement());
+    }
 
+    public void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) throws SQLException {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = dataSource.getConnection();
-            final StatementStrategy statement = new DeleteAllStatement();
-            pstmt = statement.makePreparedStatement(conn);
+            pstmt = statementStrategy.makePreparedStatement(conn);
             pstmt.executeUpdate();
-
-            log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
