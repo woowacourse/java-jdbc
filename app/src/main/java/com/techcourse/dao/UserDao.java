@@ -25,37 +25,28 @@ public class UserDao {
     public void insert(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
-            String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            void setValues(PreparedStatement pstmt, Object... values) throws SQLException {
-                int cnt = 1;
-                for (Object value : values) {
-                    pstmt.setObject(cnt++, value);
-                }
+            void setParams(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
             }
         };
-        jdbcTemplate.execute(user.getAccount(), user.getPassword(), user.getEmail());
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.execute(sql);
     }
 
     public void update(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
-            String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
-
-            @Override
-            void setValues(PreparedStatement pstmt, Object... values) throws SQLException {
-                int cnt = 1;
-                for (Object value : values) {
-                    pstmt.setObject(cnt++, value);
-                }
+            void setParams(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
             }
         };
-        jdbcTemplate.execute(user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.execute(sql);
     }
 
     public List<User> findAll() {
@@ -124,14 +115,10 @@ public class UserDao {
     public void clear() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
-            String createQuery() {
-                return "drop table users";
-            }
-
-            @Override
-            void setValues(PreparedStatement pstmt, Object... values) {
+            void setParams(PreparedStatement pstmt) {
             }
         };
-        jdbcTemplate.execute();
+        String sql = "drop table users";
+        jdbcTemplate.execute(sql);
     }
 }
