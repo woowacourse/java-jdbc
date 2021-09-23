@@ -21,9 +21,18 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        StatementStrategy statementStrategy = new InsertStatement(user);
-        jdbcContextWithStatementStrategy(statementStrategy);
+    public void insert(final User user) {
+        class InsertStatement implements StatementStrategy {
+            public PreparedStatement makePreparedStatement(Connection conn) throws SQLException {
+                PreparedStatement pstmt = conn.prepareStatement("insert into users (account, password, email) values (?, ?, ?)");
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                return pstmt;
+            }
+        }
+
+        jdbcContextWithStatementStrategy(new InsertStatement());
     }
 
     private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
