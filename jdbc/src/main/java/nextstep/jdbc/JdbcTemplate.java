@@ -45,8 +45,7 @@ public class JdbcTemplate {
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
-        // todo, dataaccessutils
-        return result.get(0);
+        return DataAccessUtils.singleResult(result);
     }
 
     private <T> List<T> query(String sql, Object[] args, RowMapperResultSetExtractor<T> rse) {

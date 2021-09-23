@@ -16,3 +16,4 @@
   - [x] RowMapper를 제네릭을 사용해서 구현하기
   - [x] PreparedStatementSetter를 가변 인자를 이용해서 구현하기
   - [x] 람다를 활용해서 코드량을 줄이기
+  - [x] DataAccessUtils로 singleResult 가져오기
