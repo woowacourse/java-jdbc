@@ -22,72 +22,77 @@ public class JdbcTemplate {
     }
 
     public void insert(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            setValues(pstmt, args);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        class CreateTemplate implements ActionTemplate {
+            @Override
+            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+                setValues(pst, args);
+                pst.executeUpdate();
+                return null;
+            }
         }
+        makeResult(new CreateTemplate(), sql, args);
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            setValues(pstmt, args);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        class UpdateTemplate implements ActionTemplate {
+            @Override
+            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+                setValues(pst, args);
+                pst.executeUpdate();
+                return null;
+            }
         }
+        makeResult(new UpdateTemplate(), sql, args);
     }
 
     public List<?> query(String sql, RowMapper<?> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
-            log.debug("query : {}", sql);
-
-            ResultSet rs = pstmt.executeQuery();
-            List<Object> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+        class FindAllTemplate implements ActionTemplate {
+            @Override
+            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+                try (ResultSet rs = pst.executeQuery();) {
+                    List<Object> result = new ArrayList<>();
+                    while (rs.next()) {
+                        result.add(rowMapper.mapRow(rs));
+                    }
+                    return result;
+                }
             }
-
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
+        return (List<?>) makeResult(new FindAllTemplate(), sql, null);
     }
 
     public Object queryObject(String sql, RowMapper<?> rowMapper, Object... args) {
+        class FindTemplate implements ActionTemplate {
+            @Override
+            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+                setValues(pst, args);
+
+                try (ResultSet rs = pst.executeQuery();) {
+                    if (rs.next()) {
+                        return rowMapper.mapRow(rs);
+                    }
+                    return null;
+                }
+            }
+        }
+        return makeResult(new FindTemplate(), sql, args);
+    }
+
+    private Object makeResult(ActionTemplate actionTemplate, String sql, Object[] args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
+             PreparedStatement pst = conn.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
-            setValues(pstmt, args);
-
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
+            return actionTemplate.action(pst, sql, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void setValues(PreparedStatement pst, Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+            pst.setObject(i + 1, args[i]);
         }
     }
 }
