@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private static final RowMapper<Car> CAR_ROW_MAPPER = rs -> new Car(rs.getLong(1),
+        rs.getString(2), rs.getInt(3));
     private static final JdbcDataSource JDBC_DATA_SOURCE = new JdbcDataSource();
 
     static {
@@ -108,7 +110,6 @@ class JdbcTemplateTest {
         assertThat(car.getName()).isEqualTo("car2");
     }
 
-
     public static class Car {
 
         private final Long id;
@@ -121,10 +122,6 @@ class JdbcTemplateTest {
             this.speed = speed;
         }
 
-        public Long getId() {
-            return id;
-        }
-
         public String getName() {
             return name;
         }
@@ -133,8 +130,5 @@ class JdbcTemplateTest {
             return speed;
         }
     }
-
-    public static final RowMapper<Car> CAR_ROW_MAPPER = (rs) -> new Car(rs.getLong(1),
-        rs.getString(2), rs.getInt(3));
 
 }

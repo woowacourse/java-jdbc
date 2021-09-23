@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +28,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, (pstmt) -> {
+        return execute(sql, pstmt -> {
             ResultSet rs = pstmt.executeQuery();
             List<T> targets = new ArrayList<>();
 
@@ -39,11 +42,11 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         final List<T> result = queryForList(sql, rowMapper, args);
         if (result.isEmpty()) {
-            throw new RuntimeException("no result!");
+            throw new EmptyResultDataAccessException();
         }
         if (result.size() > 1) {
             log.info("Size is {}", result.size());
-            throw new RuntimeException("result is more than one!");
+            throw new IncorrectResultSizeDataAccessException();
         }
         return result.get(0);
     }
@@ -57,7 +60,7 @@ public class JdbcTemplate {
             return logic.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
     }
 
