@@ -8,7 +8,10 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class JdbcTemplate {
 
@@ -20,15 +23,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public List<Map<String, Object>> queryForList(final String query) {
+        return query(query, new ColumnMapRowMapper());
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+    public <T> T query(final String sql, final ResultSetExtractor<T> rse) {
+        return execute(new SimplePreparedStatement(sql), rse);
+    }
+
     public void queryDML(final String query, @Nullable Object... args) {
         execute(new SimplePreparedStatement(query), new ArgumentPreparedStatementSetter(args));
     }
 
-    public void queryDML(final String query) {
-        execute(new SimplePreparedStatement(query));
-    }
-
-    private void execute(PreparedStatementCreator psc, PreparedStatementSetter pss) {
+    private void execute(PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
         Connection conn = null;
         PreparedStatement pstmt = null;
 
@@ -57,18 +68,27 @@ public class JdbcTemplate {
         }
     }
 
-    private void execute(PreparedStatementCreator stmt) {
+    private <T> T execute(PreparedStatementCreator psc, final ResultSetExtractor<T> rse) {
         Connection conn = null;
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
         try {
             conn = dataSource.getConnection();
-            pstmt = stmt.createPreparedStatement(conn);
-            pstmt.executeUpdate();
+            pstmt = psc.createPreparedStatement(conn);
+            final ResultSet resultSet = pstmt.executeQuery();
+            return rse.extractData(resultSet);
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
             try {
                 if (pstmt != null) {
                     pstmt.close();
