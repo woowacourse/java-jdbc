@@ -74,7 +74,7 @@ class UserDaoTest {
 
         assertThat(users).isNotEmpty();
         assertThat(users).hasSize(1);
-        assertThat(users.get(0).getId()).isNotNull();
+        assertThat(users.get(0).getId()).isGreaterThan(0);
         assertThat(users.get(0).getAccount()).isEqualTo(user.getAccount());
         assertThat(users.get(0).getPassword()).isEqualTo(user.getPassword());
     }
