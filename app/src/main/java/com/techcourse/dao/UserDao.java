@@ -54,18 +54,6 @@ public class UserDao {
                 .collect(Collectors.toList());
     }
 
-    private User mapToUser(List<Map<String, Object>> maps) {
-        if (maps.size() == 0) {
-            return null;
-        }
-        return new User(
-                (Long) maps.get(0).get("USERS_ID"),
-                (String) maps.get(0).get("USERS_ACCOUNT"),
-                (String) maps.get(0).get("USERS_PASSWORD"),
-                (String) maps.get(0).get("USERS_EMAIL")
-        );
-    }
-
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
@@ -113,6 +101,19 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private User mapToUser(List<Map<String, Object>> maps) {
+        if (maps.size() == 0) {
+            return null;
+        }
+
+        return new User(
+                (Long) maps.get(0).get("users_id"),
+                (String) maps.get(0).get("users_account"),
+                (String) maps.get(0).get("users_password"),
+                (String) maps.get(0).get("users_email")
+        );
     }
 
     public User findByAccount(String account) {

@@ -1,5 +1,7 @@
 package nextstep.jdbc;
 
+import nextstep.util.LinkedCaseInsensitiveMap;
+
 import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,7 +14,7 @@ public class ColumnMapRowMapper implements RowMapper<Map<String, Object>> {
         try {
             final ResultSetMetaData rsmd = rs.getMetaData();
             final int columnCount = rsmd.getColumnCount();
-            final Map<String, Object> mapOfColumnValues = new LinkedHashMap<>(columnCount);
+            final Map<String, Object> mapOfColumnValues = new LinkedCaseInsensitiveMap<>(columnCount);
             for (int idx = 1; idx <= columnCount; idx++) {
                 final String columnName = lookupColumnName(rsmd, idx);
                 mapOfColumnValues.putIfAbsent(columnName, getColumnValue(rs, idx));
