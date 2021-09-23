@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,11 @@ class UserDaoTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteAll();
     }
 
     @Test
@@ -71,5 +77,18 @@ class UserDaoTest {
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @DisplayName("등록된 모든 user를 삭제한다.")
+    @Test
+    void deleteAll() {
+        // given
+        assertThat(userDao.findAll()).isNotEmpty();
+
+        // when
+        userDao.deleteAll();
+
+        // then
+        assertThat(userDao.findAll()).isEmpty();
     }
 }
