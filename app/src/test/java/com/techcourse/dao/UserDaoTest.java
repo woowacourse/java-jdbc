@@ -5,23 +5,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
-
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        userDao = new UserDao(jdbcTemplate);
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void teardown() throws SQLException {
+        String sql = "drop table users";
+        try (Connection conn = DataSourceConfig.getInstance().getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.execute();
+        }
     }
 
     @Test
@@ -29,6 +40,7 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users.size()).isEqualTo(1);
     }
 
     @Test

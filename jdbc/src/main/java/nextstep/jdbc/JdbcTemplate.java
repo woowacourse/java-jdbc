@@ -20,50 +20,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException();
-        }
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            ResultSet rs = pstmt.executeQuery();
-
-            if (!rs.next()) {
-                throw new SQLException("no result!");
-            }
-            return rowMapper.mapRow(rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException();
-        }
+    public int update(String sql, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return execute(sql, (pstmt) -> {
             ResultSet rs = pstmt.executeQuery();
             List<T> targets = new ArrayList<>();
 
@@ -71,9 +33,37 @@ public class JdbcTemplate {
                 targets.add(rowMapper.mapRow(rs));
             }
             return targets;
+        }, args);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        final List<T> result = queryForList(sql, rowMapper, args);
+        if (result.isEmpty()) {
+            throw new RuntimeException("no result!");
+        }
+        if (result.size() > 1) {
+            log.info("Size is {}", result.size());
+            throw new RuntimeException("result is more than one!");
+        }
+        return result.get(0);
+    }
+
+    private <T> T execute(String sql, Execute<T> logic, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            return logic.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException();
         }
+    }
+
+    @FunctionalInterface
+    private interface Execute<T> {
+
+        T execute(PreparedStatement pstmt) throws SQLException;
     }
 }
