@@ -13,8 +13,6 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private final DataSource dataSource;
 
     public UserDao(DataSource dataSource) {
@@ -52,11 +50,7 @@ public class UserDao {
         RowMapper rowMapper = rs -> {
             ArrayList<User> users = new ArrayList<>();
             while (rs.next()) {
-                User user = new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                User user = mapToUser(rs);
                 users.add(user);
             }
             return users;
@@ -73,11 +67,7 @@ public class UserDao {
             if (!rs.next()) {
                 return null;
             }
-            return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
+            return mapToUser(rs);
         };
 
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource);
@@ -92,15 +82,19 @@ public class UserDao {
             if (!rs.next()) {
                 return null;
             }
-            return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
+            return mapToUser(rs);
         };
 
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate(dataSource);
         return (User) selectJdbcTemplate.query(sql, pss, rowMapper);
+    }
+
+    private User mapToUser(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
     }
 
     public void clear() {
