@@ -29,9 +29,9 @@ public abstract class AbstractJdbcTemplate {
 
     protected <T> T executeQuery(StatementStrategy stmt, ResultSetExtractor<T> rse) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement ps = stmt.makePreparedStatement(conn)
-        ) {
+            PreparedStatement ps = stmt.makePreparedStatement(conn);
             ResultSet rs = ps.executeQuery();
+        ) {
             return rse.extractData(rs);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
@@ -40,10 +40,9 @@ public abstract class AbstractJdbcTemplate {
 
     protected <T> List<T> executeQuery(StatementStrategy stmt, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement ps = stmt.makePreparedStatement(conn)
-        ) {
+            PreparedStatement ps = stmt.makePreparedStatement(conn);
             ResultSet rs = ps.executeQuery();
-
+        ) {
             List<T> result = new ArrayList<>();
 
             int rowNum = 1;
@@ -54,6 +53,8 @@ public abstract class AbstractJdbcTemplate {
             return result;
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+
         }
     }
 }
