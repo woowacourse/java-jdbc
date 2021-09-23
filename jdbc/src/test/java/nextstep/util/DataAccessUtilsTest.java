@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import exception.DataAccessException;
 import exception.IncorrectDataSizeException;
 import java.util.List;
-import nextstep.util.DataAccessUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
