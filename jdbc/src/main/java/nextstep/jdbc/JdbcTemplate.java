@@ -1,10 +1,11 @@
 package nextstep.jdbc;
 
+import nextstep.exception.DataAccessException;
 import nextstep.exception.connectioon.ConnectionAcquisitionFailureException;
-import nextstep.exception.connectioon.ConnectionCloseFailureException;
 import nextstep.exception.statement.StatementExecutionFailureException;
 import nextstep.exception.statement.StatementInitializationFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
+import nextstep.jdbc.resultset.ResultSetExtractor;
 import nextstep.jdbc.statement.StatementExecutionStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -32,10 +34,19 @@ public class JdbcTemplate {
     public <T> T executeForObject(String sql, ObjectMapper<T> objectMapper, Object... args) {
         StatementExecutionStrategy<T> singleObjectStrategy = pstmt -> {
             ResultSet resultSet = pstmt.executeQuery();
-            resultSet.next();
-            return objectMapper.mapObject(resultSet);
+            ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(objectMapper);
+            return resultSetExtractor.extractSingleObject(resultSet);
         };
         return context(sql, singleObjectStrategy, args);
+    }
+
+    public <T> List<T> executeForList(String sql, ObjectMapper<T> objectMapper, Object... args) {
+        StatementExecutionStrategy<List<T>> listStrategy = pstmt -> {
+            ResultSet resultSet = pstmt.executeQuery();
+            ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(objectMapper);
+            return resultSetExtractor.extractList(resultSet);
+        };
+        return context(sql, listStrategy, args);
     }
 
     private <T> T context(String sql, StatementExecutionStrategy<T> executionStrategy, Object... args) {
@@ -46,7 +57,7 @@ public class JdbcTemplate {
             log.debug("query : {}, {}", sql, args);
             return applyStrategy(executionStrategy, pstmt);
         } catch (SQLException e) {
-            throw new ConnectionCloseFailureException(e.getMessage());
+            throw new DataAccessException(e.getMessage());
         }
     }
 
