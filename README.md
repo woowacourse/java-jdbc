@@ -8,11 +8,11 @@
 
 - [ ] JdbcTemplate으로 분리하기
   - [x] void를 리턴하는 update 메서드 분리하기
-  - [ ] Object, Collection을 리턴하는 query 메서드 분리하기
+  - [x] Object, Collection을 리턴하는 query 메서드 분리하기
   - [ ] Template 및 Callback의 적용
 
-- [ ] 라이브러리 확장
-  - [ ] SQLException을 CustomException으로 변경하기
-  - [ ] RowMapper를 제네릭을 사용해서 구현하기
-  - [ ] PreparedStatementSetter를 가변 인자를 이용해서 구현하기
-  - [ ] 람다를 활용해서 코드량을 줄이기
+- [x] 라이브러리 확장
+  - [x] SQLException을 CustomException으로 변경하기
+  - [x] RowMapper를 제네릭을 사용해서 구현하기
+  - [x] PreparedStatementSetter를 가변 인자를 이용해서 구현하기
+  - [x] 람다를 활용해서 코드량을 줄이기

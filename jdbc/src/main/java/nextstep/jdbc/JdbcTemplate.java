@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import exception.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,37 +31,22 @@ public class JdbcTemplate {
         );
     }
 
-    private int execute(PreparedStatementStrategy strategy) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = strategy.makePreparedStatement(conn);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+     return result(query(sql, new RowMapperResultSetExtractor<>(rowMapper)));
+    }
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+    private <T> List<T> result(List<T> query) {
+        return query;
+    }
+
+    public <T> List<T> query(final String sql, final RowMapperResultSetExtractor<T> rse) {
+        return execute(conn -> conn.prepareStatement(sql), rse);
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
+        List<T> result = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
         // todo, dataaccessutils
-        return results.get(0);
+        return result.get(0);
     }
 
     private <T> List<T> query(String sql, Object[] args, RowMapperResultSetExtractor<T> rse) {
@@ -68,7 +54,7 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapperResultSetExtractor<T> rse) {
-        return query(
+        return execute(
             conn -> {
                 PreparedStatement preparedStatement = conn.prepareStatement(sql);
                 pss.setValues(preparedStatement);
@@ -78,39 +64,26 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> List<T> query(PreparedStatementStrategy strategy, RowMapperResultSetExtractor<T> rse) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+    private int execute(PreparedStatementStrategy strategy) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = strategy.makePreparedStatement(conn))
+        {
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = strategy.makePreparedStatement(conn);
-            rs = pstmt.executeQuery();
+    private <T> List<T> execute(PreparedStatementStrategy strategy, RowMapperResultSetExtractor<T> rse) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = strategy.makePreparedStatement(conn);
+            ResultSet rs = pstmt.executeQuery())
+        {
             return rse.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            throw new DataAccessException(e);
         }
     }
 }

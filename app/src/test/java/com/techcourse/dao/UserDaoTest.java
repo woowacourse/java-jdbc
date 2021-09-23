@@ -1,28 +1,27 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 class UserDaoTest {
 
     private UserDao userDao;
+    private User user;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -58,11 +57,36 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("userDao에 등록된 모든 유저를 조회한다. - 데이터의 개수가 0개일 때")
+    void findAllWhenZero() {
+        userDao.deleteAll();
+
+        // given - when
+        final List<User> users = userDao.findAll();
+        // then
+        assertThat(users).isEmpty();
+    }
+
+    @Test
+    @DisplayName("userDao에 등록된 모든 유저를 조회한다. - 데이터의 개수가 하나일 때")
     void findAll() {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
         assertThat(users).hasSize(1);
+        assertThat(users.get(0).getId()).isNotNull();
+        assertThat(users.get(0).getAccount()).isEqualTo(user.getAccount());
+        assertThat(users.get(0).getPassword()).isEqualTo(user.getPassword());
+    }
+
+    @Test
+    @DisplayName("userDao에 등록된 모든 유저를 조회한다. - 데이터의 개수가 두개 이상일 때")
+    void findAllWhenMoreThanOne() {
+        userDao.insert(new User("joanne", "1234", "joanne@woowahan.com"));
+        final List<User> users = userDao.findAll();
+
+        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(2);
     }
 
     @Test
