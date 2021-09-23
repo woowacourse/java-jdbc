@@ -27,7 +27,7 @@ class UserDaoTest {
     }
 
     @AfterEach
-    void tearDown() throws SQLException {
+    void tearDown() {
         userDao.deleteAll();
     }
 
@@ -84,7 +84,7 @@ class UserDaoTest {
 
     @DisplayName("등록된 모든 user를 삭제한다.")
     @Test
-    void deleteAll() throws SQLException {
+    void deleteAll() {
         // given
         assertThat(userDao.findAll()).isNotEmpty();
 

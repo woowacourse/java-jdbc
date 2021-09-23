@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package com.techcourse.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeleteAllStatement implements StatementStrategy{
+public class DeleteAllStatement implements StatementStrategy {
     private static final Logger log = LoggerFactory.getLogger(DeleteAllStatement.class);
     @Override
     public PreparedStatement makePreparedStatement(Connection conn) throws SQLException {

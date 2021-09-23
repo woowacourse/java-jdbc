@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package com.techcourse.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -8,8 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.DeleteAllStatement;
-import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,36 +22,8 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        StatementStrategy statementStrategy = new InsertStatement(user);
+        jdbcContextWithStatementStrategy(statementStrategy);
     }
 
     private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
@@ -247,11 +217,11 @@ public class UserDao {
         }
     }
 
-    public void deleteAll() throws SQLException {
+    public void deleteAll() {
        jdbcContextWithStatementStrategy(new DeleteAllStatement());
     }
 
-    public void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) throws SQLException {
+    public void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
