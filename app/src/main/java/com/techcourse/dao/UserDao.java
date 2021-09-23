@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.PreparedStatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,33 +17,22 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
+    private final JdbcTemplate jdbcTemplate;
     private final DataSource dataSource;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
-        jdbcContextWithStatementStrategy(conn -> {
-            String sql = "insert into users (account, password, email) values (?, ?, ?)";
-            log.debug("query : {}", sql);
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            return pstmt;
-        });
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
-        jdbcContextWithStatementStrategy(conn -> {
-            String sql = "update users set password = ? where email = ?";
-            log.debug("query : {}", sql);
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, user.getPassword());
-            pstmt.setString(2, user.getEmail());
-            return pstmt;
-        });
+        String sql = "update users set password = ? where email = ?";
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
@@ -199,12 +190,12 @@ public class UserDao {
         });
     }
 
-    public void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) {
+    public void jdbcContextWithStatementStrategy(PreparedStatementStrategy preparedStatementStrategy) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = statementStrategy.makePreparedStatement(conn);
+            pstmt = preparedStatementStrategy.makePreparedStatement(conn);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

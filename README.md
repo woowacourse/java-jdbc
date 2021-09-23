@@ -7,9 +7,9 @@
   - [x] findByAccount
 
 - [ ] JdbcTemplate으로 분리하기
-  - [ ] 중복된 메서드를 추출해서 클래스로 분리하기 
-  - [ ] Template 적용
-  - [ ] Callback 적용
+  - [x] void를 리턴하는 update 메서드 분리하기
+  - [ ] Object, Collection을 리턴하는 query 메서드 분리하기
+  - [ ] Template 및 Callback의 적용
 
 - [ ] 라이브러리 확장
   - [ ] SQLException을 CustomException으로 변경하기
