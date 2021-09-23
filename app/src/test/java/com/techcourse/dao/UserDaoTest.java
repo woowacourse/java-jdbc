@@ -46,12 +46,12 @@ class UserDaoTest {
     @DisplayName("user의 비밀번호를 수정한다.")
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findByAccount("gugu");
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findByAccount("gugu");
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -66,7 +66,9 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(
+            userDao.findByAccount("gugu").getId()
+        );
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
