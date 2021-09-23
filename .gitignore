@@ -124,3 +124,4 @@ gen
 build
 
 /tomcat.8080/
+/app/jacoco/jacoco.xml

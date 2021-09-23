@@ -7,7 +7,7 @@ import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> userRowMapper = (rs) -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs) -> new User(
         rs.getLong(1),
         rs.getString(2),
         rs.getString(3),
@@ -32,21 +32,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, userRowMapper);
+        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
-    }
-
-    public int remove(String account) {
-        final String sql = "delete from users where account = ?";
-        return jdbcTemplate.update(sql, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
