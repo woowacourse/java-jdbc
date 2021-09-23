@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.JdbcContext;
+import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,13 +18,15 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcContext jdbcContext;
 
-    public UserDao(DataSource dataSource) {
+    public UserDao(DataSource dataSource, JdbcContext jdbcContext) {
         this.dataSource = dataSource;
+        this.jdbcContext = jdbcContext;
     }
 
     public void insert(final User user) {
-        jdbcContextWithStatementStrategy(connection -> {
+        this.jdbcContext.workWithStatementStrategy(connection -> {
             final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
             final PreparedStatement pstmt = connection.prepareStatement(sql);
@@ -37,7 +41,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        jdbcContextWithStatementStrategy(connection -> {
+        this.jdbcContext.workWithStatementStrategy(connection -> {
             final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
             final PreparedStatement pstmt = connection.prepareStatement(sql);
@@ -180,34 +184,6 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
-    private void jdbcContextWithStatementStrategy(StatementStrategy statementStrategy) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = statementStrategy.makePreparedStatement(conn);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
             try {
                 if (pstmt != null) {
                     pstmt.close();

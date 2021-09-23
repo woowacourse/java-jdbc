@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import nextstep.jdbc.JdbcContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(DataSourceConfig.getInstance(), new JdbcContext(DataSourceConfig.getInstance()));
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

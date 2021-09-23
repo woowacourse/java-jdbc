@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
