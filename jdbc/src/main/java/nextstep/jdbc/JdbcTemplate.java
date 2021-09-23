@@ -46,4 +46,15 @@ public class JdbcTemplate extends AbstractJdbcTemplate{
             rowMapper
         );
     }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(
+            (conn) -> {
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                setParameters(preparedStatement, args);
+                return preparedStatement;
+            },
+            rowMapper
+        );
+    }
 }

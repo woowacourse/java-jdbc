@@ -1,7 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,13 +13,17 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> mapper = (rs, rowNum) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+        );
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
 
     public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.dataSource = dataSource;
     }
 
     public void insert(User user) {
@@ -45,54 +51,20 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select * from users";
-        return jdbcTemplate.query(
-            sql,
-            (rs, rowNum) -> {
-                return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email")
-                );
-            }
-        );
+        return jdbcTemplate.query(sql, mapper);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return this.jdbcTemplate.query(
-            sql,
-            (rs) -> {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                return null;
-            },
-            id
-        );
+        return this.jdbcTemplate.query(sql, mapper, id)
+            .stream().findFirst();
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return this.jdbcTemplate.query(
-            sql,
-            (rs) -> {
-                if (rs.next()) {
-                    return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-                }
-                return null;
-            },
-            account
-        );
+        return this.jdbcTemplate.query(sql, mapper, account)
+            .stream().findFirst();
     }
 }
