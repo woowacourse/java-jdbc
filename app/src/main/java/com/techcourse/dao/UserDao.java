@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.mapper.ObjectMapper;
@@ -7,10 +8,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+
+    private static UserDao instance;
+
+    private final JdbcTemplate jdbcTemplate;
 
     private final ObjectMapper<User> userMapper = resultSet -> new User(
             resultSet.getLong("id"),
@@ -19,10 +26,17 @@ public class UserDao {
             resultSet.getString("email")
     );
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(JdbcTemplate jdbcTemplate) {
+    private UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public static UserDao getInstance() {
+        if (Objects.isNull(instance)) {
+            instance = new UserDao(
+                    new JdbcTemplate(DataSourceConfig.getInstance())
+            );
+        }
+        return instance;
     }
 
     public int insert(User user) {
@@ -30,14 +44,14 @@ public class UserDao {
         return jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.executeForObject(sql, userMapper, id);
+        return Optional.ofNullable(jdbcTemplate.executeForObject(sql, userMapper, id));
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.executeForObject(sql, userMapper, account);
+        return Optional.ofNullable(jdbcTemplate.executeForObject(sql, userMapper, account));
     }
 
     public List<User> findAll() {

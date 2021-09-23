@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.datasource.DatabasePopulatorUtils;
-import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,42 +15,54 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private Long dummyId;
 
     @BeforeEach
     void setup() {
         URL url = getClass().getClassLoader().getResource("schema.sql");
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), url);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userDao = new UserDao(jdbcTemplate);
+        userDao = UserDao.getInstance();
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+        final User createdUser = userDao.findByAccount("gugu").orElseThrow(IllegalStateException::new);
+        dummyId = createdUser.getId();
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteById(dummyId);
     }
 
     @Test
     void insert() {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
+
         int affectedCount = userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
-
         assertThat(affectedCount).isEqualTo(1);
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(userDao.findByAccount(account))
+                .get()
+                .extracting(User::getAccount)
+                .isEqualTo(account);
     }
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
-
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(userDao.findById(dummyId))
+                .get()
+                .extracting(User::getAccount)
+                .isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(userDao.findByAccount(account))
+                .get()
+                .extracting(User::getId)
+                .isEqualTo(dummyId);
     }
 
     @Test
@@ -63,21 +75,19 @@ class UserDaoTest {
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(dummyId).orElseThrow(IllegalStateException::new);
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findById(dummyId).orElseThrow(IllegalStateException::new);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
     void deleteById() {
-        final long id = 1L;
-
-        final int affectedResult = userDao.deleteById(1L);
+        final int affectedResult = userDao.deleteById(dummyId);
 
         assertThat(affectedResult).isEqualTo(1);
     }
