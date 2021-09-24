@@ -18,13 +18,11 @@ public class UserDao {
     private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
-    private final DeleteAllJdbcTemplate deleteAllJdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.updateJdbcTemplate = new UpdateJdbcTemplate();
-        this.deleteAllJdbcTemplate = new DeleteAllJdbcTemplate();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public User insert(User user) {
@@ -133,10 +131,14 @@ public class UserDao {
     }
 
     public int update(User user) {
-        return updateJdbcTemplate.update(dataSource, user);
+        final String sql = "update users set account=?, password=?, email=? where id=?";
+
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public int deleteAll() {
-        return deleteAllJdbcTemplate.deleteAll(dataSource);
+        final String sql = "delete from users";
+
+        return jdbcTemplate.update(sql);
     }
 }
