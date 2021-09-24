@@ -34,21 +34,14 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
-        try (connection; statement) {
-            int index = 1;
-            for (Object arg : args) {
-                statement.setObject(index++, arg);
-            }
-
-            ResultSet resultSet = statement.executeQuery();
+        return execute(query, preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
             List<T> result = new ArrayList<>();
-            if (resultSet.next()) {
+            while (resultSet.next()) {
                 result.add(rowMapper.map(resultSet));
             }
             return result;
-        }
+        }, args);
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
