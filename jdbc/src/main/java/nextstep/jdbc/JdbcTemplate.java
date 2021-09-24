@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.jdbc.exception.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private DataSource dataSource;
 
@@ -48,19 +45,16 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(PreparedStatementCreator preparedStatementCreator) {
-        return execute(preparedStatementCreator, PreparedStatement::executeUpdate);
+    public void update(PreparedStatementCreator preparedStatementCreator) {
+        execute(preparedStatementCreator, PreparedStatement::executeUpdate);
     }
 
     private <T> T execute(PreparedStatementCreator preparedStatementCreator, PreparedStatementCallback<T> action) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
-
-            T result = action.doInPreparedStatement(preparedStatement);
-            return result;
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
-            throw new RuntimeException();
+            throw new DataAccessException("execute exception");
         }
     }
 
