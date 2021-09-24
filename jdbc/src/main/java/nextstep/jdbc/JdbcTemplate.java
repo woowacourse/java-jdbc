@@ -52,19 +52,27 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
-        try (connection; statement) {
-            int index = 1;
-            for (Object arg : args) {
-                statement.setObject(index++, arg);
-            }
-
-            ResultSet resultSet = statement.executeQuery();
+        return execute(query, preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.map(resultSet);
             }
+            return null;
+        }, args);
+    }
+
+    public <T> T execute(String query, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        try (connection; preparedStatement) {
+            int index = 1;
+            for (Object arg : args) {
+                preparedStatement.setObject(index++, arg);
+            }
+            return preparedStatementExecutor.execute(preparedStatement);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
-        throw new SQLException();
     }
 }
