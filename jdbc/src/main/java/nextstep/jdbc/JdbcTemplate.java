@@ -26,7 +26,7 @@ public class JdbcTemplate {
         PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)){
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             log.debug("query : {}", query);
 
@@ -41,42 +41,60 @@ public class JdbcTemplate {
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... values) {
 
         PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
+        ResultSet rs = null;
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)){
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             log.debug("query : {}", query);
 
             pstmtSetter.setValues(pstmt);
-            ResultSet rs = executeQuery(pstmt);
+            rs = executeQuery(pstmt);
             rs.next();
             return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                throw new DataAccessException("ResultSet close Error");
+            }
         }
     }
 
     public <T> List<T> queryForList(String query, RowMapper<T> rowMapper, Object... values) {
         PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
+        ResultSet rs = null;
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)){
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             log.debug("query : {}", query);
 
             pstmtSetter.setValues(pstmt);
-            ResultSet rs = executeQuery(pstmt);
+            rs = executeQuery(pstmt);
 
             List<T> result = new ArrayList<>();
 
-            while(rs.next()) {
+            while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                throw new DataAccessException("ResultSet close Error");
+            }
         }
     }
 
