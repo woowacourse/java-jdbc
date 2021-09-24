@@ -22,10 +22,12 @@ public class JdbcTemplate {
     }
 
     public void update(String query, Object... args) throws SQLException {
+        log.info("JdbcTemplate.update, query: {}", query);
         execute(query, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        log.info("JdbcTemplate.query, query: {}", query);
         return execute(query, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
             List<T> result = new ArrayList<>();
@@ -37,6 +39,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        log.info("JdbcTemplate.queryForObject, query: {}", query);
         return execute(query, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
@@ -46,7 +49,7 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> T execute(String query, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) throws SQLException {
+    private <T> T execute(String query, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) throws SQLException {
         Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         try (connection; preparedStatement) {
@@ -56,7 +59,7 @@ public class JdbcTemplate {
             }
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.debug("JdbcTemplate execution failed: {}", e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
     }
