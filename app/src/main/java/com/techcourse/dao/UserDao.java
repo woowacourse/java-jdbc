@@ -35,8 +35,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users";
+        return jdbcTemplate.queryForList(sql, userRowMapper());
     }
 
     public User findById(Long id) {
@@ -48,7 +48,7 @@ public class UserDao {
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
     }
-    
+
     private RowMapper<User> userRowMapper() {
         return (rs, rm) -> new User(
                 rs.getLong(1),
