@@ -14,7 +14,6 @@ import java.util.List;
 
 public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
@@ -24,15 +23,19 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementSetter pstmtSetter) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
+            log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) throws DataAccessException {
+    public void update(String sql, Object... parameters) throws DataAccessException {
+        update(sql, createPreparedStatementSetter(parameters));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) throws DataAccessException {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -49,11 +52,23 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) throws DataAccessException {
-        List<T> result = query(sql, pstmtSetter, rowMapper);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        return query(sql, rowMapper, createPreparedStatementSetter(parameters));
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        List<T> result = query(sql, rowMapper, createPreparedStatementSetter(parameters));
         if (result.isEmpty()) {
             return null;
         }
         return result.get(0);
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(Object... parameters) {
+        return pstmt -> {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
+        };
     }
 }

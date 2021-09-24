@@ -14,4 +14,4 @@
   - [x] mapRow, setValues 인터페이스로 분리
   - [x] Unchecked Exception 추가
   - [x] RowMapper 제네릭 사용하도록 수정
-  - [ ] PreparedStatementSetter 가변인자를 사용하도록 수정
+  - [x] PreparedStatementSetter 가변인자를 사용하도록 수정
