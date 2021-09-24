@@ -7,7 +7,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,12 +20,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query, Object... args) throws SQLException {
+    public void update(String query, Object... args) {
         log.info("JdbcTemplate.update, query: {}", query);
         execute(query, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
+    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) {
         log.info("JdbcTemplate.query, query: {}", query);
         return execute(query, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -38,7 +37,7 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
+    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) {
         log.info("JdbcTemplate.queryForObject, query: {}", query);
         return execute(query, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -49,10 +48,9 @@ public class JdbcTemplate {
         }, args);
     }
 
-    private <T> T execute(String query, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        try (connection; preparedStatement) {
+    private <T> T execute(String query, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             int index = 1;
             for (Object arg : args) {
                 preparedStatement.setObject(index++, arg);
