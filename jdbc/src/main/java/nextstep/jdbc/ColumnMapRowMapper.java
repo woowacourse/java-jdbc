@@ -3,7 +3,6 @@ package nextstep.jdbc;
 import nextstep.util.LinkedCaseInsensitiveMap;
 
 import java.sql.*;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 

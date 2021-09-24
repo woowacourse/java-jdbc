@@ -17,26 +17,38 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
-    public void setDataSource(DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public List<Map<String, Object>> queryForList(final String query) {
-        return query(query, new ColumnMapRowMapper());
+    public List<Map<String, Object>> queryForList(final String sql) {
+        return query(sql, new ColumnMapRowMapper());
+    }
+
+    public List<Map<String, Object>> queryForList(final String sql, @Nullable Object... args) {
+        return query(sql, args, new ColumnMapRowMapper());
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
     }
 
+    public <T> List<T> query(String sql, @Nullable Object[] args, RowMapper<T> rowMapper) {
+        return query(sql, args, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
     public <T> T query(final String sql, final ResultSetExtractor<T> rse) {
         return execute(new SimplePreparedStatement(sql), rse);
     }
 
-    public void queryDML(final String query, @Nullable Object... args) {
-        execute(new SimplePreparedStatement(query), new ArgumentPreparedStatementSetter(args));
+    public <T> T query(final String sql, @Nullable Object[] args, final ResultSetExtractor<T> rse) {
+        return execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args), rse);
+    }
+
+    public void queryDML(final String sql, @Nullable Object... args) {
+        execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
     private void execute(PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
@@ -77,8 +89,46 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = psc.createPreparedStatement(conn);
             final ResultSet resultSet = pstmt.executeQuery();
-            return rse.extractData(resultSet);
 
+            return rse.extractData(resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    private <T> T execute(PreparedStatementCreator psc, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = dataSource.getConnection();
+            pstmt = psc.createPreparedStatement(conn);
+            pss.setValue(pstmt);
+            final ResultSet resultSet = pstmt.executeQuery();
+
+            return rse.extractData(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

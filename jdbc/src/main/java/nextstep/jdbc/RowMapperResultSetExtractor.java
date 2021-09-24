@@ -25,7 +25,7 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
     @Override
     public List<T> extractData(ResultSet rs) {
         List<T> results = initializeList();
-        int rowNum=0;
+        int rowNum = 0;
         try {
             while (rs.next()) {
                 results.add(this.rowMapper.mapRow(rs, rowNum++));
