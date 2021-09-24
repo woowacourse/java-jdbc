@@ -24,14 +24,18 @@ public class RegisterController {
                 request.getParameter("password"),
                 request.getParameter("email"));
         if (userDao.findByAccount(account).isPresent()) {
-            return new ModelAndView(new JspView("redirect:/500.jsp"));
+            return redirect("/500.jsp");
         }
         userDao.insert(user);
-        return new ModelAndView(new JspView("redirect:/"));
+        return redirect("/");
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
         return new ModelAndView(new JspView("/register.jsp"));
+    }
+
+    private ModelAndView redirect(String path) {
+        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }
