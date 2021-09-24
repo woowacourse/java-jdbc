@@ -57,15 +57,14 @@ class UserDaoTest {
     void findById() {
         User user = userDao.findById(savedUser.getId());
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user).isEqualTo(savedUser);
     }
 
     @Test
     void findByAccount() {
-        String account = "gugu";
-        User user = userDao.findByAccount(account);
+        User user = userDao.findByAccount(savedUser.getAccount());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user).isEqualTo(savedUser);
     }
 
     @Test
