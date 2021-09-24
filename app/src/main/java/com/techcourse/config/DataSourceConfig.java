@@ -23,5 +23,10 @@ public class DataSourceConfig {
         return jdbcDataSource;
     }
 
+    private static void foo() {
+        String path = "/h2-console";
+        String urlMapping = path + (path.endsWith("/") ? "*" : "/*");
+    }
+
     private DataSourceConfig() {}
 }

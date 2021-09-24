@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class UserDao {
@@ -59,7 +60,7 @@ public class UserDao {
     }
 
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id as users_id, account as users_account, " +
                 "password as users_password, email as users_email " +
                 "from users " +
@@ -67,7 +68,7 @@ public class UserDao {
         log.debug("query : {}", sql);
         final List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, account);
 
-        return mapToUser(result);
+        return Optional.ofNullable(mapToUser(result));
     }
 
     public void deleteAll() {

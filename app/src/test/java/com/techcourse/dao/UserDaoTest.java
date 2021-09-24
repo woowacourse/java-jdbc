@@ -47,7 +47,7 @@ class UserDaoTest {
         //given
         final String account = "gugu";
         //when
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(account).get();
         //then
         assertThat(user.getAccount()).isEqualTo(account);
     }
