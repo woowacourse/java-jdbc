@@ -31,7 +31,16 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set account=?, password=?, email=? where id=?";
+
+        jdbcTemplate.update(connection -> {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+            return preparedStatement;
+        });
     }
 
     public List<User> findAll() {
