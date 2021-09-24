@@ -28,23 +28,31 @@ public class JdbcTemplate {
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) {
         log.info("JdbcTemplate.query, query: {}", query);
         return execute(query, preparedStatement -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(rowMapper.map(resultSet));
+                }
+                return result;
+            } catch (Exception e) {
+                log.debug("ResultSet failed: {}", e.getMessage());
+                throw new JdbcTemplateException(e.getMessage());
             }
-            return result;
         }, args);
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) {
         log.info("JdbcTemplate.queryForObject, query: {}", query);
         return execute(query, preparedStatement -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.map(resultSet);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return rowMapper.map(resultSet);
+                }
+                return null;
+            } catch (Exception e) {
+                log.debug("ResultSet failed: {}", e.getMessage());
+                throw new JdbcTemplateException(e.getMessage());
             }
-            return null;
         }, args);
     }
 
