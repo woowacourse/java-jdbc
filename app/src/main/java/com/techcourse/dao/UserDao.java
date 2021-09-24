@@ -15,12 +15,16 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
+    private final DeleteAllJdbcTemplate deleteAllJdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.updateJdbcTemplate = new UpdateJdbcTemplate();
+        this.deleteAllJdbcTemplate = new DeleteAllJdbcTemplate();
     }
 
     public User insert(User user) {
@@ -30,7 +34,7 @@ public class UserDao {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
         ) {
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -46,7 +50,7 @@ public class UserDao {
                 throw new SQLException();
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -58,7 +62,7 @@ public class UserDao {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             ResultSet rs = pstmt.executeQuery();
 
@@ -69,7 +73,7 @@ public class UserDao {
 
             return users;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -81,7 +85,7 @@ public class UserDao {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             pstmt.setLong(1, id);
             ResultSet rs = pstmt.executeQuery();
@@ -96,7 +100,7 @@ public class UserDao {
                 throw new SQLException();
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -108,7 +112,7 @@ public class UserDao {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
+            LOG.debug("query : {}", sql);
 
             pstmt.setString(1, account);
             ResultSet rs = pstmt.executeQuery();
@@ -123,45 +127,16 @@ public class UserDao {
                 throw new SQLException();
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
     public int update(User user) {
-        final String sql = "update users set account=?, password=?, email=? where id=?";
-
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return updateJdbcTemplate.update(dataSource, user);
     }
 
     public int deleteAll() {
-        final String sql = "delete from users";
-
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return deleteAllJdbcTemplate.deleteAll(dataSource);
     }
 }
