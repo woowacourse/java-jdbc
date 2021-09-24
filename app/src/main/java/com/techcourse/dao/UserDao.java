@@ -19,13 +19,13 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        log.info("UserDao.insert, user:{}", user.toString());
+        log.info("UserDao.insert");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
-        log.info("UserDao.update, user:{}", user.toString());
+        log.info("UserDao.update");
         final String sql = "update users set password=? where id=?";
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
@@ -37,13 +37,13 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        log.info("UserDao.findById, userId:{}", id);
+        log.info("UserDao.findById");
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, userMapper(), id);
     }
 
     public User findByAccount(String account) {
-        log.info("UserDao.findByAccount, userAccount:{}", account);
+        log.info("UserDao.findByAccount");
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userMapper(), account);
     }
