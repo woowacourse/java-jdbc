@@ -36,7 +36,6 @@ public class JdbcTemplate {
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
         Connection connection = dataSource.getConnection();
         PreparedStatement statement = connection.prepareStatement(query);
-
         try (connection; statement) {
             int index = 1;
             for (Object arg : args) {
@@ -55,7 +54,6 @@ public class JdbcTemplate {
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
         Connection connection = dataSource.getConnection();
         PreparedStatement statement = connection.prepareStatement(query);
-
         try (connection; statement) {
             int index = 1;
             for (Object arg : args) {

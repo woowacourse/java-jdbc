@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,31 +31,24 @@ public class UserDao {
 
     public List<User> findAll() throws SQLException {
         final String sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql,
-                (resultSet, rowNum) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")));
+        return jdbcTemplate.query(sql, userMapper());
     }
 
     public User findById(Long id) throws SQLException {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql,
-                (resultSet, rowNum) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")), id);
+        return jdbcTemplate.queryForObject(sql, userMapper(), id);
     }
 
     public User findByAccount(String account) throws SQLException {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql,
-                (resultSet, rowNum) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")), account);
+        return jdbcTemplate.queryForObject(sql, userMapper(), account);
+    }
+
+    private RowMapper<User> userMapper() {
+        return (resultSet, rowNum) -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email"));
     }
 }
