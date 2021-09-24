@@ -45,7 +45,7 @@ public class JdbcTemplate {
             ResultSet resultSet = statement.executeQuery();
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
-                result.add(rowMapper.map(resultSet, resultSet.getRow()));
+                result.add(rowMapper.map(resultSet));
             }
             return result;
         }
@@ -62,7 +62,7 @@ public class JdbcTemplate {
 
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                return rowMapper.map(resultSet, resultSet.getRow());
+                return rowMapper.map(resultSet);
             }
         }
         throw new SQLException();
