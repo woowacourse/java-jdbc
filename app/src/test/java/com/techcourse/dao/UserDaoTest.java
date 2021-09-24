@@ -11,11 +11,14 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import nextstep.jdbc.datasource.DataSourceConfig;
+import nextstep.jdbc.exception.DataAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -95,5 +98,19 @@ class UserDaoTest {
         final User actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    @DisplayName("동일한 이름으로 가입시 가입되지 않음")
+    void rollback() {
+        final User user = new User("gugu", "password2", "hkkang2@woowahan.com");
+        int originalSize = userDao.findAll().size();
+
+        assertThatThrownBy(() -> userDao.insert(user))
+                .isInstanceOf(DataAccessException.class);
+
+        int afterSize = userDao.findAll().size();
+
+        assertThat(originalSize).isEqualTo(afterSize);
     }
 }
