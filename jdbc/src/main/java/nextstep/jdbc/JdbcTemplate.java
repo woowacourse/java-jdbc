@@ -60,7 +60,7 @@ public class JdbcTemplate {
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (Exception e) {
             log.debug("JdbcTemplate execution failed: {}", e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            throw new JdbcTemplateException(e.getMessage());
         }
     }
 }
