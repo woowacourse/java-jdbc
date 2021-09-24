@@ -22,15 +22,7 @@ public class JdbcTemplate {
     }
 
     public void update(String query, Object... args) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        PreparedStatement statement = connection.prepareStatement(query);
-        try (connection; statement) {
-            int index = 1;
-            for (Object arg : args) {
-                statement.setObject(index++, arg);
-            }
-            statement.executeUpdate();
-        }
+        execute(query, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... args) throws SQLException {
