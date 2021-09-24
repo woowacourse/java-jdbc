@@ -13,14 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private User savedUser;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
+        savedUser = userDao.insert(user);
     }
 
     @Test
@@ -31,44 +32,48 @@ class UserDaoTest {
 
         // when
         User insertedUser = userDao.insert(user);
-        User actual = userDao.findById(insertedUser.getId());
 
         // then
+        User actual = userDao.findById(insertedUser.getId());
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
     void findAll() {
-        final List<User> users = userDao.findAll();
+        List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        User user = userDao.findById(savedUser.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        String account = "gugu";
+        User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
-        final String newPassword = "password99";
-        final User user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        // given
+        String newPassword = "password99";
 
-        userDao.update(user);
+        User beforeChangeUser = userDao.findById(savedUser.getId());
+        assertThat(beforeChangeUser.getPassword()).isNotEqualTo(newPassword);
 
-        final User actual = userDao.findById(1L);
+        // when
+        beforeChangeUser.changePassword(newPassword);
+        userDao.update(beforeChangeUser);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        // then
+        User afterChangeUser = userDao.findById(savedUser.getId());
+        assertThat(afterChangeUser.getPassword()).isEqualTo(newPassword);
     }
 }
