@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.JdbcContext;
+import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,43 +18,31 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final JdbcContext jdbcContext;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource, JdbcContext jdbcContext) {
+    public UserDao(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         this.dataSource = dataSource;
-        this.jdbcContext = jdbcContext;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-        this.jdbcContext.workWithStatementStrategy(connection -> {
-            final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-            final PreparedStatement pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-
-            log.info("query : {}", sql);
-
-            return pstmt;
-        });
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        try {
+            this.jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public void update(final User user) {
-        this.jdbcContext.workWithStatementStrategy(connection -> {
-            final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-            final PreparedStatement pstmt = connection.prepareStatement(sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-
-            log.info("query : {}", sql);
-
-            return pstmt;
-        });
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        try {
+            this.jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public List<User> findAll() {
