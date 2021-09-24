@@ -19,6 +19,7 @@ public class UserDao {
     }
 
     public void insert(User user) {
+        log.debug("insert : " + user);
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(connection -> {
@@ -31,6 +32,7 @@ public class UserDao {
     }
 
     public void update(User user) {
+        log.debug("update : " + user);
         final String sql = "update users set account=?, password=?, email=? where id=?";
 
         jdbcTemplate.update(connection -> {
@@ -44,16 +46,19 @@ public class UserDao {
     }
 
     public List<User> findAll() {
+        log.debug("findAll : ");
         final String sql = "select id, account, password, email from users";
         return jdbcTemplate.queryForList(sql, userRowMapper());
     }
 
     public User findById(Long id) {
+        log.debug("findById : " + id);
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper(), id);
     }
 
     public User findByAccount(String account) {
+        log.debug("findByAccount : " + account);
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
     }
