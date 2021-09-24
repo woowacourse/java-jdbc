@@ -1,19 +1,20 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import javax.sql.DataSource;
+
+import com.techcourse.domain.User;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
 
@@ -22,22 +23,24 @@ public class UserDao {
     }
 
     public void insert(User user) {
+        LOGGER.info("UserDao insert executed");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = dataSource.getConnection();
+            LOGGER.debug("connection:" + conn.toString());
             pstmt = conn.prepareStatement(sql);
 
-            log.debug("query : {}", sql);
+            LOGGER.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
@@ -55,7 +58,17 @@ public class UserDao {
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set password = ? where id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, user.getPassword());
+            preparedStatement.setLong(2, user.getId());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public List<User> findAll() {
@@ -75,7 +88,7 @@ public class UserDao {
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
+            LOGGER.debug("query : {}", sql);
 
             if (rs.next()) {
                 return new User(
@@ -86,7 +99,7 @@ public class UserDao {
             }
             return null;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {

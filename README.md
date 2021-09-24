@@ -7,7 +7,7 @@
 ## 구현할 기능 목록
 
 - [ ] UserDao 구현
-  - [ ] update 메서드 구현
+  - [x] update 메서드 구현
   - [ ] findAll 구현
   - [ ] findByAccount 구현
 
