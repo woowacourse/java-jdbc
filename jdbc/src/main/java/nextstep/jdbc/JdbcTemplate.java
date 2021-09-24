@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -26,26 +28,32 @@ public class JdbcTemplate {
             pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) throws DataAccessException {
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) throws DataAccessException {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
-            rs = executeQuery(pstmt);
+            rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
-            return rowMapper.mapRow(rs);
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) throws DataAccessException {
+        List<T> result = query(sql, pstmtSetter, rowMapper);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
     }
 }

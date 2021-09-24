@@ -13,5 +13,5 @@
   - [x] SelectJdbcTemplate에 템플릿 메서드 패턴 적용
   - [x] mapRow, setValues 인터페이스로 분리
   - [x] Unchecked Exception 추가
-  - [ ] RowMapper 제네릭 사용하도록 수정
+  - [x] RowMapper 제네릭 사용하도록 수정
   - [ ] PreparedStatementSetter 가변인자를 사용하도록 수정
