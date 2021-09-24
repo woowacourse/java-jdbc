@@ -37,6 +37,10 @@ public class JdbcTemplate<T> {
         });
     }
 
+    public T queryForObject(String sql, Class<T> requiredType, Object org) throws DataAccessException {
+        return queryForObject(sql, new SingleColumnRowMapper<T>(requiredType), org);
+    }
+
     public T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.notNullSingleResult(results);
