@@ -3,7 +3,9 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -22,6 +24,11 @@ class UserDaoTest {
 
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         savedUser = userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteAll();
     }
 
     @Test
@@ -43,6 +50,7 @@ class UserDaoTest {
         List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users).containsExactly(savedUser);
     }
 
     @Test
@@ -75,5 +83,19 @@ class UserDaoTest {
         // then
         User afterChangeUser = userDao.findById(savedUser.getId());
         assertThat(afterChangeUser.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void deleteAll() {
+        // given
+        List<User> users = userDao.findAll();
+        assertThat(users).isNotEmpty();
+
+        // when
+        int deletedCount = userDao.deleteAll();
+
+        // then
+        assertThat(userDao.findAll()).isEmpty();
+        assertThat(deletedCount).isEqualTo(users.size());
     }
 }
