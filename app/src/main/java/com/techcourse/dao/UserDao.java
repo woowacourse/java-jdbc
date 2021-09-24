@@ -49,4 +49,11 @@ public class UserDao {
         List<User> users = jdbcTemplate.query(sql, userRowMapper, account);
         return Optional.ofNullable(DataAccessUtils.singleResult(users));
     }
+
+    public void cleanUp() {
+        final String deleteSql = "delete from users";
+        final String alterSql = "alter table users alter column id restart with 1";
+        jdbcTemplate.update(deleteSql);
+        jdbcTemplate.update(alterSql);
+    }
 }

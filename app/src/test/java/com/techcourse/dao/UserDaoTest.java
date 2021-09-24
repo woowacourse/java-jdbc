@@ -6,22 +6,23 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
-    private final AtomicLong seq = new AtomicLong(1);
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu" + seq.getAndIncrement(), "password", "hkkang@woowahan.com");
+        userDao.cleanUp();
+
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -36,7 +37,7 @@ class UserDaoTest {
     void findById() {
         final User user = userDao.findById(1L).orElseThrow();
 
-        assertThat(user.getAccount()).isEqualTo("gugu1");
+        assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
@@ -47,6 +48,7 @@ class UserDaoTest {
 
         final User user = userDao.findByAccount(account).orElseThrow();
 
+        System.out.println(user);
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
