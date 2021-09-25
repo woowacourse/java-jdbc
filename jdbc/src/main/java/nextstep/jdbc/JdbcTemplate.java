@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +40,13 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, new RowMapperExtractor<>(rowMapper), createPreparedStatementSetter(args));
 
-        if (result.size() > 1) {
-            throw new IllegalStateException("조회된 데이터가 2개 이상입니다.");
+        if (result.isEmpty()) {
+            throw new DataAccessException("조회된 데이터가 없습니다.");
         }
+        if (result.size() > 1) {
+            throw new DataAccessException("조회된 데이터가 2개 이상입니다.");
+        }
+
         return result.get(0);
     }
 
@@ -66,7 +71,7 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
