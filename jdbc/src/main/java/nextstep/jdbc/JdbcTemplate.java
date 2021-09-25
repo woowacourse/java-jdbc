@@ -22,30 +22,43 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) throws DataAccessException {
+    public static int updateCount(Integer integer) {
+        return integer;
+    }
+
+    public void execute(String sql) {
         try (final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.info(sql);
+            pstmt.execute();
+        } catch (SQLException throwables) {
+            log.error("execute error");
+        }
+
+    }
+
+    public <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) throws DataAccessException {
+        try (final Connection conn = dataSource.getConnection()) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            log.info("query : {}", sql);
-            return pstmt.executeUpdate();
+
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            throw new DataAccessException("update SQLException", e);
+            throw new DataAccessException("execute SQLException", e);
         }
     }
 
+    public int update(String sql, Object... args) throws DataAccessException {
+        log.info(sql);
+        return updateCount(execute(sql, ps -> ps.executeUpdate(), args));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            log.info("query : {}", sql);
-
-            try (final ResultSet rs = pstmt.executeQuery()) {
+        return execute(sql, ps -> {
+            try (final ResultSet rs = ps.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 int rowNum = 0;
                 while (rs.next()) {
@@ -53,9 +66,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("query SQLException", e);
-        }
+        }, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
