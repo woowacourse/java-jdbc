@@ -26,8 +26,8 @@ public class UserDao {
     }
 
     public void update(User user) {
-        final String sql = "update into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -47,9 +47,10 @@ public class UserDao {
 
     private RowMapper<User> userMapper() {
         return (rs, rm) -> new User(
-                rs.getString("name"),
-                rs.getString("name"),
-                rs.getString("description")
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
         );
     }
 }

@@ -70,7 +70,7 @@ public class JdbcTemplate {
                 PreparedStatement preparedStatement = conn.prepareStatement(sql);
         ) {
             for (int i = 0; i < params.length; i++) {
-                preparedStatement.setObject(i, params);
+                preparedStatement.setObject(i + 1, params[i]);
             }
 
             log.debug("query : {}", sql);
