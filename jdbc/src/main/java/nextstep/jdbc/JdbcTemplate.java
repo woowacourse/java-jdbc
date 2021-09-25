@@ -24,7 +24,7 @@ public class JdbcTemplate {
     public void insert(String sql, Object... args) {
         class CreateTemplate implements ActionTemplate {
             @Override
-            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+            public <T> T action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
                 setValues(pst, args);
                 pst.executeUpdate();
                 return null;
@@ -36,7 +36,7 @@ public class JdbcTemplate {
     public void update(String sql, Object... args) {
         class UpdateTemplate implements ActionTemplate {
             @Override
-            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+            public <T> T action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
                 setValues(pst, args);
                 pst.executeUpdate();
                 return null;
@@ -45,12 +45,12 @@ public class JdbcTemplate {
         makeResult(new UpdateTemplate(), sql, args);
     }
 
-    public List<?> query(String sql, RowMapper<?> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         class FindAllTemplate implements ActionTemplate {
             @Override
-            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
-                try (ResultSet rs = pst.executeQuery();) {
-                    List<Object> result = new ArrayList<>();
+            public List<T> action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+                try (ResultSet rs = pst.executeQuery()) {
+                    List<T> result = new ArrayList<>();
                     while (rs.next()) {
                         result.add(rowMapper.mapRow(rs));
                     }
@@ -58,16 +58,16 @@ public class JdbcTemplate {
                 }
             }
         }
-        return (List<?>) makeResult(new FindAllTemplate(), sql, null);
+        return makeResult(new FindAllTemplate(), sql, null);
     }
 
-    public Object queryObject(String sql, RowMapper<?> rowMapper, Object... args) {
+    public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... args) {
         class FindTemplate implements ActionTemplate {
             @Override
-            public Object action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
+            public T action(PreparedStatement pst, String sql, Object[] args) throws SQLException {
                 setValues(pst, args);
 
-                try (ResultSet rs = pst.executeQuery();) {
+                try (ResultSet rs = pst.executeQuery()) {
                     if (rs.next()) {
                         return rowMapper.mapRow(rs);
                     }
@@ -78,15 +78,14 @@ public class JdbcTemplate {
         return makeResult(new FindTemplate(), sql, args);
     }
 
-    private Object makeResult(ActionTemplate actionTemplate, String sql, Object[] args) {
+    private <T> T makeResult(ActionTemplate actionTemplate, String sql, Object[] args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pst = conn.prepareStatement(sql);
+             PreparedStatement pst = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             return actionTemplate.action(pst, sql, args);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcCustomException(e.getMessage());
         }
     }
 
