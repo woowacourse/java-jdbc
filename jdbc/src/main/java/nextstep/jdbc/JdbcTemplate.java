@@ -39,18 +39,20 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> userRowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         LOGGER.info("sql query: {}", sql);
         List<T> queryResults = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            ResultSet rs = preparedStatement.executeQuery();
         ) {
-            int rowNumber = 1;
-            while (rs.next()) {
-                queryResults.add(userRowMapper.mapRow(rs, rowNumber++));
+            setPreparedStatementWithArgs(preparedStatement, args);
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                int rowNumber = 1;
+                while (rs.next()) {
+                    queryResults.add(rowMapper.mapRow(rs, rowNumber++));
+                }
+                return queryResults;
             }
-            return queryResults;
         } catch (SQLException exception) {
             LOGGER.debug("exception occurred while sql execute");
             LOGGER.debug("exception message: {}", exception.getMessage());
@@ -59,6 +61,6 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> userRowMapper, final Object... args) {
-        return null;
+        return query(sql, userRowMapper, args).get(0);
     }
 }
