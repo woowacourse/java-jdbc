@@ -30,8 +30,4 @@ public class ModelAndView {
     public View getView() {
         return view;
     }
-
-    public static ModelAndView redirect(String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
-    }
 }

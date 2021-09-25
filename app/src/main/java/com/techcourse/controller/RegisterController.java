@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.mvc.view.util.ViewRedirectHelper;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -25,7 +26,7 @@ public class RegisterController {
                 request.getParameter("email"));
 
         UserDao.insert(user);
-        return ModelAndView.redirect("/index.jsp");
+        return ViewRedirectHelper.redirect("/index.jsp");
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
