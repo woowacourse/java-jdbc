@@ -18,21 +18,31 @@ public abstract class AbstractJdbcTemplate {
     }
 
     protected void executeUpdate(StatementStrategy stmt) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement ps = stmt.makePreparedStatement(conn);
-        ) {
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        doBinghe(stmt, new Binghe<Integer>() {
+            @Override
+            public Integer doSomething(PreparedStatement ps) throws SQLException {
+                return ps.executeUpdate();
+            }
+        });
+//        doBinghe(stmt, PreparedStatement::executeUpdate);
     }
 
     protected <T> T executeQuery(StatementStrategy stmt, ResultSetExtractor<T> rse) {
+        return doBinghe(stmt, new Binghe<T>() {
+            @Override
+            public T doSomething(PreparedStatement ps) throws SQLException {
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rse.extractData(rs);
+                }
+            }
+        });
+    }
+
+    private <T> T doBinghe(StatementStrategy stmt, Binghe<T> binghe) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement ps = stmt.makePreparedStatement(conn);
-            ResultSet rs = ps.executeQuery();
         ) {
-            return rse.extractData(rs);
+          return binghe.doSomething(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -53,8 +63,10 @@ public abstract class AbstractJdbcTemplate {
             return result;
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
-        } finally {
-
         }
+    }
+
+    private interface Binghe<T> {
+        T doSomething(PreparedStatement ps) throws SQLException;
     }
 }
