@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -25,13 +24,17 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, rowMapper, args);
+        return query(sql, rowMapper, args)
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new DataAccessException("No Data Found"));
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        CallBack<T> execution = pstm -> {
-            ResultSet rs = pstm.executeQuery();
-            return rowMapper.apply(rs);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        CallBack<List<T>> execution = pstm -> {
+            try (ResultSet rs = pstm.executeQuery()) {
+                return ResultSetExtractor.extract(rs, rowMapper);
+            }
         };
 
         return execute(sql, args, execution);
@@ -43,11 +46,17 @@ public class JdbcTemplate {
             PreparedStatement pstm = conn.prepareStatement(sql);
         ) {
             log.info("query : {}", sql);
-            new ArgumentsSetter().setArguments(pstm, args);
+            setArguments(pstm, args);
             return sqlExecution.execute(pstm);
         } catch (SQLException e) {
             log.error("SQLException thrown: {}", e.getMessage());
             throw new DataAccessException(e.getMessage());
+        }
+    }
+
+    public void setArguments(PreparedStatement pstm, Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstm.setObject(i + 1, args[i]);
         }
     }
 }
