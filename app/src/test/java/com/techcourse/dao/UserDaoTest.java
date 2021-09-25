@@ -18,7 +18,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao();
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -26,7 +26,8 @@ class UserDaoTest {
     @Test
     void findAll() {
         final List<User> users = userDao.findAll();
-
+        User gugu = users.get(0);
+        assertThat(gugu.getAccount()).isEqualTo("gugu");
         assertThat(users).isNotEmpty();
     }
 
