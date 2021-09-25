@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,12 @@ class JdbcTemplateTest {
         dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         dataSource.setUser("");
         dataSource.setPassword("");
+
+        String dropSql = "drop table users if exists";
+        try (Connection conn = dataSource.getConnection();
+             Statement st = conn.createStatement()) {
+            st.execute(dropSql);
+        }
 
         String sql = "create table if not exists users (\n" +
                 "    id bigint auto_increment,\n" +
