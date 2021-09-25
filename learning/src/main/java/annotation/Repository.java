@@ -7,6 +7,8 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@AliasFor(annotation = Component.class)
+@Component
 public @interface Repository {
     String value() default "";
 }
