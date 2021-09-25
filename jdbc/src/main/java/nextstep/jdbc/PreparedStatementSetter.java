@@ -3,8 +3,7 @@ package nextstep.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public interface PreparedStatementSetter {
+public interface PreparedStatementSetter<T> {
 
-    void setValues(PreparedStatement pstmt) throws SQLException;
-
+    T execute(PreparedStatement pstmt) throws SQLException;
 }

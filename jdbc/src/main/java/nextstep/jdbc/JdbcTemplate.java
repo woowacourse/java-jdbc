@@ -18,53 +18,45 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object ... parameters) {
-        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetterImpl(parameters);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        }
+        execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... parameters) {
-        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetterImpl(parameters);
-        ResultSet rs = null;
-
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            preparedStatementSetter.setValues(pstmt);
-            rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            throw new IllegalArgumentException();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
                 }
-            } catch (SQLException ignored) {}
-        }
+                return null;
+            } catch (Exception e) {
+                throw new DataAccessException(e.getMessage());
+            }
+        }, parameters);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()) {
-
-            List<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rowMapper.mapRow(rs));
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(rowMapper.mapRow(rs));
+                }
+                return list;
+            } catch (SQLException e) {
+                throw new DataAccessException(e.getMessage());
             }
+        });
+    }
 
-            return list;
+    private <T> T execute(String sql, PreparedStatementSetter<T> preparedStatementSetter, Object ... parameters) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int index = 1;
+            for (Object parameter : parameters) {
+                pstmt.setObject(index, parameter);
+                index++;
+            }
+            return preparedStatementSetter.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
