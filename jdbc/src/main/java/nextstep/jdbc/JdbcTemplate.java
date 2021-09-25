@@ -26,29 +26,28 @@ public class JdbcTemplate {
         return integer;
     }
 
-    public void execute(String sql) {
-        try (final Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.info(sql);
-            pstmt.execute();
-        } catch (SQLException throwables) {
-            log.error("execute error");
-        }
-
-    }
-
-    public <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) throws DataAccessException {
+    public <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
+            PreparedStatement pstmt = psc.createPreparedStatement(conn);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("execute SQLException", e);
         }
+    }
+
+    public void execute(String sql) {
+        class ExecuteStatementCallback implements PreparedStatementCallback<Object> {
+            @Override
+            public Object doInPreparedStatement(PreparedStatement pstmt) throws SQLException {
+                pstmt.execute();
+                return null;
+            }
+        }
+        execute(new SimplePreparedStatementCreator(sql), new ExecuteStatementCallback());
+    }
+
+    public <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) throws DataAccessException {
+        return execute(new PreparedStatementCreatorImpl(sql, args), action);
     }
 
     public int update(String sql, Object... args) throws DataAccessException {
@@ -72,5 +71,38 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
         List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
+    }
+
+    private static class SimplePreparedStatementCreator implements PreparedStatementCreator {
+        private final String sql;
+
+        public SimplePreparedStatementCreator(String sql) {
+            this.sql = sql;
+        }
+
+        @Override
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
+            return conn.prepareStatement(sql);
+        }
+    }
+
+    private static class PreparedStatementCreatorImpl implements PreparedStatementCreator {
+        private final String sql;
+        private final Object[] args;
+
+        public PreparedStatementCreatorImpl(String sql, Object[] args) {
+            this.sql = sql;
+            this.args = args;
+        }
+
+        @Override
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            return pstmt;
+        }
     }
 }
