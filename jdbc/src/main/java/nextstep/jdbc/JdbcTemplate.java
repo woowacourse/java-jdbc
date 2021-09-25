@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,7 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             LOGGER.debug("exception occurred while sql execute");
             LOGGER.debug("exception message: {}", exception.getMessage());
+            throw new DataAccessException();
         }
     }
 
@@ -41,12 +43,12 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         LOGGER.info("sql query: {}", sql);
-        List<T> queryResults = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
             setPreparedStatementWithArgs(preparedStatement, args);
             try (ResultSet rs = preparedStatement.executeQuery()) {
+                List<T> queryResults = new ArrayList<>();
                 int rowNumber = 1;
                 while (rs.next()) {
                     queryResults.add(rowMapper.mapRow(rs, rowNumber++));
@@ -56,11 +58,19 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             LOGGER.debug("exception occurred while sql execute");
             LOGGER.debug("exception message: {}", exception.getMessage());
-            return queryResults;
+            throw new DataAccessException();
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> userRowMapper, final Object... args) {
-        return query(sql, userRowMapper, args).get(0);
+        List<T> results = query(sql, userRowMapper, args);
+        validateQueryForObject(results);
+        return results.get(0);
+    }
+
+    private <T> void validateQueryForObject(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new DataAccessException("찾는 데이터가 없습니다.");
+        }
     }
 }
