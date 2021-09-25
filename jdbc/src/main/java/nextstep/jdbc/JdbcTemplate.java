@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.exception.EmptyResultDataAccessException;
-import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.utils.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) throws DataAccessException {
+    public int update(String sql, Object... args) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -32,7 +30,7 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
             log.info("query : {}", sql);
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("update SQLException", e);
         }
