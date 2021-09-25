@@ -21,11 +21,11 @@ public class LoginController {
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
         return UserSession.getUserFrom(request.getSession())
-                .map(user -> {
-                    log.info("logged in {}", user.getAccount());
-                    return redirect("/index.jsp");
-                })
-                .orElse(new ModelAndView(new JspView("/login.jsp")));
+            .map(user -> {
+                log.info("logged in {}", user.getAccount());
+                return redirect("/index.jsp");
+            })
+            .orElse(new ModelAndView(new JspView("/login.jsp")));
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
