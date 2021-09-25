@@ -15,26 +15,31 @@ public class UserDao {
     private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     public static void insert(User user) {
+        log.info("UserDao insert Method");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public static void update(User user) {
+        log.info("UserDao update Method");
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public static List<User> findAll() {
+        log.info("UserDao findAll Method");
         final String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, userRowMapper());
     }
 
     public static User findById(Long id) {
+        log.info("UserDao findById Method");
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper(), id);
     }
 
     public static User findByAccount(String account) {
+        log.info("UserDao findByAccount Method");
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
     }
