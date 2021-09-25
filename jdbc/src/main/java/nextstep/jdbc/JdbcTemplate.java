@@ -22,33 +22,31 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
-        execute(sql, pstmt -> {
-            setter.setValues(pstmt);
-            return pstmt.executeUpdate();
-        });
+        execute(sql, pstmt -> setValues(pstmt, args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
         RowMapperResultSetExtractor<T> extractor = new RowMapperResultSetExtractor<>(mapper);
-        PreparedStatementSetter setter = argumentPreparedStatementSetter(args);
-        return execute(sql, pstmt -> {
-            ResultSet resultSet = null;
-            try {
-                setter.setValues(pstmt);
-                resultSet = pstmt.executeQuery();
-                return extractor.extractData(resultSet);
-            } finally {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            }
-        });
+        return execute(sql,
+                pstmt -> setValues(pstmt, args),
+                pstmt -> {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return extractor.extractData(resultSet);
+                    }
+                });
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            Object value = args[i];
+            pstmt.setObject(i + 1, value);
+        }
+    }
+
+    private <T> T execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setter.setValues(pstmt);
             log.debug("query : {}", sql);
             return callback.execute(pstmt);
         } catch (SQLException e) {
@@ -61,9 +59,5 @@ public class JdbcTemplate {
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new DataAccessException("존재하지 않는 데이터입니다."));
-    }
-
-    private PreparedStatementSetter argumentPreparedStatementSetter(Object[] args) {
-        return new ArgumentPreparedStatementSetter(args);
     }
 }
