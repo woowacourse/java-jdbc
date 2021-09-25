@@ -23,7 +23,7 @@ public class LoginController {
         return UserSession.getUserFrom(request.getSession())
                 .map(user -> {
                     log.info("logged in {}", user.getAccount());
-                    return redirect("/index.jsp");
+                    return ModelAndView.redirect("/index.jsp");
                 })
                 .orElse(new ModelAndView(new JspView("/login.jsp")));
     }
@@ -31,7 +31,7 @@ public class LoginController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ModelAndView login(HttpServletRequest request, HttpServletResponse response) {
         if (UserSession.isLoggedIn(request.getSession())) {
-            return redirect("/index.jsp");
+            return ModelAndView.redirect("/index.jsp");
         }
 
         return login(request, UserDao.findByAccount(request.getParameter("account")));
@@ -41,13 +41,9 @@ public class LoginController {
         if (user.checkPassword(request.getParameter("password"))) {
             final HttpSession session = request.getSession();
             session.setAttribute(UserSession.SESSION_KEY, user);
-            return redirect("/index.jsp");
+            return ModelAndView.redirect("/index.jsp");
         } else {
-            return redirect("/401.jsp");
+            return ModelAndView.redirect("/401.jsp");
         }
-    }
-
-    private ModelAndView redirect(String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }

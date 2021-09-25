@@ -25,7 +25,7 @@ public class RegisterController {
                 request.getParameter("email"));
 
         UserDao.insert(user);
-        return redirect("/index.jsp");
+        return ModelAndView.redirect("/index.jsp");
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
@@ -33,7 +33,4 @@ public class RegisterController {
         return new ModelAndView(new JspView("/register.jsp"));
     }
 
-    private ModelAndView redirect(String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
-    }
 }

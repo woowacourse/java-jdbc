@@ -5,7 +5,6 @@ import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
-import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
@@ -28,9 +27,5 @@ public class UserController {
         final User user = UserDao.findByAccount(account);
         modelAndView.addObject("user", user);
         return modelAndView;
-    }
-
-    private ModelAndView redirect(String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }
