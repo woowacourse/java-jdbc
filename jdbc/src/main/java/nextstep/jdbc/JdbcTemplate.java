@@ -60,7 +60,7 @@ public class JdbcTemplate {
             return execution.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage());
-            throw new JdbcExecutionException();
+            throw new JdbcExecutionException(e.getMessage());
         }
     }
 
