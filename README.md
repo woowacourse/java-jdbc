@@ -7,4 +7,4 @@
 - [x] 예외처리 (커스텀 익셉션)
 - [ ] 트랜잭션 관리 (...??)
 - [x] Connection, Statement, ResultSet close (try-with-resource 사용)
-- [ ] Insert 아이디 발급 편의를 위해 SimpleJdbcInsert 만들어보기
+- [x] Insert 아이디 발급 편의를 위해 SimpleJdbcInsert 만들어보기

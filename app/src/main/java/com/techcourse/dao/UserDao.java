@@ -6,10 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.SimpleJdbcInsert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,38 +28,23 @@ public class UserDao {
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
+    private final SimpleJdbcInsert jdbcInsert;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcInsert = new SimpleJdbcInsert(dataSource, "users", "id");
     }
 
     public User insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        Map<String, String> parameters = new HashMap<>();
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        ) {
-            LOG.debug("query : {}", sql);
+        parameters.put("account", user.getAccount());
+        parameters.put("password", user.getPassword());
+        parameters.put("email", user.getEmail());
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-
-            pstmt.executeUpdate();
-
-            ResultSet generatedKeys = pstmt.getGeneratedKeys();
-
-            if (generatedKeys.next()) {
-                return User.generateId(generatedKeys.getLong(1), user);
-            } else {
-                throw new SQLException();
-            }
-        } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        Long id = (Long) jdbcInsert.executeAndReturnKey(parameters);
+        return User.generateId(id, user);
     }
 
     public List<User> findAll() {
