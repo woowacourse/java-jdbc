@@ -32,7 +32,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        jdbcTemplate.query(sql, userMapper());
+        return jdbcTemplate.query(sql, userMapper());
     }
 
     public User findById(Long id) {

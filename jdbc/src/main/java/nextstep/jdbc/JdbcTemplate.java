@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,11 +55,11 @@ public class JdbcTemplate {
 
     private <T> void validateResultsForObject(List<T> results) {
         if(results.size() <= 0) {
-            throw new IllegalArgumentException("조회할 대상이 없습니다");
+            throw new EmptyResultDataAccessException("조회할 결과가 존재하지 않습니다.");
         }
 
         if(results.size() > 1) {
-            throw new IllegalArgumentException("조회할 대상이 한개가 아닙니다.");
+            throw new IncorrectResultSizeDataAccessException("조회할 결과의 개수가 두 개 이상입니다.");
         }
     }
 
