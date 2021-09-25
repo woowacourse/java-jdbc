@@ -1,11 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +9,11 @@ import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import nextstep.jdbc.SimpleJdbcInsert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.web.annotation.Repository;
 
+@Repository
 public class UserDao {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> MAPPER = (rs) -> new User(
         rs.getLong("id"),
         rs.getString("account"),

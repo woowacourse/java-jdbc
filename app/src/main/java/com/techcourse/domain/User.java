@@ -1,5 +1,6 @@
 package com.techcourse.domain;
 
+import com.techcourse.exception.UnauthorizedException;
 import java.util.Objects;
 
 public class User {
@@ -24,8 +25,10 @@ public class User {
         return new User(id, user.account, user.password, user.email);
     }
 
-    public boolean checkPassword(String password) {
-        return this.password.equals(password);
+    public void checkPassword(String password) {
+        if (!this.password.equals(password)) {
+            throw new UnauthorizedException();
+        }
     }
 
     public void changePassword(String password) {
