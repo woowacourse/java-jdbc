@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +40,8 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
+        userDao.insert(new User("guguByAccount", "password", "hkkang@woowahan.com"));
+        final String account = "guguByAccount";
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);

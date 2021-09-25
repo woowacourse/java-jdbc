@@ -1,12 +1,10 @@
 package nextstep.jdbc;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -27,16 +25,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            pss.setValue(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
@@ -61,14 +50,20 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapperExtractor<T> extractor, PreparedStatementSetter pss) {
-        ResultSet rs = null;
+        return execute(sql, pss, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractor.extractData(rs);
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pss.setValue(pstmt);
-            rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
-            return extractor.extractData(rs);
+
+            pss.setValue(pstmt);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
