@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.StringJoiner;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.SimpleJdbcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +35,11 @@ public class SimpleJdbcInsert {
 
     private List<String> getTableColumns(DataSource dataSource) {
         try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(String.format("select * from %s", table));
-            ResultSet rs = pstmt.executeQuery()
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(String.format("select * from %s", table));
+            ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            ResultSetMetaData metaData = rs.getMetaData();
+            ResultSetMetaData metaData = resultSet.getMetaData();
             List<String> names = new ArrayList<>();
 
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -47,21 +48,20 @@ public class SimpleJdbcInsert {
             }
 
             return names;
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
+        } catch (Exception e) {
+            throw new SimpleJdbcException(String.format("초기화 중 에러가 발생했습니다. : %s", e.getMessage()));
         }
     }
 
     public Object executeAndReturnKey(Map<String, String> parameters) {
         try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(convertToSql(parameters), Statement.RETURN_GENERATED_KEYS)
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(convertToSql(parameters), Statement.RETURN_GENERATED_KEYS)
         ) {
-            pstmt.executeUpdate();
-            return convertKey(pstmt);
+            preparedStatement.executeUpdate();
+            return convertKey(preparedStatement);
         } catch (SQLException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -77,22 +77,22 @@ public class SimpleJdbcInsert {
                 columnNames.add(columnName);
                 columnValues.add(String.format("'%s'", columnValue));
             } else {
-                throw new DataAccessException("안맞아!");
+                throw new SimpleJdbcException(String.format("테이블에 컬럼이 존재하지 않습니다. [%s]", columnName));
             }
         }
 
         return String.format("insert into %s %s values %s", table, columnNames, columnValues);
     }
 
-    private Object convertKey(PreparedStatement pstmt) {
-        try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+    private Object convertKey(PreparedStatement preparedStatement) {
+        try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 return generatedKeys.getObject(keyColumn);
             } else {
-                throw new DataAccessException("");
+                throw new SimpleJdbcException(String.format("테이블에 Key로 지정된 컬럼이 존재하지 않습니다. [%s]", keyColumn));
             }
         } catch (SQLException e){
-            throw new DataAccessException("");
+            throw new DataAccessException(e.getMessage());
         }
     }
 }

@@ -30,11 +30,11 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> executeQueryAndMappingList(PreparedStatement preparedStatement, RowMapper<T> rowMapper) {
-        try (ResultSet rs = preparedStatement.executeQuery()){
+        try (ResultSet resultSet = preparedStatement.executeQuery()){
             List<T> results = new ArrayList<>();
 
-            while (rs.next()) {
-                results.add(rowMapper.map(rs));
+            while (resultSet.next()) {
+                results.add(rowMapper.map(resultSet));
             }
 
             return results;
@@ -48,9 +48,9 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQueryAndMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper) {
-        try (ResultSet rs = preparedStatement.executeQuery()){
-            if (rs.next()) {
-                return rowMapper.map(rs);
+        try (ResultSet resultSet = preparedStatement.executeQuery()){
+            if (resultSet.next()) {
+                return rowMapper.map(resultSet);
             } else {
                 throw new DataAccessException("result set has no result.");
             }
@@ -59,14 +59,14 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(StatementCallback<T> statementCallback, String sql, Object... args) {
+    private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... args) {
         LOG.debug("query : {}", sql);
 
         try (
             Connection connection = dataSource.getConnection();
-            PreparedStatement statement = createStatement(connection, sql, args)
+            PreparedStatement preparedStatement = createStatement(connection, sql, args)
         ) {
-            return statementCallback.call(statement);
+            return preparedStatementCallback.call(preparedStatement);
         } catch (SQLException e) {
             LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -74,12 +74,12 @@ public class JdbcTemplate {
     }
 
     private PreparedStatement createStatement(Connection connection, String sql, Object[] args) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(sql);
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
         for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
+            preparedStatement.setObject(i + 1, args[i]);
         }
 
-        return statement;
+        return preparedStatement;
     }
 }
