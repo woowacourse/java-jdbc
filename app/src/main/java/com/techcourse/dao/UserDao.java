@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +17,14 @@ public class UserDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-
     private final DataSource dataSource;
+
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
+        rs.getLong("id"),
+        rs.getString("account"),
+        rs.getString("password"),
+        rs.getString("email")
+    );
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -34,8 +41,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        String sql = "select * from users";
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(Long id) {
