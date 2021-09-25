@@ -14,12 +14,8 @@ import java.util.StringJoiner;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.SimpleJdbcException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SimpleJdbcInsert {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleJdbcInsert.class);
 
     private final DataSource dataSource;
     private final String table;
