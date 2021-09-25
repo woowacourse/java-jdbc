@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
+import nextstep.jdbc.exception.JdbcTemplateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,7 @@ public class JdbcTemplate {
             return query.doQuery(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e);
+            throw new JdbcTemplateException(e);
         }
     }
 
