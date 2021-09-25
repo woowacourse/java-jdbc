@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Component
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Controller {
+public @interface Service {
 }
