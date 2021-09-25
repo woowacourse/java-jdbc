@@ -1,6 +1,5 @@
 package com.techcourse.controller;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
@@ -27,7 +25,7 @@ public class UserController {
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
 
-        final User user = userDao.findByAccount(account);
+        final User user = UserDao.findByAccount(account);
         modelAndView.addObject("user", user);
         return modelAndView;
     }

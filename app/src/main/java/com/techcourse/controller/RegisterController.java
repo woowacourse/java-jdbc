@@ -1,6 +1,5 @@
 package com.techcourse.controller;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 public class RegisterController {
 
     private static final Logger log = LoggerFactory.getLogger(RegisterController.class);
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {
@@ -26,7 +24,7 @@ public class RegisterController {
                 request.getParameter("password"),
                 request.getParameter("email"));
 
-        userDao.insert(user);
+        UserDao.insert(user);
         return redirect("/index.jsp");
     }
 
