@@ -12,10 +12,10 @@ public class UserMapper implements RowMapper<User> {
         try (rs) {
             if (rs.next()) {
                 return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
                 );
             }
         }
