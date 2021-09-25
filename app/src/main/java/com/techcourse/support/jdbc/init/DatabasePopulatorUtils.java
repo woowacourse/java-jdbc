@@ -14,34 +14,30 @@ import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+
+    private DatabasePopulatorUtils() {}
 
     public static void execute(DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
         try {
             final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
             final File file = new File(url.getFile());
             final String sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
-            statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
 
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
+            executeSql(dataSource, sql);
+        } catch (NullPointerException | IOException e) {
+            LOG.error(e.getMessage(), e);
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private static void executeSql(DataSource dataSource, String sql) {
+        try (
+            Connection connection = dataSource.getConnection();
+            Statement statement = connection.createStatement()
+        ){
+            statement.execute(sql);
+        } catch (SQLException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
 }
