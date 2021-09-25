@@ -23,7 +23,7 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll()  {
+    void findAll() {
         final List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
     }

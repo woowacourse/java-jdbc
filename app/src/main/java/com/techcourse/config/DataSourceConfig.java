@@ -24,5 +24,6 @@ public class DataSourceConfig {
         return jdbcDataSource;
     }
 
-    private DataSourceConfig() {}
+    private DataSourceConfig() {
+    }
 }
