@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
+import nextstep.jdbc.utils.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,14 +62,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
         List<T> results = query(sql, rowMapper, args);
-
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
-        }
-
-        if (results.size() > 1){
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        return results.iterator().next();
+        return DataAccessUtils.nullableSingleResult(results);
     }
 }
