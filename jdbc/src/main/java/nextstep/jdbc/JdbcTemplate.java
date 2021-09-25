@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class JdbcTemplate {
 
             return results;
         } catch (SQLException e){
-            throw new RuntimeException();
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -51,10 +52,10 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return rowMapper.map(rs);
             } else {
-                throw new SQLException();
+                throw new DataAccessException("result set has no result.");
             }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new DataAccessException(e.getMessage());
         }
     }
 
