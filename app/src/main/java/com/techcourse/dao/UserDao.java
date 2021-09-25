@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.ArrayList;
+import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ public class UserDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void insert(User user) {
+    public void save(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
@@ -45,15 +46,15 @@ public class UserDao {
         return jdbcTemplate.queryAsList(sql, USER_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, USER_MAPPER, id);
+        return Optional.of(jdbcTemplate.query(sql, USER_MAPPER, id));
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, USER_MAPPER, account);
+        return Optional.of(jdbcTemplate.query(sql, USER_MAPPER, account));
     }
 }

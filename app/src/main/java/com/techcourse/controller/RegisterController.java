@@ -1,7 +1,7 @@
 package com.techcourse.controller;
 
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.repository.UserDaoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
@@ -19,7 +19,7 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        InMemoryUserRepository.save(user);
+        UserDaoRepository.USER_DAO.save(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
