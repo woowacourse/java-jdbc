@@ -6,10 +6,10 @@
 
 ## 구현할 기능 목록
 
-- [ ] UserDao 구현
+- [x] UserDao 구현
   - [x] update 메서드 구현
   - [x] findAll 메서드 구현
-  - [ ] findByAccount 메서드 구현
+  - [x] findByAccount 메서드 구현
 
 - [ ] UserDao에서 JdbcTemplate을 이용하도록 리팩터링
 
