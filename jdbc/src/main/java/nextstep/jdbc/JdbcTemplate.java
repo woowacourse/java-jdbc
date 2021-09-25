@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class JdbcTemplate {
 
@@ -20,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @NonNull Object... args) {
         log.debug("jdbcTemplate queryForObject method - query : " + sql);
         return execute(sql, args, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -33,7 +35,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @NonNull Object... args) {
         log.debug("jdbcTemplate query method - query : " + sql);
         return execute(sql, args, pstmt -> {
             List<T> results = new ArrayList<>();
@@ -46,7 +48,7 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(String sql, Object... args) {
+    public void update(String sql, @NonNull Object... args) {
         log.debug("jdbcTemplate update method - query : " + sql);
         execute(sql, args, PreparedStatement::executeUpdate);
     }
@@ -65,8 +67,10 @@ public class JdbcTemplate {
     }
 
     private void setStatementArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+        if (Objects.nonNull(args)) {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
         }
     }
 }
