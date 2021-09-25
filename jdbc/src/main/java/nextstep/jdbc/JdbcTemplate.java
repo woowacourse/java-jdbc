@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
@@ -43,17 +44,17 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(preparedStatement -> executeQueryAndMapping(preparedStatement, rowMapper), sql, args);
     }
 
-    private <T> T executeQueryAndMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper) {
+    private <T> Optional<T> executeQueryAndMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper) {
         try (ResultSet resultSet = preparedStatement.executeQuery()){
             if (resultSet.next()) {
-                return rowMapper.map(resultSet);
-            } else {
-                throw new DataAccessException("result set has no result.");
+                return Optional.of(rowMapper.map(resultSet));
             }
+
+            return Optional.empty();
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }

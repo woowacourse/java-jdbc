@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.exception.UserNotFoundException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class UserDaoTest {
         User insertedUser = userDao.insert(user);
 
         // then
-        User actual = userDao.findById(insertedUser.getId());
+        User actual = userDao.findById(insertedUser.getId()).orElseThrow(UserNotFoundException::new);
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
@@ -55,14 +56,15 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        User user = userDao.findById(savedUser.getId());
+        User user = userDao.findById(savedUser.getId()).orElseThrow(UserNotFoundException::new);
 
         assertThat(user).isEqualTo(savedUser);
     }
 
     @Test
     void findByAccount() {
-        User user = userDao.findByAccount(savedUser.getAccount());
+        User user = userDao.findByAccount(savedUser.getAccount())
+            .orElseThrow(UserNotFoundException::new);
 
         assertThat(user).isEqualTo(savedUser);
     }
@@ -72,7 +74,7 @@ class UserDaoTest {
         // given
         String newPassword = "password99";
 
-        User beforeChangeUser = userDao.findById(savedUser.getId());
+        User beforeChangeUser = userDao.findById(savedUser.getId()).orElseThrow(UserNotFoundException::new);
         assertThat(beforeChangeUser.getPassword()).isNotEqualTo(newPassword);
 
         // when
@@ -80,7 +82,7 @@ class UserDaoTest {
         userDao.update(beforeChangeUser);
 
         // then
-        User afterChangeUser = userDao.findById(savedUser.getId());
+        User afterChangeUser = userDao.findById(savedUser.getId()).orElseThrow(UserNotFoundException::new);
         assertThat(afterChangeUser.getPassword()).isEqualTo(newPassword);
     }
 

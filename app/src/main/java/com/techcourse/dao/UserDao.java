@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
@@ -53,13 +54,13 @@ public class UserDao {
         return jdbcTemplate.query(sql, MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, MAPPER, id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, MAPPER, account);
