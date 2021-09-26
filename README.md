@@ -14,5 +14,5 @@
 - [x] 클래스 추출
 - [x] 또 다른 템플릿 메서드 패턴 적용
 - [x] 불필요한 mapRow 메서드 제거
-- [ ] PreparedStatementSetter 인터페이스 적용
+- [x] PreparedStatementSetter 인터페이스 적용
 - [ ] 라이브러리 확장

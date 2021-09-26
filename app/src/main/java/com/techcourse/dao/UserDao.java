@@ -5,8 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -26,16 +24,9 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            }
         };
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql);
+        jdbcTemplate.update(sql, new InsertUserPreparedStatementSetter(user));
     }
 
     public void update(User user) {
@@ -45,17 +36,9 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.setLong(4, user.getId());
-            }
         };
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql);
+        jdbcTemplate.update(sql, new UpdateUserPreparedStatementSetter(user));
     }
 
     public List<User> findAll() {
@@ -70,14 +53,9 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
         };
         String sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.query(sql, new UserRowMapper());
+        return (User) jdbcTemplate.query(sql, new SelectUserPreparedStatementSetter(id), new UserRowMapper());
     }
 
     public User findByAccount(String account) {

@@ -19,16 +19,14 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
-
-    public void update(String sql) {
+    public void update(String sql, PreparedStatementSetter setter) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            setValues(pstmt);
+            setter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -43,14 +41,14 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, RowMapper rowMapper) {
+    public Object query(String sql, PreparedStatementSetter setter, RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
-            setValues(pstmt);
+            setter.setValues(pstmt);
             rs = executeQuery(pstmt);
 
             log.debug("query : {}", sql);
