@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package nextstep.jdbc;
 
 import java.sql.SQLException;
 
