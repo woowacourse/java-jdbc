@@ -10,14 +10,11 @@ public class UserMapper implements RowMapper<User> {
 
     @Override
     public User apply(ResultSet resultSet) throws SQLException {
-        if(resultSet.next()){
-            return new User(
-                    resultSet.getLong("id"),
-                    resultSet.getString("account"),
-                    resultSet.getString("password"),
-                    resultSet.getString("email")
-                    );
-        }
-        return null;
+        return new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
     }
 }
