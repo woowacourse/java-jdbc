@@ -25,5 +25,5 @@
 
 - [x] findAll 구현
 - [x] findByAccount 구현
-- [ ] Controller in-memory user 저장 방식 dao 로 변경
+- [x] Controller in-memory user 저장 방식 dao 로 변경
 - [ ] JdbcTemplate 테스트 작성

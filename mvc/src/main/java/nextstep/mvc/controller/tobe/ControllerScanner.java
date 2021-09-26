@@ -1,11 +1,16 @@
 package nextstep.mvc.controller.tobe;
 
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
+import nextstep.web.annotation.Repository;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +34,27 @@ public class ControllerScanner {
         final Map<Class<?>, Object> controllers = new HashMap<>();
         try {
             for (Class<?> clazz : preInitiatedControllers) {
-                controllers.put(clazz, clazz.getDeclaredConstructor().newInstance());
+
+                Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(Repository.class);
+
+                Constructor<?> constructorWithAutowired = Arrays.stream(clazz.getDeclaredConstructors())
+                        .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
+                        .findFirst()
+                        .orElse(null);
+                Object classInstance;
+                if (constructorWithAutowired != null) {
+                    Class<?> daoClass = Arrays.stream(constructorWithAutowired.getParameters())
+                            .map(Parameter::getType)
+                            .filter(repositories::contains)
+                            .findFirst()
+                            .orElseThrow();
+                    Object daoInstance = daoClass.getDeclaredConstructor().newInstance();
+                    classInstance = constructorWithAutowired.newInstance(daoInstance);
+                    controllers.put(clazz, classInstance);
+                    continue;
+                }
+                classInstance = clazz.getDeclaredConstructor().newInstance();
+                controllers.put(clazz, classInstance);
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e.getMessage());
