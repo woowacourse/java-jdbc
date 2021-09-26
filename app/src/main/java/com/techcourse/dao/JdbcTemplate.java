@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +16,9 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
-    public void update(User user) {
+    public void update() {
         String sql = createQuery();
 
         Connection conn = null;
@@ -28,7 +27,7 @@ public abstract class JdbcTemplate {
             conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            setValues(user, pstmt);
+            setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
