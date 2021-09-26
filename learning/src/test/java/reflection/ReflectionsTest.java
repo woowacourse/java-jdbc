@@ -1,18 +1,47 @@
 package reflection;
 
+import annotation.Controller;
+import annotation.Repository;
+import annotation.Service;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ReflectionsTest {
+import java.util.Set;
 
-    private static final Logger log = LoggerFactory.getLogger(ReflectionsTest.class);
+import static org.assertj.core.api.Assertions.assertThat;
+
+class ReflectionsTest extends OutputTest {
 
     @Test
-    void showAnnotationClass() throws Exception {
+    void showAnnotationClass() {
+        // given
         Reflections reflections = new Reflections("examples");
 
-        // TODO 클래스 레벨에 @Controller, @Service, @Repository 애노테이션이 설정되어 모든 클래스 찾아 로그로 출력한다.
+        // when
+        Set<Class<?>> controllers = reflections.getTypesAnnotatedWith(Controller.class);
+        for (Class<?> controller : controllers) {
+            System.out.println(controller.getSimpleName());
+        }
+
+        Set<Class<?>> services = reflections.getTypesAnnotatedWith(Service.class);
+        for (Class<?> service : services) {
+            System.out.println(service.getSimpleName());
+        }
+
+        Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(Repository.class);
+        for (Class<?> repository : repositories) {
+            System.out.println(repository.getSimpleName());
+        }
+
+        // then
+        String output = captor.toString().trim();
+        assertThat(output).contains(
+                        "QnaController",
+                        "MyQnaService",
+                        "JdbcQuestionRepository",
+                        "JdbcUserRepository"
+        );
     }
 }
