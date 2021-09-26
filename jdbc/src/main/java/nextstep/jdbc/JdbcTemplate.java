@@ -6,7 +6,6 @@ import nextstep.jdbc.exception.EmptyResultException;
 import nextstep.jdbc.exception.ResultSizeExceedException;
 import nextstep.jdbc.setter.ArgumentPreparedStatementSetter;
 import nextstep.jdbc.setter.PreparedStatementSetter;
-import nextstep.jdbc.setter.SimplePreparedStatementSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,20 +21,14 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    //todo 설정파일에 정의된 dataSource를 가져올 수 없을까...
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public void update(String sql) {
-        executeUpdate(connection -> connection.prepareStatement(sql), new SimplePreparedStatementSetter());
     }
 
     public void update(String sql, Object... args) {
         executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
-    //TODO executeUpdate 와 executeQuery의 중복도 줄여보자
     public void executeUpdate(PreparedStatementCallback preparedStatementCallback, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStatementCallback.makePrepareStatement(conn)) {
@@ -54,8 +47,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = executeQuery(connection -> connection.prepareStatement(sql),
-                new ArgumentPreparedStatementSetter(args), new RowMapperResultExtract<>(rowMapper));
+        List<T> results = query(sql, rowMapper, args);
         validateSingleResult(results);
         return results.get(0);
     }
