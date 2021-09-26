@@ -48,7 +48,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
