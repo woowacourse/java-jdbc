@@ -1,9 +1,9 @@
 package nextstep.jdbc.utils;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import nextstep.jdbc.templates.JdbcException;
 
 public class RowMapperListExtractor<T> implements ResultSetExtractor<List<T>> {
 
@@ -14,12 +14,16 @@ public class RowMapperListExtractor<T> implements ResultSetExtractor<List<T>> {
     }
 
     @Override
-    public List<T> extractData(ResultSet rs) throws SQLException {
-        List<T> result = new ArrayList<>();
-        int rowNum = 0;
-        while (rs.next()) {
-            result.add(this.rowMapper.mapRow(rs, rowNum++));
+    public List<T> extractData(ResultSet rs) {
+        try {
+            List<T> result = new ArrayList<>();
+            int rowNum = 0;
+            while (rs.next()) {
+                result.add(this.rowMapper.mapRow(rs, rowNum++));
+            }
+            return result;
+        } catch (Exception e) {
+            throw new JdbcException();
         }
-        return result;
     }
 }

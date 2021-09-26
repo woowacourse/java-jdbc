@@ -18,35 +18,43 @@ public abstract class BaseJdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    protected <T> T execute(StatementCallback<T> action) throws SQLException {
-        final Connection connection = ConnectionUtils.getConnection(dataSource);
-        try (Statement stmt = connection.createStatement()) {
-            stmt.setQueryTimeout(30);
-            final T result = action.getResult(stmt);
-            if (ConnectionUtils.isTransactionStarted()) {
-                connection.setAutoCommit(false);
+    protected <T> T execute(StatementCallback<T> action) {
+        final Connection connection;
+        try {
+            connection = ConnectionUtils.getConnection(dataSource);
+            try (Statement stmt = connection.createStatement()) {
+                stmt.setQueryTimeout(30);
+                final T result = action.getResult(stmt);
+                if (ConnectionUtils.isTransactionStarted()) {
+                    return result;
+                }
+                ConnectionUtils.closeConnection();
                 return result;
             }
-            ConnectionUtils.closeConnection();
-            return result;
+        } catch (SQLException sqlException) {
+            throw new JdbcException();
         }
     }
 
     protected <T> T execute(PreparedStatementCreator preparedStatementCreator,
-                            PreparedStatementCallback<T> action) throws SQLException {
-        final Connection connection = ConnectionUtils.getConnection(dataSource);
-        try (PreparedStatement preparedStatement =
-            preparedStatementCreator.createPreparedStatement(connection)) {
+                            PreparedStatementCallback<T> action) {
+        final Connection connection;
+        try {
+            connection = ConnectionUtils.getConnection(dataSource);
+            try (PreparedStatement preparedStatement =
+                preparedStatementCreator.createPreparedStatement(connection)) {
 
-            preparedStatement.setQueryTimeout(30);
+                preparedStatement.setQueryTimeout(30);
 
-            final T result = action.getResult(preparedStatement);
-            if (ConnectionUtils.isTransactionStarted()) {
-                connection.setAutoCommit(false);
+                final T result = action.getResult(preparedStatement);
+                if (ConnectionUtils.isTransactionStarted()) {
+                    return result;
+                }
+                ConnectionUtils.closeConnection();
                 return result;
             }
-            ConnectionUtils.closeConnection();
-            return result;
+        } catch (SQLException sqlException) {
+            throw new JdbcException();
         }
     }
 }

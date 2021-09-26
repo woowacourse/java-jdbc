@@ -22,19 +22,17 @@ public class JdbcTemplate extends BaseJdbcTemplate implements QueryOperations {
     }
 
     @Override
-    public <T> List<T> queryForList(String sql, Class<T> type, Object... args) throws SQLException {
+    public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
         return query(sql, (rs, rowNum) -> ObjectConverter.convertSingleObject(rs, type), args);
     }
 
     @Override
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args)
-        throws SQLException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, new RowMapperListExtractor<>(rowMapper), args);
     }
 
     @Override
-    public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args)
-        throws SQLException {
+    public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
         if (Objects.isNull(sql) || Objects.isNull(resultSetExtractor) || sql.isEmpty()) {
             throw new IllegalStateException("sql or resultSetExtractor can not be null");
         }
@@ -50,19 +48,17 @@ public class JdbcTemplate extends BaseJdbcTemplate implements QueryOperations {
     }
 
     @Override
-    public <T> Optional<T> queryForObject(String sql, Class<T> type, Object... args)
-        throws SQLException {
+    public <T> Optional<T> queryForObject(String sql, Class<T> type, Object... args) {
         return queryForList(sql, type, args).stream().findAny();
     }
 
     @Override
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args)
-        throws SQLException {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, rowMapper, args).stream().findAny();
     }
 
     @Override
-    public int update(String sql, Object... args) throws SQLException {
+    public int update(String sql, Object... args) {
         if (args.length == 0) {
             return execute(stmt -> stmt.executeUpdate(sql));
         }
@@ -72,11 +68,8 @@ public class JdbcTemplate extends BaseJdbcTemplate implements QueryOperations {
         );
     }
 
-    private <T> T callBackForm(ResultSetExtractor<T> resultSetExtractor, ResultSet resultSet)
-        throws SQLException {
-        try (resultSet) {
-            return resultSetExtractor.extractData(resultSet);
-        }
+    private <T> T callBackForm(ResultSetExtractor<T> resultSetExtractor, ResultSet resultSet) {
+        return resultSetExtractor.extractData(resultSet);
     }
 
     private PreparedStatement getPreparedStatement(String sql, Connection con, Object[] args)

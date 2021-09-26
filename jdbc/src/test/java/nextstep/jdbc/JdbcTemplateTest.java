@@ -103,6 +103,7 @@ class JdbcTemplateTest {
 
         // then
         verify(dataSource, times(3)).getConnection();
+        verify(connection, times(3)).close();
     }
 
     @Test
@@ -127,6 +128,7 @@ class JdbcTemplateTest {
 
         // then
         verify(dataSource, times(1)).getConnection();
+        verify(connection).close();
     }
 
     @Test
@@ -149,5 +151,6 @@ class JdbcTemplateTest {
 
         // then
         verify(connection).rollback();
+        verify(connection).close();
     }
 }

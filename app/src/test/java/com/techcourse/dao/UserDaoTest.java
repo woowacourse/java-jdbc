@@ -27,11 +27,6 @@ class UserDaoTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
     }
 
-    @BeforeEach
-    void setup() {
-        userDao.removeAll();
-    }
-
     @Test
     void findAll() {
         유저_등록();

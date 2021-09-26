@@ -11,12 +11,17 @@ public class ConnectionUtils {
     private static final Map<String, ConnectionInfo> CONNECTIONS = new HashMap<>();
 
     private static class ConnectionInfo {
+
         private Connection connection;
         private boolean transactionStarted;
 
         public Connection getConnection(DataSource dataSource) throws SQLException {
-            if(connection == null) {
+            if (connection == null) {
                 connection = dataSource.getConnection();
+            }
+
+            if (transactionStarted) {
+                connection.setAutoCommit(false);
             }
             return connection;
         }
@@ -26,13 +31,13 @@ public class ConnectionUtils {
         }
 
         public void closeConnection() throws SQLException {
-            if(connection != null) {
+            if (connection != null) {
                 connection.close();
             }
         }
 
         public void startTransaction() {
-            transactionStarted =  true;
+            transactionStarted = true;
         }
     }
 
@@ -70,7 +75,7 @@ public class ConnectionUtils {
 
     public static void closeConnection() throws SQLException {
         final String currentThread = currentThread();
-        if(CONNECTIONS.containsKey(currentThread)) {
+        if (CONNECTIONS.containsKey(currentThread)) {
             CONNECTIONS.get(currentThread).closeConnection();
             CONNECTIONS.remove(currentThread);
         }
