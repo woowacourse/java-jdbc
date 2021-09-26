@@ -2,6 +2,7 @@ package nextstep.mvc.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import nextstep.mvc.controller.AnnotationHandlerMapping;
 import nextstep.mvc.controller.HandlerExecution;
 import nextstep.mvc.view.ModelAndView;
@@ -21,7 +22,7 @@ class AnnotationHandlerMappingTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ComponentContainer.initializeComponents("samples");
+        ComponentContainer.initializeComponents(mock(DataSource.class), "samples");
         handlerMapping = new AnnotationHandlerMapping("samples");
         handlerMapping.initialize();
     }
