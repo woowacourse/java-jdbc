@@ -11,4 +11,4 @@ Step 1. JDBC 라이브러리 구현하기
 Step 2. JdbcTemplate 리팩토링
 - [x] Exception 처리
 - [x] try with resource 적용
-- [ ] 추가 리팩토링 
+- [x] 콜백 적용 

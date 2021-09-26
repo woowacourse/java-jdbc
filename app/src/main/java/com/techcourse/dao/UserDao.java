@@ -11,10 +11,10 @@ import nextstep.web.annotation.Repository;
 @Repository
 public class UserDao {
 
-    private final JdbcTemplate<User> jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> rowMapper;
 
-    public UserDao(JdbcTemplate<User> jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.rowMapper = resultSet -> {
             if (resultSet.next()) {
@@ -29,17 +29,17 @@ public class UserDao {
     }
 
     public UserDao(DataSource dataSource) {
-        this(new JdbcTemplate<User>(dataSource));
+        this(new JdbcTemplate(dataSource));
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         final String sql = "update users SET account = ?, password = ?, email = ?";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {

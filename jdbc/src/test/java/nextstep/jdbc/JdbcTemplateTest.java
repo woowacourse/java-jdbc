@@ -43,7 +43,7 @@ class JdbcTemplateTest {
         String query = "insert into users (account, password, email) values (?, ?, ?)";
 
         //when
-        jdbcTemplate.execute(query, "gugu", "password", "hkkang@woowahan.com");
+        jdbcTemplate.update(query, "gugu", "password", "hkkang@woowahan.com");
 
         //then
         verify(preparedStatement, times(1)).executeUpdate();

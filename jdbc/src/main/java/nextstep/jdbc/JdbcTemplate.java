@@ -10,7 +10,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.QueryException;
 
-public class JdbcTemplate<T> {
+public class JdbcTemplate {
 
     private final DataSource dataSource;
 
@@ -18,53 +18,30 @@ public class JdbcTemplate<T> {
         this.dataSource = dataSource;
     }
 
-    public int execute(String query, Object... querySubject) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(query)
-        ) {
-            setValue(preparedStatement, querySubject);
-            preparedStatement.executeUpdate();
-            return 1;
-        } catch (SQLException e) {
-            throw new QueryException(e.getMessage());
-        }
+    public int update(String query, Object... querySubject) {
+        return execute(PreparedStatement::executeUpdate, query, querySubject);
     }
 
-    public List<T> queryObjects(String query, RowMapper<T> rowMapper) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(query)
-        ) {
-            return translateObject(preparedStatement, rowMapper);
-        } catch (SQLException e) {
-            throw new QueryException(e.getMessage());
-        }
+    public <T> List<T> queryObjects(String query, RowMapper<T> rowMapper) {
+        return execute(preparedStatement -> translateObject(preparedStatement, rowMapper), query);
     }
 
-    public Optional<T> queryObjectWithCondition(String query, RowMapper<T> rowMapper,
+    public <T> Optional<T> queryObjectWithCondition(String query, RowMapper<T> rowMapper,
         Object... querySubject) {
+        return execute(preparedStatement -> executeQueryWithRowMapper(preparedStatement,rowMapper), query, querySubject);
+    }
+
+    private <T> T execute(PrepareStatementAction<T> prepareStatementAction,
+        String query, Object... querySubject) {
         try (
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(query)
         ) {
             setValue(preparedStatement, querySubject);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return Optional.ofNullable(rowMapper.rowMappedObject(resultSet));
+            return prepareStatementAction.execute(preparedStatement);
         } catch (SQLException e) {
             throw new QueryException(e.getMessage());
         }
-    }
-
-    private List<T> translateObject(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
-        throws SQLException {
-        ResultSet resultSet = preparedStatement.executeQuery();
-        List<T> domains = new LinkedList<>();
-        while (resultSet.next()) {
-            T t = rowMapper.rowMappedObject(resultSet);
-            domains.add(t);
-        }
-        return domains;
     }
 
     private void setValue(PreparedStatement preparedStatement, Object... querySubject)
@@ -72,5 +49,22 @@ public class JdbcTemplate<T> {
         for (int i = 0; i < querySubject.length; i++) {
             preparedStatement.setObject(i + 1, querySubject[i]);
         }
+    }
+
+    private <T> Optional<T> executeQueryWithRowMapper(PreparedStatement preparedStatement,
+        RowMapper<T> rowMapper) throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        return Optional.ofNullable(rowMapper.rowMappedObject(resultSet));
+    }
+
+    private <T> List<T> translateObject(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
+        throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        List<T> objects = new LinkedList<>();
+        while (resultSet.next()) {
+            T t = rowMapper.rowMappedObject(resultSet);
+            objects.add(t);
+        }
+        return objects;
     }
 }
