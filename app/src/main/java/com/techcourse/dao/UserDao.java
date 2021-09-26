@@ -10,9 +10,6 @@ import java.util.Optional;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> rowMapper = rs -> new User(
             rs.getLong(1),
@@ -22,8 +19,11 @@ public class UserDao {
     );
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
+    }
+
+    public UserDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(User user) {
