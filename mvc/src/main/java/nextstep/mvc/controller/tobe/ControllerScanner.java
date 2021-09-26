@@ -30,30 +30,27 @@ public class ControllerScanner {
         return instantiateControllers(preInitiatedControllers);
     }
 
-    Map<Class<?>, Object> instantiateControllers(Set<Class<?>> preInitiatedControllers) {
+    private Map<Class<?>, Object> instantiateControllers(Set<Class<?>> preInitiatedControllers) {
         final Map<Class<?>, Object> controllers = new HashMap<>();
         try {
             for (Class<?> clazz : preInitiatedControllers) {
-
                 Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(Repository.class);
-
-                Constructor<?> constructorWithAutowired = Arrays.stream(clazz.getDeclaredConstructors())
+                Constructor<?> autowiredConstructors = Arrays.stream(clazz.getDeclaredConstructors())
                         .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
                         .findFirst()
                         .orElse(null);
-                Object classInstance;
-                if (constructorWithAutowired != null) {
-                    Class<?> daoClass = Arrays.stream(constructorWithAutowired.getParameters())
+                if (autowiredConstructors != null) {
+                    Class<?> daoClass = Arrays.stream(autowiredConstructors.getParameters())
                             .map(Parameter::getType)
                             .filter(repositories::contains)
                             .findFirst()
                             .orElseThrow();
                     Object daoInstance = daoClass.getDeclaredConstructor().newInstance();
-                    classInstance = constructorWithAutowired.newInstance(daoInstance);
+                    Object classInstance = autowiredConstructors.newInstance(daoInstance);
                     controllers.put(clazz, classInstance);
                     continue;
                 }
-                classInstance = clazz.getDeclaredConstructor().newInstance();
+                Object classInstance = clazz.getDeclaredConstructor().newInstance();
                 controllers.put(clazz, classInstance);
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
