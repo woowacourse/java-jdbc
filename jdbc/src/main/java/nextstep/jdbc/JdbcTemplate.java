@@ -8,12 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.jdbc.exception.QueryException;
 
-public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+public class JdbcTemplate<T> {
 
     private final DataSource dataSource;
 
@@ -21,52 +18,45 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query, Object... querySubject) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(query);
+    public int execute(String query, Object... querySubject) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ) {
             setValue(preparedStatement, querySubject);
             preparedStatement.executeUpdate();
+            return 1;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            checkNullStateOfCompositions(connection, preparedStatement);
+            throw new QueryException(e.getMessage());
         }
     }
 
-    public <T> List<T> findAll(String query, RowMapper rowMapper) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(query);
-            return translateAllDomain(preparedStatement, rowMapper);
+    public List<T> queryObjects(String query, RowMapper<T> rowMapper) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ) {
+            return translateObject(preparedStatement, rowMapper);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            checkNullStateOfCompositions(connection, preparedStatement);
+            throw new QueryException(e.getMessage());
         }
     }
 
-    public <T> Optional<T> findWithCondition(String query, RowMapper rowMapper, Object... querySubject) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(query);
+    public Optional<T> queryObjectWithCondition(String query, RowMapper<T> rowMapper,
+        Object... querySubject) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ) {
             setValue(preparedStatement, querySubject);
             ResultSet resultSet = preparedStatement.executeQuery();
             return Optional.ofNullable(rowMapper.rowMappedObject(resultSet));
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            checkNullStateOfCompositions(connection, preparedStatement);
+            throw new QueryException(e.getMessage());
         }
     }
 
-    private <T> List<T> translateAllDomain(PreparedStatement preparedStatement, RowMapper rowMapper)
+    private List<T> translateObject(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
         throws SQLException {
         ResultSet resultSet = preparedStatement.executeQuery();
         List<T> domains = new LinkedList<>();
@@ -81,32 +71,6 @@ public class JdbcTemplate {
         throws SQLException {
         for (int i = 0; i < querySubject.length; i++) {
             preparedStatement.setObject(i + 1, querySubject[i]);
-        }
-    }
-
-    private void checkNullStateOfCompositions(Connection connection,
-        PreparedStatement preparedStatement) {
-        checkNullPrepareStatement(preparedStatement);
-        checkNullConnection(connection);
-    }
-
-    private void checkNullPrepareStatement(PreparedStatement preparedStatement) {
-        try {
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-        } catch (SQLException ignored) {
-            log.error(ignored.getMessage(), ignored);
-        }
-    }
-
-    private void checkNullConnection(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException ignored) {
-            log.error(ignored.getMessage(), ignored);
         }
     }
 }

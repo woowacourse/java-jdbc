@@ -3,7 +3,7 @@ package nextstep.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface RowMapper {
+public interface RowMapper<T> {
 
-    <T> T rowMappedObject(ResultSet resultSet) throws SQLException;
+    T rowMappedObject(ResultSet resultSet) throws SQLException;
 }

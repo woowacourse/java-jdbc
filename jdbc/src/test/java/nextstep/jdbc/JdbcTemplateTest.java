@@ -43,7 +43,7 @@ class JdbcTemplateTest {
         String query = "insert into users (account, password, email) values (?, ?, ?)";
 
         //when
-        jdbcTemplate.update(query, "gugu", "password", "hkkang@woowahan.com");
+        jdbcTemplate.execute(query, "gugu", "password", "hkkang@woowahan.com");
 
         //then
         verify(preparedStatement, times(1)).executeUpdate();
@@ -56,7 +56,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         //when
-        jdbcTemplate.findAll(sql, rowMapper);
+        jdbcTemplate.queryObjects(sql, rowMapper);
 
         //then
         verify(preparedStatement, times(1)).executeQuery();
@@ -70,7 +70,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where account = ?";
 
         //when
-        jdbcTemplate.findWithCondition(sql, rowMapper, "gugu");
+        jdbcTemplate.queryObjectWithCondition(sql, rowMapper, "gugu");
 
         //then
         verify(preparedStatement, times(1)).executeQuery();
