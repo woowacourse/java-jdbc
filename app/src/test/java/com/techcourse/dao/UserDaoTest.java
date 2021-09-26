@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,17 +33,19 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        Optional<User> user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user).isNotEmpty();
+        assertThat(user.get().getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        Optional<User> user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user).isNotEmpty();
+        assertThat(user.get().getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -51,21 +54,23 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final Optional<User> actual = userDao.findById(2L);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual).isNotEmpty();
+        assertThat(actual.get().getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final Optional<User> actual = userDao.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual).isNotEmpty();
+        assertThat(actual.get().getPassword()).isEqualTo(newPassword);
     }
 }

@@ -3,11 +3,10 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -29,7 +28,6 @@ public class UserDao {
 
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -52,13 +50,13 @@ public class UserDao {
         return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setLong(1, id));
+        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setLong(1, id)));
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setString(1, account));
+        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setString(1, account)));
     }
 }
