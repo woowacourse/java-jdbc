@@ -11,6 +11,8 @@ import javax.sql.DataSource;
 
 import com.techcourse.domain.User;
 
+import nextstep.jdbc.InsertJdbcTemplate;
+import nextstep.jdbc.UpdateJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,33 +27,13 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        LOGGER.info("UserDao insert executed");
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
+        insertJdbcTemplate.insert(user);
     }
 
     public void update(User user) {
-        final String sql = "update users set password = ? where id = ?";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, user.getPassword());
-            preparedStatement.setLong(2, user.getId());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
