@@ -26,13 +26,41 @@ public class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-    public void update(String sql, PreparedStatementSetter setter) {
+    public void update(String sql, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setter.setValues(pstmt);
+            pss.setValues(pstmt);
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
             }
             pstmt.executeUpdate();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public int update(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(SQL_INFO_LOG, sql);
+            }
+            return pstmt.executeUpdate();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public int update(String sql, Object[] args, int[] argTypes) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (int i = 1; i <= args.length; i++) {
+                pstmt.setObject(i, args[i], argTypes[i]);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(SQL_INFO_LOG, sql);
+            }
+            return pstmt.executeUpdate();
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
