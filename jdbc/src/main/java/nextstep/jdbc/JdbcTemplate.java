@@ -1,91 +1,39 @@
 package nextstep.jdbc;
 
-import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.exception.JdbcTemplateException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.jdbc.executor.PreparedStatementExecutor;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private DataSource dataSource;
-
-    public JdbcTemplate() {
-    }
+    private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... params){
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            int index = 1;
-            for (Object param : params) {
-                pstmt.setObject(index++, param);
-            }
-
-            List<T> results = new ArrayList<>();
-            ResultSet resultSet = pstmt.executeQuery();
-            while (resultSet.next()) {
-                results.add(mapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException sqlException) {
-            log.error(sqlException.getMessage());
-            throw new JdbcTemplateException();
-        }
+    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... params) {
+        return execute(sql, pstmt -> PreparedStatementExecutor.query(mapper, pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            int index = 1;
-            for (Object param : params) {
-                pstmt.setObject(index++, param);
-            }
-
-            List<T> results = new ArrayList<>();
-            ResultSet resultSet = pstmt.executeQuery();
-            while (resultSet.next()) {
-                results.add(mapper.mapRow(resultSet));
-            }
-
-            if (results.size() != 1) {
-                throw new IncorrectResultSizeDataAccessException(1, results.size());
-            }
-            return results.get(0);
-        } catch (SQLException sqlException) {
-            log.error(sqlException.getMessage());
-            throw new JdbcTemplateException();
-        }
+        return execute(sql, pstmt -> PreparedStatementExecutor.queryForObject(mapper, pstmt, params));
     }
 
-    public int update(String sql, Object... params){
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            int index = 1;
-            for (Object param : params) {
-                pstmt.setObject(index++, param);
-            }
-            return pstmt.executeUpdate();
-        } catch (SQLException sqlException) {
-            log.error(sqlException.getMessage());
+    public int update(String sql, Object... params) {
+        return execute(sql, pstmt -> PreparedStatementExecutor.update(pstmt, params));
+    }
+
+    private <T> T execute(String sql, QueryCallBack<T> queryCallBack) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            return queryCallBack.execute(pstmt);
+        } catch (SQLException e) {
             throw new JdbcTemplateException();
         }
     }
