@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 
 class PreparedStatementExecutorTest {
 
-    @DisplayName("query, queryForObject를 테스트한다.")
+    @DisplayName("query()")
     @Nested
     class TestQueryForObject {
 
@@ -57,6 +57,11 @@ class PreparedStatementExecutorTest {
             assertThatThrownBy(() -> PreparedStatementExecutor.queryForObject(mockPreparedStatement, params, rowMapper))
                     .isInstanceOf(IncorrectResultSizeDataAccessException.class);
         }
+    }
+
+    @DisplayName("queryForObject()")
+    @Nested
+    class TestQuery{
 
         @DisplayName("다중 조회 쿼리를 수행한다")
         @Test
@@ -77,7 +82,7 @@ class PreparedStatementExecutorTest {
         }
     }
 
-    @DisplayName("update를 테스트한다")
+    @DisplayName("update()")
     @Nested
     class TestUpdate {
 
