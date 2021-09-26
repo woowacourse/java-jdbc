@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.init;
+package nextstep.support;
 
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
@@ -9,9 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 

@@ -1,5 +1,7 @@
 package nextstep.jdbc;
 
+import nextstep.jdbc.exception.JdbcTemplateException;
+import nextstep.jdbc.utils.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,19 +43,9 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... args) {
-        log.info("JdbcTemplate.queryForObject, query: {}", query);
-        return execute(query, preparedStatement -> {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.apply(resultSet);
-                }
-                return null;
-            } catch (Exception e) {
-                log.debug("ResultSet failed when execute queryForObject: {}", e.getMessage());
-                throw new JdbcTemplateException(e.getMessage());
-            }
-        }, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        log.info("JdbcTemplate.queryForObject, query: {}", sql);
+        return DataAccessUtils.singleResult(query(sql, rowMapper, args));
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {

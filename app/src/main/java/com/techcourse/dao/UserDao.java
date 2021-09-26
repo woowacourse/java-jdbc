@@ -3,16 +3,18 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.List;
 
 public class UserDao {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserDao.class);
-    private static final RowMapper<User> USER_MAPPER = new UserMapper();
+    private static final RowMapper<User> USER_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -43,5 +45,10 @@ public class UserDao {
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_MAPPER, account);
+    }
+
+    public void deleteAll() {
+        final String sql = "delete from users";
+        jdbcTemplate.update(sql);
     }
 }

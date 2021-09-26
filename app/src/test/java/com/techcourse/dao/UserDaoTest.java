@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -13,27 +13,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+    private static UserDao userDao;
 
-    @BeforeEach
-    void setup() {
+    @BeforeAll
+    static void beforeAll() {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
         userDao = new UserDao(dataSource);
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        유저등록("gugu", "password", "hkkang@woowahan.com");
     }
 
     @Test
     void insert() {
-        final String account = "insert-gugu";
-        final User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        유저등록("gugu-insert", "password", "hkkang@woowahan.com");
 
         final User actual = userDao.findById(2L);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.getAccount()).isEqualTo("gugu-insert");
     }
 
     @Test
@@ -69,5 +67,10 @@ class UserDaoTest {
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    private static void 유저등록(String account, String password, String email) {
+        final User user = new User(account, password, email);
+        userDao.insert(user);
     }
 }
