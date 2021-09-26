@@ -21,10 +21,6 @@ public class UserDao {
 
     public void insert(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
 
             @Override
             protected DataSource getDataSource() {
@@ -38,15 +34,12 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
             }
         };
-        jdbcTemplate.update();
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql);
     }
 
     public void update(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
 
             @Override
             protected DataSource getDataSource() {
@@ -61,7 +54,8 @@ public class UserDao {
                 pstmt.setLong(4, user.getId());
             }
         };
-        jdbcTemplate.update();
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql);
     }
 
     public List<User> findAll() {
@@ -71,10 +65,6 @@ public class UserDao {
 
     public User findById(Long id) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
 
             @Override
             protected DataSource getDataSource() {
@@ -86,7 +76,8 @@ public class UserDao {
                 pstmt.setLong(1, id);
             }
         };
-        return (User) jdbcTemplate.query(new UserRowMapper());
+        String sql = "select id, account, password, email from users where id = ?";
+        return (User) jdbcTemplate.query(sql, new UserRowMapper());
     }
 
     public User findByAccount(String account) {

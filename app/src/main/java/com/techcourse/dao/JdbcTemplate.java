@@ -13,8 +13,6 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(nextstep.jdbc.JdbcTemplate.class);
 
-    protected abstract String createQuery();
-
     private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
         return pstmt.executeQuery();
     }
@@ -23,9 +21,7 @@ public abstract class JdbcTemplate {
 
     protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
-    public void update() {
-        String sql = createQuery();
-
+    public void update(String sql) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -47,17 +43,17 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(RowMapper rowMapper) {
+    public Object query(String sql, RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = getDataSource().getConnection();
-            pstmt = conn.prepareStatement(createQuery());
+            pstmt = conn.prepareStatement(sql);
             setValues(pstmt);
             rs = executeQuery(pstmt);
 
-            log.debug("query : {}", createQuery());
+            log.debug("query : {}", sql);
 
             return rowMapper.mapRow(rs);
         } catch (SQLException e) {
