@@ -2,7 +2,7 @@
 
 ## TODO
 - [ ] 메서드 추출
-  - [ ] UserDao 클래스에서 insert 메서드를 참고해서 update 메서드를 구현한다.
+  - [x] UserDao 클래스에서 insert 메서드를 참고해서 update 메서드를 구현한다.
   - [ ] update와 insert 메서드에서 사용자가 수정해야 되는 부분을 메서드로 분리한다.
 - [ ] 클래스 추출
 - [ ] 템플릿 메서드 패턴 적용

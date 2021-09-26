@@ -22,7 +22,7 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -44,18 +44,43 @@ public class UserDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
     public void update(User user) {
-        // todo
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
     }
 
     public List<User> findAll() {
@@ -64,7 +89,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
+        String sql = "select id, account, password, email from users where id = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -93,19 +118,22 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
