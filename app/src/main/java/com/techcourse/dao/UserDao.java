@@ -12,6 +12,12 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final RowMapper<User> rowMapper = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4)
+    );
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -32,18 +38,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        return jdbcTemplate.queryForList(sql, new UserRowMapper(), User.class);
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        return (User) jdbcTemplate.query(sql, new SelectUserPreparedStatementSetter(id), new UserRowMapper());
+        return jdbcTemplate.query(sql, new SelectUserPreparedStatementSetter(id), rowMapper);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        return (User) jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account), new UserRowMapper());
+        return jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account), rowMapper);
     }
 }

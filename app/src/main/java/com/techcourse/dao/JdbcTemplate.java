@@ -48,7 +48,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter setter, RowMapper rowMapper) {
+    public <T> T query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -77,7 +77,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper rowMapper, Class<T> clazz) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -90,7 +90,7 @@ public class JdbcTemplate {
 
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add((T) rowMapper.mapRow(rs));
+                result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {
