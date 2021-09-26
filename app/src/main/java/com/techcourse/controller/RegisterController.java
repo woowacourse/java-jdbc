@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
+import nextstep.web.annotation.InjectDao;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
 
@@ -15,6 +16,7 @@ public class RegisterController {
 
     private final UserDao userDao;
 
+    @InjectDao
     public RegisterController(UserDao userDao) {
         this.userDao = userDao;
     }
@@ -26,7 +28,6 @@ public class RegisterController {
             request.getParameter("password"),
             request.getParameter("email"));
         userDao.insert(user);
-
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
 

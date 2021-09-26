@@ -1,10 +1,13 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.web.annotation.Repository;
 
+@Repository
 public class UserDao {
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
@@ -13,11 +16,7 @@ public class UserDao {
         rs.getString(3),
         rs.getString(4));
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     public int insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";

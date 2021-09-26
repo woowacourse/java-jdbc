@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpSession;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
+import nextstep.web.annotation.InjectDao;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class LoginController {
 
     private final UserDao userDao;
 
+    @InjectDao
     public LoginController(UserDao userDao) {
         this.userDao = userDao;
     }
@@ -44,6 +46,7 @@ public class LoginController {
             log.info("User : {}", user);
             return login(request, user);
         } catch (RuntimeException e) {
+            log.error(e.getMessage(), e);
             return redirect("/401.jsp");
         }
     }
@@ -54,6 +57,7 @@ public class LoginController {
             session.setAttribute(UserSession.SESSION_KEY, user);
             return redirect("/index.jsp");
         } else {
+            log.debug("wrong password!");
             return redirect("/401.jsp");
         }
     }

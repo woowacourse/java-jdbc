@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
+import nextstep.web.annotation.InjectDao;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class UserController {
 
     private final UserDao userDao;
 
+    @InjectDao
     public UserController(UserDao userDao) {
         this.userDao = userDao;
     }
