@@ -124,6 +124,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("유저 업데이트 테스트")
     void updateTest() {
 
         // given
