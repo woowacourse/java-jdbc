@@ -38,13 +38,13 @@ public class UserDao {
             }
 
             @Override
-            public void setValues(User user, PreparedStatement preparedStatement) throws SQLException {
+            public void setValues(PreparedStatement preparedStatement) throws SQLException {
                 preparedStatement.setString(1, user.getAccount());
                 preparedStatement.setString(2, user.getPassword());
                 preparedStatement.setString(3, user.getEmail());
             }
         };
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public void update(User user) {
@@ -60,12 +60,12 @@ public class UserDao {
             }
 
             @Override
-            public void setValues(User user, PreparedStatement preparedStatement) throws SQLException {
+            public void setValues(PreparedStatement preparedStatement) throws SQLException {
                 preparedStatement.setString(1, user.getPassword());
                 preparedStatement.setLong(2, user.getId());
             }
         };
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {

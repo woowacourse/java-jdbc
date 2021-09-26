@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory;
 public abstract class JdbcTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update(User user) {
+    public void update() {
         String sql = createQuery();
 
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setValues(user, preparedStatement);
+            setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error(e.getMessage(), e);
@@ -31,5 +31,5 @@ public abstract class JdbcTemplate {
 
     public abstract String createQuery();
 
-    public abstract void setValues(User user, PreparedStatement preparedStatement) throws SQLException;
+    public abstract void setValues(PreparedStatement preparedStatement) throws SQLException;
 }
