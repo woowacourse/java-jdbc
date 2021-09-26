@@ -34,7 +34,6 @@ public class UserDao {
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-
     }
 
     public List<User> findAll() {
@@ -44,11 +43,11 @@ public class UserDao {
 
     public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setLong(1, id)));
+        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, id));
     }
 
     public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, pstmt -> pstmt.setString(1, account)));
+        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, account));
     }
 }

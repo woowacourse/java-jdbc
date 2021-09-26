@@ -22,41 +22,29 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
-    public void update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pss.setValues(pstmt);
-            if (log.isDebugEnabled()) {
-                log.debug(SQL_INFO_LOG, sql);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException exception) {
-            throw new DataAccessException(exception);
-        }
+    public int update(String sql, PreparedStatementSetter pss) {
+        return executeUpdate(sql, pss::setValues);
     }
 
     public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        return executeUpdate(sql, pstmt -> {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            if (log.isDebugEnabled()) {
-                log.debug(SQL_INFO_LOG, sql);
-            }
-            return pstmt.executeUpdate();
-        } catch (SQLException exception) {
-            throw new DataAccessException(exception);
-        }
+        });
     }
 
     public int update(String sql, Object[] args, int[] argTypes) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        return executeUpdate(sql, pstmt -> {
             for (int i = 1; i <= args.length; i++) {
                 pstmt.setObject(i, args[i], argTypes[i]);
             }
+        });
+    }
+
+    private int executeUpdate(String sql, JdbcExecutable je) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            je.execute(pstmt);
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
             }
@@ -67,12 +55,25 @@ public class JdbcTemplate {
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
+        return executeQuery(sql, rowMapper, setter::setValues);
+    }
+
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(sql, rowMapper, pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    public <T> T executeQuery(String sql, RowMapper<T> rowMapper, JdbcExecutable je) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setter.setValues(pstmt);
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
             }
-            ResultSet rs = executeQuery(pstmt);
+            je.execute(pstmt);
+            ResultSet rs = pstmt.executeQuery();
+
 
             if (!rs.next()) {
                 return null;
@@ -88,7 +89,7 @@ public class JdbcTemplate {
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
             }
-            ResultSet rs = executeQuery(pstmt);
+            ResultSet rs = pstmt.executeQuery();
 
             List<T> result = new ArrayList<>();
             while (rs.next()) {
