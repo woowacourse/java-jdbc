@@ -49,9 +49,9 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(String sql, @NonNull Object... args) {
+    public int update(String sql, @NonNull Object... args) {
         log.debug("jdbcTemplate update method - query : " + sql);
-        execute(sql, args, PreparedStatement::executeUpdate);
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     private <T> T execute(String sql, Object[] args, JdbcPreparedStatementExecution<T> execution) {
