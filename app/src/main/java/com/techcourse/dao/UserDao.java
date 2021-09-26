@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.config.JdbcTemplateConfig;
 import com.techcourse.domain.User;
+import com.techcourse.exception.UserNotFoundException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import nextstep.jdbc.exception.DataAccessException;
@@ -49,7 +50,7 @@ public class UserDao {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, rowMapper, id));
         } catch (DataAccessException e) {
-            return Optional.empty();
+            throw new UserNotFoundException("유저 정보를 조회하는데 실패했습니다.", e);
         }
     }
 
@@ -58,7 +59,7 @@ public class UserDao {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, rowMapper, account));
         } catch (DataAccessException e) {
-            return Optional.empty();
+            throw new UserNotFoundException("유저 정보를 조회하는데 실패했습니다.", e);
         }
     }
 
