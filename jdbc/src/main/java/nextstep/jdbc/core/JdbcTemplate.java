@@ -29,6 +29,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
+        log.debug("update() : {}", sql);
         StatementCallback<Integer> statementCallback = new StatementCallback<>() {
             @Override
             public Integer executeQuery(PreparedStatement statement) throws SQLException {
@@ -40,6 +41,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        log.debug("queryForObject() : {}", sql);
+
         List<T> results = query(sql, rowMapper, args);
         if (results.size() < 1) {
             throw new DataAccessException();
@@ -52,6 +55,8 @@ public class JdbcTemplate {
     }
 
     private <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
+        log.debug("query() : {}", sql);
+
         StatementCallback<T> statementCallback = new StatementCallback<>() {
             @Override
             public T executeQuery(PreparedStatement statement) throws SQLException {
