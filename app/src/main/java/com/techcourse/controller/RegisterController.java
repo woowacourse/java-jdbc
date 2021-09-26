@@ -5,9 +5,9 @@ import com.techcourse.domain.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.jdbc.datasource.DataSourceConfig;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -15,7 +15,12 @@ import nextstep.web.support.RequestMethod;
 @Controller
 public class RegisterController {
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao;
+
+    @Autowired
+    public RegisterController(UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {

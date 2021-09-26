@@ -29,7 +29,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao();
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

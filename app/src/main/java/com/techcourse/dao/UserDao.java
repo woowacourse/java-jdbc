@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
 import java.util.List;
-import javax.sql.DataSource;
 
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.datasource.DataSourceConfig;
 
 public class UserDao {
 
@@ -20,8 +20,8 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao() {
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     }
 
     public void insert(User user) {

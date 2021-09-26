@@ -6,10 +6,10 @@ import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import nextstep.jdbc.datasource.DataSourceConfig;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -21,7 +21,12 @@ public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao;
+
+    @Autowired
+    public LoginController(UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
