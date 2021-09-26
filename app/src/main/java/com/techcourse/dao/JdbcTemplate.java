@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,82 +26,51 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter setter) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setter.setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+            if (log.isDebugEnabled()) {
+                log.debug("query : {}", sql);
             }
+            pstmt.executeUpdate();
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new RuntimeException(exception);
         }
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setter.setValues(pstmt);
-            rs = executeQuery(pstmt);
-
-            log.debug("query : {}", sql);
+            if (log.isDebugEnabled()) {
+                log.debug("query : {}", sql);
+            }
+            ResultSet rs = executeQuery(pstmt);
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new RuntimeException(exception);
         }
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            rs = executeQuery(pstmt);
-
-            log.debug("query : {}", sql);
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (log.isDebugEnabled()) {
+                log.debug("query : {}", sql);
+            }
+            ResultSet rs = executeQuery(pstmt);
 
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
             }
             return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new RuntimeException(exception);
         }
     }
 }
