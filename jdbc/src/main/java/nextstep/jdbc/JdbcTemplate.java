@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -23,81 +21,71 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter pss) {
-        return executeUpdate(sql, pss::setValues);
+        return execute(sql, pstmt -> {
+            setPreparedStatementValues(pstmt, pss);
+            return pstmt.executeUpdate();
+        });
     }
 
     public int update(String sql, Object... args) {
-        return executeUpdate(sql, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return execute(sql, pstmt -> {
+            setPreparedStatementValues(pstmt, args);
+            return pstmt.executeUpdate();
         });
     }
 
     public int update(String sql, Object[] args, int[] argTypes) {
-        return executeUpdate(sql, pstmt -> {
-            for (int i = 1; i <= args.length; i++) {
-                pstmt.setObject(i, args[i], argTypes[i]);
-            }
-        });
-    }
-
-    private int executeUpdate(String sql, JdbcExecutable je) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            je.execute(pstmt);
-            if (log.isDebugEnabled()) {
-                log.debug(SQL_INFO_LOG, sql);
-            }
+        return execute(sql, pstmt -> {
+            setPreparedStatementValues(pstmt, args, argTypes);
             return pstmt.executeUpdate();
-        } catch (SQLException exception) {
-            throw new DataAccessException(exception);
-        }
+        });
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
-        return executeQuery(sql, rowMapper, setter::setValues);
-    }
-
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, rowMapper, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return execute(sql, pstmt -> {
+            setPreparedStatementValues(pstmt, setter);
+            return ResultSetExtractor.toObject(rowMapper, pstmt);
         });
     }
 
-    public <T> T executeQuery(String sql, RowMapper<T> rowMapper, JdbcExecutable je) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, pstmt -> {
+            setPreparedStatementValues(pstmt, args);
+            return ResultSetExtractor.toObject(rowMapper, pstmt);
+        });
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> ResultSetExtractor.toList(rowMapper, pstmt));
+    }
+
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
             }
-            je.execute(pstmt);
-            ResultSet rs = pstmt.executeQuery();
-
-
-            if (!rs.next()) {
-                return null;
-            }
-            return rowMapper.mapRow(rs);
+            return executor.execute(pstmt);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            if (log.isDebugEnabled()) {
-                log.debug(SQL_INFO_LOG, sql);
-            }
-            ResultSet rs = pstmt.executeQuery();
+    private void setPreparedStatementValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
 
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException exception) {
-            throw new DataAccessException(exception);
+    private void setPreparedStatementValues(PreparedStatement pstmt, PreparedStatementSetter pss) throws SQLException {
+        pss.setValues(pstmt);
+    }
+
+    private void setPreparedStatementValues(PreparedStatement pstmt, Object[] args, int[] argTypes) throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            pstmt.setObject(i, args[i], argTypes[i]);
         }
     }
 }

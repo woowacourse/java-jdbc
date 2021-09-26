@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface JdbcExecutable {
+public interface PreparedStatementExecutor<T> {
 
-    void execute(PreparedStatement pstmt) throws SQLException;
+    T execute(PreparedStatement pstmt) throws SQLException;
 }
