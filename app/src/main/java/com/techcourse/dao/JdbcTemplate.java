@@ -21,8 +21,6 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract Object mapRow(ResultSet rs) throws SQLException;
-
     protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
     public void update() {
@@ -49,7 +47,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query() {
+    public Object query(RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -61,7 +59,7 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", createQuery());
 
-            return mapRow(rs);
+            return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
