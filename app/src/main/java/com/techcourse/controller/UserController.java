@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import nextstep.web.annotation.Autowired;
 import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
@@ -19,6 +20,7 @@ public class UserController {
 
     private final UserDao userDao;
 
+    @Autowired
     public UserController(UserDao userDao) {
         this.userDao = userDao;
     }
