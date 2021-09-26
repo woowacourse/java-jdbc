@@ -1,11 +1,16 @@
 plugins {
     id 'application'
     id 'org.sonarqube' version '3.3'
+    id 'jacoco'
     id 'idea'
 }
 
 application {
     mainClass = 'com.techcourse.JwpApplication'
+}
+
+jacoco {
+    toolVersion = "0.8.7"
 }
 
 idea {
@@ -26,8 +31,10 @@ repositories {
 }
 
 dependencies {
-    implementation project(':mvc')
-    implementation project(':jdbc')
+//    implementation project(':mvc')
+    implementation project(path: ":mvc", configuration: 'default')
+//    implementation project(':jdbc')
+    implementation project(path: ":jdbc", configuration: 'default')
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
     implementation 'com.google.guava:guava:29.0-jre'
@@ -55,5 +62,12 @@ sonarqube {
         property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
         property "sonar.organization", "woowacourse"
         property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled(true)
+        xml.destination(new File("jacoco/jacoco.xml"))
     }
 }
