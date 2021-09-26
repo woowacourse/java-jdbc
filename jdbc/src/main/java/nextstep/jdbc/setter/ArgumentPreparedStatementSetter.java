@@ -1,9 +1,7 @@
 package nextstep.jdbc.setter;
 
-import nextstep.jdbc.parametervalue.ParameterValue;
-import nextstep.jdbc.parametervalue.ParameterValueGenerator;
-
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class ArgumentPreparedStatementSetter implements PreparedStatementSetter {
 
@@ -14,10 +12,9 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
     }
 
     @Override
-    public void setValues(PreparedStatement preparedStatement) {
+    public void setValues(PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            ParameterValue parameterValue = ParameterValueGenerator.createParameterValue(args[i]);
-            parameterValue.setPreparedStatementParameter(i + 1, preparedStatement);
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 }
