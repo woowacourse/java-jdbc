@@ -16,6 +16,8 @@ public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
+    private DatabasePopulatorUtils() {}
+
     public static void execute(DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;
@@ -42,6 +44,4 @@ public class DatabasePopulatorUtils {
             } catch (SQLException ignored) {}
         }
     }
-
-    private DatabasePopulatorUtils() {}
 }
