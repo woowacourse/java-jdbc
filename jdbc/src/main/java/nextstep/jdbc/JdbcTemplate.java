@@ -14,12 +14,10 @@ import org.slf4j.LoggerFactory;
 public abstract class JdbcTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void executeQuery() {
-        String sql = createQuery();
-
+    public void executeQuery(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setValues(preparedStatement);
+            preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error(e.getMessage(), e);
@@ -27,19 +25,20 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query() {
-        String sql = createQuery();
-
+    public Object query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setValues(preparedStatement);
+
+            if (preparedStatementSetter != null) {
+                preparedStatementSetter.setValues(preparedStatement);
+            }
 
             List<Object> result = new ArrayList<>();
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                result.add(mapRow(resultSet));
+                result.add(rowMapper.mapRow(resultSet));
             }
 
             return result;
@@ -49,8 +48,8 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object queryForObject() {
-        List<Object> result = (List<Object>) query();
+    public Object queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) {
+        List<Object> result = (List<Object>) query(sql, preparedStatementSetter, rowMapper);
 
         if (result.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 데이터입니다.");
@@ -64,10 +63,4 @@ public abstract class JdbcTemplate {
     }
 
     public abstract DataSource getDataSource();
-
-    public abstract String createQuery();
-
-    public abstract void setValues(PreparedStatement preparedStatement) throws SQLException;
-
-    public abstract Object mapRow(ResultSet resultSet) throws SQLException;
 }

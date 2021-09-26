@@ -9,6 +9,8 @@ import javax.sql.DataSource;
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.PreparedStatementSetter;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,25 +30,16 @@ public class UserDao {
             public DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            public String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            public void setValues(PreparedStatement preparedStatement) throws SQLException {
-                preparedStatement.setString(1, user.getAccount());
-                preparedStatement.setString(2, user.getPassword());
-                preparedStatement.setString(3, user.getEmail());
-            }
-
-            @Override
-            public Object mapRow(ResultSet resultSet) throws SQLException {
-                return null;
-            }
         };
-        jdbcTemplate.executeQuery();
+
+        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+        };
+
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.executeQuery(sql, preparedStatementSetter);
     }
 
     public void update(User user) {
@@ -55,54 +48,34 @@ public class UserDao {
             public DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            public String createQuery() {
-                return "update users set password = ? where id = ?";
-            }
-
-            @Override
-            public void setValues(PreparedStatement preparedStatement) throws SQLException {
-                preparedStatement.setString(1, user.getPassword());
-                preparedStatement.setLong(2, user.getId());
-            }
-
-            @Override
-            public Object mapRow(ResultSet resultSet) throws SQLException {
-                return null;
-            }
         };
-        jdbcTemplate.executeQuery();
+
+        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
+            preparedStatement.setString(1, user.getPassword());
+            preparedStatement.setLong(2, user.getId());
+        };
+
+        String sql = "update users set password = ? where id = ?";
+        jdbcTemplate.executeQuery(sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users";
-            }
-
-            @Override
-            public void setValues(PreparedStatement preparedStatement) throws SQLException {
-            }
-
-            @Override
-            public Object mapRow(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4)
-                );
-            }
         };
-        return (List<User>) jdbcTemplate.query();
+
+        RowMapper rowMapper = resultSet -> new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4)
+        );
+
+        String sql = "select id, account, password, email from users";
+        return (List<User>) jdbcTemplate.query(sql, null, rowMapper);
     }
 
     public User findById(Long id) {
@@ -112,29 +85,20 @@ public class UserDao {
             public DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
-
-            @Override
-            public void setValues(PreparedStatement preparedStatement) throws SQLException {
-                preparedStatement.setLong(1, id);
-            }
-
-            @Override
-            public Object mapRow(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4)
-                );
-            }
         };
 
-        return (User) jdbcTemplate.queryForObject();
+        PreparedStatementSetter preparedStatementSetter =
+                preparedStatement -> preparedStatement.setLong(1, id);
+
+        RowMapper rowMapper = resultSet -> new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4)
+        );
+
+        String sql = "select id, account, password, email from users where id = ?";
+        return (User) jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
     }
 
     public User findByAccount(String account) {
@@ -144,27 +108,19 @@ public class UserDao {
             public DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            public String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
-            public void setValues(PreparedStatement preparedStatement) throws SQLException {
-                preparedStatement.setString(1, account);
-            }
-
-            @Override
-            public Object mapRow(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4)
-                );
-            }
         };
-        return (User) jdbcTemplate.queryForObject();
+
+        PreparedStatementSetter preparedStatementSetter =
+                preparedStatement -> preparedStatement.setString(1, account);
+
+        RowMapper rowMapper = resultSet -> new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4)
+        );
+
+        String sql = "select id, account, password, email from users where account = ?";
+        return (User) jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
     }
 }
