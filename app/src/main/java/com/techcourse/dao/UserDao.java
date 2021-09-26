@@ -41,8 +41,9 @@ public class UserDao {
     }
 
     public User findByAccount(String account) {
-        // todo
-        return null;
+        String sql = "select id, account, password, email from users where account = ?";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return (User) jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account), new UserRowMapper());
     }
 
     public DataSource getDataSource() {

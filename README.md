@@ -22,5 +22,5 @@
   - [ ] RowMapper 제네릭 활용
 
 - [ ] findById 구현
-- [ ] findByAccount 구현
+- [x] findByAccount 구현
 - [ ] Controller in-memory user 저장 방식 dao 로 변경
