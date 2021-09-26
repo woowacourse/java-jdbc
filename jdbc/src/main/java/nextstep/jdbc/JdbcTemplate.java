@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
@@ -39,26 +38,30 @@ public class JdbcTemplate {
         execute(new SimplePreparedStatementCreator(sql), PreparedStatement::execute);
     }
 
-    public <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) throws DataAccessException {
-        return execute(new PreparedStatementCreatorImpl(sql, args), action);
+    public int update(PreparedStatementCreator psc) {
+        return updateCount(execute(psc, PreparedStatement::executeUpdate));
     }
 
     public int update(String sql, Object... args) throws DataAccessException {
-        log.info(sql);
-        return updateCount(execute(sql, PreparedStatement::executeUpdate, args));
+        return update(new PreparedStatementCreatorImpl(sql, args));
+    }
+
+    public <T> List<T> query(PreparedStatementCreator psc, ResultSetExtractor<List<T>> rse) throws DataAccessException {
+        return execute(psc, ps -> {
+            try (final ResultSet rs = ps.executeQuery()) {
+                return rse.extractData(rs);
+            } catch (SQLException e) {
+                throw new DataAccessException("rse Exception", e);
+            }
+        });
+    }
+
+    public <T> List<T> query(String sql, ResultSetExtractor<List<T>> rse, Object... args) throws DataAccessException {
+        return query(new PreparedStatementCreatorImpl(sql, args), rse);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        return execute(sql, ps -> {
-            try (final ResultSet rs = ps.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                return results;
-            }
-        }, args);
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
