@@ -6,6 +6,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +16,7 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
@@ -24,7 +25,7 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() {
+    void findAll() throws SQLException {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
@@ -32,14 +33,14 @@ class UserDaoTest {
     }
 
     @Test
-    void findById() {
+    void findById() throws SQLException {
         final User user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findByAccount() {
+    void findByAccount() throws SQLException {
         final String account = "gugu";
         final User user = userDao.findByAccount(account);
 
@@ -47,7 +48,7 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() {
+    void insert() throws SQLException {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -58,7 +59,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException {
         final String newPassword = "password99";
         final User user = userDao.findById(1L);
         user.changePassword(newPassword);
