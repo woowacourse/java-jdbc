@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.SelectJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +40,11 @@ public class UserDao {
                 preparedStatement.setString(2, user.getPassword());
                 preparedStatement.setString(3, user.getEmail());
             }
+
+            @Override
+            public Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
+            }
         };
         jdbcTemplate.executeQuery();
     }
@@ -62,13 +66,18 @@ public class UserDao {
                 preparedStatement.setString(1, user.getPassword());
                 preparedStatement.setLong(2, user.getId());
             }
+
+            @Override
+            public Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
+            }
         };
         jdbcTemplate.executeQuery();
     }
 
     public List<User> findAll() {
 
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
                 return dataSource;
@@ -93,12 +102,12 @@ public class UserDao {
                 );
             }
         };
-        return (List<User>) selectJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
 
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
                 return dataSource;
@@ -125,12 +134,12 @@ public class UserDao {
             }
         };
 
-        return (User) selectJdbcTemplate.queryForObject();
+        return (User) jdbcTemplate.queryForObject();
     }
 
     public User findByAccount(String account) {
 
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
                 return dataSource;
@@ -156,6 +165,6 @@ public class UserDao {
                 );
             }
         };
-        return (User) selectJdbcTemplate.queryForObject();
+        return (User) jdbcTemplate.queryForObject();
     }
 }
