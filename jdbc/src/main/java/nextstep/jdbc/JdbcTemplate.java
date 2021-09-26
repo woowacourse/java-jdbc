@@ -66,7 +66,7 @@ public class JdbcTemplate {
             throw new EmptyResultException("queryForObject Result is Empty");
         }
         if (results.size() > 1) {
-            log.error("queryForObject Result Size Over than 1, size > {}", results.size());
+            log.error("queryForObject Result Size Over than 1, result size is {}", results.size());
             throw new ResultSizeExceedException("queryForObject Result Size Over than 1");
         }
     }
