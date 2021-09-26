@@ -1,15 +1,17 @@
 package nextstep.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-
-import static nextstep.jdbc.PreparedStatementValueSetter.setPreparedStatementValues;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.DatabaseConnectionFailureException;
+import nextstep.jdbc.exception.PreparedStatementCreationFailureException;
+import nextstep.jdbc.exception.QueryExecutionFailureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -24,47 +26,72 @@ public class JdbcTemplate {
 
     public int update(String sql, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setPreparedStatementValues(pstmt, pss);
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(pss);
             return pstmt.executeUpdate();
         });
     }
 
     public int update(String sql, Object... args) {
         return execute(sql, pstmt -> {
-            setPreparedStatementValues(pstmt, args);
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(args);
             return pstmt.executeUpdate();
         });
     }
 
     public int update(String sql, Object[] args, int[] argTypes) {
         return execute(sql, pstmt -> {
-            setPreparedStatementValues(pstmt, args, argTypes);
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(args, argTypes);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
-            setPreparedStatementValues(pstmt, setter);
-            return ResultSetExtractor.toObject(rowMapper, pstmt);
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(setter);
+            return getObjectResult(rowMapper, pstmt);
         });
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
-            setPreparedStatementValues(pstmt, args);
-            return ResultSetExtractor.toObject(rowMapper, pstmt);
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(args);
+            return getObjectResult(rowMapper, pstmt);
         });
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        return execute(sql, pstmt -> ResultSetExtractor.toList(rowMapper, pstmt));
+        return execute(sql, pstmt -> getListResult(rowMapper, pstmt));
+    }
+
+    private <T> List<T> getListResult(RowMapper<T> rowMapper, PreparedStatement pstmt) {
+        ResultSet resultSet = getResultSet(pstmt);
+        ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(rowMapper);
+        return resultSetExtractor.toList(resultSet);
+    }
+
+    private <T> T getObjectResult(RowMapper<T> rowMapper, PreparedStatement pstmt) {
+        ResultSet resultSet = getResultSet(pstmt);
+        ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(rowMapper);
+        return resultSetExtractor.toObject(resultSet);
+    }
+
+    private ResultSet getResultSet(PreparedStatement pstmt) {
+        try {
+            return pstmt.executeQuery();
+        } catch (SQLException e) {
+            throw new QueryExecutionFailureException(e.getMessage(), e.getCause());
+        }
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
+            Connection conn = getConnection();
+            PreparedStatement pstmt = getPreparedStatement(conn, sql)
         ) {
             if (log.isDebugEnabled()) {
                 log.debug(SQL_INFO_LOG, sql);
@@ -72,6 +99,22 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection conn, String sql) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new PreparedStatementCreationFailureException(e.getMessage(), e.getCause());
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DatabaseConnectionFailureException(e.getMessage(), e.getCause());
         }
     }
 }

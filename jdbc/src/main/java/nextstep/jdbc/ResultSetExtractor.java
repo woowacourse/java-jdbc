@@ -1,29 +1,39 @@
 package nextstep.jdbc;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import nextstep.jdbc.exception.ResultSetMappingFailureException;
 
-public class ResultSetExtractor {
+public class ResultSetExtractor<T> {
 
-    public static <T> T toObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        ResultSet rs = pstmt.executeQuery();
+    private final RowMapper<T> rowMapper;
 
-        if (!rs.next()) {
-            return null;
-        }
-        return rowMapper.mapRow(rs);
+    public ResultSetExtractor(RowMapper<T> rowMapper) {
+        this.rowMapper = rowMapper;
     }
 
-    public static <T> List<T> toList(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        ResultSet rs = pstmt.executeQuery();
-
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(rowMapper.mapRow(rs));
+    public T toObject(ResultSet rs) {
+        try {
+            if (!rs.next()) {
+                return null;
+            }
+            return rowMapper.mapRow(rs);
+        } catch (SQLException exception) {
+           throw new ResultSetMappingFailureException(exception.getMessage(), exception.getCause());
         }
-        return result;
+    }
+
+    public List<T> toList(ResultSet rs) {
+        try {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        } catch (SQLException exception) {
+            throw new ResultSetMappingFailureException(exception.getMessage(), exception.getCause());
+        }
     }
 }

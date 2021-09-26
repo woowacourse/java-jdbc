@@ -2,22 +2,41 @@ package nextstep.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import nextstep.jdbc.exception.PreparedStatementSetFailureException;
 
 public class PreparedStatementValueSetter {
 
-    public static void setPreparedStatementValues(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private final PreparedStatement pstmt;
+
+    public PreparedStatementValueSetter(PreparedStatement pstmt) {
+        this.pstmt = pstmt;
+    }
+
+    public void setPreparedStatementValues(Object[] args) {
+        try {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        } catch (SQLException e) {
+            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
         }
     }
 
-    public static void setPreparedStatementValues(PreparedStatement pstmt, PreparedStatementSetter pss) throws SQLException {
-        pss.setValues(pstmt);
+    public void setPreparedStatementValues(PreparedStatementSetter pss) {
+        try {
+            pss.setValues(pstmt);
+        } catch (SQLException e) {
+            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
+        }
     }
 
-    public static void setPreparedStatementValues(PreparedStatement pstmt, Object[] args, int[] argTypes) throws SQLException {
-        for (int i = 1; i <= args.length; i++) {
-            pstmt.setObject(i, args[i], argTypes[i]);
+    public void setPreparedStatementValues(Object[] args, int[] argTypes) {
+        try {
+            for (int i = 1; i <= args.length; i++) {
+                pstmt.setObject(i, args[i], argTypes[i]);
+            }
+        } catch (SQLException e) {
+            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
         }
     }
 }
