@@ -19,7 +19,7 @@ public class PreparedStatementExecutor {
         return pstmt.executeUpdate();
     }
 
-    public static <T> List<T> query(RowMapper<T> mapper, PreparedStatement pstmt, Object[] params) throws SQLException {
+    public static <T> List<T> query(PreparedStatement pstmt, Object[] params, RowMapper<T> mapper) throws SQLException {
         setArguments(pstmt, params);
         try (ResultSet resultSet = pstmt.executeQuery()) {
             List<T> results = new ArrayList<>();
@@ -30,8 +30,8 @@ public class PreparedStatementExecutor {
         }
     }
 
-    public static <T> T queryForObject(RowMapper<T> mapper, PreparedStatement pstmt, Object[] params) throws SQLException {
-        List<T> results = query(mapper, pstmt, params);
+    public static <T> T queryForObject(PreparedStatement pstmt, Object[] params, RowMapper<T> mapper) throws SQLException {
+        List<T> results = query(pstmt, params, mapper);
         if (results.size() != 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }

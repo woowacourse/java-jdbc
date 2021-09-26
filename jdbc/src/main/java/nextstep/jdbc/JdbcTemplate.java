@@ -18,11 +18,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> mapper, Object... params) {
-        return execute(sql, pstmt -> PreparedStatementExecutor.query(mapper, pstmt, params));
+        return execute(sql, pstmt -> PreparedStatementExecutor.query(pstmt, params, mapper));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... params) {
-        return execute(sql, pstmt -> PreparedStatementExecutor.queryForObject(mapper, pstmt, params));
+        return execute(sql, pstmt -> PreparedStatementExecutor.queryForObject(pstmt, params, mapper));
     }
 
     public int update(String sql, Object... params) {
