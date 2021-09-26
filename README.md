@@ -21,4 +21,6 @@
   - [ ] custom 예외를 사용하여 checked exception을 unchecked로 변경
   - [ ] RowMapper 제네릭 활용
 
+- [ ] findById 구현
+- [ ] findByAccount 구현
 - [ ] Controller in-memory user 저장 방식 dao 로 변경
