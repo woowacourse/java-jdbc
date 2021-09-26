@@ -7,11 +7,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import nextstep.web.annotation.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Repository
 public class InMemoryUserRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryUserRepository.class);

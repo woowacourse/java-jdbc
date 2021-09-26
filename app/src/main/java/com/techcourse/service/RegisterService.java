@@ -5,7 +5,6 @@ import com.techcourse.controller.request.RegisterRequest;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.exception.DuplicateAccountException;
-import com.techcourse.repository.InMemoryUserRepository;
 import nextstep.web.annotation.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

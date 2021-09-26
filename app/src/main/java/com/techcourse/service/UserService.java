@@ -3,7 +3,6 @@ package com.techcourse.service;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.exception.UserNotFoundException;
-import com.techcourse.repository.InMemoryUserRepository;
 import nextstep.web.annotation.Service;
 
 @Service

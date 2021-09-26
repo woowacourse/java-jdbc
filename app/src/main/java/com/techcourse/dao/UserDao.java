@@ -21,12 +21,10 @@ public class UserDao {
         rs.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcInsert;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.jdbcInsert = new SimpleJdbcInsert(dataSource, "users", "id");
     }

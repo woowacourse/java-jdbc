@@ -1,10 +1,12 @@
 package nextstep.web;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.sql.DataSource;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.Repository;
 import nextstep.web.annotation.Service;
@@ -16,16 +18,16 @@ public class ComponentContainer {
 
     private ComponentContainer() {}
 
-    public static void initializeComponents(Object... basePackage) throws Exception {
+    public static void initializeComponents(DataSource dataSource, Object... basePackage) throws Exception {
         Reflections reflections = new Reflections(basePackage);
-        initializeRepositories(reflections.getTypesAnnotatedWith(Repository.class));
+        initializeRepositories(reflections.getTypesAnnotatedWith(Repository.class), dataSource);
         initializeServices(reflections.getTypesAnnotatedWith(Service.class));
         initializeControllers(reflections.getTypesAnnotatedWith(Controller.class));
     }
 
-    private static void initializeRepositories(Set<Class<?>> repositoryTypes) throws Exception {
+    private static void initializeRepositories(Set<Class<?>> repositoryTypes, DataSource dataSource) throws Exception {
         for (Class<?> repository : repositoryTypes) {
-            Object instance = repository.getConstructor().newInstance();
+            Object instance = repository.getConstructor(DataSource.class).newInstance(dataSource);
             COMPONENTS.put(repository, instance);
         }
     }
