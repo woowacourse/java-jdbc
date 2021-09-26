@@ -11,8 +11,7 @@ import javax.sql.DataSource;
 
 import com.techcourse.domain.User;
 
-import nextstep.jdbc.InsertJdbcTemplate;
-import nextstep.jdbc.UpdateJdbcTemplate;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +26,46 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
-        insertJdbcTemplate.insert(user);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            public String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            public void setValues(User user, PreparedStatement preparedStatement) throws SQLException {
+                preparedStatement.setString(1, user.getAccount());
+                preparedStatement.setString(2, user.getPassword());
+                preparedStatement.setString(3, user.getEmail());
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public void update(User user) {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
-        updateJdbcTemplate.update(user);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            public DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            public String createQuery() {
+                return "update users set password = ? where id = ?";
+            }
+
+            @Override
+            public void setValues(User user, PreparedStatement preparedStatement) throws SQLException {
+                preparedStatement.setString(1, user.getPassword());
+                preparedStatement.setLong(2, user.getId());
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
