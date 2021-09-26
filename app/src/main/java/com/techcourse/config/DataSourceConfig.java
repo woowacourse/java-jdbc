@@ -1,9 +1,11 @@
 package com.techcourse.config;
 
+import nextstep.web.annotation.DBConnection;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
 
+@DBConnection
 public class DataSourceConfig {
 
     private static javax.sql.DataSource INSTANCE;

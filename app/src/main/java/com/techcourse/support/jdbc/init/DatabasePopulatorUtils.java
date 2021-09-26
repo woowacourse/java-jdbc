@@ -1,5 +1,6 @@
 package com.techcourse.support.jdbc.init;
 
+import nextstep.web.annotation.ConnectingDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+@ConnectingDB
 public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
