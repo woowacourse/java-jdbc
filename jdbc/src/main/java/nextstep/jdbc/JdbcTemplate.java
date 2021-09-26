@@ -9,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
+import static nextstep.jdbc.PreparedStatementValueSetter.setPreparedStatementValues;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -70,22 +72,6 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
-        }
-    }
-
-    private void setPreparedStatementValues(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
-    private void setPreparedStatementValues(PreparedStatement pstmt, PreparedStatementSetter pss) throws SQLException {
-        pss.setValues(pstmt);
-    }
-
-    private void setPreparedStatementValues(PreparedStatement pstmt, Object[] args, int[] argTypes) throws SQLException {
-        for (int i = 1; i <= args.length; i++) {
-            pstmt.setObject(i, args[i], argTypes[i]);
         }
     }
 }
