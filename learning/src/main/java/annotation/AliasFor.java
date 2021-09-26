@@ -1,14 +1,13 @@
 package annotation;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@AliasFor(annotation = Component.class)
-@Component
-public @interface Service {
-    String value() default "";
+public @interface AliasFor {
+    Class<? extends Annotation> annotation() default Annotation.class;
 }

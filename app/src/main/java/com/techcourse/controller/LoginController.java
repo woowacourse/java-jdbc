@@ -1,7 +1,7 @@
 package com.techcourse.controller;
 
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.repository.UserDaoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -21,11 +21,11 @@ public class LoginController {
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
         return UserSession.getUserFrom(request.getSession())
-                .map(user -> {
-                    log.info("logged in {}", user.getAccount());
-                    return redirect("/index.jsp");
-                })
-                .orElse(new ModelAndView(new JspView("/login.jsp")));
+            .map(user -> {
+                log.info("logged in {}", user.getAccount());
+                return redirect("/index.jsp");
+            })
+            .orElse(new ModelAndView(new JspView("/login.jsp")));
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
@@ -34,12 +34,12 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
-                .map(user -> {
-                    log.info("User : {}", user);
-                    return login(request, user);
-                })
-                .orElse(redirect("/401.jsp"));
+        return UserDaoRepository.USER_DAO.findByAccount(request.getParameter("account"))
+            .map(user -> {
+                log.info("User : {}", user);
+                return login(request, user);
+            })
+            .orElse(redirect("/401.jsp"));
     }
 
     private ModelAndView login(HttpServletRequest request, User user) {

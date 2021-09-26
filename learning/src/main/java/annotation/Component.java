@@ -7,8 +7,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@AliasFor(annotation = Component.class)
-@Component
-public @interface Service {
+public @interface Component {
     String value() default "";
 }
