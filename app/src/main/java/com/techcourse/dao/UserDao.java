@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,6 +33,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
+
+            @Override
             protected void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
@@ -56,6 +60,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
+
+            @Override
             protected void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
@@ -72,7 +81,7 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -100,7 +109,7 @@ public class UserDao {
                 pstmt.setLong(1, id);
             }
         };
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
