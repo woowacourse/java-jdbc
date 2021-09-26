@@ -1,116 +1,59 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.core.RowMapper;
+import nextstep.jdbc.util.DataAccessUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> userRowMapper;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userRowMapper = rs -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
-        // todo
+        final String sql = "update users set password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select * from users";
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+    public Optional<User> findById(Long id) {
+        final String sql = "select * from users where id = ?";
+        List<User> users = jdbcTemplate.query(sql, userRowMapper, id);
+        return Optional.ofNullable(DataAccessUtils.singleResult(users));
     }
 
-    public User findByAccount(String account) {
-        // todo
-        return null;
+    public Optional<User> findByAccount(String account) {
+        final String sql = "select * from users where account = ?";
+        List<User> users = jdbcTemplate.query(sql, userRowMapper, account);
+        return Optional.ofNullable(DataAccessUtils.singleResult(users));
+    }
+
+    public void cleanUp() {
+        final String deleteSql = "delete from users";
+        final String alterSql = "alter table users alter column id restart with 1";
+        jdbcTemplate.update(deleteSql);
+        jdbcTemplate.update(alterSql);
     }
 }
