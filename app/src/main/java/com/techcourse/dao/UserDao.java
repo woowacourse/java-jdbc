@@ -30,8 +30,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        String sql = "select id, account, password, email from users";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return jdbcTemplate.queryForList(sql, new UserRowMapper(), User.class);
     }
 
     public User findById(Long id) {
@@ -44,9 +45,5 @@ public class UserDao {
         String sql = "select id, account, password, email from users where account = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         return (User) jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account), new UserRowMapper());
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

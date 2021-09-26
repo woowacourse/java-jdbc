@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -57,7 +60,39 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            return rowMapper.mapRow(rs);
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper rowMapper, Class<T> clazz) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = executeQuery(pstmt);
+
+            log.debug("query : {}", sql);
+
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add((T) rowMapper.mapRow(rs));
+            }
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
