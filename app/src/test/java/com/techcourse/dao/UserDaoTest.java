@@ -75,7 +75,7 @@ class UserDaoTest {
 
         // then
         assertThatThrownBy(callable).isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
-                                    .hasMessage("파라미터에 해당하는 엔티티를 찾을 수 없습니다.");
+                                    .hasMessage("파라미터와 일치하는 엔티티가 존재하지 않거나 일치하는 엔티티가 둘 이상입니다.");
     }
 
     @Test
@@ -104,7 +104,7 @@ class UserDaoTest {
 
         // then
         assertThatThrownBy(callable).isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
-                                    .hasMessage("파라미터에 해당하는 엔티티를 찾을 수 없습니다.");
+                                    .hasMessage("파라미터와 일치하는 엔티티가 존재하지 않거나 일치하는 엔티티가 둘 이상입니다.");
     }
 
     @Test

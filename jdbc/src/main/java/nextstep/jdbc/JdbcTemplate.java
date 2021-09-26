@@ -31,15 +31,15 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         final List<T> results = queryForList(sql, rowMapper, params);
-        if (results.isEmpty()) {
-            throw new IncorrectResultSizeDataAccessException("파라미터에 해당하는 엔티티를 찾을 수 없습니다.");
+        if (isValidSize(results)) {
+            return results.get(0);
         }
 
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException("파라미터와 일치하는 엔티티가 2개 이상입니다.");
-        }
+        throw new IncorrectResultSizeDataAccessException("파라미터와 일치하는 엔티티가 존재하지 않거나 일치하는 엔티티가 둘 이상입니다.");
+    }
 
-        return results.get(0);
+    private <T> boolean isValidSize(List<T> results) {
+        return results.size() == 1;
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback, Object... params) {
