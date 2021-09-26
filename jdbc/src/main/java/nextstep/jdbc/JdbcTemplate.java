@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.exception.DataAccessException;
 import org.slf4j.Logger;
@@ -33,11 +34,11 @@ public class JdbcTemplate {
         return query(sql, (rs, rowNum) -> getSingleObject(rs, type), createPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(String sql, Class<T> type, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, Class<T> type, Object... args) {
         return queryForObject(sql, (rs, rowNum) -> getSingleObject(rs, type), args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, new RowMapperExtractor<>(rowMapper), createPreparedStatementSetter(args));
 
         if (result.isEmpty()) {
@@ -47,7 +48,7 @@ public class JdbcTemplate {
             throw new DataAccessException("조회된 데이터가 2개 이상입니다.");
         }
 
-        return result.get(0);
+        return Optional.ofNullable(result.get(0));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {

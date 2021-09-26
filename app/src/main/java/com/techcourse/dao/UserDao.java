@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 
@@ -28,12 +29,12 @@ public class UserDao {
         return jdbcTemplate.queryForList(sql, User.class);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id=?";
         return jdbcTemplate.queryForObject(sql, User.class, id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account=?";
         return jdbcTemplate.queryForObject(sql, User.class, account);
     }
