@@ -1,16 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -20,8 +18,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         DataSource dataSource = DataSourceConfig.getInstance();
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        userDao = new UserDao(jdbcTemplate);
+        userDao = new UserDao(dataSource);
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -34,7 +31,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).get();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -42,7 +39,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(account).get();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -53,7 +50,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(2L).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -61,12 +58,12 @@ class UserDaoTest {
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findById(1L).get();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

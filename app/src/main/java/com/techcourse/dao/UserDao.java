@@ -4,9 +4,13 @@ import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
+import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.web.annotation.Repository;
 
+@Repository
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
@@ -30,6 +34,10 @@ public class UserDao {
         };
     }
 
+    public UserDao(DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
+    }
+
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
@@ -45,13 +53,18 @@ public class UserDao {
         return jdbcTemplate.findAll(sql, rowMapper);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.findWithCondition(sql, rowMapper, id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.findWithCondition(sql, rowMapper, account);
+    }
+
+    public Optional<User> findByAccountAndPassoword(String account, String password) {
+        final String sql = "select id, account, password, email from users where account = ? and password = ?";
+        return jdbcTemplate.findWithCondition(sql, rowMapper, account, password);
     }
 }

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T findWithCondition(String query, RowMapper rowMapper, Object... querySubject) {
+    public <T> Optional<T> findWithCondition(String query, RowMapper rowMapper, Object... querySubject) {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         try {
@@ -57,7 +58,7 @@ public class JdbcTemplate {
             preparedStatement = connection.prepareStatement(query);
             setValue(preparedStatement, querySubject);
             ResultSet resultSet = preparedStatement.executeQuery();
-            return rowMapper.rowMappedObject(resultSet);
+            return Optional.ofNullable(rowMapper.rowMappedObject(resultSet));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
