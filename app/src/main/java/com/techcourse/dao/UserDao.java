@@ -18,26 +18,14 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(sql, new InsertUserPreparedStatementSetter(user));
     }
 
     public void update(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(sql, new UpdateUserPreparedStatementSetter(user));
     }
 
@@ -47,14 +35,8 @@ public class UserDao {
     }
 
     public User findById(Long id) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
         String sql = "select id, account, password, email from users where id = ?";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         return (User) jdbcTemplate.query(sql, new SelectUserPreparedStatementSetter(id), new UserRowMapper());
     }
 

@@ -9,21 +9,25 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
         return pstmt.executeQuery();
     }
 
-    protected abstract DataSource getDataSource();
-
     public void update(String sql, PreparedStatementSetter setter) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = getDataSource().getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             setter.setValues(pstmt);
@@ -46,7 +50,7 @@ public abstract class JdbcTemplate {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = getDataSource().getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
             setter.setValues(pstmt);
             rs = executeQuery(pstmt);
