@@ -11,7 +11,7 @@ import java.sql.SQLException;
 
 public abstract class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(nextstep.jdbc.JdbcTemplate.class);
+    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
         return pstmt.executeQuery();
