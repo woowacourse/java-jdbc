@@ -27,8 +27,8 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection()) {
-            PreparedStatement pstmt = psc.createPreparedStatement(conn);
+        try (final Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = psc.createPreparedStatement(conn)) {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("execute SQLException", e);
@@ -36,14 +36,7 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql) {
-        class ExecuteStatementCallback implements PreparedStatementCallback<Object> {
-            @Override
-            public Object doInPreparedStatement(PreparedStatement pstmt) throws SQLException {
-                pstmt.execute();
-                return null;
-            }
-        }
-        execute(new SimplePreparedStatementCreator(sql), new ExecuteStatementCallback());
+        execute(new SimplePreparedStatementCreator(sql), PreparedStatement::execute);
     }
 
     public <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) throws DataAccessException {
@@ -52,7 +45,7 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) throws DataAccessException {
         log.info(sql);
-        return updateCount(execute(sql, ps -> ps.executeUpdate(), args));
+        return updateCount(execute(sql, PreparedStatement::executeUpdate, args));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {

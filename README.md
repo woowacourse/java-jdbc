@@ -13,7 +13,6 @@ public class JdbcTemplate {
     }
 }
 ```
-- try-resource 구조에서, 로직을 분리하게 되니, 하나의 메소드 안에서, connection pstmt를 관장하지 않게 됨. 별도로 메모리르 해제해야 한다고 생각됨.
 
 ## 구현 목표
 - [x] Sql+args로 PreparedStatement를 만드는 로직을 분리하여, args가 있든 없든 공통 로직으로 묶을 수 있게끔 리팩토링
