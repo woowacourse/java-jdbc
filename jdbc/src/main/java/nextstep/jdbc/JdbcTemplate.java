@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public abstract class JdbcTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update() {
+    public void executeQuery() {
         String sql = createQuery();
 
         try (Connection connection = getDataSource().getConnection();

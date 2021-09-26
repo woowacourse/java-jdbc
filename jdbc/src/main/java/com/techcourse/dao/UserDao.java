@@ -42,7 +42,7 @@ public class UserDao {
                 preparedStatement.setString(3, user.getEmail());
             }
         };
-        jdbcTemplate.update();
+        jdbcTemplate.executeQuery();
     }
 
     public void update(User user) {
@@ -63,7 +63,7 @@ public class UserDao {
                 preparedStatement.setLong(2, user.getId());
             }
         };
-        jdbcTemplate.update();
+        jdbcTemplate.executeQuery();
     }
 
     public List<User> findAll() {
