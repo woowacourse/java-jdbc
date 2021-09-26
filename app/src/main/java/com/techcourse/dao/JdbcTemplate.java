@@ -14,6 +14,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final String SQL_INFO_LOG = "query : {}";
 
     private final DataSource dataSource;
 
@@ -29,12 +30,11 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setter.setValues(pstmt);
             if (log.isDebugEnabled()) {
-                log.debug("query : {}", sql);
+                log.debug(SQL_INFO_LOG, sql);
             }
             pstmt.executeUpdate();
         } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 
@@ -42,24 +42,23 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setter.setValues(pstmt);
             if (log.isDebugEnabled()) {
-                log.debug("query : {}", sql);
+                log.debug(SQL_INFO_LOG, sql);
             }
             ResultSet rs = executeQuery(pstmt);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            if (!rs.next()) {
+                return null;
             }
-            return null;
+            return rowMapper.mapRow(rs);
         } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (log.isDebugEnabled()) {
-                log.debug("query : {}", sql);
+                log.debug(SQL_INFO_LOG, sql);
             }
             ResultSet rs = executeQuery(pstmt);
 
@@ -69,8 +68,7 @@ public class JdbcTemplate {
             }
             return result;
         } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 }

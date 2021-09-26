@@ -18,7 +18,7 @@
 - [ ] 라이브러리 확장
   - [x] JdbcTemplate이 datasource를 필드로 갖고 있도록 수정
   - [x] PreparedStatementSetter 람다 적용
-  - [ ] custom 예외를 사용하여 checked exception을 unchecked로 변경
+  - [x] custom 예외를 사용하여 checked exception을 unchecked로 변경
   - [x] RowMapper 제네릭 활용
   - [x] try-with-resources 적용
 
