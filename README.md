@@ -15,7 +15,7 @@
 - [x] 또 다른 템플릿 메서드 패턴 적용
 - [x] 불필요한 mapRow 메서드 제거
 - [x] PreparedStatementSetter 인터페이스 적용
-- [ ] 라이브러리 확장
+- [x] 라이브러리 확장
   - [x] JdbcTemplate이 datasource를 필드로 갖고 있도록 수정
   - [x] PreparedStatementSetter 람다 적용
   - [x] custom 예외를 사용하여 checked exception을 unchecked로 변경
