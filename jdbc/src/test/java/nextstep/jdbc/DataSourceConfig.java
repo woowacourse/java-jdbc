@@ -1,4 +1,4 @@
-package com.techcourse.config;
+package nextstep.jdbc;
 
 import org.h2.jdbcx.JdbcDataSource;
 

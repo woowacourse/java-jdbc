@@ -1,12 +1,13 @@
 package com.techcourse.controller;
 
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.mvc.view.util.ViewRedirectHelper;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -23,7 +24,7 @@ public class LoginController {
         return UserSession.getUserFrom(request.getSession())
                 .map(user -> {
                     log.info("logged in {}", user.getAccount());
-                    return redirect("/index.jsp");
+                    return ViewRedirectHelper.redirect("/index.jsp");
                 })
                 .orElse(new ModelAndView(new JspView("/login.jsp")));
     }
@@ -31,28 +32,19 @@ public class LoginController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ModelAndView login(HttpServletRequest request, HttpServletResponse response) {
         if (UserSession.isLoggedIn(request.getSession())) {
-            return redirect("/index.jsp");
+            return ViewRedirectHelper.redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
-                .map(user -> {
-                    log.info("User : {}", user);
-                    return login(request, user);
-                })
-                .orElse(redirect("/401.jsp"));
+        return login(request, UserDao.findByAccount(request.getParameter("account")));
     }
 
     private ModelAndView login(HttpServletRequest request, User user) {
         if (user.checkPassword(request.getParameter("password"))) {
             final HttpSession session = request.getSession();
             session.setAttribute(UserSession.SESSION_KEY, user);
-            return redirect("/index.jsp");
+            return ViewRedirectHelper.redirect("/index.jsp");
         } else {
-            return redirect("/401.jsp");
+            return ViewRedirectHelper.redirect("/401.jsp");
         }
-    }
-
-    private ModelAndView redirect(String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }

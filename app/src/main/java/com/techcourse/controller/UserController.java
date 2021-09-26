@@ -1,7 +1,7 @@
 package com.techcourse.controller;
 
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
@@ -23,9 +23,8 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        final User user = InMemoryUserRepository.findByAccount(account)
-                .orElseThrow();
 
+        final User user = UserDao.findByAccount(account);
         modelAndView.addObject("user", user);
         return modelAndView;
     }

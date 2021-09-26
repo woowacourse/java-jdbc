@@ -18,7 +18,7 @@ class ServletTest {
 
     /**
      * 2. 톰캣 maxThread 테스트 가능할까?
-     *
+     * <p>
      * 서블릿 컨테이너 설정 테스트 코드
      * accept-count 1
      * threads max 1

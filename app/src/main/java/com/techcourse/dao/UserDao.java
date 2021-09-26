@@ -1,116 +1,55 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
-    private final DataSource dataSource;
-
-    public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void insert(User user) {
+    public static void insert(User user) {
+        log.info("UserDao insert Method");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
-        // todo
+    public static void update(User user) {
+        log.info("UserDao update Method");
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        // todo
-        return null;
+    public static List<User> findAll() {
+        log.info("UserDao findAll Method");
+        final String sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, userRowMapper());
     }
 
-    public User findById(Long id) {
+    public static User findById(Long id) {
+        log.info("UserDao findById Method");
         final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return jdbcTemplate.queryForObject(sql, userRowMapper(), id);
     }
 
-    public User findByAccount(String account) {
-        // todo
-        return null;
+    public static User findByAccount(String account) {
+        log.info("UserDao findByAccount Method");
+        final String sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
+    }
+
+    public static RowMapper<User> userRowMapper() {
+        return (rs -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        ));
     }
 }
