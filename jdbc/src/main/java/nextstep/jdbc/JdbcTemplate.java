@@ -24,6 +24,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = generatePreparedStatement(sql, conn, args)) {
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = generatePreparedStatement(sql, conn, args);
@@ -43,15 +52,6 @@ public class JdbcTemplate {
                 list.add(rowMapper.map(rs));
             }
             return list;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(sql, conn, args)) {
-            return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
