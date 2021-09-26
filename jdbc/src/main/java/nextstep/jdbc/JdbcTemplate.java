@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import nextstep.jdbc.exception.JdbcExecutionException;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
