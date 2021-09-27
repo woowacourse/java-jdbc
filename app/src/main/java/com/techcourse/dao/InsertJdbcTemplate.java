@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 
-import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -20,7 +19,7 @@ public abstract class InsertJdbcTemplate {
     public void insert() {
         try (Connection conn = createConnection();
                 PreparedStatement pstmt = createPstmt(conn)) {
-            setValuesForInsert2(pstmt);
+            setValuesForInsert(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -34,15 +33,5 @@ public abstract class InsertJdbcTemplate {
         return dataSource.getConnection();
     }
 
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.executeUpdate();
-
-    }
-
-    public abstract void setValuesForInsert2(PreparedStatement pstmt) throws SQLException;
+    public abstract void setValuesForInsert(PreparedStatement pstmt) throws SQLException;
 }

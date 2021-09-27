@@ -39,7 +39,7 @@ public class UserDao {
             }
 
             @Override
-            public void setValuesForInsert2(PreparedStatement pstmt) throws SQLException {
+            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
