@@ -23,7 +23,7 @@ public class JdbcTemplate {
             setValues(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataException(e.getMessage());
         }
     }
 
@@ -33,12 +33,19 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)) {
+                PreparedStatement pstmt = conn.prepareStatement(query);
+                ResultSet resultSet = null) {
             setValues(pstmt, params);
             pstmt.executeQuery();
-            return doMapping(pstmt.executeQuery(), rowMapper);
+            return mapping(pstmt, rowMapper);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataException(e.getMessage());
+        }
+    }
+
+    private <T> List<T> mapping(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
+            return doMapping(pstmt.executeQuery(), rowMapper);
         }
     }
 
