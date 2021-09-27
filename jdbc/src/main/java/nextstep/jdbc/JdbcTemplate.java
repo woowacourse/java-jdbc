@@ -20,6 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(String sql, Object... parameters) throws DataAccessException {
+        update(sql, createPreparedStatementSetter(parameters));
+    }
+
     public void update(String sql, PreparedStatementSetter pstmtSetter) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -31,8 +35,16 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object... parameters) throws DataAccessException {
-        update(sql, createPreparedStatementSetter(parameters));
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        List<T> result = query(sql, rowMapper, createPreparedStatementSetter(parameters));
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        return query(sql, rowMapper, createPreparedStatementSetter(parameters));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) throws DataAccessException {
@@ -50,18 +62,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        return query(sql, rowMapper, createPreparedStatementSetter(parameters));
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        List<T> result = query(sql, rowMapper, createPreparedStatementSetter(parameters));
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.get(0);
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(Object... parameters) {
