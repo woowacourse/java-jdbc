@@ -18,11 +18,7 @@ public class ArgumentPreparedStatementSetter {
         }
 
         for (int i = 0; i < args.length; i++) {
-            doSetValue(ps, i + 1, this.args[i]);
+            ps.setObject(i + 1, this.args[i]);
         }
-    }
-
-    private void doSetValue(final PreparedStatement ps, final int parameterPosition, final Object argValue) throws SQLException {
-        StatementCreatorUtils.setParameterValue(ps, parameterPosition, argValue);
     }
 }
