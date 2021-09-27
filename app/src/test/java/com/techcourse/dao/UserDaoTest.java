@@ -3,12 +3,18 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -25,16 +31,29 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final List<User> users = userDao.findAll();
+        final User user = new User("gugu1", "password1", "hkkang@woowahan.com1");
+        userDao.insert(user);
 
-        assertThat(users).isNotEmpty();
+        assertThat(userDao.findAll()).isNotEmpty();
     }
 
     @Test
     void findById() {
         final User user = userDao.findById(1L);
-
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdThrowNotExists() {
+        assertThatThrownBy(()  -> userDao.findById(20L)).isInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void findByIdThrowIncorrectSize() {
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
+        assertThatThrownBy(()  -> userDao.findByAccount("gugu")).isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
@@ -48,13 +67,15 @@ class UserDaoTest {
 
     @Test
     void insert() {
+        List<User> before = userDao.findAll();
+
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        List<User> actual = userDao.findAll();
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.size() - before.size()).isEqualTo(1);
     }
 
     @Test
