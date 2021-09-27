@@ -9,26 +9,20 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 
-public abstract class AbstractJdbcTemplate {
+public class AbstractJdbcTemplate {
 
     private final DataSource dataSource;
 
-    public AbstractJdbcTemplate(DataSource dataSource) {
+    protected AbstractJdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     protected void executeUpdate(StatementStrategy stmt) {
-        doBinghe(stmt, new Binghe<Integer>() {
-            @Override
-            public Integer doSomething(PreparedStatement ps) throws SQLException {
-                return ps.executeUpdate();
-            }
-        });
-//        doBinghe(stmt, PreparedStatement::executeUpdate);
+        execute(stmt, PreparedStatement::executeUpdate);
     }
 
     protected <T> T executeQuery(StatementStrategy stmt, ResultSetExtractor<T> rse) {
-        return doBinghe(stmt, new Binghe<T>() {
+        return execute(stmt, new executor<T>() {
             @Override
             public T doSomething(PreparedStatement ps) throws SQLException {
                 try (ResultSet rs = ps.executeQuery()) {
@@ -38,11 +32,11 @@ public abstract class AbstractJdbcTemplate {
         });
     }
 
-    private <T> T doBinghe(StatementStrategy stmt, Binghe<T> binghe) {
+    private <T> T execute(StatementStrategy stmt, executor<T> executor) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement ps = stmt.makePreparedStatement(conn);
         ) {
-          return binghe.doSomething(ps);
+          return executor.doSomething(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -66,7 +60,7 @@ public abstract class AbstractJdbcTemplate {
         }
     }
 
-    private interface Binghe<T> {
+    private interface executor<T> {
         T doSomething(PreparedStatement ps) throws SQLException;
     }
 }
