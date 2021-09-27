@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,42 +19,52 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
+
+//    public UserDao(JdbcTemplate jdbcTemplate) {
+//        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+//    }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        jdbcTemplate.update(con -> {
+            PreparedStatement pstmt = con.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            //todo: 추후 Custom Exception으로 변경하기!
-            throw new IllegalArgumentException();
-        }
+            return pstmt;
+        });
+
+
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql)
+//        ) {
+//            log.debug("query : {}", sql);
+//            pstmt.setString(1, user.getAccount());
+//            pstmt.setString(2, user.getPassword());
+//            pstmt.setString(3, user.getEmail());
+//            pstmt.executeUpdate();
+//        } catch (SQLException e) {
+//            //todo: 추후 Custom Exception으로 변경하기!
+//            throw new IllegalArgumentException();
+//        }
     }
 
     public void update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        jdbcTemplate.update(con -> {
+            PreparedStatement pstmt = con.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            //todo: 추후 Custom Exception으로 변경하기!
-            throw new IllegalArgumentException();
-        }
+            return pstmt;
+        });
     }
 
     public List<User> findAll() {
