@@ -32,11 +32,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        List<T> result = query(sql, rowMapper, parameters);
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.get(0);
+        List<T> results = query(sql, rowMapper, parameters);
+        return getSingleResult(results);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
@@ -60,5 +57,12 @@ public class JdbcTemplate {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }
+    }
+
+    private <T> T getSingleResult(List<T> results) {
+        if (results.size() != 1) {
+            throw new IllegalArgumentException();
+        }
+        return results.get(0);
     }
 }
