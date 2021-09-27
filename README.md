@@ -19,11 +19,12 @@
   - [x] DataAccessUtils로 singleResult 가져오기
 
 ## 너잘 리뷰 반영
-- [ ] RowMapperResultSetExtractor의 개선
+- [x] RowMapperResultSetExtractor의 개선
 - [x] ArgumentPreparedStatementSetter의 개선
 - [ ] JdbcTemplate 중복 개선
 
 ## 구구 리뷰 반영
-- [ ] JdbcTemplate에 delete 메서드
+- [x] JdbcTemplate에 delete 메서드
+  - [x] update로 유지 
 - [x] remove 2-depths
 - [x] ArgumentPreparedStatementSetter 개선

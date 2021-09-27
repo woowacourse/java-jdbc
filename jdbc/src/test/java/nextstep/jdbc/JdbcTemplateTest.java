@@ -63,7 +63,7 @@ class JdbcTemplateTest {
         // given
         String sql = "select * from users where account = ?";
         // when
-        User user = jdbcTemplate.query(sql, rowMapper, "너잘");
+        User user = jdbcTemplate.queryForObject(sql, rowMapper, "너잘");
 
         // then
         assertThat(user.getAccount()).isEqualTo("너잘");
@@ -77,7 +77,7 @@ class JdbcTemplateTest {
         // given
         String sql = "select * from users";
         // when
-        List<User> users = jdbcTemplate.query(sql, rowMapper);
+        List<User> users = jdbcTemplate.queryForList(sql, rowMapper);
 
         // then
         assertThat(users).hasSize(1);

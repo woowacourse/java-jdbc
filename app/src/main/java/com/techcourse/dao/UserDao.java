@@ -41,19 +41,19 @@ public class UserDao {
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         log.debug("query: {}", sql);
-        return jdbcTemplate.query(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         log.debug("query: {}", sql);
-        return jdbcTemplate.query(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 
     public List<User> findAll() {
         final String sql = "select * from users";
         log.debug("query: {}", sql);
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public void deleteAll() {
