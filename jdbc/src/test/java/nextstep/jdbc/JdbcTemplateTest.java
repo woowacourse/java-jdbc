@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.sql.Statement;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class JdbcTemplateTest {
@@ -57,12 +59,14 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("update 메서드를 이용해 user를 저장한다.")
     void insert() {
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         assertDoesNotThrow(() -> jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, EMAIL));
     }
 
     @Test
+    @DisplayName("update 메서드를 이용해 user 정보를 수정한다.")
     void update() {
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, EMAIL);
@@ -72,6 +76,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("query 메서드를 이용해 모든 유저들의 정보를 조회한다.")
     void query() {
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, EMAIL);
@@ -83,6 +88,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("queryForObject 메서드를 이용해 id로 특정 유저의 정보를 조회한다.")
     void queryForObject() {
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, EMAIL);
@@ -91,6 +97,18 @@ class JdbcTemplateTest {
         User user = jdbcTemplate.queryForObject(selectSql, rowMapper, ID);
         assertThat(user).usingRecursiveComparison()
                 .isEqualTo(BADA);
+    }
+
+    @Test
+    @DisplayName("queryForObject의 결과가 1개가 아니라면 예외를 발생한다.")
+    void queryForObject_exception() {
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, EMAIL);
+        jdbcTemplate.update(insertSql, ACCOUNT, PASSWORD, NEW_EMAIL);
+
+        String selectSql = "select id, account, password, email from users where account = ?";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(selectSql, rowMapper, ACCOUNT))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static class User {
