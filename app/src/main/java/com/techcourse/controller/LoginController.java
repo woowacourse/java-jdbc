@@ -23,7 +23,7 @@ public class LoginController {
     private final UserDao userDao;
 
     public LoginController(UserDao userDao) {
-        this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.userDao = userDao;
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)

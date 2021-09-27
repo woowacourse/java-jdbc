@@ -20,7 +20,7 @@ public class UserController {
     private final UserDao userDao;
 
     public UserController(UserDao userDao) {
-        this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.userDao = userDao;
     }
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);

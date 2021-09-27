@@ -18,7 +18,7 @@ public class RegisterController {
     private final UserDao userDao;
 
     public RegisterController(UserDao userDao) {
-        this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.userDao = userDao;
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
