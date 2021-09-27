@@ -9,29 +9,21 @@ import javax.sql.DataSource;
 public abstract class InsertJdbcTemplate {
 
     private final DataSource dataSource;
-    private final String query;
 
-    public InsertJdbcTemplate(DataSource dataSource, String query) {
+    public InsertJdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.query = query;
     }
 
     public void insert() {
-        try (Connection conn = createConnection();
-                PreparedStatement pstmt = createPstmt(conn)) {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
             setValuesForInsert(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private PreparedStatement createPstmt(Connection conn) throws SQLException {
-        return conn.prepareStatement(query);
-    }
-
-    private Connection createConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
+    public abstract String createQuery();
 
     public abstract void setValuesForInsert(PreparedStatement pstmt) throws SQLException;
 }

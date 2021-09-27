@@ -32,10 +32,15 @@ public class UserDao {
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource, sql) {
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
             @Override
             public void insert() {
                 super.insert();
+            }
+
+            @Override
+            public String createQuery() {
+                return sql;
             }
 
             @Override
