@@ -18,6 +18,7 @@ public class ResultSetExtractor<T> {
         while (resultSet.next()) {
             results.add(this.rowMapper.mapRow(resultSet));
         }
+        resultSet.close();
         return results;
     }
 }
