@@ -6,7 +6,6 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import nextstep.jdbc.exception.JdbcNotFoundException;
 
 public class UserDao {
 
@@ -44,20 +43,12 @@ public class UserDao {
     public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        try {
-            return Optional.of(jdbcTemplate.query(sql, USER_ROW_MAPPER, id));
-        } catch (JdbcNotFoundException exception) {
-            return Optional.empty();
-        }
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, id);
     }
 
     public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        try {
-            return Optional.of(jdbcTemplate.query(sql, USER_ROW_MAPPER, account));
-        } catch (JdbcNotFoundException exception) {
-            return Optional.empty();
-        }
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
     }
 }

@@ -14,7 +14,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import nextstep.jdbc.exception.JdbcNotFoundException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,21 +59,23 @@ class JdbcTemplateTest {
     @DisplayName("sql문을 통해 단일 데이터 조회")
     @Test
     void query() {
-        TestUser user = jdbcTemplate.query("select id, account, password, email from users where account = ?", TEST_USER_ROW_MAPPER, "junroot");
+        TestUser user = jdbcTemplate.query("select id, account, password, email from users where account = ?", TEST_USER_ROW_MAPPER, "junroot").orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("junroot");
         assertThat(user.getPassword()).isEqualTo("rootzzang123");
         assertThat(user.getEmail()).isEqualTo("rootjjang@gmail.com");
     }
 
-    @DisplayName("만족하는 데이터가 없는 경우 예외 처리")
+    @DisplayName("query 호출시 만족하는 데이터가 복수일 경우 예외 처리")
     @Test
     void InvalidQuery() {
+        jdbcTemplate.update("insert into users (account, password, email) values ('junroot', 'rootzzang1234', 'rootjjang@gmail.com')");
+
         TestUserRowMapper rowMapper = new TestUserRowMapper();
         assertThatThrownBy(() -> {
-            jdbcTemplate.query("select id, account, password, email from users where account = ?", rowMapper, "junriot");
+            jdbcTemplate.query("select id, account, password, email from users where account = ?", rowMapper, "junroot");
         })
-            .isExactlyInstanceOf(JdbcNotFoundException.class);
+            .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @DisplayName("sql문을 통해 데이터 전체 조회")
@@ -108,7 +110,7 @@ class JdbcTemplateTest {
                 results.put("id", resultSet.getLong(1));
                 results.put("name", resultSet.getString(2));
                 return results;
-            });
+            }).orElseThrow();
 
         assertThat(row.get("id")).isNotNull();
         assertThat(row).containsEntry("name", "junroot");

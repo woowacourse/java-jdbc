@@ -6,9 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
-import nextstep.jdbc.exception.JdbcNotFoundException;
 import nextstep.jdbc.exception.JdbcSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,17 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
+    public <T> Optional<T> query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
         List<T> rows = queryAsList(sql, rowMapper, arguments);
 
-        if (rows.isEmpty()) {
-            throw new JdbcNotFoundException(sql);
-        }
         if (rows.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(sql);
         }
 
-        return rows.get(0);
+        return rows.stream().findFirst();
     }
 
     public <T> List<T> queryAsList(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
@@ -71,12 +68,12 @@ public class JdbcTemplate {
     }
 
     private void bindParameter(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
-        for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
-            preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
+        for (int i = 1; i <= arguments.length; i++) {
+            preparedStatement.setObject(i, arguments[i - 1]);
             log.debug("binding parameter [{}] as [{}] - [{}]",
-                argumentIndex,
-                preparedStatement.getParameterMetaData().getParameterTypeName(argumentIndex),
-                arguments[argumentIndex - 1]);
+                i,
+                preparedStatement.getParameterMetaData().getParameterTypeName(i),
+                arguments[i - 1]);
         }
     }
 }
