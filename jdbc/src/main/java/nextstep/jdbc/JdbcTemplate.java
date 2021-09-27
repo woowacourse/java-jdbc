@@ -80,8 +80,4 @@ public class JdbcTemplate {
             throw new JdbcTemplateException(e);
         }
     }
-
-    interface Query<T> {
-        T doQuery(PreparedStatement preparedStatement) throws SQLException;
-    }
 }
