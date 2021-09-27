@@ -20,29 +20,28 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final List<User> users = userDao.findAll();
-
+        List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
-
-        assertThat(user.getId()).isEqualTo(1L);
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        Optional<User> user = userDao.findById(1L);
+        assertThat(user.isPresent()).isTrue();
+        assertThat(user.get().getId()).isEqualTo(1L);
+        assertThat(user.get().getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
-        final Optional<User> user = userDao.findByAccount(account);
+        String account = "gugu";
+        Optional<User> user = userDao.findByAccount(account);
 
         assertThat(user.get().getAccount()).isEqualTo(account);
     }
@@ -50,32 +49,32 @@ class UserDaoTest {
     @Test
     void insert() {
         // given
-        final String account = "insert-gugu";
-        final String password = "password";
-        final String email = "hkkang@woowahan.com";
-        final User user = new User(account, password, email);
+        String account = "insert-gugu";
+        String password = "password";
+        String email = "hkkang@woowahan.com";
+        User user = new User(account, password, email);
 
         // when
         userDao.insert(user);
 
         // then
-        final User actual = userDao.findById(2L);
-        checkSameUserInfo(account, password, email, actual);
+        Optional<User> findUser = userDao.findById(2L);
+        checkSameUserInfo(account, password, email, findUser.get());
     }
 
     @Test
     void update() {
         // given
-        final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        String newPassword = "password99";
+        Optional<User> findUser = userDao.findById(1L);
 
         // when
-        user.changePassword(newPassword);
-        userDao.update(user);
+        findUser.get().changePassword(newPassword);
+        userDao.update(findUser.get());
 
         // then
-        final User actual = userDao.findById(1L);
-        checkSameUserInfo(user, actual);
+        Optional<User> actualUser = userDao.findById(1L);
+        checkSameUserInfo(findUser.get(), actualUser.get());
     }
 
     private void checkSameUserInfo(final User user, final User actual) {

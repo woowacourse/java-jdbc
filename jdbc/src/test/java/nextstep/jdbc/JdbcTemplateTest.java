@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,45 +25,50 @@ class JdbcTemplateTest {
 
     @Test
     void insert() {
-        jdbcTemplate.update("insert into users (account, password, email) values('pomo2', 'pomo1234', 'pomo2@email.com')");
-        Map<String, Object> params = jdbcTemplate.query(QUERY_SELECT_BY_ID, getMapRowMapper(), 2L);
-        assertThat(params)
-                .containsEntry("id", 2L)
-                .containsEntry("account", "pomo2")
-                .containsEntry("password", "pomo1234")
-                .containsEntry("email", "pomo2@email.com");
+        jdbcTemplate.update("insert into users values(2, 'pomo2', 'pomo1234', 'pomo2@email.com')");
+        Optional<Map<String, Object>> params = jdbcTemplate.queryForObject(QUERY_SELECT_BY_ID, getMapRowMapper(), 2L);
+        assertThat(params).isPresent();
+        유저_동등성_비교(params.get(), 2L, "pomo2", "pomo1234", "pomo2@email.com");
     }
 
     @Test
     void update() {
         jdbcTemplate.update("update users set account='pomo2', password='pomo1234', email='pomo2@email.com' where id = ?", 1L);
-        Map<String, Object> params = jdbcTemplate.query(QUERY_SELECT_BY_ID, getMapRowMapper(), 1L);
-        assertThat(params)
-                .containsEntry("id", 1L)
-                .containsEntry("account", "pomo2")
-                .containsEntry("password", "pomo1234")
-                .containsEntry("email", "pomo2@email.com");
+        Optional<Map<String, Object>> params = jdbcTemplate.queryForObject(QUERY_SELECT_BY_ID, getMapRowMapper(), 1L);
+        assertThat(params).isPresent();
+        유저_동등성_비교(params.get(), 1L, "pomo2", "pomo1234", "pomo2@email.com");
     }
 
     @Test
     void select() {
-        Map<String, Object> params = jdbcTemplate.query("select * from users where id = ?", getMapRowMapper(), 1L);
+        Optional<Map<String, Object>> params = jdbcTemplate.queryForObject("select * from users where id = ?", getMapRowMapper(), 1L);
+        assertThat(params).isPresent();
+        유저_동등성_비교(params.get(), 1L, "pomo", "pomo", "pomo@email.com");
+    }
+
+    @Test
+    void findAll() {
+        jdbcTemplate.update("insert into users values(2, 'pomo2', 'pomo2', 'pomo2@email.com')");
+        List<Map<String, Object>> params = jdbcTemplate.query("select * from users", getMapRowMapper());
+        assertThat(params.size()).isNotZero();
+        유저_동등성_비교(params.get(0), 1L, "pomo", "pomo", "pomo@email.com");
+    }
+
+    private void 유저_동등성_비교(Map<String, Object> params, long id, String account, String password, String email) {
         assertThat(params)
-                .containsEntry("id", 1L)
-                .containsEntry("account", "pomo")
-                .containsEntry("password", "pomo")
-                .containsEntry("email", "pomo@email.com");
+                .containsEntry("id", id)
+                .containsEntry("account", account)
+                .containsEntry("password", password)
+                .containsEntry("email", email);
     }
 
     private RowMapper<Map<String, Object>> getMapRowMapper() {
         return rs -> {
             Map<String, Object> result = new HashMap<>();
-            if (rs.next()) {
-                result.put("id", rs.getLong("id"));
-                result.put("account", rs.getString("account"));
-                result.put("password", rs.getString("password"));
-                result.put("email", rs.getString("email"));
-            }
+            result.put("id", rs.getLong("id"));
+            result.put("account", rs.getString("account"));
+            result.put("password", rs.getString("password"));
+            result.put("email", rs.getString("email"));
             return result;
         };
     }

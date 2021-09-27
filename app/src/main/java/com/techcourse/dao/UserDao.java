@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,46 +40,26 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select * from users";
         log.debug(QUERY_SQL, sql);
-        return jdbcTemplate.query(sql, getListRowMapper());
+        return jdbcTemplate.query(sql, getUserRowMapper());
     }
 
-    private RowMapper<List<User>> getListRowMapper() {
-        return rs -> {
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                long id = rs.getLong(ID);
-                String account = rs.getString(ACCOUNT);
-                String password = rs.getString(PASSWORD);
-                String email = rs.getString(EMAIL);
-                User user = new User(id, account, password, email);
-                users.add(user);
-            }
-            return users;
-        };
-    }
-
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug(QUERY_SQL, sql);
-        return jdbcTemplate.query(sql, getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
     }
 
     public Optional<User> findByAccount(String account) {
         String sql = "select * from users where account = ?";
         log.debug(QUERY_SQL, sql);
-        return Optional.of(jdbcTemplate.query(sql, getUserRowMapper(), account));
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
     }
 
     private RowMapper<User> getUserRowMapper() {
-        return rs -> {
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(ID),
-                        rs.getString(ACCOUNT),
-                        rs.getString(PASSWORD),
-                        rs.getString(EMAIL));
-            }
-            return null;
-        };
+        return rs -> new User(
+                rs.getLong(ID),
+                rs.getString(ACCOUNT),
+                rs.getString(PASSWORD),
+                rs.getString(EMAIL));
     }
 }
