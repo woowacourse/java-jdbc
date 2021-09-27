@@ -70,7 +70,7 @@ public class JdbcTemplate {
             return preparedStatementCallback.call(preparedStatement);
         } catch (SQLException e) {
             LOG.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
