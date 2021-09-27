@@ -5,10 +5,10 @@
 - [x] UserDao 구현하기
   - [x] InMemoryUserRepository -> UserDao로 대체하기
   - [x] UserDao - update, findAll, findByAccount 구현
-- [ ] JDBC 라이브러리 구현하기
-  - [ ] 리팩터링은 UserDaoTest를 활용해 진행한다.
-  - [ ] 중복을 제거하기 위한 라이브러리는 JdbcTemplate 클래스에 구현한다.
-  - [ ] sql,에러 로깅하기
+- [x] JDBC 라이브러리 구현하기
+  - [x] 리팩터링은 UserDaoTest를 활용해 진행한다.
+  - [x] 중복을 제거하기 위한 라이브러리는 JdbcTemplate 클래스에 구현한다.
+  - [x] sql,에러 로깅하기
 
 ## step2
 - [ ] 리팩터링
