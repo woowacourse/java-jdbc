@@ -28,7 +28,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new InvalidDataException(e.getMessage());
         }
     }
 
@@ -57,7 +57,7 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new InvalidDataException(e.getMessage());
         }
     }
 
@@ -65,11 +65,11 @@ public class JdbcTemplate {
         List<T> result = query(sql, rowMapper, values);
 
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("존재하지 않는 데이터입니다.");
+            throw new InvalidDataException("존재하지 않는 데이터입니다.");
         }
 
         if (result.size() > 1) {
-            throw new IllegalArgumentException("두 개 이상의 데이터가 존재합니다.");
+            throw new InvalidDataException("두 개 이상의 데이터가 존재합니다.");
         }
 
         return result.get(0);
