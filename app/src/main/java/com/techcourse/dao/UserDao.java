@@ -34,19 +34,15 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
-        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        printQueryLog(sql);
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
+        printQueryLog(sql);
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
+        printQueryLog(sql);
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, rowMapper, id));
         } catch (DataAccessException e) {
@@ -56,6 +52,7 @@ public class UserDao {
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
+        printQueryLog(sql);
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, rowMapper, account));
         } catch (DataAccessException e) {
@@ -63,8 +60,15 @@ public class UserDao {
         }
     }
 
+    public void update(User user) {
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        printQueryLog(sql);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public void deleteAll() {
         final String sql = "delete from users";
+        printQueryLog(sql);
         jdbcTemplate.update(sql);
     }
 

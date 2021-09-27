@@ -29,7 +29,7 @@ public class JdbcTemplate {
         executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
-    public void executeUpdate(PreparedStatementCallback preparedStatementCallback, PreparedStatementSetter preparedStatementSetter) {
+    private void executeUpdate(PreparedStatementCallback preparedStatementCallback, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStatementCallback.makePrepareStatement(conn)) {
             preparedStatementSetter.setValues(pstmt);
@@ -52,7 +52,7 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public <T> void validateSingleResult(List<T> results) {
+    private  <T> void validateSingleResult(List<T> results) {
         if (results.isEmpty()) {
             log.error("queryForObject Result is Empty");
             throw new EmptyResultException("queryForObject Result is Empty");
@@ -63,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQuery(PreparedStatementCallback preparedStatementCallback,
+    private  <T> List<T> executeQuery(PreparedStatementCallback preparedStatementCallback,
                                     PreparedStatementSetter preparedStatementSetter, RowMapperResultExtract<T> rowMapperResultExtract) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStatementCallback.makePrepareStatement(conn)) {
