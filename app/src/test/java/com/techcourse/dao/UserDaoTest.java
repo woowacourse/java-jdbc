@@ -57,15 +57,6 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccount() {
-        userDao.insert(new User("jinho", "jinho", "jinho-email"));
-        final String account = "jinho";
-        final User user = userDao.findByAccount(account);
-
-        assertThat(user.getAccount()).isEqualTo(account);
-    }
-
-    @Test
     void insert() {
         List<User> before = userDao.findAll();
 
