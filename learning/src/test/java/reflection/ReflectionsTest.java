@@ -6,7 +6,6 @@ import annotation.Service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +15,7 @@ class ReflectionsTest {
 
     @DisplayName("클래스 레벨에 @Controller, @Service, @Repository 애노테이션이 설정되어 모든 클래스 찾아 로그로 출력한다.")
     @Test
-    void showAnnotationClass() throws Exception {
+    void showAnnotationClass() {
         Reflections reflections = new Reflections("examples");
 
         reflections.getTypesAnnotatedWith(Controller.class)
