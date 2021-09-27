@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private final DataSource dataSource;
 
@@ -17,23 +17,25 @@ public abstract class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query) {
+    public void update(String query, Object... params) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setValues(pstmt);
+            setValues(pstmt, params);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T queryForObject(String query, RowMapper<T> rowMapper) {
-        return query(query, rowMapper).get(0);
+    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... params) {
+        return query(query, rowMapper, params).get(0);
     }
 
-    public <T> List<T> query(String query, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setValues(pstmt);
+            setValues(pstmt, params);
+            pstmt.executeQuery();
             return doMapping(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -45,12 +47,16 @@ public abstract class JdbcTemplate {
         while (resultSet.next()) {
             data.add(rowMapper.mapRow(resultSet));
         }
-
         if (data.isEmpty()) {
             throw new SQLException();
         }
         return data;
     }
 
-    public abstract void setValues(PreparedStatement pstmt) throws SQLException;
+    public void setValues(PreparedStatement pstmt, Object... params) throws SQLException {
+        int parameterNumber = 1;
+        for (Object param : params) {
+            pstmt.setObject(parameterNumber++, param);
+        }
+    }
 }
