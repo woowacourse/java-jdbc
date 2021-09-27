@@ -21,13 +21,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) throws DataAccessException {
-        update(sql, createPreparedStatementSetter(parameters));
-    }
-
-    public void update(String sql, PreparedStatementSetter pstmtSetter) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmtSetter.setValues(pstmt);
+            setValues(pstmt, parameters);
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -36,7 +32,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        List<T> result = query(sql, rowMapper, createPreparedStatementSetter(parameters));
+        List<T> result = query(sql, rowMapper, parameters);
         if (result.isEmpty()) {
             return null;
         }
@@ -44,14 +40,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        return query(sql, rowMapper, createPreparedStatementSetter(parameters));
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) throws DataAccessException {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmtSetter.setValues(pstmt);
+            setValues(pstmt, parameters);
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
             List<T> result = new ArrayList<>();
@@ -64,11 +56,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatementSetter createPreparedStatementSetter(Object... parameters) {
-        return pstmt -> {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-        };
+    private void setValues(PreparedStatement pstmt, Object... parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
+        }
     }
 }
