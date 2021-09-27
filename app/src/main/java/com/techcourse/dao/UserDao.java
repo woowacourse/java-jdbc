@@ -34,11 +34,19 @@ public class UserDao {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource, sql) {
             @Override
-            public void insert(User user) {
-                super.insert(user);
+            public void insert() {
+                super.insert();
+            }
+
+            @Override
+            public void setValuesForInsert2(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.executeUpdate();
             }
         };
-        insertJdbcTemplate.insert(user);
+        insertJdbcTemplate.insert();
     }
 
 

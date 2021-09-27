@@ -17,36 +17,17 @@ public abstract class InsertJdbcTemplate {
         this.query = query;
     }
 
-    public void insert(User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-
-            conn = createConnection();
-            pstmt = createPstmt(query, conn);
-            setValuesForInsert(user, pstmt);
-
+    public void insert() {
+        try (Connection conn = createConnection();
+                PreparedStatement pstmt = createPstmt(conn)) {
+            setValuesForInsert2(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    private PreparedStatement createPstmt(String sql, Connection conn) throws SQLException {
-        return conn.prepareStatement(sql);
+    private PreparedStatement createPstmt(Connection conn) throws SQLException {
+        return conn.prepareStatement(query);
     }
 
     private Connection createConnection() throws SQLException {
@@ -62,4 +43,6 @@ public abstract class InsertJdbcTemplate {
         pstmt.executeUpdate();
 
     }
+
+    public abstract void setValuesForInsert2(PreparedStatement pstmt) throws SQLException;
 }
