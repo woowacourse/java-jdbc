@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
@@ -14,10 +15,10 @@ import org.slf4j.LoggerFactory;
 public abstract class JdbcTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void executeQuery(String sql, PreparedStatementSetter preparedStatementSetter) {
+    public void executeQuery(String sql, Object... values) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
+            setValues(preparedStatement, values);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             LOGGER.error(e.getMessage(), e);
@@ -25,12 +26,18 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    private void setValues(PreparedStatement preparedStatement, Object[] values) throws SQLException {
+        for (int i = 0; i < values.length; i++) {
+            preparedStatement.setObject(i + 1, values[i]);
+        }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            if (preparedStatementSetter != null) {
-                preparedStatementSetter.setValues(preparedStatement);
+            if (Objects.nonNull(values)) {
+                setValues(preparedStatement, values);
             }
 
             List<T> result = new ArrayList<>();
@@ -48,8 +55,8 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        List<T> result = query(sql, preparedStatementSetter, rowMapper);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        List<T> result = query(sql, rowMapper, values);
 
         if (result.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 데이터입니다.");

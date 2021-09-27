@@ -6,7 +6,6 @@ import javax.sql.DataSource;
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.PreparedStatementSetter;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +28,8 @@ public class UserDao {
             }
         };
 
-        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-        };
-
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeQuery(sql, preparedStatementSetter);
+        jdbcTemplate.executeQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
@@ -47,13 +40,8 @@ public class UserDao {
             }
         };
 
-        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
-            preparedStatement.setString(1, user.getPassword());
-            preparedStatement.setLong(2, user.getId());
-        };
-
         String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.executeQuery(sql, preparedStatementSetter);
+        jdbcTemplate.executeQuery(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
@@ -64,7 +52,7 @@ public class UserDao {
             }
         };
 
-        RowMapper rowMapper = resultSet -> new User(
+        RowMapper<User> rowMapper = resultSet -> new User(
                 resultSet.getLong(1),
                 resultSet.getString(2),
                 resultSet.getString(3),
@@ -72,7 +60,7 @@ public class UserDao {
         );
 
         String sql = "select id, account, password, email from users";
-        return (List<User>) jdbcTemplate.query(sql, null, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(Long id) {
@@ -84,9 +72,6 @@ public class UserDao {
             }
         };
 
-        PreparedStatementSetter preparedStatementSetter =
-                preparedStatement -> preparedStatement.setLong(1, id);
-
         RowMapper<User> rowMapper = resultSet -> new User(
                 resultSet.getLong(1),
                 resultSet.getString(2),
@@ -95,7 +80,7 @@ public class UserDao {
         );
 
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
@@ -107,9 +92,6 @@ public class UserDao {
             }
         };
 
-        PreparedStatementSetter preparedStatementSetter =
-                preparedStatement -> preparedStatement.setString(1, account);
-
         RowMapper<User> rowMapper = resultSet -> new User(
                 resultSet.getLong(1),
                 resultSet.getString(2),
@@ -118,6 +100,6 @@ public class UserDao {
         );
 
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }
