@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 
@@ -36,5 +37,10 @@ public class UserDao {
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account= ?";
         return jdbcTemplate.queryForObject(sql, new UserMapper(), account);
+    }
+
+    public void dropTable(String table) {
+        final String sql = "drop table if exists " + table;
+        jdbcTemplate.update(sql);
     }
 }

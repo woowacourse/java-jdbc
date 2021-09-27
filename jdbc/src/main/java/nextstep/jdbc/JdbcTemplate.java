@@ -13,7 +13,7 @@ public class JdbcTemplate {
 
     protected static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected DataSource datasource;
+    private final DataSource datasource;
 
     public JdbcTemplate(DataSource datasource) {
         this.datasource = datasource;
@@ -24,8 +24,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, rowMapper, args)
-            .stream()
+        List<T> results = query(sql, rowMapper, args);
+
+        if (results.size() > 1) {
+            throw new DataAccessException("More than one query result");
+        }
+
+        return results.stream()
             .findFirst()
             .orElseThrow(() -> new DataAccessException("No Data Found"));
     }
@@ -54,7 +59,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void setArguments(PreparedStatement pstm, Object... args) throws SQLException {
+    private void setArguments(PreparedStatement pstm, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstm.setObject(i + 1, args[i]);
         }

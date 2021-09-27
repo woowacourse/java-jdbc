@@ -6,6 +6,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,11 @@ class UserDaoTest {
 
         userDao.insert(user);
         userDao.insert(another);
+    }
+
+    @AfterEach
+    void after() {
+        userDao.dropTable("users");
     }
 
     @Test
