@@ -25,7 +25,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) {
+    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -33,7 +33,7 @@ public abstract class JdbcTemplate {
                 preparedStatementSetter.setValues(preparedStatement);
             }
 
-            List<Object> result = new ArrayList<>();
+            List<T> result = new ArrayList<>();
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -48,8 +48,8 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) {
-        List<Object> result = (List<Object>) query(sql, preparedStatementSetter, rowMapper);
+    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        List<T> result = query(sql, preparedStatementSetter, rowMapper);
 
         if (result.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 데이터입니다.");

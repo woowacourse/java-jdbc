@@ -1,8 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -90,7 +87,7 @@ public class UserDao {
         PreparedStatementSetter preparedStatementSetter =
                 preparedStatement -> preparedStatement.setLong(1, id);
 
-        RowMapper rowMapper = resultSet -> new User(
+        RowMapper<User> rowMapper = resultSet -> new User(
                 resultSet.getLong(1),
                 resultSet.getString(2),
                 resultSet.getString(3),
@@ -98,7 +95,7 @@ public class UserDao {
         );
 
         String sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
+        return jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
     }
 
     public User findByAccount(String account) {
@@ -113,7 +110,7 @@ public class UserDao {
         PreparedStatementSetter preparedStatementSetter =
                 preparedStatement -> preparedStatement.setString(1, account);
 
-        RowMapper rowMapper = resultSet -> new User(
+        RowMapper<User> rowMapper = resultSet -> new User(
                 resultSet.getLong(1),
                 resultSet.getString(2),
                 resultSet.getString(3),
@@ -121,6 +118,6 @@ public class UserDao {
         );
 
         String sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
+        return jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
     }
 }
