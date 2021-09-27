@@ -22,23 +22,14 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        createQueryForInsert();
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-
+            final String sql = "insert into users (account, password, email) values (?, ?, ?)";
             conn = createConnection();
             pstmt = createPstmt(sql, conn);
+            setValuesForInsert(user, pstmt);
 
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -57,6 +48,15 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.executeUpdate();
+
     }
 
     private PreparedStatement createPstmt(String sql, Connection conn) throws SQLException {
@@ -67,24 +67,18 @@ public class UserDao {
         return dataSource.getConnection();
     }
 
-    private void createQueryForInsert() {
-
-    }
 
     public void update(User user) {
-        final String sql = "update users set password=? where id =?";
+
 
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
+            final String sql = "update users set password=? where id =?";
             conn = createConnection();
             pstmt = createPstmt(sql, conn);
+            setValuesForUpdate(user, pstmt);
 
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getPassword());
-            pstmt.setLong(2, user.getId());
-            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -103,6 +97,14 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+
+        pstmt.setString(1, user.getPassword());
+        pstmt.setLong(2, user.getId());
+        pstmt.executeUpdate();
+
     }
 
     public List<User> findAll() {
@@ -124,8 +126,8 @@ public class UserDao {
                         new User(
                                 rs.getLong(1),
                                 rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4))
+                                rs.getString(3),
+                                rs.getString(4))
                 );
             }
             return users;
@@ -175,7 +177,7 @@ public class UserDao {
                         rs.getLong(1),
                         rs.getString(2),
                         rs.getString(3),
-                    rs.getString(4));
+                        rs.getString(4));
             }
             return null;
         } catch (SQLException e) {
@@ -224,7 +226,7 @@ public class UserDao {
                         rs.getLong(1),
                         rs.getString(2),
                         rs.getString(3),
-                    rs.getString(4));
+                        rs.getString(4));
             }
             return null;
         } catch (SQLException e) {
