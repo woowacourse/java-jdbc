@@ -31,7 +31,8 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource, sql) {
             @Override
             public void insert(User user) {
                 super.insert(user);

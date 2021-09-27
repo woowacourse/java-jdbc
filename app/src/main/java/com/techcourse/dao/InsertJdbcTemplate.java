@@ -10,18 +10,20 @@ import javax.sql.DataSource;
 public abstract class InsertJdbcTemplate {
 
     private final DataSource dataSource;
+    private final String query;
 
-    public InsertJdbcTemplate(DataSource dataSource) {
+    public InsertJdbcTemplate(DataSource dataSource, String query) {
         this.dataSource = dataSource;
+        this.query = query;
     }
 
     public void insert(User user) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
             conn = createConnection();
-            pstmt = createPstmt(sql, conn);
+            pstmt = createPstmt(query, conn);
             setValuesForInsert(user, pstmt);
 
         } catch (SQLException e) {
