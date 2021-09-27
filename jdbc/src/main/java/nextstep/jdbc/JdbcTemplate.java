@@ -12,11 +12,17 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public void executeQuery(String sql, Object... values) {
-        try (Connection connection = getDataSource().getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setValues(preparedStatement, values);
             preparedStatement.executeUpdate();
@@ -33,7 +39,7 @@ public abstract class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        try (Connection connection = getDataSource().getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             if (Objects.nonNull(values)) {
@@ -68,6 +74,4 @@ public abstract class JdbcTemplate {
 
         return result.get(0);
     }
-
-    public abstract DataSource getDataSource();
 }
