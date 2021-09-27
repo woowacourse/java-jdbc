@@ -52,106 +52,40 @@ public class JdbcTemplate {
     }
 
     private void execute(PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = psc.createPreparedStatement(conn);
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = psc.createPreparedStatement(conn)
+        ) {
             pss.setValue(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     private <T> T execute(PreparedStatementCreator psc, final ResultSetExtractor<T> rse) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = psc.createPreparedStatement(conn);
-            final ResultSet resultSet = pstmt.executeQuery();
-
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = psc.createPreparedStatement(conn);
+            ResultSet resultSet = pstmt.executeQuery()
+        ){
             return rse.extractData(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     private <T> T execute(PreparedStatementCreator psc, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = psc.createPreparedStatement(conn);
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = psc.createPreparedStatement(conn);
+            ResultSet resultSet = pstmt.executeQuery()
+        ){
             pss.setValue(pstmt);
-            final ResultSet resultSet = pstmt.executeQuery();
-
             return rse.extractData(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
