@@ -8,12 +8,12 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class Rollback implements BeforeEachCallback, AfterEachCallback {
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         TransactionManager.startTransaction();
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void afterEach(ExtensionContext context) {
         TransactionManager.rollback();
     }
 }

@@ -5,12 +5,17 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
-import nextstep.jdbc.utils.ConnectionUtils;
+import nextstep.jdbc.utils.ConnectionManager;
+import nextstep.jdbc.utils.JdbcResourceCloser;
 import nextstep.jdbc.utils.preparestatement.PreparedStatementCallback;
 import nextstep.jdbc.utils.preparestatement.PreparedStatementCreator;
 import nextstep.jdbc.utils.statement.StatementCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseJdbcTemplate {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseJdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -19,40 +24,40 @@ public abstract class BaseJdbcTemplate {
     }
 
     protected <T> T execute(StatementCallback<T> action) {
-        final Connection connection;
+        Connection connection = null;
+        Statement stmt = null;
+        T result = null;
         try {
-            connection = ConnectionUtils.getConnection(dataSource);
-            try (Statement stmt = connection.createStatement()) {
-
-                final T result = action.getResult(stmt);
-                if (ConnectionUtils.isTransactionStarted()) {
-                    return result;
-                }
-                ConnectionUtils.closeConnection();
-                return result;
-            }
+            connection = ConnectionManager.getConnection(dataSource);
+            stmt = connection.createStatement();
+            result = action.getResult(stmt);
         } catch (SQLException sqlException) {
-            throw new JdbcException();
+            log.error(sqlException.getMessage());
+            ConnectionManager.errorHandle();
+        } finally {
+            JdbcResourceCloser.closeStatement(stmt);
+            JdbcResourceCloser.closeConnection(connection);
         }
+        return result;
     }
 
     protected <T> T execute(PreparedStatementCreator preparedStatementCreator,
                             PreparedStatementCallback<T> action) {
-        final Connection connection;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        T result = null;
         try {
-            connection = ConnectionUtils.getConnection(dataSource);
-            try (PreparedStatement preparedStatement =
-                preparedStatementCreator.createPreparedStatement(connection)) {
-
-                final T result = action.getResult(preparedStatement);
-                if (ConnectionUtils.isTransactionStarted()) {
-                    return result;
-                }
-                ConnectionUtils.closeConnection();
-                return result;
-            }
+            connection = ConnectionManager.getConnection(dataSource);
+            preparedStatement =
+                preparedStatementCreator.createPreparedStatement(connection);
+            result = action.getResult(preparedStatement);
         } catch (SQLException sqlException) {
-            throw new JdbcException();
+            log.error(sqlException.getMessage());
+            ConnectionManager.errorHandle();
+        } finally {
+            JdbcResourceCloser.closePreparedStatement(preparedStatement);
+            JdbcResourceCloser.closeConnection(connection);
         }
+        return result;
     }
 }

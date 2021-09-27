@@ -51,9 +51,9 @@ class JdbcTemplateTest {
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
 
-        verify(preparedStatement).setString(1, arg1);
-        verify(preparedStatement).setString(2, arg2);
-        verify(preparedStatement).setString(3, arg3);
+        verify(preparedStatement).setObject(1, arg1);
+        verify(preparedStatement).setObject(2, arg2);
+        verify(preparedStatement).setObject(3, arg3);
 
         verify(connection).close();
         verify(preparedStatement).close();
@@ -124,7 +124,7 @@ class JdbcTemplateTest {
         jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
         jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
         jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
-        TransactionManager.endTransaction();
+        TransactionManager.commit();
 
         // then
         verify(dataSource, times(1)).getConnection();
