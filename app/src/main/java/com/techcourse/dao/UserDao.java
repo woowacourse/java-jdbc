@@ -82,53 +82,30 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = createConnection();
-            pstmt = createPstmt(sql, conn);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                users.add(
-                        new User(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4))
-                );
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+            @Override
+            public String createQuery() {
+                return sql;
             }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+
+            @Override
+            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            }
+
+            @Override
+            public Object mapUser(ResultSet resultSet) throws SQLException {
+                List<User> users = new ArrayList<>();
+                while (resultSet.next()) {
+                    users.add(new User(
+                            resultSet.getLong(1),
+                            resultSet.getString(2),
+                            resultSet.getString(3),
+                            resultSet.getString(4)));
                 }
-            } catch (SQLException ignored) {
+                return users;
             }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        };
+        return (List<User>) insertJdbcTemplate.query();
     }
 
     public User findById(Long id) {
@@ -146,6 +123,7 @@ public class UserDao {
 
             @Override
             public Object mapUser(ResultSet resultSet) throws SQLException {
+
                 if (resultSet.next()) {
                     return new User(
                             resultSet.getLong(1),
