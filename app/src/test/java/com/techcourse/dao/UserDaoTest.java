@@ -48,8 +48,9 @@ class UserDaoTest {
                 .map(User::getAccount)
                 .collect(Collectors.toList());
 
-        assertThat(users).isNotEmpty();
-        assertThat(users).hasSize(2);
+        assertThat(users)
+                .isNotEmpty()
+                .hasSize(2);
         assertThat(userNames).contains("gugu", "better");
     }
 
@@ -103,7 +104,7 @@ class UserDaoTest {
 
     @DisplayName("전체 삭제를 한다.")
     @Test
-    public void removeAll() {
+    void removeAll() {
         List<User> users = userDao.findAll();
         assertThat(users).isNotEmpty();
 

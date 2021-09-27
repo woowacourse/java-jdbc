@@ -14,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("try-with-resources close 테스트")
-public class UserDaoCloseTest {
+class UserDaoCloseTest {
 
     @DisplayName("createPreparedStatement 를 사용할 때, close 가 호출되는지 확인한다.")
     @Test
