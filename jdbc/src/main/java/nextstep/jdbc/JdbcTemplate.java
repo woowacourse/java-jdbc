@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -29,7 +30,8 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet, 0);
             }
-            return null;
+
+            throw new EmptyResultDataAccessException();
         });
     }
 
