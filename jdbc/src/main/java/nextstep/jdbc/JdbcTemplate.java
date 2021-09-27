@@ -48,11 +48,6 @@ public class JdbcTemplate<T> {
         return results;
     }
 
-    private void handleJdbcTemplateException(final SQLException e) {
-        log.error(e.getMessage(), e);
-        throw new JdbcTemplateException(e);
-    }
-
     public Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -65,5 +60,10 @@ public class JdbcTemplate<T> {
             handleJdbcTemplateException(e);
         }
         return Optional.empty();
+    }
+
+    private void handleJdbcTemplateException(final SQLException e) {
+        log.error(e.getMessage(), e);
+        throw new JdbcTemplateException(e);
     }
 }
