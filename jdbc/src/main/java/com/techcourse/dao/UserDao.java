@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -52,19 +53,17 @@ public class UserDao {
             }
         };
 
-        RowMapper<User> rowMapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4)
-        );
-
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, (ResultSet resultSet) ->
+                new User(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4)
+                ));
     }
 
     public User findById(Long id) {
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
@@ -72,19 +71,17 @@ public class UserDao {
             }
         };
 
-        RowMapper<User> rowMapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4)
-        );
-
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, (ResultSet resultSet) ->
+                new User(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4)
+                ), id);
     }
 
     public User findByAccount(String account) {
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             public DataSource getDataSource() {
@@ -92,14 +89,13 @@ public class UserDao {
             }
         };
 
-        RowMapper<User> rowMapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4)
-        );
-
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, (ResultSet resultSet) ->
+                new User(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4)
+                ), account);
     }
 }
