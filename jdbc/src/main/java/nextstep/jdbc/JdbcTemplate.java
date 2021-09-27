@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import com.google.common.base.Strings;
+import nextstep.jdbc.exception.NotFoundDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +43,13 @@ public class JdbcTemplate {
         }
     }
 
-
-//    public <T> List<T> query(String sql) {
-//        assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
-//        return this.execute(sql, callback);
-//    }
+    public <T> T queryForObject(String sql ,RowMapper<T> rowMapper, Object... objects) {
+        List<T> results = query(sql, rowMapper, objects);
+        if (results.isEmpty()) {
+            throw new NotFoundDataException();
+        }
+        return results.get(0);
+    }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
         assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
