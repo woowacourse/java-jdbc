@@ -22,13 +22,16 @@ public class UserDao {
     }
 
     public void insert(User user) {
+        createQueryForInsert();
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
 
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+
+            conn = createConnection();
+            pstmt = createPstmt(sql, conn);
 
             log.debug("query : {}", sql);
 
@@ -56,14 +59,26 @@ public class UserDao {
         }
     }
 
+    private PreparedStatement createPstmt(String sql, Connection conn) throws SQLException {
+        return conn.prepareStatement(sql);
+    }
+
+    private Connection createConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    private void createQueryForInsert() {
+
+    }
+
     public void update(User user) {
         final String sql = "update users set password=? where id =?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            conn = createConnection();
+            pstmt = createPstmt(sql, conn);
 
             log.debug("query : {}", sql);
 
@@ -97,8 +112,8 @@ public class UserDao {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            conn = createConnection();
+            pstmt = createPstmt(sql, conn);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
@@ -106,9 +121,9 @@ public class UserDao {
             List<User> users = new ArrayList<>();
             while (rs.next()) {
                 users.add(
-                    new User(
-                        rs.getLong(1),
-                        rs.getString(2),
+                        new User(
+                                rs.getLong(1),
+                                rs.getString(2),
                         rs.getString(3),
                         rs.getString(4))
                 );
@@ -148,8 +163,8 @@ public class UserDao {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            conn = createConnection();
+            pstmt = createPstmt(sql, conn);
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
 
@@ -157,9 +172,9 @@ public class UserDao {
 
             if (rs.next()) {
                 return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
                     rs.getString(4));
             }
             return null;
@@ -197,8 +212,8 @@ public class UserDao {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            conn = createConnection();
+            pstmt = createPstmt(sql, conn);
             pstmt.setString(1, account);
             rs = pstmt.executeQuery();
 
@@ -206,9 +221,9 @@ public class UserDao {
 
             if (rs.next()) {
                 return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
                     rs.getString(4));
             }
             return null;
