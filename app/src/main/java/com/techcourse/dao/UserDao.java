@@ -56,8 +56,22 @@ public class UserDao {
 
 
     public void update(User user) {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
-        updateJdbcTemplate.update(user);
+        final String sql = "update users set password=? where id =?";
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+
+            @Override
+            public String createQuery() {
+                return sql;
+            }
+
+            @Override
+            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getPassword());
+                pstmt.setLong(2, user.getId());
+                pstmt.executeUpdate();
+            }
+        };
+        insertJdbcTemplate.update();
     }
 
     public List<User> findAll() {

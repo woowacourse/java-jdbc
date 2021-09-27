@@ -23,6 +23,15 @@ public abstract class InsertJdbcTemplate {
         }
     }
 
+    public void update() {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+            setValuesForInsert(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public abstract String createQuery();
 
     public abstract void setValuesForInsert(PreparedStatement pstmt) throws SQLException;
