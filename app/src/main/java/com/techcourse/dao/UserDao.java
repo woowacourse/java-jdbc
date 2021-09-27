@@ -40,45 +40,10 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-//    public List<User> findAll() { // todo: query(...) 로 추상화
-//        final String sql = "select id, account, password, email from users";
-//        try (Connection conn = dataSource.getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(sql);
-//             ResultSet rs = pstmt.executeQuery()) {
-//
-//            List<User> users = new ArrayList<>();
-//            while (rs.next()) {
-//                User user = parseUser(rs);
-//                users.add(user);
-//            }
-//            return users;
-//        } catch (SQLException e) {
-//            //todo: Custom Exception
-//            throw new IllegalArgumentException();
-//        }
-//    }
-
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, mapperUser());
-
-
-//        try (Connection conn = dataSource.getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(sql);
-//             ResultSet rs = pstmt.executeQuery()) {
-//
-//            List<User> users = new ArrayList<>();
-//            while (rs.next()) {
-//                User user = parseUser(rs);
-//                users.add(user);
-//            }
-//            return users;
-//        } catch (SQLException e) {
-//            //todo: Custom Exception
-//            throw new IllegalArgumentException();
-//        }
     }
-
 
     public User findById(Long id) { // todo: queryForObject(...)로 추상화
         final String sql = "select id, account, password, email from users where id = ?";
@@ -110,9 +75,9 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = ((Supplier<PreparedStatement>) () -> {
                  try {
-                     PreparedStatement s = conn.prepareStatement(sql);
-                     s.setString(1, account);
-                     return s;
+                     PreparedStatement ps = conn.prepareStatement(sql);
+                     ps.setString(1, account);
+                     return ps;
                  } catch (SQLException e) {
                      throw new RuntimeException(e);
                  }
@@ -138,7 +103,7 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
     }
 
     private RowMapper<User> mapperUser() {
-        return (rs, rowNum) -> new User(rs.getLong("id"), rs.getString("account"),
+        return rs -> new User(rs.getLong("id"), rs.getString("account"),
                 rs.getString("password"), rs.getString("email"));
     }
 }
