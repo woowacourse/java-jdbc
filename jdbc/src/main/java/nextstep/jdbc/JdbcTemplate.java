@@ -25,13 +25,12 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(getArgumentPreparedCreator(sql, args), preparedStatement -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, 0);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return rowMapper.mapRow(resultSet, 0);
+                }
+                throw new EmptyResultDataAccessException();
             }
-
-            throw new EmptyResultDataAccessException();
         });
     }
 
