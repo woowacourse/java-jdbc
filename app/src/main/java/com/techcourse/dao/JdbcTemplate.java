@@ -7,11 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public abstract class InsertJdbcTemplate {
+public abstract class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public InsertJdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

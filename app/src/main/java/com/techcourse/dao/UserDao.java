@@ -32,7 +32,7 @@ public class UserDao {
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
 
             @Override
             public Object mapUser(ResultSet resultSet) throws SQLException {
@@ -52,13 +52,13 @@ public class UserDao {
                 pstmt.executeUpdate();
             }
         };
-        insertJdbcTemplate.update();
+        jdbcTemplate.update();
     }
 
 
     public void update(User user) {
         final String sql = "update users set password=? where id =?";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
 
             @Override
             public Object mapUser(ResultSet resultSet) throws SQLException {
@@ -77,12 +77,12 @@ public class UserDao {
                 pstmt.executeUpdate();
             }
         };
-        insertJdbcTemplate.update();
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             public String createQuery() {
                 return sql;
@@ -105,12 +105,12 @@ public class UserDao {
                 return users;
             }
         };
-        return (List<User>) insertJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             public String createQuery() {
                 return sql;
@@ -134,12 +134,12 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) insertJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
             public String createQuery() {
                 return sql;
@@ -162,6 +162,6 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) insertJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 }
