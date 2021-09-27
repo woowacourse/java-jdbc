@@ -25,7 +25,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void insert(String sql, Object... args) {
+        executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
+    }
+
     public void update(String sql, Object... args) {
+        executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
+    }
+
+    public void delete(String sql, Object... args) {
         executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
