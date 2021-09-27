@@ -31,7 +31,12 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+            @Override
+            public void insert(User user) {
+                super.insert(user);
+            }
+        };
         insertJdbcTemplate.insert(user);
     }
 

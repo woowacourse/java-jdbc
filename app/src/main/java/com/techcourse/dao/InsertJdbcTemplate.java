@@ -7,7 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class InsertJdbcTemplate {
+public abstract class InsertJdbcTemplate {
 
     private final DataSource dataSource;
 
