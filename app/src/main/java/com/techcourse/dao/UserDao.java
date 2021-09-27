@@ -21,28 +21,13 @@ public class UserDao {
     public void insert(User user) {
         log.debug("insert : {}", user);
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            return preparedStatement;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         log.debug("update : {}", user);
         final String sql = "update users set account=?, password=?, email=? where id=?";
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setLong(4, user.getId());
-            return preparedStatement;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

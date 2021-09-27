@@ -45,8 +45,8 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(PreparedStatementCreator preparedStatementCreator) {
-        execute(preparedStatementCreator, PreparedStatement::executeUpdate);
+    public void update(String sql, Object... args) {
+        execute(getArgumentPreparedCreator(sql, args), PreparedStatement::executeUpdate);
     }
 
     private <T> T execute(PreparedStatementCreator preparedStatementCreator, PreparedStatementCallback<T> action) {
