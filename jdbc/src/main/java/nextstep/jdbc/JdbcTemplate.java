@@ -34,19 +34,18 @@ public class JdbcTemplate<T> {
     }
 
     public List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
+        List<T> results = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             new ArgumentPreparedStatementSetter(args).setValues(pstmt);
             ResultSet rs = pstmt.executeQuery();
-            List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
-            return results;
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
         }
-        return null;
+        return results;
     }
 
     private void handleJdbcTemplateException(final SQLException e) {
