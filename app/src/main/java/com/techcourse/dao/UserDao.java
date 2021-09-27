@@ -13,8 +13,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private final DataSource dataSource;
+    private final RowMapper<User> userMapper = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4));
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -23,14 +27,13 @@ public class UserDao {
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
-
             @Override
-            public Object mapUser(ResultSet resultSet) throws SQLException {
+            public Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException {
                 return null;
             }
 
             @Override
-            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
@@ -44,14 +47,13 @@ public class UserDao {
     public void update(User user) {
         final String sql = "update users set password=? where id =?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
-
             @Override
-            public Object mapUser(ResultSet resultSet) throws SQLException {
+            public Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException {
                 return null;
             }
 
             @Override
-            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getPassword());
                 pstmt.setLong(2, user.getId());
                 pstmt.executeUpdate();
@@ -65,11 +67,11 @@ public class UserDao {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
 
             @Override
-            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
             }
 
             @Override
-            public Object mapUser(ResultSet resultSet) throws SQLException {
+            public Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException {
                 List<User> users = new ArrayList<>();
                 while (resultSet.next()) {
                     users.add(new User(
@@ -81,19 +83,19 @@ public class UserDao {
                 return users;
             }
         };
-        return (List<User>) jdbcTemplate.query(sql);
+        return (List<User>) jdbcTemplate.query(sql, userMapper);
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
-            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
             }
 
             @Override
-            public Object mapUser(ResultSet resultSet) throws SQLException {
+            public Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException {
 
                 if (resultSet.next()) {
                     return new User(
@@ -105,19 +107,19 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) jdbcTemplate.query(sql);
+        return (User) jdbcTemplate.query(sql, userMapper);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
             @Override
-            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
             }
 
             @Override
-            public Object mapUser(ResultSet resultSet) throws SQLException {
+            public Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException {
                 if (resultSet.next()) {
                     return new User(
                             resultSet.getLong(1),
@@ -128,6 +130,6 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) jdbcTemplate.query(sql);
+        return (User) jdbcTemplate.query(sql, userMapper);
     }
 }

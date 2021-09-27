@@ -18,23 +18,23 @@ public abstract class JdbcTemplate {
     public void update(String query) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setValuesForInsert(pstmt);
+            setValues(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Object query(String query) {
+    public Object query(String query, RowMapper rowMapper) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setValuesForInsert(pstmt);
-            return mapUser(pstmt.executeQuery());
+            setValues(pstmt);
+            return mapUser(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public abstract Object mapUser(ResultSet resultSet) throws SQLException;
+    public abstract Object mapUser(ResultSet resultSet, RowMapper rowMapper) throws SQLException;
 
-    public abstract void setValuesForInsert(PreparedStatement pstmt) throws SQLException;
+    public abstract void setValues(PreparedStatement pstmt) throws SQLException;
 }
