@@ -26,7 +26,7 @@ public class JdbcTemplate<T> {
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
+            ArgumentPreparedStatementSetter.setValues(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             handleJdbcTemplateException(e);
@@ -37,7 +37,7 @@ public class JdbcTemplate<T> {
         List<T> results = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
+            ArgumentPreparedStatementSetter.setValues(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
@@ -51,7 +51,7 @@ public class JdbcTemplate<T> {
     public Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
+            ArgumentPreparedStatementSetter.setValues(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return Optional.of(rowMapper.mapRow(rs));
