@@ -23,10 +23,10 @@ public class JdbcTemplate {
 
     public void update(String query, Object... values) {
 
-        PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
+        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             log.debug("query : {}", query);
 
@@ -40,43 +40,34 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... values) {
 
-        PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
-        ResultSet rs = null;
+        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter);
+             ResultSet rs = executeQuery(pstmt)) {
 
             log.debug("query : {}", query);
 
-            pstmtSetter.setValues(pstmt);
-            rs = executeQuery(pstmt);
-            rs.next();
-            return rowMapper.mapRow(rs);
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+
+            throw new SQLException();
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException e) {
-                throw new DataAccessException("ResultSet close Error");
-            }
         }
     }
 
     public <T> List<T> queryForList(String query, RowMapper<T> rowMapper, Object... values) {
-        PreparedStatementSetter pstmtSetter = valuesPreparedStatementSetter(values);
-        ResultSet rs = null;
+        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter);
+             ResultSet rs = executeQuery(pstmt)) {
 
             log.debug("query : {}", query);
-
-            pstmtSetter.setValues(pstmt);
-            rs = executeQuery(pstmt);
 
             List<T> result = new ArrayList<>();
 
@@ -87,19 +78,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException e) {
-                throw new DataAccessException("ResultSet close Error");
-            }
         }
     }
 
-    private PreparedStatementSetter valuesPreparedStatementSetter(Object[] values) {
-        return new valuesPreparedStatementSetter(values);
+    private PreparedStatement generatePreparedStatement(String query, Connection conn, PreparedStatementSetter pstmtSetter)
+            throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(query);
+        pstmtSetter.setValues(pstmt);
+
+        return pstmt;
     }
 
     private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
