@@ -12,6 +12,8 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 import nextstep.jdbc.templates.JdbcTemplate;
 import nextstep.jdbc.utils.ResultSetExtractor;
+import nextstep.jdbc.utils.RowMapper;
+import nextstep.jdbc.utils.RowMapperListExtractor;
 import nextstep.jdbc.utils.TransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -73,7 +75,7 @@ class JdbcTemplateTest {
         final String sql = "select * from users";
 
         // when
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
 
         // then
         verify(dataSource).getConnection();
@@ -97,9 +99,9 @@ class JdbcTemplateTest {
         final String sql = "select * from users";
 
         // when
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
 
         // then
         verify(dataSource, times(3)).getConnection();
@@ -121,9 +123,9 @@ class JdbcTemplateTest {
 
         // when
         TransactionManager.startTransaction();
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
         TransactionManager.commit();
 
         // then
@@ -146,7 +148,7 @@ class JdbcTemplateTest {
 
         // when
         TransactionManager.startTransaction();
-        jdbcTemplate.query(sql, mock(ResultSetExtractor.class));
+        jdbcTemplate.query(sql, mock(RowMapperListExtractor.class));
         TransactionManager.rollback();
 
         // then

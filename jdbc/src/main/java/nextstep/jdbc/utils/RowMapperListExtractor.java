@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import nextstep.jdbc.templates.JdbcException;
 
-public class RowMapperListExtractor<T> implements ResultSetExtractor<List<T>> {
+public class RowMapperListExtractor<T> {
 
     private final RowMapper<T> rowMapper;
 
@@ -13,7 +13,6 @@ public class RowMapperListExtractor<T> implements ResultSetExtractor<List<T>> {
         this.rowMapper = rowMapper;
     }
 
-    @Override
     public List<T> extractData(ResultSet rs) {
         try {
             List<T> result = new ArrayList<>();

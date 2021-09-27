@@ -26,11 +26,11 @@ public class TransactionManager {
     }
 
     public static void rollback() {
-        connectionResult(Connection::rollback);
+        endTransaction(Connection::rollback);
     }
 
     public static void commit() {
-        connectionResult(Connection::commit);
+        endTransaction(Connection::commit);
     }
 
     public static Connection getConnection() {
@@ -41,7 +41,7 @@ public class TransactionManager {
         connection.set(con);
     }
 
-    private static void connectionResult(SQLExceptionHandle sqlExceptionHandle) {
+    private static void endTransaction(SQLExceptionHandle sqlExceptionHandle) {
         Connection con = connection.get();
         try {
             if(con == null) return;
