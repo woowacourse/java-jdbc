@@ -19,10 +19,10 @@ public class UserDao {
     private static final String PASSWORD = "password";
     private static final String EMAIL = "email";
 
-    private final JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate<User> jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate<>(dataSource);
     }
 
     public void insert(User user) {

@@ -33,7 +33,7 @@ class UserDaoTest {
     @Test
     void findById() {
         Optional<User> user = userDao.findById(1L);
-        assertThat(user.isPresent()).isTrue();
+        assertThat(user).isPresent();
         assertThat(user.get().getId()).isEqualTo(1L);
         assertThat(user.get().getAccount()).isEqualTo("gugu");
     }
