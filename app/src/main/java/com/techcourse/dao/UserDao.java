@@ -1,20 +1,20 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
-public class UserDao { // todo: 일단은 이 코드를 다 동작하게
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserDao(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -38,13 +38,13 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id));
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account));
     }
 }
