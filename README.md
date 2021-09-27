@@ -17,3 +17,13 @@
   - [x] PreparedStatementSetter를 가변 인자를 이용해서 구현하기
   - [x] 람다를 활용해서 코드량을 줄이기
   - [x] DataAccessUtils로 singleResult 가져오기
+
+## 너잘 리뷰 반영
+- [ ] RowMapperResultSetExtractor의 개선
+- [ ] ArgumentPreparedStatementSetter의 개선
+- [ ] JdbcTemplate 중복 개선
+
+## 구구 리뷰 반영
+- [ ] JdbcTemplate에 delete 메서드
+- [ ] remove 2-depths
+- [ ] ArgumentPreparedStatementSetter 개선
