@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql ,RowMapper<T> rowMapper, Object... objects) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         List<T> results = query(sql, rowMapper, objects);
         if (results.isEmpty()) {
             throw new NotFoundDataException();
@@ -61,12 +61,6 @@ public class JdbcTemplate {
             return results;
         };
 
-
-//        execute(sql, (Statement stmt) -> {
-//            stmt.
-//
-//            return stmt.;
-//        });
         return query(sql, resultSetExtractor, objects);
     }
 
@@ -78,30 +72,6 @@ public class JdbcTemplate {
             }
         });
     }
-
-    private <T> T execute(String sql, StatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//            ResultSet rs = pstmt.executeQuery();
-            return action.doInStatement(pstmt);
-        } catch (SQLException e) {
-            //todo; Custom Exception 하나 만들어서 통일하기!
-            throw new IllegalArgumentException("");
-        }
-    }
-
-//    private <T> T execute(String sql, ResultSetExtractor<T> rse) {
-//    private <T> T execute(String sql) {
-//        try (Connection conn = dataSource.getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(sql);
-//             Statement stmt = conn.createStatement()
-//        ) {
-//            return (T) action.doInStatement(stmt);
-//        } catch (SQLException e) {
-//            //todo; Custom Exception 하나 만들어서 통일하기!
-//            throw new IllegalArgumentException("");
-//        }
-//    }
 
     private void setValues(PreparedStatement pstmt, Object[] objects) {
         IntStream.range(0, objects.length)
