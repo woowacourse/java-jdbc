@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.exception.JdbcNotFoundException;
 import nextstep.jdbc.exception.JdbcSqlException;
 import org.slf4j.Logger;
@@ -23,16 +24,16 @@ public class JdbcTemplate {
     }
 
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        JdbcCallback<T> jdbcCallback = preparedStatement -> {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (!resultSet.next()) {
-                    throw new JdbcNotFoundException(String.format("조건을 만족하는 행을 찾지 못했습니다.%nsql:(%s)%n", sql));
-                }
-                return rowMapper.map(resultSet);
-            }
-        };
+        List<T> rows = queryAsList(sql, rowMapper, arguments);
 
-        return prepareStatementAndThen(sql, jdbcCallback, arguments);
+        if (rows.isEmpty()) {
+            throw new JdbcNotFoundException(sql);
+        }
+        if (rows.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(sql);
+        }
+
+        return rows.get(0);
     }
 
     public <T> List<T> queryAsList(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
