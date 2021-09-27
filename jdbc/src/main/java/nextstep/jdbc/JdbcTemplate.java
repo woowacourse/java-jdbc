@@ -16,10 +16,6 @@ public class JdbcTemplate {
     private DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
-        setDataSource(dataSource);
-    }
-
-    public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
