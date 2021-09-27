@@ -35,6 +35,11 @@ public class UserDao {
         InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
 
             @Override
+            public Object mapUser(ResultSet resultSet) throws SQLException {
+                return null;
+            }
+
+            @Override
             public String createQuery() {
                 return sql;
             }
@@ -54,6 +59,11 @@ public class UserDao {
     public void update(User user) {
         final String sql = "update users set password=? where id =?";
         InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+
+            @Override
+            public Object mapUser(ResultSet resultSet) throws SQLException {
+                return null;
+            }
 
             @Override
             public String createQuery() {
@@ -123,51 +133,30 @@ public class UserDao {
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = createConnection();
-            pstmt = createPstmt(sql, conn);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource) {
+            @Override
+            public String createQuery() {
+                return sql;
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+
+            @Override
+            public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
+                pstmt.setLong(1, id);
+            }
+
+            @Override
+            public Object mapUser(ResultSet resultSet) throws SQLException {
+                if (resultSet.next()) {
+                    return new User(
+                            resultSet.getLong(1),
+                            resultSet.getString(2),
+                            resultSet.getString(3),
+                            resultSet.getString(4));
                 }
-            } catch (SQLException ignored) {
+                throw new SQLException();
             }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        };
+        return (User) insertJdbcTemplate.query();
     }
 
     public User findByAccount(String account) {

@@ -3,6 +3,7 @@ package com.techcourse.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -22,6 +23,22 @@ public abstract class InsertJdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    public Object query() {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+            setValuesForInsert(pstmt);
+            return mapUser(pstmt.executeQuery());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        return pstmt.executeQuery();
+    }
+
+    public abstract Object mapUser(ResultSet resultSet) throws SQLException;
 
     public abstract String createQuery();
 
