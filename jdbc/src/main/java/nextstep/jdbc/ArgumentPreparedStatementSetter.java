@@ -13,10 +13,12 @@ public class ArgumentPreparedStatementSetter {
     }
 
     public void setValues(PreparedStatement ps) throws SQLException {
-        if (Objects.nonNull(args)) {
-            for (int i = 0; i < args.length; i++) {
-                doSetValue(ps, i + 1, this.args[i]);
-            }
+        if (Objects.isNull(args)) {
+            return;
+        }
+
+        for (int i = 0; i < args.length; i++) {
+            doSetValue(ps, i + 1, this.args[i]);
         }
     }
 
