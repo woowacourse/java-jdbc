@@ -31,7 +31,7 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql) {
-        execute(new SimplePreparedStatementCreator(sql), PreparedStatement::execute);
+        execute(conn -> conn.prepareStatement(sql), PreparedStatement::execute);
     }
 
     public int update(final PreparedStatementCreator psc) {
@@ -67,19 +67,6 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
-    }
-
-    private static class SimplePreparedStatementCreator implements PreparedStatementCreator {
-        private final String sql;
-
-        public SimplePreparedStatementCreator(String sql) {
-            this.sql = sql;
-        }
-
-        @Override
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
-            return conn.prepareStatement(sql);
-        }
     }
 
     private static class PreparedStatementCreatorImpl implements PreparedStatementCreator {
