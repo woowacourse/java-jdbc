@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -37,8 +36,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryAsList(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        JdbcCallback<List<T>> jdbcCallback = preparedStatement -> {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        JdbcCallback<List<T>> jdbcCallback = statement -> {
+            try (ResultSet resultSet = statement.preparedStatementValue().executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
                     results.add(rowMapper.map(resultSet));
@@ -51,32 +50,21 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... arguments) {
-        return prepareStatementAndThen(sql, PreparedStatement::executeUpdate, arguments);
+        return prepareStatementAndThen(sql, statement -> statement.preparedStatementValue().executeUpdate(), arguments);
     }
 
     public void execute(final String sql, final Object... arguments) {
-        prepareStatementAndThen(sql, PreparedStatement::execute, arguments);
+        prepareStatementAndThen(sql, statement -> statement.preparedStatementValue().execute(), arguments);
     }
 
     private <T> T prepareStatementAndThen(final String sql, final JdbcCallback<T> jdbcCallback, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            bindParameter(preparedStatement, arguments);
+            ParameterizedStatement statement = ParameterizedStatement.from(connection, sql, arguments)) {
             log.debug("query : {}", sql);
-            return jdbcCallback.call(preparedStatement);
+            return jdbcCallback.call(statement);
         } catch (SQLException exception) {
             log.error(exception.getMessage());
             throw new JdbcSqlException("SQL을 실행하는 중에 문제가 발생했습니다.", exception);
-        }
-    }
-
-    private void bindParameter(final PreparedStatement preparedStatement, final Object... arguments) throws SQLException {
-        for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
-            preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
-            log.debug("binding parameter [{}] as [{}] - [{}]",
-                argumentIndex,
-                preparedStatement.getParameterMetaData().getParameterTypeName(argumentIndex),
-                arguments[argumentIndex - 1]);
         }
     }
 }
