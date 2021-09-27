@@ -20,10 +20,10 @@
 
 ## 너잘 리뷰 반영
 - [ ] RowMapperResultSetExtractor의 개선
-- [ ] ArgumentPreparedStatementSetter의 개선
+- [x] ArgumentPreparedStatementSetter의 개선
 - [ ] JdbcTemplate 중복 개선
 
 ## 구구 리뷰 반영
 - [ ] JdbcTemplate에 delete 메서드
-- [ ] remove 2-depths
-- [ ] ArgumentPreparedStatementSetter 개선
+- [x] remove 2-depths
+- [x] ArgumentPreparedStatementSetter 개선
