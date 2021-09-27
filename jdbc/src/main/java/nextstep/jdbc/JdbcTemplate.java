@@ -29,11 +29,10 @@ public class JdbcTemplate {
         executeUpdate(connection -> connection.prepareStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
-    private void executeUpdate(PreparedStatementCallback preparedStatementCallback, PreparedStatementSetter preparedStatementSetter) {
+    private void executeUpdate(PreparedStatementCallback pstmtCallback, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCallback.makePrepareStatement(conn)) {
-            preparedStatementSetter.setValues(pstmt);
-
+             PreparedStatement pstmt = pstmtCallback.makePrepareStatement(conn)) {
+            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("executeUpdate Database Access Failed", e);
@@ -52,7 +51,7 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private  <T> void validateSingleResult(List<T> results) {
+    private <T> void validateSingleResult(List<T> results) {
         if (results.isEmpty()) {
             log.error("queryForObject Result is Empty");
             throw new EmptyResultException("queryForObject Result is Empty");
@@ -63,13 +62,12 @@ public class JdbcTemplate {
         }
     }
 
-    private  <T> List<T> executeQuery(PreparedStatementCallback preparedStatementCallback,
-                                    PreparedStatementSetter preparedStatementSetter, RowMapperResultExtract<T> rowMapperResultExtract) {
+    private <T> List<T> executeQuery(PreparedStatementCallback pstmtCallback, PreparedStatementSetter pstmtSetter,
+                                     RowMapperResultExtract<T> rowMapperResultExtract) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCallback.makePrepareStatement(conn)) {
-            preparedStatementSetter.setValues(pstmt);
-            List<T> results = rowMapperResultExtract.execute(pstmt);
-            return results;
+             PreparedStatement pstmt = pstmtCallback.makePrepareStatement(conn)) {
+            pstmtSetter.setValues(pstmt);
+            return rowMapperResultExtract.execute(pstmt);
         } catch (SQLException e) {
             log.error("executeQuery Data Access Failed!!", e);
             throw new DataAccessException("executeQuery Data Access Failed!!");
