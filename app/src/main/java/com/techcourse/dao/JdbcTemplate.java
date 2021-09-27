@@ -15,18 +15,18 @@ public abstract class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update() {
+    public void update(String query) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
             setValuesForInsert(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Object query() {
+    public Object query(String query) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+                PreparedStatement pstmt = conn.prepareStatement(query)) {
             setValuesForInsert(pstmt);
             return mapUser(pstmt.executeQuery());
         } catch (SQLException e) {
@@ -34,13 +34,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
     public abstract Object mapUser(ResultSet resultSet) throws SQLException;
-
-    public abstract String createQuery();
 
     public abstract void setValuesForInsert(PreparedStatement pstmt) throws SQLException;
 }

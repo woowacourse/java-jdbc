@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,15 +20,6 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-
-    private PreparedStatement createPstmt(String sql, Connection conn) throws SQLException {
-        return conn.prepareStatement(sql);
-    }
-
-    private Connection createConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
@@ -40,11 +30,6 @@ public class UserDao {
             }
 
             @Override
-            public String createQuery() {
-                return sql;
-            }
-
-            @Override
             public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
@@ -52,7 +37,7 @@ public class UserDao {
                 pstmt.executeUpdate();
             }
         };
-        jdbcTemplate.update();
+        jdbcTemplate.update(sql);
     }
 
 
@@ -66,27 +51,18 @@ public class UserDao {
             }
 
             @Override
-            public String createQuery() {
-                return sql;
-            }
-
-            @Override
             public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getPassword());
                 pstmt.setLong(2, user.getId());
                 pstmt.executeUpdate();
             }
         };
-        jdbcTemplate.update();
+        jdbcTemplate.update(sql);
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
-            @Override
-            public String createQuery() {
-                return sql;
-            }
 
             @Override
             public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
@@ -105,17 +81,12 @@ public class UserDao {
                 return users;
             }
         };
-        return (List<User>) jdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query(sql);
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
-            @Override
-            public String createQuery() {
-                return sql;
-            }
-
             @Override
             public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
@@ -134,17 +105,12 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) jdbcTemplate.query();
+        return (User) jdbcTemplate.query(sql);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource) {
-            @Override
-            public String createQuery() {
-                return sql;
-            }
-
             @Override
             public void setValuesForInsert(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
@@ -162,6 +128,6 @@ public class UserDao {
                 throw new SQLException();
             }
         };
-        return (User) jdbcTemplate.query();
+        return (User) jdbcTemplate.query(sql);
     }
 }
