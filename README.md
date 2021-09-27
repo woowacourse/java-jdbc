@@ -26,6 +26,6 @@
 - [x] findAll 구현
 - [x] findByAccount 구현
 - [x] Controller in-memory user 저장 방식 dao 로 변경
-- [ ] JdbcTemplate 테스트 작성
+- [x] JdbcTemplate 테스트 작성
 
 - [ ] Service 어노테이션이 있는 클래스도 스캔

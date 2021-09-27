@@ -102,19 +102,19 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(Connection conn, String sql) {
-        try {
-            return conn.prepareStatement(sql);
-        } catch (SQLException e) {
-            throw new PreparedStatementCreationFailureException(e.getMessage(), e.getCause());
-        }
-    }
-
     private Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
             throw new DatabaseConnectionFailureException(e.getMessage(), e.getCause());
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection conn, String sql) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new PreparedStatementCreationFailureException(e.getMessage(), e.getCause());
         }
     }
 }
