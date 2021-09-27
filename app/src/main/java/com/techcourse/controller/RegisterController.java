@@ -1,12 +1,12 @@
 package com.techcourse.controller;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -14,7 +14,12 @@ import nextstep.web.support.RequestMethod;
 @Controller
 public class RegisterController {
 
-    private static final UserDao USER_DAO = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao;
+
+    @Autowired
+    public RegisterController(final UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {
@@ -22,7 +27,7 @@ public class RegisterController {
             request.getParameter("account"),
             request.getParameter("password"),
             request.getParameter("email"));
-        USER_DAO.insert(user);
+        userDao.insert(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }

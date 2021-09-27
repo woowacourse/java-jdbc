@@ -4,7 +4,6 @@ import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.HandlesTypes;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +13,7 @@ public class NextstepServletContainerInitializer implements ServletContainerInit
 
     @Override
     public void onStartup(Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
-            throws ServletException {
+        throws ServletException {
         final List<WebApplicationInitializer> initializers = new LinkedList<>();
 
         if (webAppInitializerClasses != null) {
