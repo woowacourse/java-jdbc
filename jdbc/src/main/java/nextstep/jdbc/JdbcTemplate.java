@@ -1,6 +1,9 @@
 package nextstep.jdbc;
 
 import com.google.common.base.Strings;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
+import nextstep.jdbc.exception.InvalidQueryParameterException;
+import nextstep.jdbc.exception.JdbcTemplateSqlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,32 +26,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... objects) {
-        assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
-        log.info("update query: {}", sql);
-        execute(sql, (PreparedStatement pstmt) -> {
-            setValues(pstmt, objects);
-            return pstmt.executeUpdate();
-        });
-    }
-
-    private <T> T execute(String sql, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            //todo; Custom Exception 하나 만들어서 통일하기!
-            throw new IllegalArgumentException("");
-        }
-    }
-
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         List<T> results = query(sql, rowMapper, objects);
         if (results.isEmpty()) {
             return null;
         }
 
-        return results.get(0);
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+
+        return results.iterator().next();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
@@ -73,7 +61,25 @@ public class JdbcTemplate {
         });
     }
 
-    private void setValues(PreparedStatement pstmt, Object[] objects) {
+    public void update(String sql, Object... objects) {
+        assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
+        log.info("update query: {}", sql);
+        execute(sql, (PreparedStatement pstmt) -> {
+            setValues(pstmt, objects);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new JdbcTemplateSqlException(e.getMessage());
+        }
+    }
+
+    private void setValues(PreparedStatement pstmt, Object... objects) {
         IntStream.range(0, objects.length)
                 .forEach(it -> setValue(it, pstmt, objects[it]));
     }
@@ -82,7 +88,7 @@ public class JdbcTemplate {
         try {
             pstmt.setObject(sequence + 1, object);
         } catch (SQLException e) {
-            throw new IllegalArgumentException("SQL 쿼리문의 파라미터에 값을 할당할 수 없습니다.");
+            throw new InvalidQueryParameterException();
         }
     }
 }
