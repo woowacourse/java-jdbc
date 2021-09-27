@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -30,62 +30,57 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
 //        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 //    }
 
-    public void insert(User user) {
+    public void insert(User user) { // todo: SimpleJdbcInsert 도 구현해보자!!
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(con -> {
-            PreparedStatement pstmt = con.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            return pstmt;
-        });
-
-
-//        try (Connection conn = dataSource.getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(sql)
-//        ) {
-//            log.debug("query : {}", sql);
-//            pstmt.setString(1, user.getAccount());
-//            pstmt.setString(2, user.getPassword());
-//            pstmt.setString(3, user.getEmail());
-//            pstmt.executeUpdate();
-//        } catch (SQLException e) {
-//            //todo: 추후 Custom Exception으로 변경하기!
-//            throw new IllegalArgumentException();
-//        }
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(con -> {
-            PreparedStatement pstmt = con.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            return pstmt;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
+
+//    public List<User> findAll() { // todo: query(...) 로 추상화
+//        final String sql = "select id, account, password, email from users";
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql);
+//             ResultSet rs = pstmt.executeQuery()) {
+//
+//            List<User> users = new ArrayList<>();
+//            while (rs.next()) {
+//                User user = parseUser(rs);
+//                users.add(user);
+//            }
+//            return users;
+//        } catch (SQLException e) {
+//            //todo: Custom Exception
+//            throw new IllegalArgumentException();
+//        }
+//    }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+        return jdbcTemplate.query(sql, mapperUser());
 
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                User user = parseUser(rs);
-                users.add(user);
-            }
-            return users;
-        } catch (SQLException e) {
-            //todo: Custom Exception
-            throw new IllegalArgumentException();
-        }
+
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql);
+//             ResultSet rs = pstmt.executeQuery()) {
+//
+//            List<User> users = new ArrayList<>();
+//            while (rs.next()) {
+//                User user = parseUser(rs);
+//                users.add(user);
+//            }
+//            return users;
+//        } catch (SQLException e) {
+//            //todo: Custom Exception
+//            throw new IllegalArgumentException();
+//        }
     }
 
-    public User findById(Long id) {
+
+    public User findById(Long id) { // todo: queryForObject(...)로 추상화
         final String sql = "select id, account, password, email from users where id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = createPreParedStatementByIndex(conn, sql, id);
@@ -140,5 +135,10 @@ public class UserDao { // todo: 일단은 이 코드를 다 동작하게
     private User parseUser(ResultSet rs) throws SQLException {
         return new User(rs.getLong(1), rs.getString(2), rs.getString(3),
                 rs.getString(4));
+    }
+
+    private RowMapper<User> mapperUser() {
+        return (rs, rowNum) -> new User(rs.getLong("id"), rs.getString("account"),
+                rs.getString("password"), rs.getString("email"));
     }
 }
