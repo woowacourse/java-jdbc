@@ -35,12 +35,12 @@ public class UserDao {
         return jdbcTemplate.query(sql, mapper);
     }
 
-    public User findById(Long id) {
+    public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, mapper, id);
     }
 
-    public User findByAccount(String account) {
+    public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         return this.jdbcTemplate.queryForObject(sql, mapper, account);
     }

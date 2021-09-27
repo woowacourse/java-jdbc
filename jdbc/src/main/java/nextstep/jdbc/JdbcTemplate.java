@@ -21,13 +21,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public static int updateCount(Integer integer) {
-        return integer;
-    }
-
-    public <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) throws DataAccessException {
+    public <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallback<T> action) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = psc.createPreparedStatement(conn)) {
+                final PreparedStatement pstmt = psc.createPreparedStatement(conn)) {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("execute SQLException", e);
@@ -38,15 +34,19 @@ public class JdbcTemplate {
         execute(new SimplePreparedStatementCreator(sql), PreparedStatement::execute);
     }
 
-    public int update(PreparedStatementCreator psc) {
-        return updateCount(execute(psc, PreparedStatement::executeUpdate));
+    public int update(final PreparedStatementCreator psc) {
+        log.debug("Executing prepared SQL update");
+
+        return execute(psc, PreparedStatement::executeUpdate);
     }
 
-    public int update(String sql, Object... args) throws DataAccessException {
+    public int update(final String sql, final Object... args) throws DataAccessException {
         return update(new PreparedStatementCreatorImpl(sql, args));
     }
 
-    public <T> List<T> query(PreparedStatementCreator psc, ResultSetExtractor<List<T>> rse) throws DataAccessException {
+    public <T> List<T> query(final PreparedStatementCreator psc, final ResultSetExtractor<List<T>> rse) throws DataAccessException {
+        log.debug("Executing prepared SQL query");
+
         return execute(psc, ps -> {
             try (final ResultSet rs = ps.executeQuery()) {
                 return rse.extractData(rs);
@@ -56,15 +56,15 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(String sql, ResultSetExtractor<List<T>> rse, Object... args) throws DataAccessException {
+    public <T> List<T> query(final String sql, final ResultSetExtractor<List<T>> rse, final Object... args) throws DataAccessException {
         return query(new PreparedStatementCreatorImpl(sql, args), rse);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         return query(sql, new RowMapperResultSetExtractor<>(rowMapper), args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
