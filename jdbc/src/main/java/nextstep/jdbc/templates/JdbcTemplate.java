@@ -38,12 +38,20 @@ public class JdbcTemplate extends BaseJdbcTemplate implements QueryOperations {
         }
 
         if (args.length == 0) {
-            return execute(stmt -> callBackForm(resultSetExtractor, stmt.executeQuery(sql)));
+            return execute(stmt -> {
+                try (ResultSet resultSet = stmt.executeQuery(sql)) {
+                    return callBackForm(resultSetExtractor, resultSet);
+                }
+            });
         }
 
         return execute(
             con -> getPreparedStatement(sql, con, args),
-            ps -> callBackForm(resultSetExtractor, ps.executeQuery())
+            ps -> {
+                try (ResultSet resultSet = ps.executeQuery()) {
+                    return callBackForm(resultSetExtractor, resultSet);
+                }
+            }
         );
     }
 

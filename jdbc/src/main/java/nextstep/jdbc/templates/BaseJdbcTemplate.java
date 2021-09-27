@@ -23,7 +23,7 @@ public abstract class BaseJdbcTemplate {
         try {
             connection = ConnectionUtils.getConnection(dataSource);
             try (Statement stmt = connection.createStatement()) {
-                stmt.setQueryTimeout(30);
+
                 final T result = action.getResult(stmt);
                 if (ConnectionUtils.isTransactionStarted()) {
                     return result;
@@ -43,8 +43,6 @@ public abstract class BaseJdbcTemplate {
             connection = ConnectionUtils.getConnection(dataSource);
             try (PreparedStatement preparedStatement =
                 preparedStatementCreator.createPreparedStatement(connection)) {
-
-                preparedStatement.setQueryTimeout(30);
 
                 final T result = action.getResult(preparedStatement);
                 if (ConnectionUtils.isTransactionStarted()) {
