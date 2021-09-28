@@ -36,11 +36,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
-        return query(sql, (rs, rowNum) -> getSingleObject(rs, type), createPreparedStatementSetter(args));
+        return query(sql, (rs, rowNum) -> createSingleObject(rs, type), createPreparedStatementSetter(args));
     }
 
     public <T> Optional<T> queryForObject(String sql, Class<T> type, Object... args) {
-        return queryForObject(sql, (rs, rowNum) -> getSingleObject(rs, type), args);
+        return queryForObject(sql, (rs, rowNum) -> createSingleObject(rs, type), args);
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -78,7 +78,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getSingleObject(ResultSet rs, Class<T> type) {
+    private <T> T createSingleObject(ResultSet rs, Class<T> type) {
         try {
             T object = type.getConstructor().newInstance();
             for (Field field : object.getClass().getDeclaredFields()) {

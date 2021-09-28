@@ -1,6 +1,6 @@
 package nextstep.exception;
 
-public class ObjectCreationException extends RuntimeException{
+public class ObjectCreationException extends RuntimeException {
 
     public ObjectCreationException(Exception e) {
         super(e);
