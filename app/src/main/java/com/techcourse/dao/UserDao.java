@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.core.JdbcTemplate;
+import nextstep.jdbc.core.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,11 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    public static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -28,33 +34,16 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.query("SELECT * FROM users", ((rs, rowNum) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"))
-        ));
+        return jdbcTemplate.query("SELECT * FROM users", USER_ROW_MAPPER);
     }
 
     public User findById(Long id) {
         final String sql = "SELECT * FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql,
-                (rs, rowNum) -> new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")),
-                id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(String account) {
         final String sql = "SELECT * FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql,
-                (rs, rowNum) -> new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")),
-                account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
