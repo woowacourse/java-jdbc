@@ -26,9 +26,10 @@ public class JdbcTemplate {
         return execute(preparedStatement -> translateObject(preparedStatement, rowMapper), query);
     }
 
-    public <T> Optional<T> queryObjectWithCondition(String query, RowMapper<T> rowMapper,
+    public <T> Optional<T> queryObject(String query, RowMapper<T> rowMapper,
         Object... querySubject) {
-        return execute(preparedStatement -> executeQueryWithRowMapper(preparedStatement,rowMapper), query, querySubject);
+        return execute(preparedStatement -> executeQueryWithRowMapper(preparedStatement, rowMapper),
+            query, querySubject);
     }
 
     private <T> T execute(PrepareStatementAction<T> prepareStatementAction,
@@ -53,18 +54,27 @@ public class JdbcTemplate {
 
     private <T> Optional<T> executeQueryWithRowMapper(PreparedStatement preparedStatement,
         RowMapper<T> rowMapper) throws SQLException {
-        ResultSet resultSet = preparedStatement.executeQuery();
-        return Optional.ofNullable(rowMapper.rowMappedObject(resultSet));
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return Optional.ofNullable(mappedObject(resultSet, rowMapper));
+        }
     }
 
     private <T> List<T> translateObject(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
         throws SQLException {
-        ResultSet resultSet = preparedStatement.executeQuery();
-        List<T> objects = new LinkedList<>();
-        while (resultSet.next()) {
-            T t = rowMapper.rowMappedObject(resultSet);
-            objects.add(t);
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            List<T> objects = new LinkedList<>();
+            while (resultSet.next()) {
+                T t = mappedObject(resultSet, rowMapper);
+                objects.add(t);
+            }
+            return objects;
         }
-        return objects;
+    }
+
+    private <T> T mappedObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        if (resultSet.next()) {
+            return rowMapper.rowMappedObject(resultSet);
+        }
+        return null;
     }
 }

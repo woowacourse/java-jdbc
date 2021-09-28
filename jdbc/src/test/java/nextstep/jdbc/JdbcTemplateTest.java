@@ -70,7 +70,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where account = ?";
 
         //when
-        jdbcTemplate.queryObjectWithCondition(sql, rowMapper, "gugu");
+        jdbcTemplate.queryObject(sql, rowMapper, "gugu");
 
         //then
         verify(preparedStatement, times(1)).executeQuery();

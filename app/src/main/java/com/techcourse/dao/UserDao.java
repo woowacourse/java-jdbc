@@ -16,16 +16,13 @@ public class UserDao {
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.rowMapper = resultSet -> {
-            if (resultSet.next()) {
-                return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
-            }
-            return null;
-        };
+        this.rowMapper = resultSet ->
+            new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4)
+            );
     }
 
     public UserDao(DataSource dataSource) {
@@ -49,16 +46,16 @@ public class UserDao {
 
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryObjectWithCondition(sql, rowMapper, id);
+        return jdbcTemplate.queryObject(sql, rowMapper, id);
     }
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryObjectWithCondition(sql, rowMapper, account);
+        return jdbcTemplate.queryObject(sql, rowMapper, account);
     }
 
     public Optional<User> findByAccountAndPassoword(String account, String password) {
         final String sql = "select id, account, password, email from users where account = ? and password = ?";
-        return jdbcTemplate.queryObjectWithCondition(sql, rowMapper, account, password);
+        return jdbcTemplate.queryObject(sql, rowMapper, account, password);
     }
 }
