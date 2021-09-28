@@ -30,14 +30,18 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(String sql, Object... args) {
-        log.debug("update() : {}", sql);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, new ResultListExtractorFromRowMapper<>(rowMapper), args);
+    }
 
-        StatementCallback<Integer> statementCallback = (preparedStatement) -> {
+    private <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
+        log.debug("query() : {}", sql);
+
+        StatementCallback<T> statementCallback = (preparedStatement) -> {
             setArgs(preparedStatement, args);
-            return preparedStatement.executeUpdate();
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSetExtractor.extractData(resultSet);
         };
-
         return execute(sql, statementCallback);
     }
 
@@ -51,18 +55,14 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, new ResultListExtractorFromRowMapper<>(rowMapper), args);
-    }
+    public int update(String sql, Object... args) {
+        log.debug("update() : {}", sql);
 
-    private <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
-        log.debug("query() : {}", sql);
-
-        StatementCallback<T> statementCallback = (preparedStatement) -> {
+        StatementCallback<Integer> statementCallback = (preparedStatement) -> {
             setArgs(preparedStatement, args);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return resultSetExtractor.extractData(resultSet);
+            return preparedStatement.executeUpdate();
         };
+
         return execute(sql, statementCallback);
     }
 
