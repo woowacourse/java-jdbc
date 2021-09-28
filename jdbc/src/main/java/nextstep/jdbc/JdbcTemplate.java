@@ -30,18 +30,14 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object... objects) {
+    public int update(String sql, Object... objects) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             LOG.debug("query : {}", sql);
 
             PreparedStatementSetter.setValues(pstmt, objects);
-            int i = pstmt.executeUpdate();
-            LOG.info("update Size : {}", i);
-            if (i == 0) {
-                throw new SQLException();
-            }
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new SqlUpdateException(e);
         }
