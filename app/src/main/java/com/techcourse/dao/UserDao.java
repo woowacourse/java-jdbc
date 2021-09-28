@@ -73,9 +73,8 @@ public class UserDao {
                 "from users " +
                 "where account = ?";
         log.debug("query : {}", sql);
-        final List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, account);
 
-        return Optional.ofNullable(mapToUser(result));
+        return Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account));
     }
 
     public void deleteAll() {

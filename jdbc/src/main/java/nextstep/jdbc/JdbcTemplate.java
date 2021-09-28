@@ -25,30 +25,30 @@ public class JdbcTemplate {
     }
 
     public List<Map<String, Object>> queryForList(final String sql, @Nullable Object... args) {
-        return query(sql, args, new ColumnMapRowMapper());
+        return query(sql, new ColumnMapRowMapper(), args);
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper,  @Nullable Object... args) {
-        final List<T> query = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper));
+        final List<T> query = query(sql, new RowMapperResultSetExtractor<>(rowMapper), args);
         return query.iterator().next();
     }
 
-    public <T> List<T> query(String sql, @Nullable Object[] args, RowMapper<T> rowMapper) {
-        return query(sql, args, new RowMapperResultSetExtractor<>(rowMapper));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object[] args) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), args);
     }
 
-    public <T> T query(final String sql, @Nullable Object[] args, final ResultSetExtractor<T> rse) {
+    public <T> T query(final String sql, final ResultSetExtractor<T> rse, @Nullable Object[] args) {
         return query(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args), rse);
     }
 
     public <T> T query(PreparedStatementCreator psc, @Nullable final PreparedStatementSetter pss, final ResultSetExtractor<T> rss) {
-        return execute(psc, ps -> {
+        return execute(psc, pstmt -> {
             ResultSet rs = null;
             try {
                 if (pss != null) {
-                    pss.setValue(ps);
+                    pss.setValue(pstmt);
                 }
-                rs = ps.executeQuery();
+                rs = pstmt.executeQuery();
                 return rss.extractData(rs);
             } finally {
                 try {
@@ -66,11 +66,11 @@ public class JdbcTemplate {
     }
 
     public int update(final PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
-        return execute(psc, ps -> {
+        return execute(psc, pstmt -> {
             if (pss != null) {
-                pss.setValue(ps);
+                pss.setValue(pstmt);
             }
-            return ps.executeUpdate();
+            return pstmt.executeUpdate();
         });
     }
 
