@@ -30,7 +30,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object... args) {
+    public int update(String sql, Object... args) {
         log.debug("update() : {}", sql);
 
         StatementCallback<Integer> statementCallback = (preparedStatement) -> {
@@ -38,7 +38,7 @@ public class JdbcTemplate {
             return preparedStatement.executeUpdate();
         };
 
-        execute(sql, statementCallback);
+        return execute(sql, statementCallback);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
