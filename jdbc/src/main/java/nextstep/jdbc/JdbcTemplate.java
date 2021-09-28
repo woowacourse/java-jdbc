@@ -38,8 +38,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = generatePstmt(conn, sql, parameters);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
             List<T> results = new ArrayList<>();
             while (rs.next()) {
@@ -51,10 +51,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement generatePstmt(Connection conn, String sql, Object... parameters) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
+    private ResultSet executeQuery(PreparedStatement pstmt, Object... parameters) throws SQLException {
         setValues(pstmt, parameters);
-        return pstmt;
+        return pstmt.executeQuery();
     }
 
     private void setValues(PreparedStatement pstmt, Object... parameters) throws SQLException {
