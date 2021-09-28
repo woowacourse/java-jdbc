@@ -88,8 +88,14 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("update 쿼리를 실행한다.")
-    void update() {
+    @DisplayName("update 쿼리는 반영된 Row의 개수만큼을 int 값으로 리턴한다.")
+    void update() throws SQLException {
+        // given
+        int assumedAffectedNumber = 11;
+        long assumedId = 1L;
+        when(mockPreparedStatement.executeUpdate()).thenReturn(assumedAffectedNumber);
 
+        // then
+        assertThat(jdbcTemplate.update("UPDATE users SET account=?, password=?, email=? WHERE id=?", assumedId)).isEqualTo(assumedAffectedNumber);
     }
 }
