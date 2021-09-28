@@ -29,10 +29,10 @@ public class UserDao {
 
     public List<User> findAll() {
         return jdbcTemplate.query("SELECT * FROM users", ((rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4))
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"))
         ));
     }
 
@@ -40,10 +40,10 @@ public class UserDao {
         final String sql = "SELECT * FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql,
                 (rs, rowNum) -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)),
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")),
                 id);
     }
 
@@ -51,10 +51,10 @@ public class UserDao {
         final String sql = "SELECT * FROM users WHERE account = ?";
         return jdbcTemplate.queryForObject(sql,
                 (rs, rowNum) -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)),
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")),
                 account);
     }
 }
