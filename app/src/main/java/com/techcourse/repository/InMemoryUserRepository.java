@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryUserRepository {
+public class InMemoryUserRepository implements UserRepository {
 
     private static final Map<String, User> database = new ConcurrentHashMap<>();
 
@@ -15,13 +15,13 @@ public class InMemoryUserRepository {
         database.put(user.getAccount(), user);
     }
 
-    public static void save(User user) {
+    public void save(User user) {
         database.put(user.getAccount(), user);
     }
 
-    public static Optional<User> findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         return Optional.ofNullable(database.get(account));
     }
 
-    private InMemoryUserRepository() {}
+    public InMemoryUserRepository() {}
 }
