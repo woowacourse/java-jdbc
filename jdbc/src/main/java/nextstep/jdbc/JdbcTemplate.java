@@ -39,6 +39,7 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
+            LOG.info("errorName : {}", e.getClass());
             throw new SqlUpdateException(e);
         }
     }
