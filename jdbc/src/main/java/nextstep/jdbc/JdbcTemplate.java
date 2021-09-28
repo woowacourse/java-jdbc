@@ -77,16 +77,23 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(PreparedStatementCreator psc, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
-
+        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = psc.createPreparedStatement(conn);
         ) {
-            pstmt.executeQuery();
             pss.setValue(pstmt);
-            return rse.extractData(pstmt.executeQuery());
+            rs = pstmt.executeQuery();
+            return rse.extractData(rs);
         } catch (SQLException e) {
             log.info("JdbcInternalException: {} {}", e.getMessage(), e);
             throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 
