@@ -1,14 +1,17 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import nextstep.jdbc.exception.DataAccessException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
@@ -67,5 +70,26 @@ class UserDaoTest {
         final User actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @DisplayName("잘못된")
+    @Nested
+    class failTest {
+
+        @DisplayName("id로 데이터를 찾으려고 하면, 예외가 발생한다.")
+        @Test
+        void findByWrongId() {
+            assertThatThrownBy(
+                () -> userDao.findById(Long.MAX_VALUE)
+            ).isExactlyInstanceOf(DataAccessException.class);
+        }
+
+        @DisplayName("userName로 데이터를 찾으려고 하면, 예외가 발생한다.")
+        @Test
+        void findByWrongAccount() {
+            assertThatThrownBy(
+                () -> userDao.findByAccount("pkjjanjjangMan")
+            ).isExactlyInstanceOf(DataAccessException.class);
+        }
     }
 }
