@@ -31,13 +31,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, new ResultListExtractorFromRowMapper<>(rowMapper), args);
-    }
-
-    private <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
         log.debug("query() : {}", sql);
+        ResultSetExtractor<List<T>> resultSetExtractor = new ResultListExtractorFromRowMapper<>(rowMapper);
 
-        StatementCallback<T> statementCallback = (preparedStatement) -> {
+        StatementCallback<List<T>> statementCallback = (preparedStatement) -> {
             setArgs(preparedStatement, args);
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSetExtractor.extractData(resultSet);
