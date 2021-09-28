@@ -57,11 +57,10 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
-    @ValueSource(strings = {"gugu", "wrongAccount"})
-    @ParameterizedTest
-    void errorFindingObject(String input) {
+    @Test
+    void errorFindingObject() {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
-        assertThatThrownBy(() -> userDao.findByAccount(input))
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
             .isInstanceOf(DataAccessException.class);
     }
 

@@ -41,14 +41,11 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, new RowMapperExtractor<>(rowMapper), createPreparedStatementSetter(args));
 
-        if (result.isEmpty()) {
-            throw new DataAccessException("조회된 데이터가 없습니다.");
-        }
         if (result.size() > 1) {
             throw new DataAccessException("조회된 데이터가 2개 이상입니다.");
         }
 
-        return Optional.ofNullable(result.get(0));
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
