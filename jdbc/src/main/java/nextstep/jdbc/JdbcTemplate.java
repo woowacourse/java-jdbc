@@ -28,7 +28,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... params) {
-        return query(query, rowMapper, params).get(0);
+        List<T> queryResult = query(query, rowMapper, params);
+        if (queryResult.size() > 1) {
+            throw new DataException("duplication result");
+        }
+        return queryResult.get(0);
     }
 
     public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... params) {
