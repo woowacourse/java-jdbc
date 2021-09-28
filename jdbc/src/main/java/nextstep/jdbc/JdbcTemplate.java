@@ -1,6 +1,6 @@
 package nextstep.jdbc;
 
-import com.techcourse.support.jdbc.exception.DataAccessException;
+import com.techcourse.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,25 +36,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, params)) {
 
-            setParams(pstmt, params);
-            rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
 
             return mapToList(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
@@ -66,6 +57,11 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
+    private ResultSet executeQuery(PreparedStatement pstmt, Object[] params) throws SQLException {
+        setParams(pstmt, params);
+        return pstmt.executeQuery();
+    }
+
     private void setParams(PreparedStatement pstmt, Object[] params) throws SQLException {
         int firstIdx = 1;
         for (Object param : params) {
@@ -73,8 +69,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> ArrayList<T> mapToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        ArrayList<T> list = new ArrayList<>();
+    private <T> List<T> mapToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> list = new ArrayList<>();
         while (rs.next()) {
             list.add(rowMapper.map(rs));
         }
