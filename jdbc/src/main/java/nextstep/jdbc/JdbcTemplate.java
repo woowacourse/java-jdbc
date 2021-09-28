@@ -54,25 +54,22 @@ public class JdbcTemplate {
 
     private <T> List<T> query(String sql, ResultSetExtractor<List<T>> resultSetExtractor, Object... objects) {
         return execute(sql, (PreparedStatement pstmt) -> {
-            setValues(pstmt, objects);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return resultSetExtractor.extractData(rs);
             }
-        });
+        }, objects);
     }
 
     public void update(String sql, Object... objects) {
         assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
         log.info("update query: {}", sql);
-        execute(sql, (PreparedStatement pstmt) -> {
-            setValues(pstmt, objects);
-            return pstmt.executeUpdate();
-        });
+        execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> action) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... objects) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setValues(pstmt, objects);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new JdbcTemplateSqlException(e.getMessage());
