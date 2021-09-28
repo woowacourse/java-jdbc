@@ -1,15 +1,16 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.techcourse.exception.MoreThanTwoResultsFoundFromOptionalMethodException;
 import nextstep.jdbc.core.JdbcTemplate;
 import nextstep.jdbc.core.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
-
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     public static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
             rs.getLong("id"),
@@ -45,5 +46,14 @@ public class UserDao {
     public User findByAccount(String account) {
         final String sql = "SELECT * FROM users WHERE account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+    }
+
+    public Optional<User> findOptionalByAccount(String account) {
+        final String sql = "SELECT * FROM users WHERE account = ?";
+        List<User> users = jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
+        if (users.size() < 2) {
+            return Optional.of(users.get(0));
+        }
+        throw new MoreThanTwoResultsFoundFromOptionalMethodException(users.size());
     }
 }
