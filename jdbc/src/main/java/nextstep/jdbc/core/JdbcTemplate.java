@@ -1,6 +1,7 @@
 package nextstep.jdbc.core;
 
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.JdbcTemaplateQueryExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
             return callback.executeQuery(stm);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcTemaplateQueryExecutionException(e);
         }
     }
 
