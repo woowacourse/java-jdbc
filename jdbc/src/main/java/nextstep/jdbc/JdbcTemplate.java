@@ -20,18 +20,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    // TODO 클래스로 분리할 부분 찾기
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    interface Result<T> {
-
-        T makeResult(PreparedStatement preparedStatement) throws SQLException;
-    }
 
     public int update(String sql, Object... args) {
         log(sql);
 
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return executeUpdate(sql, preparedStatementSetter(args));
+    }
+
+    private int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
+            if (preparedStatementSetter != null) {
+                preparedStatementSetter.setValues(preparedStatement);
+            }
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -47,38 +55,54 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         log(sql);
 
-        return execute(
+        return executeForList(
             sql,
-            preparedStatement -> {
-                try (ResultSet rs = preparedStatement.executeQuery();) {
-                    List<T> results = new ArrayList<>();
-                    int rowNum = 0;
-                    while (rs.next()) {
-                        results.add(rowMapper.mapRow(rs, rowNum++));
-                    }
-                    return results;
+            preparedStatementSetter(args),
+            resultSet -> {
+                List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, rowNum++));
                 }
-            },
-            args
+                return results;
+            }
         );
     }
 
-    public <T> T execute(String sql, Result<T> result, Object... args) {
+    private <T> List<T> executeForList(String sql,
+                                       PreparedStatementSetter preparedStatementSetter,
+                                       ResultSetExtractor<List<T>> resultSetExtractor
+    ) {
         try (
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            for (int row = 0; row < args.length; row++) {
-                preparedStatement.setObject(row + 1, args[row]);
-            }
-            return result.makeResult(preparedStatement);
+            return resultSetExtractor.extractData(
+                executeQuery(preparedStatement, preparedStatementSetter)
+            );
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
+    private ResultSet executeQuery(PreparedStatement preparedStatement,
+                                   PreparedStatementSetter preparedStatementSetter
+    ) throws SQLException {
+        if (preparedStatementSetter != null) {
+            preparedStatementSetter.setValues(preparedStatement);
+        }
+        return preparedStatement.executeQuery();
+    }
+
+    private PreparedStatementSetter preparedStatementSetter(Object[] args) {
+        return preparedStatement -> {
+            for (int row = 0; row < args.length; row++) {
+                preparedStatement.setObject(row + 1, args[row]);
+            }
+        };
+    }
+
     private void log(String sql) {
         log.info("query: {}", sql);
     }
-
 }

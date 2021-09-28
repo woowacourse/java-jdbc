@@ -18,7 +18,7 @@ public class UserDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    private RowMapper<User> rowMapper = (rs, rowNum) ->
+    private static final RowMapper<User> rowMapper = (rs, rowNum) ->
         new User(
             rs.getLong(1),
             rs.getString(2),
@@ -28,37 +28,31 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        log.debug("query: {}", sql);
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         String sql = "update users set password = ? where email = ?";
-        log.debug("query: {}", sql);
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail());
     }
 
     public User findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        log.debug("query: {}", sql);
         return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        log.debug("query: {}", sql);
         return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 
     public List<User> findAll() {
         final String sql = "select * from users";
-        log.debug("query: {}", sql);
         return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public void deleteAll() {
         String sql = "delete from users";
-        log.debug("query: {}", sql);
         jdbcTemplate.update(sql);
     }
 }
