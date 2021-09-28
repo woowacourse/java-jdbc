@@ -24,5 +24,6 @@
 
 - [ ] hikari 설정 추가
 - [x] 업데이트시 반영되는게 없을때 에러발생하지 않도록 수정하기
-- [ ] resultset을 메서드화 하기
-- [ ] PreparedStatemnetSetter 변경하기
+- [x] resultset을 메서드화 하기
+- [x] PreparedStatementSetter 변경하기
+

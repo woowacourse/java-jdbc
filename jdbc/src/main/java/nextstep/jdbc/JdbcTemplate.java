@@ -65,21 +65,15 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper,
         PreparedStatementSetter preparedStatementSetter) {
-        ResultSet resultSet = null;
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(pstmt);
-
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet resultSet = executeQuery(pstmt, preparedStatementSetter)) {
             LOG.debug("query : {}", sql);
-            resultSet = pstmt.executeQuery();
             RowMapperResultSetExtractor<T> rowMapperResultSetExtractor
                 = new RowMapperResultSetExtractor<>(rowMapper);
             return rowMapperResultSetExtractor.extract(resultSet);
         } catch (SQLException e) {
             throw new SqlQueryException(e);
-        } finally {
-            tryCloseResultSet(resultSet);
         }
     }
 
@@ -87,13 +81,10 @@ public class JdbcTemplate {
         return query(sql, rowMapper, createPreparedStatementSetter(objects));
     }
 
-    private void tryCloseResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException ignored) {
-        }
+    private ResultSet executeQuery(PreparedStatement pstmt,
+        PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        preparedStatementSetter.setValues(pstmt);
+        return pstmt.executeQuery();
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(Object[] objects) {
