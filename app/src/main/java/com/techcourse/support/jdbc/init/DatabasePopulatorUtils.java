@@ -22,7 +22,6 @@ public class DatabasePopulatorUtils {
     }
 
     public static void execute(DataSource dataSource) {
-
         try (Connection connection = dataSource.getConnection();
             Statement statement = connection.createStatement()) {
 

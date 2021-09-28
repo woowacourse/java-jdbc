@@ -37,6 +37,7 @@ dependencies {
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.0.10'
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    implementation 'com.zaxxer:HikariCP:5.0.0'
 
     implementation 'com.h2database:h2:1.4.200'
 
