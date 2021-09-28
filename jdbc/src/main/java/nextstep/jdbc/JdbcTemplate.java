@@ -24,76 +24,64 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public List<Map<String, Object>> queryForList(final String sql) {
-        return query(sql, new ColumnMapRowMapper());
-    }
-
     public List<Map<String, Object>> queryForList(final String sql, @Nullable Object... args) {
         return query(sql, args, new ColumnMapRowMapper());
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper,  @Nullable Object... args) {
+        final List<T> query = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper));
+        return query.iterator().next();
     }
 
     public <T> List<T> query(String sql, @Nullable Object[] args, RowMapper<T> rowMapper) {
         return query(sql, args, new RowMapperResultSetExtractor<>(rowMapper));
     }
 
-    public <T> T query(final String sql, final ResultSetExtractor<T> rse) {
-        return execute(new SimplePreparedStatement(sql), rse);
-    }
-
     public <T> T query(final String sql, @Nullable Object[] args, final ResultSetExtractor<T> rse) {
-        return execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args), rse);
+        return query(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args), rse);
     }
 
-    public void query(final String sql, @Nullable Object... args) {
-        execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args));
+    public <T> T query(PreparedStatementCreator psc, @Nullable final PreparedStatementSetter pss, final ResultSetExtractor<T> rss) {
+        return execute(psc, ps -> {
+            ResultSet rs = null;
+            try {
+                if (pss != null) {
+                    pss.setValue(ps);
+                }
+                rs = ps.executeQuery();
+                return rss.extractData(rs);
+            } finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                } catch (SQLException ignored) {
+                }
+            }
+        });
     }
 
-    private void execute(PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
+    public int update(final String sql, @Nullable Object... args) {
+       return update(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(final PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
+        return execute(psc, ps -> {
+            if (pss != null) {
+                pss.setValue(ps);
+            }
+            return ps.executeUpdate();
+        });
+    }
+
+    private <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = psc.createPreparedStatement(conn)
         ) {
-            pss.setValue(pstmt);
-            pstmt.executeUpdate();
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.info("JdbcInternalException: {} {}", e.getMessage(), e);
             throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
-        }
-    }
-
-    private <T> T execute(PreparedStatementCreator psc, final ResultSetExtractor<T> rse) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = psc.createPreparedStatement(conn);
-             ResultSet resultSet = pstmt.executeQuery()
-        ) {
-            return rse.extractData(resultSet);
-        } catch (SQLException e) {
-            log.info("JdbcInternalException: {} {}", e.getMessage(), e);
-            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
-        }
-    }
-
-    private <T> T execute(PreparedStatementCreator psc, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = psc.createPreparedStatement(conn);
-        ) {
-            pss.setValue(pstmt);
-            rs = pstmt.executeQuery();
-            return rse.extractData(rs);
-        } catch (SQLException e) {
-            log.info("JdbcInternalException: {} {}", e.getMessage(), e);
-            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 

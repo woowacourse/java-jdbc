@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,22 +16,29 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> userRowMapper;
 
     public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userRowMapper = (rs, rowNum) -> new User(
+                rs.getLong("users_id"),
+                rs.getString("users_account"),
+                rs.getString("users_password"),
+                rs.getString("users_email")
+        );
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.debug("query : {}", sql);
-        jdbcTemplate.query(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         final String sql = "update users set account=?, password=?, email=? where id=?";
         log.debug("query : {}", sql);
-        jdbcTemplate.query(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -54,9 +62,8 @@ public class UserDao {
                 "from users " +
                 "where id = ?";
         log.debug("query : {}", sql);
-        final List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, id);
 
-        return mapToUser(result);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
 
@@ -74,7 +81,7 @@ public class UserDao {
     public void deleteAll() {
         final String sql = "delete from users";
         log.debug("query : {}", sql);
-        jdbcTemplate.query(sql);
+        jdbcTemplate.update(sql);
     }
 
     private User mapToUser(List<Map<String, Object>> maps) {
