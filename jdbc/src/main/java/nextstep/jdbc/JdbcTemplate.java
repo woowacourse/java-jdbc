@@ -23,12 +23,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
-        update(sql, createPreparedStatementSetter(args));
+    public void delete(String sql, Object... args) {
+        update(sql, args);
     }
 
-    public void update(String sql, PreparedStatementSetter pss) {
-        execute(sql, pss, PreparedStatement::executeUpdate);
+    public void insert(String sql, Object... args) {
+        update(sql, args);
+    }
+
+    public void update(String sql, Object... args) {
+        execute(sql, createPreparedStatementSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
