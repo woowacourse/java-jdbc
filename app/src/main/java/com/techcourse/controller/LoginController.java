@@ -39,10 +39,13 @@ public class LoginController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ModelAndView login(HttpServletRequest request, HttpServletResponse response) {
         if (UserSession.isLoggedIn(request.getSession())) {
-            return redirect("/index.jsp");
+            return redirect(INDEX_JSP);
         }
 
-        Optional<User> user = userService.findByAccount(request.getParameter("account"));
+        String account = request.getParameter("account");
+        String password = request.getParameter("password");
+
+        Optional<User> user = userService.loginAccount(account, password);
         return user.map(value -> login(request, value)).orElseGet(() -> redirect("/401.jsp"));
     }
 

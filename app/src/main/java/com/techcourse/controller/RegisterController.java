@@ -25,11 +25,11 @@ public class RegisterController {
             request.getParameter("account"),
             request.getParameter("password"),
             request.getParameter("email"));
-        if (userService.register(user)) {
-            return new ModelAndView(new JspView("redirect:/index.jsp"));
-        }
 
-        return new ModelAndView(new JspView("redirect:/index.jsp"));
+        if (userService.isAvailableRegisteredAccount(user)) {
+            return new ModelAndView(new JspView("redirect:/login.jsp"));
+        }
+        return new ModelAndView(new JspView("redirect:/401.jsp"));
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)

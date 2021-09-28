@@ -14,18 +14,18 @@ public class UserService {
         this.userDao = userDao;
     }
 
-    public boolean login(String account, String password) {
+    public Optional<User> loginAccount(String account, String password) {
         Optional<User> user = userDao.findByAccountAndPassoword(account, password);
-        return user.isPresent();
+        return user;
     }
 
-    public boolean register(User user) {
-        try {
-            userDao.insert(user);
-            return true;
-        } catch (RuntimeException e) {
+    public boolean isAvailableRegisteredAccount(User user) {
+        Optional<User> existedUser = userDao.findByAccount(user.getAccount());
+        if (existedUser.isPresent()) {
             return false;
         }
+        userDao.insert(user);
+        return true;
     }
 
     public Optional<User> findByAccount(String account) {

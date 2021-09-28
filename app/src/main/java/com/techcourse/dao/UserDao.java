@@ -29,14 +29,14 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void insert(User user) {
+    public int insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
+    public int update(User user) {
         final String sql = "update users SET account = ?, password = ?, email = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
