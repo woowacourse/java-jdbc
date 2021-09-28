@@ -32,14 +32,6 @@ public class JdbcTemplate extends BaseJdbcTemplate {
             throw new IllegalStateException("sql or resultSetExtractor can not be null");
         }
 
-        if (args.length == 0) {
-            return execute(stmt -> {
-                try (ResultSet resultSet = stmt.executeQuery(sql)) {
-                    return callBackForm(resultSetExtractor, resultSet);
-                }
-            });
-        }
-
         return execute(
             con -> getPreparedStatement(sql, con, args),
             ps -> {
@@ -54,14 +46,7 @@ public class JdbcTemplate extends BaseJdbcTemplate {
         return queryForList(sql, type, args).stream().findAny();
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, rowMapper, args).stream().findAny();
-    }
-
     public int update(String sql, Object... args) {
-        if (args.length == 0) {
-            return execute(stmt -> stmt.executeUpdate(sql));
-        }
         return execute(
             con -> getPreparedStatement(sql, con, args),
             PreparedStatement::executeUpdate

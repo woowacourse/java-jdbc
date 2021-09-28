@@ -23,24 +23,6 @@ public abstract class BaseJdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    protected <T> T execute(StatementCallback<T> action) {
-        Connection connection = null;
-        Statement stmt = null;
-        T result = null;
-        try {
-            connection = ConnectionManager.getConnection(dataSource);
-            stmt = connection.createStatement();
-            result = action.getResult(stmt);
-        } catch (SQLException sqlException) {
-            log.error(sqlException.getMessage());
-            ConnectionManager.errorHandle();
-        } finally {
-            JdbcResourceCloser.closeStatement(stmt);
-            JdbcResourceCloser.closeConnection(connection);
-        }
-        return result;
-    }
-
     protected <T> T execute(PreparedStatementCreator preparedStatementCreator,
                             PreparedStatementCallback<T> action) {
         Connection connection = null;
