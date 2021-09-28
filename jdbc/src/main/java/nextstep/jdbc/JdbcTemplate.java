@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.exception.DataAccessException;
+import nextstep.exception.ObjectCreationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getSingleObject(ResultSet rs, Class<T> type) throws SQLException {
+    private <T> T getSingleObject(ResultSet rs, Class<T> type) {
         try {
             T object = type.getConstructor().newInstance();
             for (Field field : object.getClass().getDeclaredFields()) {
@@ -82,7 +83,7 @@ public class JdbcTemplate {
             }
             return object;
         } catch (Exception e) {
-            throw new SQLException();
+            throw new ObjectCreationException(e);
         }
     }
 
