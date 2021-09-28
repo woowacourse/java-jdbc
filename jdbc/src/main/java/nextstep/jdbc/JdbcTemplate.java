@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import nextstep.exception.JdbcInternalException;
 import nextstep.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,45 +48,45 @@ public class JdbcTemplate {
         return execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args), rse);
     }
 
-    public void queryDML(final String sql, @Nullable Object... args) {
+    public void query(final String sql, @Nullable Object... args) {
         execute(new SimplePreparedStatement(sql), new ArgumentPreparedStatementSetter(args));
     }
 
     private void execute(PreparedStatementCreator psc, @Nullable PreparedStatementSetter pss) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = psc.createPreparedStatement(conn)
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = psc.createPreparedStatement(conn)
         ) {
             pss.setValue(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            log.info("JdbcInternalException: {} {}", e.getMessage(), e);
+            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
         }
     }
 
     private <T> T execute(PreparedStatementCreator psc, final ResultSetExtractor<T> rse) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = psc.createPreparedStatement(conn);
-            ResultSet resultSet = pstmt.executeQuery()
-        ){
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = psc.createPreparedStatement(conn);
+             ResultSet resultSet = pstmt.executeQuery()
+        ) {
             return rse.extractData(resultSet);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            log.info("JdbcInternalException: {} {}", e.getMessage(), e);
+            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
         }
     }
 
     private <T> T execute(PreparedStatementCreator psc, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
 
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = psc.createPreparedStatement(conn);
-            ResultSet resultSet = pstmt.executeQuery()
-        ){
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = psc.createPreparedStatement(conn);
+        ) {
+            pstmt.executeQuery();
             pss.setValue(pstmt);
-            return rse.extractData(resultSet);
+            return rse.extractData(pstmt.executeQuery());
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            log.info("JdbcInternalException: {} {}", e.getMessage(), e);
+            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
         }
     }
 

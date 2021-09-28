@@ -1,12 +1,17 @@
 package nextstep.jdbc;
 
+import nextstep.exception.ColumnMappingException;
 import nextstep.util.LinkedCaseInsensitiveMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.Map;
 import java.util.Objects;
 
 public class ColumnMapRowMapper implements RowMapper<Map<String, Object>> {
+
+    private final Logger log = LoggerFactory.getLogger(ColumnMapRowMapper.class);
 
     @Override
     public Map<String, Object> mapRow(ResultSet rs, int rowNum) {
@@ -20,7 +25,8 @@ public class ColumnMapRowMapper implements RowMapper<Map<String, Object>> {
             }
             return mapOfColumnValues;
         } catch (SQLException e) {
-            throw new IllegalStateException("ColumnMap을 만드는데 실패했습니다.");
+            log.info("ColumnMap을 만드는데 실패했습니다. {} {}", e.getMessage(), e);
+            throw new ColumnMappingException("ColumnMap을 만드는데 실패했습니다. " + e.getMessage(), e.getCause());
         }
     }
 
@@ -64,8 +70,9 @@ public class ColumnMapRowMapper implements RowMapper<Map<String, Object>> {
                 }
             }
             return obj;
-        } catch (SQLException exception) {
-            throw new IllegalStateException("Column의 값을 가져오는데 실패했습니다.");
+        } catch (SQLException e) {
+            log.info("Column의 값을 가져오는데 실패했습니다. {} {}", e.getMessage(), e);
+            throw new ColumnMappingException("Column의 값을 가져오는데 실패했습니다. " + e.getMessage(), e.getCause());
         }
     }
 }

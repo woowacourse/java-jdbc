@@ -1,10 +1,16 @@
 package nextstep.jdbc;
 
+import nextstep.exception.BadSqlGrammarException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class ArgumentPreparedStatementSetter implements PreparedStatementSetter {
+
+    private final Logger log = LoggerFactory.getLogger(ArgumentPreparedStatementSetter.class);
 
     @Nullable
     private final Object[] args;
@@ -34,9 +40,12 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
             if (argValue instanceof Integer) {
                 ps.setInt(parameterPosition, (Integer) argValue);
             }
-        } catch (SQLException exception) {
-            throw new IllegalArgumentException(
-                    String.format("SQL문의 매개변수 마커와 일치하지 않습니다. 입력 순서: %d, 입력 값: %s", parameterPosition, args ));
+        } catch (SQLException e) {
+            log.info("SQL문의 매개변수 마커와 일치하지 않습니다. 입력 순서: {}, 입력 값: {}", parameterPosition, argValue);
+            throw new BadSqlGrammarException(
+                    String.format("SQL문의 매개변수 마커와 일치하지 않습니다. 입력 순서: %d, 입력 값: %s", parameterPosition, argValue ),
+                    e.getCause()
+            );
         }
     }
 }

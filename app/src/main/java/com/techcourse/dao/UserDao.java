@@ -24,13 +24,13 @@ public class UserDao {
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.debug("query : {}", sql);
-        jdbcTemplate.queryDML(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.query(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         final String sql = "update users set account=?, password=?, email=? where id=?";
         log.debug("query : {}", sql);
-        jdbcTemplate.queryDML(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.query(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -74,7 +74,7 @@ public class UserDao {
     public void deleteAll() {
         final String sql = "delete from users";
         log.debug("query : {}", sql);
-        jdbcTemplate.queryDML(sql);
+        jdbcTemplate.query(sql);
     }
 
     private User mapToUser(List<Map<String, Object>> maps) {

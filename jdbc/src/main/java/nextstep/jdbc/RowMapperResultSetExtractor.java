@@ -1,6 +1,9 @@
 package nextstep.jdbc;
 
+import nextstep.exception.JdbcInternalException;
 import nextstep.util.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T>> {
+
+    private final Logger log = LoggerFactory.getLogger(RowMapperResultSetExtractor.class);
 
     private final RowMapper<T> rowMapper;
     private final int rowsExpected;
@@ -31,8 +36,9 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
                 results.add(this.rowMapper.mapRow(rs, rowNum++));
             }
             return results;
-        } catch (SQLException exception) {
-            throw new IllegalStateException("데이터 베이스 연결 오류입니다");
+        } catch (SQLException e) {
+            log.info("JdbcInternalException: {} {}", e.getMessage(), e.getCause());
+            throw new JdbcInternalException("JdbcInternalException: " + e.getMessage(), e.getCause());
         }
     }
 
