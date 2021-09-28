@@ -13,10 +13,10 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private final DataSource dataSource;
     private final RowMapper<User> userMapper = resultSet -> new User(
-            resultSet.getLong(1),
-            resultSet.getString(2),
-            resultSet.getString(3),
-            resultSet.getString(4));
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email"));
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -50,5 +50,11 @@ public class UserDao {
         final String sql = "select id, account, password, email from users where account = ?";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         return jdbcTemplate.queryForObject(sql, userMapper, account);
+    }
+
+    public void clean() {
+        final String sql = "drop table users";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update(sql);
     }
 }
