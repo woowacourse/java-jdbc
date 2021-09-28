@@ -1,1 +1,18 @@
 # jwp-dashboard-jdbc
+
+- [x] UserDaoTest 통과하기
+  - [x] update
+  - [x] findAll
+  - [x] deleteAll
+  - [x] findByAccount
+
+- [x] JdbcTemplate으로 분리하기
+  - [x] void를 리턴하는 update 메서드 분리하기
+  - [x] Object, Collection을 리턴하는 query 메서드 분리하기
+  - [x] Template 및 Callback의 적용
+
+- [ ] 라이브러리 확장
+  - [x] SQLException을 CustomException으로 변경하기
+  - [x] RowMapper를 제네릭을 사용해서 구현하기
+  - [ ] 람다를 활용해서 코드량을 줄이기
+  - [x] DataAccessUtils로 singleResult 가져오기
