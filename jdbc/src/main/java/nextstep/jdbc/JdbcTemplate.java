@@ -21,131 +21,59 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) throws SQLException {
-        executeUpdate(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            return pstmt;
-        });
+    public int update(String sql, Object... args) {
+        return executeUpdate(connection -> makePreparedStatement(sql, connection, args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
-        return executeQueryForObject(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            return pstmt;
-        }, rowMapper);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeQueryForObject(connection -> makePreparedStatement(sql, connection, args), rowMapper);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
-        return executeQuery(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            return pstmt;
-        }, rowMapper);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(connection -> makePreparedStatement(sql, connection, args), rowMapper);
     }
 
-    public void executeUpdate(StatementStrategy stmt) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    private PreparedStatement makePreparedStatement(String sql, Connection connection, Object... args) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
+        }
+        return preparedStatement;
+    }
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = stmt.makePreparedStatement(conn);
-            pstmt.executeUpdate();
+    private int executeUpdate(StatementStrategy stmt) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = stmt.makePreparedStatement(conn)) {
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw e;
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            throw new DataAccessException();
         }
     }
 
-    public <T> T executeQueryForObject(StatementStrategy stmt, RowMapper<T> rowMapper) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = stmt.makePreparedStatement(conn);
-            rs = pstmt.executeQuery();
+    private <T> T executeQueryForObject(StatementStrategy stmt, RowMapper<T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = stmt.makePreparedStatement(conn);
+             ResultSet rs = preparedStatement.executeQuery()) {
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
             return null;
         } catch (SQLException e) {
-            throw e;
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+            throw new DataAccessException();
         }
     }
 
-    public <T> List<T> executeQuery(StatementStrategy stmt, RowMapper<T> rowMapper) throws SQLException {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = stmt.makePreparedStatement(conn);
-            rs = pstmt.executeQuery();
+    private <T> List<T> executeQuery(StatementStrategy stmt, RowMapper<T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = stmt.makePreparedStatement(conn);
+             ResultSet rs = preparedStatement.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {
-            throw e;
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+            throw new DataAccessException();
         }
     }
 }

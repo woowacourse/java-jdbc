@@ -9,5 +9,6 @@
         - [x] JdbcTemplate 구현하기
 
 - [ ] JdbcTemplate 리팩토링
-    - [ ] CheckedException을 UncheckedException으로 변경
+    - [x] CheckedException을 UncheckedException으로 변경
     - [ ] 중복이 들어간 로직에 대한 리팩토링
+    - [x] try-with-resources 활용
