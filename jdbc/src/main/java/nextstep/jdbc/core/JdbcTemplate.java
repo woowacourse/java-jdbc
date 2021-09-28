@@ -33,9 +33,9 @@ public class JdbcTemplate {
         log.debug("update() : {}", sql);
         StatementCallback<Integer> statementCallback = new StatementCallback<>() {
             @Override
-            public Integer executeQuery(PreparedStatement statement) throws SQLException {
-                setArgs(statement, args);
-                return statement.executeUpdate();
+            public Integer executeQuery(PreparedStatement preparedStatement) throws SQLException {
+                setArgs(preparedStatement, args);
+                return preparedStatement.executeUpdate();
             }
         };
         execute(sql, statementCallback);
