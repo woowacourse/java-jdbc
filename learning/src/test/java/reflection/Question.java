@@ -5,17 +5,17 @@ import java.util.Objects;
 
 public class Question {
 
-    private long questionId;
+    private final long questionId;
 
-    private String writer;
+    private final String writer;
 
     private String title;
 
     private String contents;
 
-    private Date createdDate;
+    private final Date createdDate;
 
-    private int countOfComment;
+    private final int countOfComment;
 
     public Question(String writer, String title, String contents) {
         this(0, writer, title, contents, new Date(), 0);

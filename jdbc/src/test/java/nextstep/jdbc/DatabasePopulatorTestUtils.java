@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.init;
+package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,14 +13,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 
-public class DatabasePopulatorUtils {
+public class DatabasePopulatorTestUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorTestUtils.class);
 
     public static void execute(DataSource dataSource) {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();) {
-            final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+            final URL url = DatabasePopulatorTestUtils.class.getClassLoader().getResource("schema.sql");
             final File file = new File(Objects.requireNonNull(url).getFile());
             final String sql = Files.readString(file.toPath());
             statement.execute(sql);
@@ -29,5 +29,6 @@ public class DatabasePopulatorUtils {
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private DatabasePopulatorTestUtils() {
+    }
 }

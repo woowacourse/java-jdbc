@@ -1,29 +1,25 @@
-package com.techcourse.config;
+package nextstep.jdbc;
 
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.h2.jdbcx.JdbcDataSource;
 
+import java.sql.SQLException;
 import java.util.Objects;
 
-public class DataSourceConfig {
-
+public class DataSourceTestConfig {
     private static javax.sql.DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    public static javax.sql.DataSource getInstance() throws SQLException {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
-            DatabasePopulatorUtils.execute(INSTANCE);
         }
         return INSTANCE;
     }
 
     private static JdbcDataSource createJdbcDataSource() {
-        final JdbcDataSource jdbcDataSource = new JdbcDataSource();
+        JdbcDataSource jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }
