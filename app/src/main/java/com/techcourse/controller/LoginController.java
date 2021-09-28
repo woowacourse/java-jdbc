@@ -3,6 +3,7 @@ package com.techcourse.controller;
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
 import com.techcourse.repository.UserRepository;
+import com.techcourse.repository.UserRepositoryImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -22,7 +23,7 @@ public class LoginController {
     private final UserRepository userRepository;
 
     public LoginController() {
-        this.userRepository = new InMemoryUserRepository();
+        this.userRepository = new UserRepositoryImpl();
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)

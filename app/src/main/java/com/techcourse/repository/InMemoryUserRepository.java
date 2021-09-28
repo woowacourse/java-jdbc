@@ -15,13 +15,16 @@ public class InMemoryUserRepository implements UserRepository {
         database.put(user.getAccount(), user);
     }
 
+    public InMemoryUserRepository() {
+    }
+
+    @Override
     public void save(User user) {
         database.put(user.getAccount(), user);
     }
 
+    @Override
     public Optional<User> findByAccount(String account) {
         return Optional.ofNullable(database.get(account));
     }
-
-    public InMemoryUserRepository() {}
 }
