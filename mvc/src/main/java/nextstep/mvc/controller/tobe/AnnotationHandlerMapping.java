@@ -61,7 +61,6 @@ public class AnnotationHandlerMapping implements HandlerMapping {
             .collect(Collectors.toList());
     }
 
-    @SuppressWarnings("unchecked")
     private Set<Method> getRequestMappingMethods(Set<Class<?>> controllers) {
         final Set<Method> requestMappingMethods = Sets.newHashSet();
         for (Class<?> clazz : controllers) {

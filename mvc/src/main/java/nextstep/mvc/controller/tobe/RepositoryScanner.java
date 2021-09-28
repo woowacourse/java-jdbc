@@ -28,7 +28,6 @@ public class RepositoryScanner {
 
     private Map<Class<?>, Object> instantiateRepositories(Set<Class<?>> preInitiatedRepositories) {
         final Map<Class<?>, Object> repositories = new HashMap<>();
-
         try {
             DBConnector dbConnector = new DBConnector(reflections);
             DataSource dataSource = dbConnector.getDataSource();

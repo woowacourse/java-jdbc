@@ -62,5 +62,4 @@ public class ControllerScanner {
             pairedParameters.add(matchedParameter);
         }
     }
-
 }
