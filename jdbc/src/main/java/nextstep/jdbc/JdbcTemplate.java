@@ -20,6 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    // TODO 클래스로 분리할 부분 찾기
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     interface Result<T> {
@@ -28,10 +29,14 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        log(sql);
+
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        log(sql);
+
         List<T> results = queryForList(sql, rowMapper, args);
         if (results.size() != 1) {
             throw new IncorrectDataSizeException(1, results.size());
@@ -40,6 +45,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
+        log(sql);
+
         return execute(
             sql,
             preparedStatement -> {
@@ -61,12 +68,14 @@ public class JdbcTemplate {
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            for (int row = 0; row < args.length; row++) {
-                preparedStatement.setObject(row + 1, args[row]);
-            }
             return result.makeResult(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
+
+    private void log(String sql) {
+        log.info("query: {}", sql);
+    }
+
 }
