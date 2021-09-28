@@ -42,7 +42,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
         try {
-            final User user = userDao.findByAccount(request.getParameter("acccount"));
+            final User user = userDao.findByAccount(request.getParameter("account"));
             log.info("User : {}", user);
             return login(request, user);
         } catch (RuntimeException e) {

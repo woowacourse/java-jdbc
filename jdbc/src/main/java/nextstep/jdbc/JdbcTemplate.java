@@ -35,6 +35,7 @@ public class JdbcTemplate {
             while (rs.next()) {
                 targets.add(rowMapper.mapRow(rs));
             }
+            rs.close();
             return targets;
         }, args);
     }
@@ -54,13 +55,17 @@ public class JdbcTemplate {
     private <T> T execute(String sql, Execute<T> logic, Object... args) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setArguments(pstmt, args);
             return logic.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
+        }
+    }
+
+    private void setArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 

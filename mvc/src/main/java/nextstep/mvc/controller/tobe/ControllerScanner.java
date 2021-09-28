@@ -19,10 +19,31 @@ public class ControllerScanner {
     private static final Logger log = LoggerFactory.getLogger(ControllerScanner.class);
 
     private final Reflections reflections;
-    Reflections daoReflections = new Reflections("com.techcourse.dao");
+    private final Map<Class<?>, Object> repositories;
 
     public ControllerScanner(Object... basePackage) {
         reflections = new Reflections(basePackage);
+        repositories = getRepositories();
+    }
+
+    private Map<Class<?>, Object> getRepositories() {
+        Reflections daoReflections = new Reflections("com.techcourse.dao");
+        Set<Class<?>> preInitiatedRepositories = daoReflections
+            .getTypesAnnotatedWith(Repository.class);
+        return instantiateRepositories(preInitiatedRepositories);
+    }
+
+    private Map<Class<?>, Object> instantiateRepositories(Set<Class<?>> preInitiatedRepositories) {
+        final Map<Class<?>, Object> repoMap = new HashMap<>();
+        preInitiatedRepositories
+            .forEach(repo -> {
+                try {
+                    repoMap.put(repo, repo.getDeclaredConstructor().newInstance());
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    log.error(e.getMessage(), e);
+                }
+            });
+        return repoMap;
     }
 
     public Map<Class<?>, Object> getControllers() {
@@ -42,12 +63,12 @@ public class ControllerScanner {
         try {
             log.info(clazz.getName());
             if (hasDao(clazz)) {
-                final Constructor<?> declaredConstructors = Arrays
+                final Constructor<?> declaredConstructor = Arrays
                     .stream(clazz.getDeclaredConstructors())
                     .filter(constructor -> constructor.isAnnotationPresent(InjectDao.class))
                     .findAny()
                     .orElseThrow();
-                controllers.put(clazz, declaredConstructors.newInstance(findDao(clazz)));
+                controllers.put(clazz, declaredConstructor.newInstance(findDao(clazz)));
                 return;
             }
             controllers.put(clazz, clazz.getDeclaredConstructor().newInstance());
@@ -61,14 +82,13 @@ public class ControllerScanner {
             .anyMatch(constructor -> constructor.isAnnotationPresent(InjectDao.class));
     }
 
-    private Object findDao(Class<?> clazz)
-        throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private Object findDao(Class<?> clazz) {
         final Class<?> daoClass = Arrays.stream(clazz.getDeclaredFields())
             .map(Field::getType)
             .filter(c -> c.isAnnotationPresent(Repository.class))
             .findAny()
             .orElseThrow();
         log.info("Selected Dao Class : {}", daoClass.getName());
-        return daoClass.getDeclaredConstructor().newInstance();
+        return repositories.get(daoClass);
     }
 }

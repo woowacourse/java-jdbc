@@ -18,14 +18,6 @@ public class DataSourceConfig {
         return INSTANCE;
     }
 
-    private static JdbcDataSource createJdbcDataSource() {
-        final JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
-    }
-
     private static DataSource createHikariDataSource() {
         final HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
