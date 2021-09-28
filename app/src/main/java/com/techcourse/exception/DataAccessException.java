@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.exception;
+package com.techcourse.exception;
 
 public class DataAccessException extends RuntimeException {
 
