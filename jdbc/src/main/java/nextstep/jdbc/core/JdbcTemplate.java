@@ -1,6 +1,6 @@
 package nextstep.jdbc.core;
 
-import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.exception.JdbcTemaplateQueryExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +45,8 @@ public class JdbcTemplate {
         log.debug("queryForObject() : {}", sql);
 
         List<T> results = query(sql, rowMapper, args);
-        if (results.size() < 1) {
-            throw new DataAccessException();
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException(results.size());
         }
         return results.get(0);
     }

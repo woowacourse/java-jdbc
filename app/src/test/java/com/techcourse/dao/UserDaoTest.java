@@ -4,6 +4,8 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.core.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,14 +14,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
+    private static JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    private static UserDao userDao = new UserDao(jdbcTemplate);
 
-    private UserDao userDao;
-
-    @BeforeEach
-    void setup() {
+    @BeforeAll
+    static void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
