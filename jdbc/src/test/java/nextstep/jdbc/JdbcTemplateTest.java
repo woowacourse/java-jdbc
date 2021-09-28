@@ -11,8 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import javax.sql.DataSource;
 import nextstep.jdbc.templates.JdbcTemplate;
-import nextstep.jdbc.utils.ResultSetExtractor;
-import nextstep.jdbc.utils.RowMapper;
 import nextstep.jdbc.utils.RowMapperListExtractor;
 import nextstep.jdbc.utils.TransactionManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,14 +60,14 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("기존 select 메서드 흐름이 JdbcTemplate에 들어있는지 확인한다. (Statement)")
+    @DisplayName("기존 select 메서드 흐름이 JdbcTemplate에 들어있는지 확인한다")
     public void select() throws Exception {
         // given
         final Connection connection = mock(Connection.class);
-        final Statement statement = mock(Statement.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.createStatement()).thenReturn(statement);
+        when(connection.prepareStatement(any())).thenReturn(statement);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         final String sql = "select * from users";
@@ -79,7 +77,7 @@ class JdbcTemplateTest {
 
         // then
         verify(dataSource).getConnection();
-        verify(connection).createStatement();
+        verify(connection).prepareStatement(any());
 
         verify(connection).close();
         verify(statement).close();
@@ -90,10 +88,10 @@ class JdbcTemplateTest {
     public void transaction_oneConnection() throws Exception {
         // given
         final Connection connection = mock(Connection.class);
-        final Statement statement = mock(Statement.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.createStatement()).thenReturn(statement);
+        when(connection.prepareStatement(any())).thenReturn(statement);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         final String sql = "select * from users";
@@ -113,10 +111,10 @@ class JdbcTemplateTest {
     public void inTransaction() throws Exception {
         // given
         final Connection connection = mock(Connection.class);
-        final Statement statement = mock(Statement.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.createStatement()).thenReturn(statement);
+        when(connection.prepareStatement(any())).thenReturn(statement);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         final String sql = "select * from users";
@@ -138,10 +136,10 @@ class JdbcTemplateTest {
     public void rollback() throws Exception {
         // given
         final Connection connection = mock(Connection.class);
-        final Statement statement = mock(Statement.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.createStatement()).thenReturn(statement);
+        when(connection.prepareStatement(any())).thenReturn(statement);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         final String sql = "select * from users";
