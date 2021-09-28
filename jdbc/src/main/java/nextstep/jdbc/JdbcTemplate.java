@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -52,7 +53,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws DataAccessException {
         List<T> result = query(sql, rowMapper, params);
         if (result.isEmpty()) {
-            return null;
+            throw new DataAccessException("해당 결과를 조회할 수 없습니다.");
         }
         return result.get(0);
     }
