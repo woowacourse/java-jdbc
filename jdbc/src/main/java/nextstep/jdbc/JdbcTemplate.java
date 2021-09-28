@@ -38,24 +38,17 @@ public class JdbcTemplate {
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(query)
         ) {
-            setValue(preparedStatement, querySubject);
+            PrepareStatementSetter.setValue(preparedStatement, querySubject);
             return prepareStatementAction.execute(preparedStatement);
         } catch (SQLException e) {
             throw new QueryException(e.getMessage());
         }
     }
 
-    private void setValue(PreparedStatement preparedStatement, Object... querySubject)
-        throws SQLException {
-        for (int i = 0; i < querySubject.length; i++) {
-            preparedStatement.setObject(i + 1, querySubject[i]);
-        }
-    }
-
     private <T> Optional<T> executeQueryWithRowMapper(PreparedStatement preparedStatement,
         RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            return Optional.ofNullable(mappedObject(resultSet, rowMapper));
+            return Optional.ofNullable(ObjectMapper.mappedObject(resultSet, rowMapper));
         }
     }
 
@@ -64,17 +57,10 @@ public class JdbcTemplate {
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
             List<T> objects = new LinkedList<>();
             while (resultSet.next()) {
-                T t = mappedObject(resultSet, rowMapper);
+                T t = ObjectMapper.mappedObject(resultSet, rowMapper);
                 objects.add(t);
             }
             return objects;
         }
-    }
-
-    private <T> T mappedObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
-        if (resultSet.next()) {
-            return rowMapper.rowMappedObject(resultSet);
-        }
-        return null;
     }
 }
