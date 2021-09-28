@@ -57,14 +57,12 @@ public class UserDao {
     public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return this.jdbcTemplate.query(sql, mapper, id)
-            .stream().findFirst();
+        return Optional.ofNullable(this.jdbcTemplate.queryForObject(sql, mapper, id));
     }
 
     public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return this.jdbcTemplate.query(sql, mapper, account)
-            .stream().findFirst();
+        return Optional.ofNullable(this.jdbcTemplate.queryForObject(sql, mapper, account));
     }
 }
