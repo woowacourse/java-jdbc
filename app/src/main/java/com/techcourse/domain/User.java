@@ -3,9 +3,9 @@ package com.techcourse.domain;
 public class User {
 
     private Long id;
-    private final String account;
+    private String account;
     private String password;
-    private final String email;
+    private String email;
 
     public User(long id, String account, String password, String email) {
         this.id = id;
@@ -26,6 +26,14 @@ public class User {
 
     public void changePassword(String password) {
         this.password = password;
+    }
+
+    public void changeAccount(String account) {
+        this.account = account;
+    }
+
+    public void changeEmail(String email) {
+        this.email = email;
     }
 
     public String getAccount() {
