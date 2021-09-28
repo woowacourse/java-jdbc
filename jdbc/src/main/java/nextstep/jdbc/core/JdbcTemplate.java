@@ -32,13 +32,12 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... args) {
         log.debug("update() : {}", sql);
-        StatementCallback<Integer> statementCallback = new StatementCallback<>() {
-            @Override
-            public Integer executeQuery(PreparedStatement preparedStatement) throws SQLException {
-                setArgs(preparedStatement, args);
-                return preparedStatement.executeUpdate();
-            }
+
+        StatementCallback<Integer> statementCallback = (preparedStatement) -> {
+            setArgs(preparedStatement, args);
+            return preparedStatement.executeUpdate();
         };
+
         execute(sql, statementCallback);
     }
 
@@ -59,13 +58,10 @@ public class JdbcTemplate {
     private <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, Object... args) {
         log.debug("query() : {}", sql);
 
-        StatementCallback<T> statementCallback = new StatementCallback<>() {
-            @Override
-            public T executeQuery(PreparedStatement statement) throws SQLException {
-                setArgs(statement, args);
-                ResultSet resultSet = statement.executeQuery();
-                return resultSetExtractor.extractData(resultSet);
-            }
+        StatementCallback<T> statementCallback = (preparedStatement) -> {
+            setArgs(preparedStatement, args);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSetExtractor.extractData(resultSet);
         };
         return execute(sql, statementCallback);
     }
