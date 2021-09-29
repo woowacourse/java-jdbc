@@ -3,11 +3,11 @@ package nextstep.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class valuesPreparedStatementSetter implements PreparedStatementSetter {
+public class ValuesPreparedStatementSetter implements PreparedStatementSetter {
 
     private final Object[] values;
 
-    public valuesPreparedStatementSetter(Object[] values) {
+    public ValuesPreparedStatementSetter(Object[] values) {
         this.values = values;
     }
 

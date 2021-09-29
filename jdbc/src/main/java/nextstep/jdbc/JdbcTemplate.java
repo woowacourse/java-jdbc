@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.DataAccessUtils;
 import nextstep.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +24,13 @@ public class JdbcTemplate {
 
     public void update(String query, Object... values) {
 
-        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
+        PreparedStatementSetter pstmtSetter = new ValuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter)) {
 
             log.debug("query : {}", query);
 
-            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,33 +39,21 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... values) {
+        List<T> results = query(query, rowMapper, values);
 
-        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter);
-             ResultSet rs = executeQuery(pstmt)) {
-
-            log.debug("query : {}", query);
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-
-            throw new SQLException();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
+        return DataAccessUtils.nullableSingleResult(results);
     }
 
     public <T> List<T> queryForList(String query, RowMapper<T> rowMapper, Object... values) {
-        PreparedStatementSetter pstmtSetter = new valuesPreparedStatementSetter(values);
+        return query(query, rowMapper, values);
+    }
+
+    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... values) {
+        PreparedStatementSetter pstmtSetter = new ValuesPreparedStatementSetter(values);
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter);
-             ResultSet rs = executeQuery(pstmt)) {
+                PreparedStatement pstmt = generatePreparedStatement(query, conn, pstmtSetter);
+                ResultSet rs = executeQuery(pstmt)) {
 
             log.debug("query : {}", query);
 
