@@ -21,34 +21,29 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
+    public void insert(User user) throws SQLException {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
 
+        try (conn; pstmt) {
             log.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 
-    public void update(User user) {
+    public void update(User user) throws SQLException {
         final String sql = "update users set account = ?, password = ?, email = ?  where id = ?";
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
 
+        try (conn; pstmt) {
             log.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
@@ -56,21 +51,18 @@ public class UserDao {
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 
-    public List<User> findAll() {
+    public List<User> findAll() throws SQLException {
         List<User> users = new ArrayList<>();
         final String sql = "select id, account, password, email from users";
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery();
-        ) {
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        ResultSet rs = pstmt.executeQuery();
+
+        try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -81,24 +73,18 @@ public class UserDao {
                     rs.getString(4)));
             }
             return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 
-    public User findById(Long id) {
+    public User findById(Long id) throws SQLException {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        ResultSet rs = null;
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setLong(1, id);
+        ResultSet rs = pstmt.executeQuery();
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
+        try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -109,30 +95,18 @@ public class UserDao {
                     rs.getString(4));
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    public User findByAccount(String account) {
+    public User findByAccount(String account) throws SQLException  {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        ResultSet rs = null;
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setString(1, account);
+        ResultSet rs = pstmt.executeQuery();
 
+        try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -143,16 +117,6 @@ public class UserDao {
                     rs.getString(4));
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 }
