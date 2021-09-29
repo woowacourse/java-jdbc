@@ -18,14 +18,14 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
-    public int insert(User user) {
+    public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public int update(User user) {
+    public void update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        return jdbcTemplate
+        jdbcTemplate
             .update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
