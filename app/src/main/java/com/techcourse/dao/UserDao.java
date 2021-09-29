@@ -23,12 +23,14 @@ public class UserDao {
 
     public void insert(User user) throws SQLException {
         InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
-        insertJdbcTemplate.update(user);
+        insertJdbcTemplate.setInsertUser(user);
+        insertJdbcTemplate.update();
     }
 
     public void update(User user) throws SQLException {
         UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
-        updateJdbcTemplate.update(user);
+        updateJdbcTemplate.setUpdateUser(user);
+        updateJdbcTemplate.update();
     }
 
     public List<User> findAll() throws SQLException {

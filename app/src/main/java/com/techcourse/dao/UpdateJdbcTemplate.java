@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 public class UpdateJdbcTemplate extends JdbcTemplate {
 
     private final DataSource dataSource;
+    private User user;
 
     public UpdateJdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -24,10 +25,15 @@ public class UpdateJdbcTemplate extends JdbcTemplate {
     }
 
     @Override
-    protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+    protected void setValues(PreparedStatement pstmt) throws SQLException {
         pstmt.setString(1, user.getAccount());
         pstmt.setString(2, user.getPassword());
         pstmt.setString(3, user.getEmail());
         pstmt.setLong(4, user.getId());
     }
+
+    public void setUpdateUser(User user) {
+        this.user = user;
+    }
+
 }

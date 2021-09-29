@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 public class InsertJdbcTemplate extends JdbcTemplate {
 
     private final DataSource dataSource;
+    private User user;
 
     public InsertJdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -24,9 +25,14 @@ public class InsertJdbcTemplate extends JdbcTemplate {
     }
 
     @Override
-    protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+    protected void setValues(PreparedStatement pstmt) throws SQLException {
         pstmt.setString(1, user.getAccount());
         pstmt.setString(2, user.getPassword());
         pstmt.setString(3, user.getEmail());
     }
+
+    public void setInsertUser(User user) {
+        this.user = user;
+    }
+
 }
