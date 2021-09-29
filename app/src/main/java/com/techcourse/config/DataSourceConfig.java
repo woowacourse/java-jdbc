@@ -9,7 +9,7 @@ public class DataSourceConfig {
 
     private static DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
