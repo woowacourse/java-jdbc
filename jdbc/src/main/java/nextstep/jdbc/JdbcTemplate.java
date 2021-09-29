@@ -39,17 +39,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(String sql, RowMapper<T> rowMapper, Object... args) {
-        ResultExtractCallBack<T> resultExtractCallBack = rs -> {
-            if (rs.getFetchSize() != 1) {
-                throw new DataAccessException("데이터가 1개가 아님.");
-            }
-            if (!rs.next()) {
-                throw new DataAccessException("데이터가 존재하지 않음.");
-            }
-            return rowMapper.mapRow(rs);
-        };
+        List<T> results = queryMany(sql, rowMapper, args);
 
-        return query(sql, resultExtractCallBack, args);
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터가 존재하지 않음.");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("데이터가 1개보다 많음.");
+        }
+
+        return results.get(0);
     }
 
     public <T> T query(String sql, ResultExtractCallBack<T> resultExtractCallBack, Object... args) {
