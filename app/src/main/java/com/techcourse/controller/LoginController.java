@@ -13,7 +13,7 @@ import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
+import java.util.Optional;
 
 @Controller
 public class LoginController {
@@ -38,13 +38,13 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        User user = userDao.findByAccount(request.getParameter("account"));
-        log.info("User : {}", user);
-
-        if (Objects.isNull(user)) {
+        Optional<User> user = userDao.findByAccount(request.getParameter("account"));
+        if (user.isEmpty()) {
             return redirect("/401.jsp");
         }
-        return login(request, user);
+        log.info("User : {}", user);
+
+        return login(request, user.get());
     }
 
     private ModelAndView login(HttpServletRequest request, User user) {

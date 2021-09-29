@@ -4,11 +4,17 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.exception.DataAccessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
+
+    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getLong(1),
@@ -41,13 +47,23 @@ public class UserDao {
         return jdbcTemplate.queryMany(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, id);
+        return findUser(sql, id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, account);
+        return findUser(sql, account);
+    }
+
+    private Optional<User> findUser(String sql, Object... args) {
+        try {
+            User user = jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, args);
+            return Optional.of(user);
+        } catch (DataAccessException e) {
+            log.error(e.getMessage());
+            return Optional.empty();
+        }
     }
 }

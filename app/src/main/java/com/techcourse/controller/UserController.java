@@ -12,7 +12,7 @@ import nextstep.web.support.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
+import java.util.Optional;
 
 @Controller
 public class UserController {
@@ -26,8 +26,8 @@ public class UserController {
         final String account = request.getParameter("account");
         log.debug("user id : {}", account);
 
-        User user = userDao.findByAccount(account);
-        if (Objects.isNull(user)) {
+        Optional<User> user = userDao.findByAccount(account);
+        if (user.isEmpty()) {
             throw new RuntimeException(); // todo
         }
 

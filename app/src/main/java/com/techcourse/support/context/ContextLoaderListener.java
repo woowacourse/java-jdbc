@@ -1,6 +1,5 @@
 package com.techcourse.support.context;
 
-import com.techcourse.JwpApplication;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import jakarta.servlet.ServletContextEvent;
@@ -12,7 +11,7 @@ import org.slf4j.LoggerFactory;
 @WebListener
 public class ContextLoaderListener implements ServletContextListener {
 
-    private static final Logger log = LoggerFactory.getLogger(JwpApplication.class);
+    private static final Logger log = LoggerFactory.getLogger(ContextLoaderListener.class);
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
