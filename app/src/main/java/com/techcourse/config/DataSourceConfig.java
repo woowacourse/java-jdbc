@@ -1,8 +1,8 @@
 package com.techcourse.config;
 
-import org.h2.jdbcx.JdbcDataSource;
-
 import java.util.Objects;
+
+import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
