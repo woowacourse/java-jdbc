@@ -19,12 +19,12 @@ public class ParameterizedStatement implements AutoCloseable {
 
     public static ParameterizedStatement from(final Connection connection, final String sql, final Object... arguments) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int argumentIndex = 1; argumentIndex <= arguments.length; argumentIndex++) {
-            preparedStatement.setObject(argumentIndex, arguments[argumentIndex - 1]);
+        for (int i = 0; i < arguments.length; i++) {
+            preparedStatement.setObject(i + 1, arguments[i]);
             log.debug("binding parameter [{}] as [{}] - [{}]",
-                argumentIndex,
-                preparedStatement.getParameterMetaData().getParameterTypeName(argumentIndex),
-                arguments[argumentIndex - 1]);
+                i + 1,
+                preparedStatement.getParameterMetaData().getParameterTypeName(i + 1),
+                arguments[i]);
         }
 
         return new ParameterizedStatement(preparedStatement);

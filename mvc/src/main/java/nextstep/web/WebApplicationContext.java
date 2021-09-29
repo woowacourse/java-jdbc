@@ -10,9 +10,6 @@ public class WebApplicationContext {
     private final Map<Class<?>, Object> beans = new HashMap<>();
     private final List<BeanScanner> beanScanners = new ArrayList<>();
 
-    public WebApplicationContext() {
-    }
-
     public void addBeanScanner(final BeanScanner beanScanner) {
         beanScanners.add(beanScanner);
     }
