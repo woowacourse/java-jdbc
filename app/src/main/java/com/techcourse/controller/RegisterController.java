@@ -14,8 +14,12 @@ import nextstep.web.support.RequestMethod;
 @Controller
 public class RegisterController {
 
+    private final UserService userService;
+
     @Autowired
-    private UserService userService;
+    public RegisterController(UserService userService) {
+        this.userService = userService;
+    }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {

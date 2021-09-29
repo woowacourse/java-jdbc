@@ -1,22 +1,18 @@
 package nextstep.mvc.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import nextstep.mvc.exception.InternalServerException;
 import nextstep.mvc.scanner.ComponentScanner;
-import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
-import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +35,6 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         Reflections reflections = new Reflections(basePackage);
         ComponentScanner componentScanner = getComponentScanner(reflections);
         initHandleExecution(reflections, componentScanner);
-        initAutowired(componentScanner);
     }
 
     private void initHandleExecution(Reflections reflections, ComponentScanner componentScanner) {
@@ -73,33 +68,6 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         ComponentScanner componentScanner = new ComponentScanner(reflections);
         componentScanner.findComponent();
         return componentScanner;
-    }
-
-    private void initAutowired(ComponentScanner componentScanner) {
-        Map<Class<?>, Object> beans = componentScanner.getBeans();
-
-        for (Entry<Class<?>, Object> entry : beans.entrySet()) {
-            Set<Field> fields = ReflectionUtils.getAllFields(
-                entry.getKey(),
-                ReflectionUtils.withAnnotation(Autowired.class)
-            );
-            setFields(componentScanner, entry.getValue(), fields);
-        }
-    }
-
-    private void setFields(ComponentScanner componentScanner, Object instance,
-        Set<Field> fields) {
-        for (Field field : fields) {
-            Class<?> fieldDeclaringClass = field.getType();
-            Object value = componentScanner.getInstance(fieldDeclaringClass);
-            try {
-                field.setAccessible(true);
-                field.set(instance, value);
-                LOG.info("autoWried : {}", field.getType().getSimpleName());
-            } catch (Exception e) {
-                LOG.error("error : {}", e.getMessage());
-            }
-        }
     }
 
     private List<Method> getRequestMappingMethods(Class<?> aClass) {

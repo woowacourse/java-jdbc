@@ -20,8 +20,12 @@ public class LogInOutController {
 
     private static final Logger LOG = LoggerFactory.getLogger(LogInOutController.class);
 
+    private final UserService userService;
+
     @Autowired
-    private UserService userService;
+    public LogInOutController(UserService userService) {
+        this.userService = userService;
+    }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView getLoginPage(HttpServletRequest request, HttpServletResponse response) {

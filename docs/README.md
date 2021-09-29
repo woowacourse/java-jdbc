@@ -28,5 +28,5 @@
 - [x] PreparedStatementSetter 변경하기
 
 - [x] user account 중복 방지
-- [ ] 생성자 주입 추가
+- [x] 생성자 주입 추가
 - [ ] 커스텀 익셉션 추가

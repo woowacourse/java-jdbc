@@ -16,6 +16,8 @@ public class UserDao {
 
     public UserDao() {
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        User user = new User("gugu", "password", "gugu@gmail.com");
+        insert(user);
     }
 
     public void insert(User user) {
