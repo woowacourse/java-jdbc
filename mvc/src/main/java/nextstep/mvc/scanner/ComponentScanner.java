@@ -51,6 +51,7 @@ public class ComponentScanner {
             if (autowiredConstructor.isPresent()) {
                 Constructor<?> constructor = autowiredConstructor.get();
                 Object[] parameters = getParameters(constructor);
+                LOG.info("Constructor Autowired : {}", parameters);
                 return constructor.newInstance(parameters);
             }
             return component.getDeclaredConstructor().newInstance();
@@ -93,7 +94,7 @@ public class ComponentScanner {
             try {
                 field.setAccessible(true);
                 field.set(instance, value);
-                LOG.info("autoWried : {}", field.getType().getSimpleName());
+                LOG.info("field AutoWried : {}", field.getType().getSimpleName());
             } catch (Exception e) {
                 LOG.error("error : {}", e.getMessage());
             }
@@ -102,9 +103,5 @@ public class ComponentScanner {
 
     public Object getInstance(Class<?> clazz) {
         return beans.get(clazz);
-    }
-
-    public Map<Class<?>, Object> getBeans() {
-        return beans;
     }
 }

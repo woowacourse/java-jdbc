@@ -22,11 +22,10 @@ public class AnnotationHandlerMapping implements HandlerMapping {
     private static final Logger LOG = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
 
     private final Object[] basePackage;
-    private final Map<HandlerKey, HandlerExecution> handlerExecutions;
+    private final Map<HandlerKey, HandlerExecution> handlerExecutions = new HashMap<>();
 
     public AnnotationHandlerMapping(Object... basePackage) {
         this.basePackage = basePackage;
-        this.handlerExecutions = new HashMap<>();
     }
 
     public void initialize() {
@@ -35,6 +34,12 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         Reflections reflections = new Reflections(basePackage);
         ComponentScanner componentScanner = getComponentScanner(reflections);
         initHandleExecution(reflections, componentScanner);
+    }
+
+    private ComponentScanner getComponentScanner(Reflections reflections) {
+        ComponentScanner componentScanner = new ComponentScanner(reflections);
+        componentScanner.findComponent();
+        return componentScanner;
     }
 
     private void initHandleExecution(Reflections reflections, ComponentScanner componentScanner) {
@@ -62,12 +67,6 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         if (handlerExecutions.containsKey(handlerKey)) {
             throw new InternalServerException();
         }
-    }
-
-    private ComponentScanner getComponentScanner(Reflections reflections) {
-        ComponentScanner componentScanner = new ComponentScanner(reflections);
-        componentScanner.findComponent();
-        return componentScanner;
     }
 
     private List<Method> getRequestMappingMethods(Class<?> aClass) {

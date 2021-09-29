@@ -4,9 +4,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Optional;
 import nextstep.mvc.adapter.HandlerAdapter;
 import nextstep.mvc.exception.AbstractCustomException;
+import nextstep.mvc.handler.ExceptionHandlerExecution;
+import nextstep.mvc.handler.ExceptionMapping;
 import nextstep.mvc.handler.HandlerMapping;
+import nextstep.mvc.registry.ExceptionHandlerRegistry;
 import nextstep.mvc.registry.HandlerAdapterRegistry;
 import nextstep.mvc.registry.HandlerMappingRegistry;
 import nextstep.mvc.view.JspView;
@@ -22,15 +26,18 @@ public class DispatcherServlet extends HttpServlet {
 
     private final HandlerMappingRegistry handlerMappingRegistry;
     private final HandlerAdapterRegistry handlerAdapterRegistry;
+    private final ExceptionHandlerRegistry exceptionHandlerRegistry;
 
     public DispatcherServlet() {
         handlerMappingRegistry = new HandlerMappingRegistry();
         handlerAdapterRegistry = new HandlerAdapterRegistry();
+        exceptionHandlerRegistry = new ExceptionHandlerRegistry();
     }
 
     @Override
     public void init() {
         handlerMappingRegistry.init();
+        exceptionHandlerRegistry.init();
     }
 
     public void addHandlerMapping(HandlerMapping handlerMapping) {
@@ -39,6 +46,10 @@ public class DispatcherServlet extends HttpServlet {
 
     public void addHandlerAdapter(HandlerAdapter handlerAdapter) {
         handlerAdapterRegistry.addHandlerAdapter(handlerAdapter);
+    }
+
+    public void addExceptionHandlerMapping(ExceptionMapping exceptionMapping) {
+        exceptionHandlerRegistry.addExceptionMapping(exceptionMapping);
     }
 
     @Override
@@ -57,13 +68,23 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private ModelAndView getModelAndView(HttpServletRequest request, HttpServletResponse response)
-        throws Exception {
+        throws Throwable {
         try {
             Object handle = handlerMappingRegistry.getHandle(request);
             HandlerAdapter handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handle);
             return handlerAdapter.handle(request, response, handle);
         } catch (AbstractCustomException e) {
             return new ModelAndView(new JspView(e.getPages().redirectPageName()));
+        } catch (RuntimeException e) {
+            return getModelAndViewWithException(e);
         }
+    }
+
+    private ModelAndView getModelAndViewWithException(RuntimeException e) {
+        Optional<Object> handle = exceptionHandlerRegistry.getHandle(e);
+        if (handle.isPresent()) {
+            return ((ExceptionHandlerExecution) handle.get()).handle(e);
+        }
+        return new ModelAndView(new JspView(Pages.INTERNAL_SERVER.redirectPageName()));
     }
 }

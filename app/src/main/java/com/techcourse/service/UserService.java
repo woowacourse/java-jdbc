@@ -3,9 +3,12 @@ package com.techcourse.service;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserSession;
+import com.techcourse.exception.LoginFailException;
+import com.techcourse.exception.RegisterFailException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import nextstep.mvc.Pages;
+import nextstep.mvc.exception.BadRequestException;
 import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Service;
 
@@ -20,7 +23,11 @@ public class UserService {
     }
 
     public User findByAccount(String account) {
-        return userDao.findByAccount(account);
+        try {
+            return userDao.findByAccount(account);
+        } catch (BadRequestException e) {
+            throw new LoginFailException();
+        }
     }
 
     public Pages checkedLogin(HttpServletRequest request) {
@@ -34,6 +41,10 @@ public class UserService {
     }
 
     public void save(User user) {
-        userDao.insert(user);
+        try {
+            userDao.insert(user);
+        } catch (Exception e) {
+            throw new RegisterFailException();
+        }
     }
 }

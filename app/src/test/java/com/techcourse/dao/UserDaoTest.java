@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private static final UserDao userDao;
-    private static final AtomicLong userNameSalt = new AtomicLong(0L);
+    private static final AtomicLong userNameSalt = new AtomicLong(1L);
 
     private User insertUser;
 

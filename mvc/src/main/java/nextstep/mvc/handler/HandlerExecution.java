@@ -21,10 +21,13 @@ public class HandlerExecution {
         this.method = method;
     }
 
-    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response) {
+    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response)
+        throws Throwable {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             LOG.error("{} method invoke fail. error message : {}", method, e.getMessage());
             throw new InternalServerException();
         }

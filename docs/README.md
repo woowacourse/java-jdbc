@@ -4,7 +4,6 @@
 - [x] 콜백 패턴 공부
 - [x] 리플렉션 테스트코드 완성
 - [x] userDao 기능 구현
-
 - [x] jdbcTemplate 구현
   - [x] userDao와 insert, update 분리하기
   - [x] user와 jdbcTemplate 의존성 분리하기
@@ -20,13 +19,17 @@
 - [x] DI 구현
 - [x] controller service Repository 분리
 - [x] pages enum 구현 후 분리
-- [ ] 테스트 코드 작성
-
 - [x] hikari 설정 추가
 - [x] 업데이트시 반영되는게 없을때 에러발생하지 않도록 수정하기
 - [x] resultset을 메서드화 하기
 - [x] PreparedStatementSetter 변경하기
-
 - [x] user account 중복 방지
 - [x] 생성자 주입 추가
-- [ ] 커스텀 익셉션 추가
+- [x] Controller Advice 구현
+
+
+
+## 추가해야할 것
+
+- [ ] 테스트 코드 추가
+- [ ] 컴포넌트스캔과 컨트롤러어드바이스 스캐너 합치기
