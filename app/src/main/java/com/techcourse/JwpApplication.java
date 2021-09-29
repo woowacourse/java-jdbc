@@ -39,6 +39,8 @@ public class JwpApplication {
     private static Context addWebapp(Tomcat tomcat) {
         final String docBase = new File("app/webapp/").getAbsolutePath();
         final Context context = tomcat.addWebapp("", docBase);
+        context.addApplicationListener("com.techcourse.support.context.ContextLoaderListener");
+
         log.info("configuring app with basedir: {}", docBase);
         return context;
     }

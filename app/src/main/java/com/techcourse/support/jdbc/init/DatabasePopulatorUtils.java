@@ -18,9 +18,7 @@ public class DatabasePopulatorUtils {
 
     public static void execute(DataSource dataSource) {
         try {
-            final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final File file = new File(url.getFile());
-            final String sql = Files.readString(file.toPath());
+            final String sql = getSchemaSql();
 
             try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
@@ -30,6 +28,12 @@ public class DatabasePopulatorUtils {
         } catch (SQLException | IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static String getSchemaSql() throws IOException {
+        final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+        final File file = new File(url.getFile());
+        return Files.readString(file.toPath());
     }
 
     private DatabasePopulatorUtils() {}
