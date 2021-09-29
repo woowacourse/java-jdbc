@@ -28,9 +28,10 @@ public class RegisterService {
     }
 
     private void validateDuplicate(User user) {
-        if (userDao.findByAccount(user.getAccount()).isPresent()) {
-            LOG.debug("Duplicate account already exist => {}", user.getAccount());
-            throw new DuplicateAccountException();
-        }
+        userDao.findByAccount(user.getAccount())
+            .ifPresent(foundUser -> {
+                LOG.debug("Duplicate account already exist => {}", foundUser.getAccount());
+                throw new DuplicateAccountException();
+            });
     }
 }
