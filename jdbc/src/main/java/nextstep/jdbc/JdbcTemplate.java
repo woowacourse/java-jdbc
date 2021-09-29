@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
@@ -26,6 +25,20 @@ public class JdbcTemplate {
         return execute(PreparedStatement::executeUpdate, sql, args);
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터 조회에 실패했습니다.");
+        }
+
+        if (results.size() > 1) {
+            throw new DataAccessException("데이터 조회 결과가 2개 이상입니다.");
+        }
+
+        return results.iterator().next();
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(preparedStatement -> executeQueryAndMappingList(preparedStatement, rowMapper), sql, args);
     }
@@ -40,22 +53,6 @@ public class JdbcTemplate {
 
             return results;
         } catch (SQLException e){
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(preparedStatement -> executeQueryAndMapping(preparedStatement, rowMapper), sql, args);
-    }
-
-    private <T> Optional<T> executeQueryAndMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper) {
-        try (ResultSet resultSet = preparedStatement.executeQuery()){
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.map(resultSet));
-            }
-
-            return Optional.empty();
-        } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
     }

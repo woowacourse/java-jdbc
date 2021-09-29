@@ -12,6 +12,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.ModelAndView;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +36,11 @@ class RegisterControllerTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         RegisterService registerService = new RegisterService(userDao);
         registerController = new RegisterController(registerService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteAll();
     }
 
     @DisplayName("/register GET 요청시")
