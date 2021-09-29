@@ -6,15 +6,19 @@ import java.util.Objects;
 public class User {
 
     private Long id;
-    private String account;
-    private String password;
-    private String email;
+    private Account account;
+    private Password password;
+    private Email email;
 
     public User(String account, String password, String email) {
         this(null, account, password, email);
     }
 
     public User(Long id, String account, String password, String email) {
+        this(id, new Account(account), new Password(password), new Email(email));
+    }
+
+    public User(Long id, Account account, Password password, Email email) {
         this.id = id;
         this.account = account;
         this.password = password;
@@ -26,29 +30,29 @@ public class User {
     }
 
     public void checkPassword(String password) {
-        if (!this.password.equals(password)) {
+        if (this.password.isDifferentWith(password)) {
             throw new UnauthorizedException();
         }
     }
 
     public void changePassword(String password) {
-        this.password = password;
-    }
-
-    public String getAccount() {
-        return account;
+        this.password = new Password(password);
     }
 
     public long getId() {
         return id;
     }
 
-    public String getEmail() {
-        return email;
+    public String getAccount() {
+        return account.getValue();
     }
 
     public String getPassword() {
-        return password;
+        return password.getValue();
+    }
+
+    public String getEmail() {
+        return email.getValue();
     }
 
     @Override
