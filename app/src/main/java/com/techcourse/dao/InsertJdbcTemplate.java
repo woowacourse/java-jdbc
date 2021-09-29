@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -35,4 +36,8 @@ public class InsertJdbcTemplate extends JdbcTemplate {
         this.user = user;
     }
 
+    @Override
+    protected Object mapRow(ResultSet rs) {
+        return null;
+    }
 }
