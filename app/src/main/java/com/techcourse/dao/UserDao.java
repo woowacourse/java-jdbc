@@ -23,7 +23,7 @@ public class UserDao {
 
     public void insert(User user) throws SQLException {
         InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
-        insertJdbcTemplate.insert(user);
+        insertJdbcTemplate.update(user);
     }
 
     public void update(User user) throws SQLException {
