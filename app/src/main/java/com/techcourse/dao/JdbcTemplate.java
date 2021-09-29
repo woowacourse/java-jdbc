@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,23 +14,19 @@ public abstract class JdbcTemplate {
 
     protected static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected abstract DataSource getDatasource();
+    private final DataSource dataSource;
 
-    protected abstract String createQuery();
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
-
-    protected abstract Object mapRow(ResultSet rs);
-
-    public void update() throws SQLException {
-        final String sql = createQuery();
-
-        Connection conn = getDatasource().getConnection();
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
 
         try (conn; pstmt) {
 
-            setValues(pstmt);
+            preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         }
     }
@@ -37,20 +35,37 @@ public abstract class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-    Object query() throws SQLException {
-        String sql = createQuery();
-        Connection conn = getDatasource().getConnection();
+    public Object queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
+        Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        setValues(pstmt);
+        preparedStatementSetter.setValues(pstmt);
         ResultSet rs = executeQuery(pstmt);
 
         try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return mapRow(rs);
+                return rowMapper.mapRow(rs);
             }
             return null;
+        }
+    }
+
+    public Object query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
+        List<Object> results = new ArrayList<>();
+
+        Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        preparedStatementSetter.setValues(pstmt);
+        ResultSet rs = executeQuery(pstmt);
+
+        try (conn; pstmt; rs) {
+            log.debug("query : {}", sql);
+
+            if (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
         }
     }
 

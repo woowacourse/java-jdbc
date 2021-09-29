@@ -1,9 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,87 +12,77 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
+        jdbcTemplate = new JdbcTemplate(dataSource) {
+        };
     }
 
     public void insert(User user) throws SQLException {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
-        insertJdbcTemplate.setInsertUser(user);
-        insertJdbcTemplate.update();
+        jdbcTemplate.update(
+            "insert into users (account, password, email) values (?, ?, ?)",
+            pstmt -> {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            });
     }
 
     public void update(User user) throws SQLException {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
-        updateJdbcTemplate.setUpdateUser(user);
-        updateJdbcTemplate.update();
+        jdbcTemplate.update(
+            "update users set account = ?, password = ?, email = ?  where id = ?",
+            pstmt -> {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            });
     }
 
     public List<User> findAll() throws SQLException {
         List<User> users = new ArrayList<>();
-        final String sql = "select id, account, password, email from users";
 
-        Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        ResultSet rs = pstmt.executeQuery();
+        return (List<User>) jdbcTemplate.query(
+            "select id, account, password, email from users",
+            pstmt -> {
 
-        try (conn; pstmt; rs) {
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                users.add(new User(
+            },
+            rs -> users.add(
+                new User(
                     rs.getLong(1),
                     rs.getString(2),
                     rs.getString(3),
-                    rs.getString(4)));
-            }
-            return users;
-        }
+                    rs.getString(4))
+            )
+        );
     }
 
     public User findById(Long id) throws SQLException {
-        final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setLong(1, id);
-        ResultSet rs = pstmt.executeQuery();
-
-        try (conn; pstmt; rs) {
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        }
+        return (User) jdbcTemplate.queryForObject(
+            "select id, account, password, email from users where id = ?",
+            pstmt -> {
+                pstmt.setLong(1, id);
+            },
+            rs -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4))
+        );
     }
 
     public User findByAccount(String account) throws SQLException {
-        final String sql = "select id, account, password, email from users where account = ?";
-
-        Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, account);
-        ResultSet rs = pstmt.executeQuery();
-
-        try (conn; pstmt; rs) {
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        }
+        return (User) jdbcTemplate.queryForObject(
+            "select id, account, password, email from users where account = ?",
+            pstmt -> {
+                pstmt.setString(1, account);
+            },
+            rs -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4))
+        );
     }
 }
