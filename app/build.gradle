@@ -2,6 +2,7 @@ plugins {
     id 'application'
     id 'org.sonarqube' version '3.3'
     id 'idea'
+    id 'jacoco'
 }
 
 application {
@@ -13,6 +14,10 @@ idea {
         inheritOutputDirs = false
         outputDir file("webapp/WEB-INF/classes")
     }
+}
+
+jacoco {
+    toolVersion = "0.8.7"
 }
 
 group = 'nextstep.jwp'
@@ -38,6 +43,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
 
     implementation 'com.h2database:h2:1.4.200'
+    implementation 'com.zaxxer:HikariCP:5.0.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.3'
     testImplementation 'org.mockito:mockito-core:3.12.3'
@@ -47,6 +53,7 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy(jacocoTestReport)
 }
 
 sonarqube {
@@ -55,5 +62,13 @@ sonarqube {
         property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
         property "sonar.organization", "woowacourse"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.coverage.jacoco.xmlReportPaths", "jacoco/jacoco.xml"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled(true)
+        xml.destination(new File("jacoco/jacoco.xml"))
     }
 }

@@ -11,6 +11,7 @@ class CallbackTest {
     @Test
     void callback() {
         final SimpleTask task = new SimpleTask();
-        task.executeWith(() -> log.info("I'm done now."));
+        final Callback callback = () -> log.info("I'm done now.");
+        task.executeWith(callback);
     }
 }
