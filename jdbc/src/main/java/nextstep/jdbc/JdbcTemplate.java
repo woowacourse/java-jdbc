@@ -29,14 +29,13 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
-            ResultSet rs = pstmt.executeQuery();
-            List<T> targets = new ArrayList<>();
-
-            while (rs.next()) {
-                targets.add(rowMapper.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> targets = new ArrayList<>();
+                while (rs.next()) {
+                    targets.add(rowMapper.mapRow(rs));
+                }
+                return targets;
             }
-            rs.close();
-            return targets;
         }, args);
     }
 
