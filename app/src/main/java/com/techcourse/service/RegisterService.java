@@ -31,7 +31,7 @@ public class RegisterService {
         userDao.findByAccount(user.getAccount())
             .ifPresent(foundUser -> {
                 LOG.debug("Duplicate account already exist => {}", foundUser.getAccount());
-                throw new DuplicateAccountException();
+                throw new DuplicateAccountException(String.format("%s 와 동일한 계정이 존재합니다.", foundUser.getAccount()));
             });
     }
 }

@@ -27,6 +27,6 @@ public class LoginService {
 
     private User findUserByAccount(String account) {
         return userDao.findByAccount(account)
-            .orElseThrow(UnauthorizedException::new);
+            .orElseThrow(() -> new UnauthorizedException(String.format("%s 계정의 유저가 존재하지 않습니다.", account)));
     }
 }

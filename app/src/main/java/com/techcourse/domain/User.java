@@ -31,7 +31,7 @@ public class User {
 
     public void checkPassword(String password) {
         if (this.password.isDifferentWith(password)) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException("비밀번호가 일치하지 않습니다.");
         }
     }
 

@@ -16,6 +16,6 @@ public class UserService {
 
     public User findUserByAccount(String account) {
         return userDao.findByAccount(account)
-            .orElseThrow(UserNotFoundException::new);
+            .orElseThrow(() -> new UserNotFoundException(String.format("%s 계정의 유저가 존재하지 않습니다.", account)));
     }
 }

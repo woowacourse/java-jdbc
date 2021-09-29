@@ -20,6 +20,6 @@ public class HandlerAdapters {
         return handlerAdapters.stream()
             .filter(handlerAdapter -> handlerAdapter.isCompatible(handler))
             .findAny()
-            .orElseThrow(HandlerAdapterNotFoundException::new);
+            .orElseThrow(() -> new HandlerAdapterNotFoundException(String.format("%s 핸들러 어댑터 조회에 실패했습니다.", handler.getClass().getSimpleName())));
     }
 }

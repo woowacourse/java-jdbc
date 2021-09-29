@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.domain.User;
 import com.techcourse.exception.DuplicateAccountException;
-import com.techcourse.exception.UnauthorizedException;
+import com.techcourse.exception.UserNotFoundException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,7 +62,7 @@ class InMemoryUserRepositoryTest {
         // when
         userRepository.save(user);
         User foundUser = userRepository.findByAccount(user.getAccount())
-            .orElseThrow(UnauthorizedException::new);
+            .orElseThrow(UserNotFoundException::new);
 
         // then
         assertThat(foundUser).usingRecursiveComparison()

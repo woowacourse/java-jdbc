@@ -17,7 +17,7 @@ public class UserSession {
     }
 
     public static User getUser(HttpSession session) {
-        return getUserFrom(session).orElseThrow(UnauthorizedException::new);
+        return getUserFrom(session).orElseThrow(() -> new UnauthorizedException("세션을 통한 유저 조회에 실패했습니다."));
     }
 
     private static Optional<User> getUserFrom(HttpSession session) {

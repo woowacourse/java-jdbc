@@ -29,7 +29,7 @@ public class InMemoryUserRepository {
     public void save(User user) {
         if (database.containsKey(user.getAccount())) {
             LOGGER.debug("Duplicate account already exist => {}", user.getAccount());
-            throw new DuplicateAccountException();
+            throw new DuplicateAccountException(String.format("%s 와 동일한 계정이 존재합니다.", user.getAccount()));
         }
 
         User newUser = User.generateId(autoIncrementId.getAndIncrement(), user);
