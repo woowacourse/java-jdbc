@@ -27,20 +27,20 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, this::getUser);
+        return jdbcTemplate.query(sql, this::createUser);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, this::getUser, id);
+        return jdbcTemplate.queryForObject(sql, this::createUser, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, this::getUser, account);
+        return jdbcTemplate.queryForObject(sql, this::createUser, account);
     }
 
-    private User getUser(ResultSet rs) throws SQLException {
+    private User createUser(ResultSet rs) throws SQLException {
         return new User(
             rs.getLong("id"),
             rs.getString("account"),
