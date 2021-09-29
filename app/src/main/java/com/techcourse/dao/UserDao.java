@@ -22,54 +22,13 @@ public class UserDao {
     }
 
     public void insert(User user) throws SQLException {
-        final String sql = createQueryForInsert();
-
-        Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-
-        try (conn; pstmt) {
-            log.debug("query : {}", sql);
-
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        }
-    }
-
-    private String createQueryForInsert() {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        return sql;
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
+        insertJdbcTemplate.insert(user);
     }
 
     public void update(User user) throws SQLException {
-        final String sql = createQueryForUpdate();
-
-        Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-
-        try (conn; pstmt) {
-            log.debug("query : {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        }
-    }
-
-    private String createQueryForUpdate() {
-        final String sql = "update users set account = ?, password = ?, email = ?  where id = ?";
-        return sql;
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
+        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() throws SQLException {
@@ -116,7 +75,7 @@ public class UserDao {
         }
     }
 
-    public User findByAccount(String account) throws SQLException  {
+    public User findByAccount(String account) throws SQLException {
         final String sql = "select id, account, password, email from users where account = ?";
 
         Connection conn = dataSource.getConnection();
