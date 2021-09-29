@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -61,16 +62,13 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         PreparedStatementSetter pstmtSetter = new ArgumentPreparedStatementSetter(args);
-        ResultSet rs = null;
 
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = executeQuery(pstmtSetter, pstmt)
         ) {
             LOG.debug("query: {}", sql);
-
-            pstmtSetter.setValues(pstmt);
-            rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -80,13 +78,14 @@ public class JdbcTemplate {
             LOG.error(e.getMessage(), e);
 
             throw new QueryException();
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (Exception ignored) {
-            }
         }
+    }
+
+    private ResultSet executeQuery(
+        PreparedStatementSetter pstmtSetter,
+        PreparedStatement pstmt
+    ) throws SQLException {
+        pstmtSetter.setValues(pstmt);
+        return pstmt.executeQuery();
     }
 }
