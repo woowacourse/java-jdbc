@@ -23,15 +23,13 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        PreparedStatementSetter pstmtSetter = new ArgumentPreparedStatementSetter(args);
-
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            LOG.debug("query: {}", sql);
+            LOG.debug("update - query: {}", sql);
 
-            pstmtSetter.setValues(pstmt);
+            createArgumentPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -40,19 +38,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()
+            ResultSet rs = executeQuery(createArgumentPreparedStatementSetter(args), pstmt)
         ) {
-            LOG.debug("query: {}", sql);
+            LOG.debug("queryForList - query: {}", sql);
 
-            List<T> objects = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs));
+                results.add(rowMapper.mapRow(rs));
             }
-            return objects;
+            return results;
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
 
@@ -61,14 +59,12 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        PreparedStatementSetter pstmtSetter = new ArgumentPreparedStatementSetter(args);
-
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = executeQuery(pstmtSetter, pstmt)
+            ResultSet rs = executeQuery(createArgumentPreparedStatementSetter(args), pstmt)
         ) {
-            LOG.debug("query: {}", sql);
+            LOG.debug("queryForObject - query: {}", sql);
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -87,5 +83,9 @@ public class JdbcTemplate {
     ) throws SQLException {
         pstmtSetter.setValues(pstmt);
         return pstmt.executeQuery();
+    }
+
+    private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
+        return new ArgumentPreparedStatementSetter(args);
     }
 }

@@ -13,6 +13,16 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
 
     @Override
     public void setValues(PreparedStatement pstmt) throws SQLException {
+        if (isNonNull()) {
+            setObjects(pstmt);
+        }
+    }
+
+    private boolean isNonNull() {
+        return args != null;
+    }
+
+    private void setObjects(PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
