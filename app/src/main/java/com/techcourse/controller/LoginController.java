@@ -1,6 +1,5 @@
 package com.techcourse.controller;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +20,7 @@ public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao = new UserDao();
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {

@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
@@ -19,6 +20,10 @@ public class UserDao {
 
     public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    public UserDao() {
+        this(DataSourceConfig.getInstance());
     }
 
     public void insert(User user) {

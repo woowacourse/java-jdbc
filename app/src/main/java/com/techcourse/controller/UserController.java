@@ -1,6 +1,5 @@
 package com.techcourse.controller;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +19,7 @@ public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao = new UserDao();
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
