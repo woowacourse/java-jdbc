@@ -1,6 +1,5 @@
 package nextstep.web;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,11 +17,11 @@ public class ComponentContainer {
 
     private ComponentContainer() {}
 
-    public static void initializeComponents(DataSource dataSource, Object... basePackage) throws Exception {
+    public static void initialize(DataSource dataSource, Object... basePackage) throws Exception {
         Reflections reflections = new Reflections(basePackage);
         initializeRepositories(reflections.getTypesAnnotatedWith(Repository.class), dataSource);
-        initializeServices(reflections.getTypesAnnotatedWith(Service.class));
-        initializeControllers(reflections.getTypesAnnotatedWith(Controller.class));
+        initializeComponents(reflections.getTypesAnnotatedWith(Service.class));
+        initializeComponents(reflections.getTypesAnnotatedWith(Controller.class));
     }
 
     private static void initializeRepositories(Set<Class<?>> repositoryTypes, DataSource dataSource) throws Exception {
@@ -32,23 +31,13 @@ public class ComponentContainer {
         }
     }
 
-    private static void initializeServices(Set<Class<?>> serviceTypes) throws Exception {
-        for (Class<?> service : serviceTypes) {
-            Class<?>[] fieldTypes = getFieldTypes(service);
+    private static void initializeComponents(Set<Class<?>> componentTypes) throws Exception {
+        for (Class<?> type : componentTypes) {
+            Class<?>[] fieldTypes = getFieldTypes(type);
             Object[] fieldObjects = getFieldObjects(fieldTypes);
 
-            Object serviceInstance = service.getConstructor(fieldTypes).newInstance(fieldObjects);
-            COMPONENTS.put(service, serviceInstance);
-        }
-    }
-
-    private static void initializeControllers(Set<Class<?>> controllerTypes) throws Exception {
-        for (Class<?> controller : controllerTypes) {
-            Class<?>[] fieldTypes = getFieldTypes(controller);
-            Object[] fieldObjects = getFieldObjects(fieldTypes);
-
-            Object controllerInstance = controller.getConstructor(fieldTypes).newInstance(fieldObjects);
-            COMPONENTS.put(controller, controllerInstance);
+            Object instance = type.getConstructor(fieldTypes).newInstance(fieldObjects);
+            COMPONENTS.put(type, instance);
         }
     }
 

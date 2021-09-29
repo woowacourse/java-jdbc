@@ -23,7 +23,7 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
         try {
             LOG.info("Start Components Initializer");
             DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-            ComponentContainer.initializeComponents(DataSourceConfig.getInstance(), BASE_PACKAGE);
+            ComponentContainer.initialize(DataSourceConfig.getInstance(), BASE_PACKAGE);
         } catch (Exception e) {
             LOG.error("Initialize Components Error: {}", e.getMessage());
             throw new ComponentContainerException(e.getMessage());
