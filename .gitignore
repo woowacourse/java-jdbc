@@ -124,3 +124,6 @@ gen
 build
 
 /tomcat.8080/
+
+### JaCoCo ###
+app/jacoco
