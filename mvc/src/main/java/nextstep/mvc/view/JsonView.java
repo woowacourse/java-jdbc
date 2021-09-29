@@ -25,17 +25,17 @@ public class JsonView implements View {
     }
 
     private String toJsonData(Map<String, ?> data) throws JsonProcessingException {
-        if (data.size() > 1) {
-            return MAPPER.writeValueAsString(data);
+        if (data.size() == 1) {
+            return MAPPER.writeValueAsString(toSingleData(data));
         }
 
-        return MAPPER.writeValueAsString(toSingleData(data));
+        return MAPPER.writeValueAsString(data);
     }
 
     private Object toSingleData(Map<String, ?> model) {
         return model.values()
             .stream()
-            .findFirst()
+            .findAny()
             .orElseThrow(IllegalStateException::new);
     }
 
