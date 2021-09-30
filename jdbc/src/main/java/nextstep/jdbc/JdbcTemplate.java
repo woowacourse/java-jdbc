@@ -23,12 +23,12 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     interface QueryResult<T> {
+
         T getResult(PreparedStatement preparedStatement) throws SQLException;
     }
 
     public int update(String sql, Object... args) {
         log(sql);
-
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
@@ -37,24 +37,18 @@ public class JdbcTemplate {
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            setValues(preparedStatement, args);
+            if (args.length != 0) {
+                setValues(preparedStatement, args);
+            }
             return queryResult.getResult(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            if (preparedStatementSetter != null) {
-                preparedStatementSetter.setValues(preparedStatement);
-            }
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+    private void setValues(PreparedStatement preparedStatement, Object[] args) throws SQLException {
+        for (int row = 0; row < args.length; row++) {
+            preparedStatement.setObject(row + 1, args[row]);
         }
     }
 
@@ -70,51 +64,31 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         log(sql);
-        return null;
 
-//        return executeForList(
-//            sql,
-//
-//            resultSet -> {
-//                List<T> results = new ArrayList<>();
-//                int rowNum = 0;
-//                while (resultSet.next()) {
-//                    results.add(rowMapper.mapRow(resultSet, rowNum++));
-//                }
-//                return results;
-//            }
-//        );
+        return execute(
+            sql,
+            preparedStatement -> {
+                try (ResultSet resultSet = executeQuery(preparedStatement, args)) {
+                    return mapRows(rowMapper, resultSet);
+                } catch (SQLException e) {
+                    throw new DataAccessException(e);
+                }
+            }
+        );
     }
 
-    private <T> List<T> executeForList(String sql,
-                                       PreparedStatementSetter preparedStatementSetter,
-                                       ResultSetExtractor<List<T>> resultSetExtractor
-    ) {
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            return resultSetExtractor.extractData(
-                executeQuery(preparedStatement, preparedStatementSetter)
-            );
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private ResultSet executeQuery(PreparedStatement preparedStatement,
-                                   PreparedStatementSetter preparedStatementSetter
-    ) throws SQLException {
-        if (preparedStatementSetter != null) {
-            preparedStatementSetter.setValues(preparedStatement);
-        }
+    private ResultSet executeQuery(PreparedStatement preparedStatement, Object[] args) throws SQLException {
+        setValues(preparedStatement, args);
         return preparedStatement.executeQuery();
     }
 
-    private void setValues(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        for (int row = 0; row < args.length; row++) {
-            preparedStatement.setObject(row + 1, args[row]);
+    private <T> List<T> mapRows(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, rowNum++));
         }
+        return results;
     }
 
     private void log(String sql) {
