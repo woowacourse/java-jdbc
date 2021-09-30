@@ -17,8 +17,8 @@ public class HandlerMappingRegistry {
 
     public Optional<Object> getHandler(HttpServletRequest request) {
         return handlerMappings.stream()
-                .map(hm -> hm.getHandler(request))
-                .filter(Objects::nonNull)
-                .findFirst();
+            .map(hm -> hm.getHandler(request))
+            .filter(Objects::nonNull)
+            .findFirst();
     }
 }

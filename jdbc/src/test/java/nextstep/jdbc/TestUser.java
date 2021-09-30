@@ -1,20 +1,20 @@
-package com.techcourse.domain;
+package nextstep.jdbc;
 
-public class User {
+public class TestUser {
 
     private Long id;
     private final String account;
     private String password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public TestUser(long id, String account, String password, String email) {
         this.id = id;
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public User(String account, String password, String email) {
+    public TestUser(String account, String password, String email) {
         this.account = account;
         this.password = password;
         this.email = email;

@@ -3,6 +3,8 @@ package nextstep.mvc.controller.tobe;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.web.RepositoryScanner;
+import nextstep.web.WebApplicationContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +18,8 @@ class AnnotationHandlerMappingTest {
 
     @BeforeEach
     void setUp() {
-        handlerMapping = new AnnotationHandlerMapping("samples");
+        WebApplicationContext webApplicationContext = new WebApplicationContext();
+        handlerMapping = new AnnotationHandlerMapping(webApplicationContext, "samples");
         handlerMapping.initialize();
     }
 

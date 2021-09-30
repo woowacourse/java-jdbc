@@ -9,7 +9,7 @@
 
     <logger name="nextstep" level="DEBUG" />
 
-    <root level="INFO">
+    <root>
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
