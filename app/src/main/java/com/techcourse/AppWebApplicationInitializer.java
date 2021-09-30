@@ -1,5 +1,6 @@
 package com.techcourse;
 
+import com.techcourse.support.context.ContextLoaderListener;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import nextstep.mvc.DispatcherServlet;
@@ -22,6 +23,8 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
         dispatcherServlet.addHandlerAdapter(new ControllerHandlerAdapter());
         dispatcherServlet.addHandlerAdapter(new HandlerExecutionHandlerAdapter());
+
+        servletContext.addListener(new ContextLoaderListener());
 
         final ServletRegistration.Dynamic dispatcher = servletContext.addServlet("dispatcher", dispatcherServlet);
         dispatcher.setLoadOnStartup(1);

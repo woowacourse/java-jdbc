@@ -13,4 +13,13 @@ class CallbackTest {
         final SimpleTask task = new SimpleTask();
         task.executeWith(() -> log.info("I'm done now."));
     }
+
+    @Test
+    void addCallback() {
+        final ComplicatedTask task = new ComplicatedTask();
+        task.executeAdd((a, b) -> {
+            log.info("더하기 끝! + " + (a + b));
+            return a + b;
+        }, 10, 20);
+    }
 }
