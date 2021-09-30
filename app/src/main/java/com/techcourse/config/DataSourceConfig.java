@@ -17,7 +17,7 @@ public class DataSourceConfig {
 
     private static JdbcDataSource createJdbcDataSource() {
         final JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+        jdbcDataSource.setUrl("jdbc:h2:tcp://localhost/~/mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
