@@ -22,10 +22,26 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    interface QueryResult<T> {
+        T getResult(PreparedStatement preparedStatement) throws SQLException;
+    }
+
     public int update(String sql, Object... args) {
         log(sql);
 
-        return executeUpdate(sql, preparedStatementSetter(args));
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, QueryResult<T> queryResult, Object... args) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
+            setValues(preparedStatement, args);
+            return queryResult.getResult(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     private int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
@@ -54,19 +70,20 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         log(sql);
+        return null;
 
-        return executeForList(
-            sql,
-            preparedStatementSetter(args),
-            resultSet -> {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rowNum++));
-                }
-                return results;
-            }
-        );
+//        return executeForList(
+//            sql,
+//
+//            resultSet -> {
+//                List<T> results = new ArrayList<>();
+//                int rowNum = 0;
+//                while (resultSet.next()) {
+//                    results.add(rowMapper.mapRow(resultSet, rowNum++));
+//                }
+//                return results;
+//            }
+//        );
     }
 
     private <T> List<T> executeForList(String sql,
@@ -94,12 +111,10 @@ public class JdbcTemplate {
         return preparedStatement.executeQuery();
     }
 
-    private PreparedStatementSetter preparedStatementSetter(Object[] args) {
-        return preparedStatement -> {
-            for (int row = 0; row < args.length; row++) {
-                preparedStatement.setObject(row + 1, args[row]);
-            }
-        };
+    private void setValues(PreparedStatement preparedStatement, Object[] args) throws SQLException {
+        for (int row = 0; row < args.length; row++) {
+            preparedStatement.setObject(row + 1, args[row]);
+        }
     }
 
     private void log(String sql) {
