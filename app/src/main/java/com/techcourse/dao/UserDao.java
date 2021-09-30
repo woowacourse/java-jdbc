@@ -32,6 +32,11 @@ public class UserDao {
 		jdbcTemplate.executeQuery(sql, user.getPassword(), user.getId());
 	}
 
+	public void deleteAll() {
+		String sql = "delete from users";
+		jdbcTemplate.executeQuery(sql);
+	}
+
 	public List<User> findAll() {
 		String sql = "select id, account, password, email from users";
 		return jdbcTemplate.query(sql, ROW_MAPPER);
