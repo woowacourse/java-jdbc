@@ -1,9 +1,91 @@
 package nextstep.jdbc;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.QueryException;
+import nextstep.jdbc.exception.UpdateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void update(String sql, Object... args) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            LOG.debug("update - query: {}", sql);
+
+            createArgumentPreparedStatementSetter(args).setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+
+            throw new UpdateException();
+        }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = executeQuery(createArgumentPreparedStatementSetter(args), pstmt)
+        ) {
+            LOG.debug("queryForList - query: {}", sql);
+
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+
+            throw new QueryException();
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = executeQuery(createArgumentPreparedStatementSetter(args), pstmt)
+        ) {
+            LOG.debug("queryForObject - query: {}", sql);
+
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+
+            throw new QueryException();
+        }
+    }
+
+    private ResultSet executeQuery(
+        PreparedStatementSetter pstmtSetter,
+        PreparedStatement pstmt
+    ) throws SQLException {
+        pstmtSetter.setValues(pstmt);
+        return pstmt.executeQuery();
+    }
+
+    private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
+        return new ArgumentPreparedStatementSetter(args);
+    }
 }

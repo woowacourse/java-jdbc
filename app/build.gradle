@@ -2,6 +2,7 @@ plugins {
     id 'application'
     id 'org.sonarqube' version '3.3'
     id 'idea'
+    id 'jacoco'
 }
 
 application {
@@ -47,6 +48,20 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    finalizedBy(jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+
+        xml.destination(new File("jacoco/jacoco.xml"))
+    }
 }
 
 sonarqube {
@@ -55,5 +70,6 @@ sonarqube {
         property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
         property "sonar.organization", "woowacourse"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.coverage.jacoco.xmlReportPaths", "jacoco/jacoco.xml"
     }
 }
