@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.DataAccessUtils;
@@ -32,20 +31,18 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... values) {
+    public <T> List<T> query(String query, ResultSetExtractor<List<T>> extractor, Object... values) {
         return execute(query, pstmt -> {
             try (ResultSet rs = executeQuery(pstmt)) {
 
                 log.debug("query : {}", query);
-
-                List<T> result = new ArrayList<>();
-
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-                return result;
+                return extractor.extract(rs);
             }
         }, values);
+    }
+
+    public <T> List<T> query(String query, RowMapper<T> rowMapper, Object... values) {
+        return query(query, new RowMapperResultSetExtractorImpl(rowMapper), values);
     }
 
     private <T> T execute(String query, PreparedStateCallBack<T> action, Object... values) {
