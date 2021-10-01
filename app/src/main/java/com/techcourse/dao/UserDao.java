@@ -23,7 +23,7 @@ public class UserDao {
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(rs.getLong("id"),
             rs.getString("account"), rs.getString("password"), rs.getString("email"));
 
-    public void insert(User user) { // todo: SimpleJdbcInsert 도 구현해보자!!
+    public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
