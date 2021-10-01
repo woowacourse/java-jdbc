@@ -33,7 +33,8 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
 
-        return results.stream().findFirst();
+        return results.stream()
+                .findFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
