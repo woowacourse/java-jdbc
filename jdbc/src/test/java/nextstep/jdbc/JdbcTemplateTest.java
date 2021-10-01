@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +20,7 @@ class JdbcTemplateTest {
     private String email;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
@@ -94,7 +93,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         //when
-        List<User> users = jdbcTemplate.query(sql, parseUser());
+        List<User> users = jdbcTemplate.queryForList(sql, parseUser());
 
         //then
         assertAll(

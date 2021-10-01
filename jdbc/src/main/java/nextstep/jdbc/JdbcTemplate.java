@@ -28,7 +28,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
-        List<T> results = query(sql, rowMapper, objects);
+        List<T> results = queryForList(sql, rowMapper, objects);
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
@@ -37,7 +37,7 @@ public class JdbcTemplate {
                 .findFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... objects) {
         validateQuery(sql);
         ResultSetExtractor<List<T>> resultSetExtractor = rs -> {
             List<T> results = new ArrayList<>();
@@ -47,10 +47,10 @@ public class JdbcTemplate {
             return results;
         };
 
-        return query(sql, resultSetExtractor, objects);
+        return queryForList(sql, resultSetExtractor, objects);
     }
 
-    private <T> List<T> query(String sql, ResultSetExtractor<List<T>> resultSetExtractor, Object... objects) {
+    private <T> List<T> queryForList(String sql, ResultSetExtractor<List<T>> resultSetExtractor, Object... objects) {
         return execute(sql, (PreparedStatement pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 return resultSetExtractor.extractData(rs);
