@@ -84,7 +84,7 @@ public class JdbcTemplate {
 
     private void setValues(PreparedStatement pstmt, Object... objects) {
         IntStream.range(0, objects.length)
-                .forEach(it -> setValue(it, pstmt, objects[it]));
+                .forEach(index -> setValue(index, pstmt, objects[index]));
     }
 
     private void setValue(int sequence, PreparedStatement pstmt, Object object) {
