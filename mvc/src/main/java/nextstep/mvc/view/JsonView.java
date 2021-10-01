@@ -4,15 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.web.support.MediaType;
-
 import java.io.IOException;
 import java.util.Map;
+import nextstep.web.support.MediaType;
 
 public class JsonView implements View {
 
     @Override
-    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public void render(Map<String, ?> model, HttpServletRequest request,
+        HttpServletResponse response) throws Exception {
         if (model == null || model.isEmpty()) {
             return;
         }
@@ -31,9 +31,9 @@ public class JsonView implements View {
     private Object toJsonObject(Map<String, ?> model) {
         if (model.size() == 1) {
             return model.values()
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
+                .stream()
+                .findFirst()
+                .orElseThrow(IllegalArgumentException::new);
         }
         return model;
     }

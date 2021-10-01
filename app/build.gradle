@@ -2,6 +2,7 @@ plugins {
     id 'application'
     id 'org.sonarqube' version '3.3'
     id 'idea'
+    id 'jacoco'
 }
 
 application {
@@ -36,6 +37,7 @@ dependencies {
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.0.10'
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    implementation 'com.zaxxer:HikariCP:5.0.0'
 
     implementation 'com.h2database:h2:1.4.200'
 
@@ -47,6 +49,7 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy(jacocoTestReport)
 }
 
 sonarqube {
@@ -55,5 +58,13 @@ sonarqube {
         property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
         property "sonar.organization", "woowacourse"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.coverage.jacoco.xmlReportPaths", "jacoco/jacoco.xml"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        xml.destination(new File("jacoco/jacoco.xml"))
     }
 }

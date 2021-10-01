@@ -1,17 +1,16 @@
 package com.techcourse;
 
+import java.io.File;
+import java.util.stream.Stream;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.stream.Stream;
-
 public class JwpApplication {
 
-    private static final Logger log = LoggerFactory.getLogger(JwpApplication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JwpApplication.class);
 
     private static final int DEFAULT_PORT = 8080;
 
@@ -31,15 +30,15 @@ public class JwpApplication {
 
     private static int defaultPortIfNull(String[] args) {
         return Stream.of(args)
-                .findFirst()
-                .map(Integer::parseInt)
-                .orElse(DEFAULT_PORT);
+            .findFirst()
+            .map(Integer::parseInt)
+            .orElse(DEFAULT_PORT);
     }
 
     private static Context addWebapp(Tomcat tomcat) {
         final String docBase = new File("app/webapp/").getAbsolutePath();
         final Context context = tomcat.addWebapp("/", docBase);
-        log.info("configuring app with basedir: {}", docBase);
+        LOG.info("configuring app with basedir: {}", docBase);
         return context;
     }
 

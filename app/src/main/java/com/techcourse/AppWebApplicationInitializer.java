@@ -3,30 +3,30 @@ package com.techcourse;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import nextstep.mvc.DispatcherServlet;
-import nextstep.mvc.controller.asis.ControllerHandlerAdapter;
-import nextstep.mvc.controller.tobe.AnnotationHandlerMapping;
-import nextstep.mvc.controller.tobe.HandlerExecutionHandlerAdapter;
+import nextstep.mvc.adapter.HandlerExecutionHandlerAdapter;
+import nextstep.mvc.handler.AnnotationExceptionMapping;
+import nextstep.mvc.handler.AnnotationHandlerMapping;
 import nextstep.web.WebApplicationInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
-    private static final Logger log = LoggerFactory.getLogger(AppWebApplicationInitializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AppWebApplicationInitializer.class);
+    private static final String BASE_PACKAGE = "com.techcourse";
 
     @Override
     public void onStartup(ServletContext servletContext) {
         final DispatcherServlet dispatcherServlet = new DispatcherServlet();
-        dispatcherServlet.addHandlerMapping(new ManualHandlerMapping());
-        dispatcherServlet.addHandlerMapping(new AnnotationHandlerMapping("com.techcourse.controller"));
-
-        dispatcherServlet.addHandlerAdapter(new ControllerHandlerAdapter());
+        dispatcherServlet.addHandlerMapping(new AnnotationHandlerMapping(BASE_PACKAGE));
         dispatcherServlet.addHandlerAdapter(new HandlerExecutionHandlerAdapter());
+        dispatcherServlet.addExceptionHandlerMapping(new AnnotationExceptionMapping(BASE_PACKAGE));
 
-        final ServletRegistration.Dynamic dispatcher = servletContext.addServlet("dispatcher", dispatcherServlet);
+        final ServletRegistration.Dynamic dispatcher = servletContext
+            .addServlet("dispatcher", dispatcherServlet);
         dispatcher.setLoadOnStartup(1);
         dispatcher.addMapping("/");
 
-        log.info("Start AppWebApplication Initializer");
+        LOG.info("Start AppWebApplication Initializer");
     }
 }
