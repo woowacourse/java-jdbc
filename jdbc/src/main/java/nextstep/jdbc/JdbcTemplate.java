@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class JdbcTemplate {
@@ -26,17 +27,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         List<T> results = query(sql, rowMapper, objects);
-        if (results.isEmpty()) {
-            return null;
-        }
-
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
 
-        return results.iterator().next();
+        return results.stream().findFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {

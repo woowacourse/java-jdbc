@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -59,7 +60,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where id = ?";
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, parseUser(), 1L);
+        User user = jdbcTemplate.queryForObject(sql, parseUser(), 1L).get();
 
         //then
         assertThat(user).isNotNull();
@@ -75,10 +76,10 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where id = ?";
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, parseUser(), 2L);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, parseUser(), 2L);
 
         //then
-        assertThat(user).isNull();
+        assertThat(user.isEmpty()).isTrue();
     }
 
     @DisplayName("다중 결과를 조회하는 기능 - 유저가 존재하는 경우")
