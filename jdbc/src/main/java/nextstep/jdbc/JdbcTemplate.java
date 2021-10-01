@@ -40,7 +40,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
-        assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
+        validateQuery(sql);
         ResultSetExtractor<List<T>> resultSetExtractor = rs -> {
             List<T> results = new ArrayList<>();
             while (rs.next()) {
@@ -61,9 +61,15 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... objects) {
-        assert !Strings.isNullOrEmpty(sql) : "Query is Null And Empty!";
+        validateQuery(sql);
         log.info("update query: {}", sql);
         execute(sql, PreparedStatement::executeUpdate, objects);
+    }
+
+    private void validateQuery(String sql) {
+        if (Strings.isNullOrEmpty(sql)) {
+            throw new IllegalArgumentException("Query is Null And Empty!");
+        }
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... objects) {
