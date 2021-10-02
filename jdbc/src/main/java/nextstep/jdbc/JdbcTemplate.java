@@ -4,21 +4,25 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.DatabaseConnectionFailureException;
-import nextstep.jdbc.exception.ResultSizeEmptyException;
-import nextstep.jdbc.exception.ResultSizeOverflowException;
+import nextstep.jdbc.exception.InvalidSQLMethodException;
 import nextstep.jdbc.exception.PreparedStatementCreationFailureException;
 import nextstep.jdbc.exception.QueryExecutionFailureException;
+import nextstep.jdbc.exception.ResultSizeEmptyException;
+import nextstep.jdbc.exception.ResultSizeOverflowException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    public static final String SQL_INFO_LOG = "query : {}";
+    private static final String SQL_INFO_LOG = "query : {}";
+    private static final String INSERT_METHOD = "insert";
+
 
     private final DataSource dataSource;
 
@@ -26,7 +30,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    // TODO : make usage of this int
     public int update(String sql, Object... args) {
         return execute(sql, pstmt -> {
             PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
@@ -43,8 +46,59 @@ public class JdbcTemplate {
         });
     }
 
+    private <T> T getObjectResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
+        List<T> results = executeQuery(pstmt, rowMapper);
+        validateSingleResult(results);
+        return results.get(0);
+    }
+
+    private <T> void validateSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            throw new ResultSizeEmptyException();
+        }
+        if (results.size() > 1) {
+            throw new ResultSizeOverflowException(results.size());
+        }
+    }
+
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
         return execute(sql, pstmt -> getListResult(pstmt, rowMapper));
+    }
+
+    private <T> List<T> getListResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
+        return executeQuery(pstmt, rowMapper);
+    }
+
+    public <T> T insert(String sql, Class<T> keyType, Object... args) {
+        if (notInsertMethod(sql)) {
+            throw new InvalidSQLMethodException(INSERT_METHOD, sql);
+        }
+        return execute(sql, pstmt -> {
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValues(args);
+            pstmt.executeUpdate();
+            return generatedKey(pstmt, keyType);
+        });
+    }
+
+    private boolean notInsertMethod(String sql) {
+        return !sql.startsWith(INSERT_METHOD);
+    }
+
+    private <T> T generatedKey(PreparedStatement pstmt, Class<T> keyType) throws SQLException {
+        ResultSet generatedKeys = pstmt.getGeneratedKeys();
+        if (generatedKeys.next()) {
+            return generatedKeys.getObject(1, keyType);
+        }
+        return null;
+    }
+
+    public void delete(String sql, Long id) {
+        execute(sql, pstmt -> {
+            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
+            valueSetter.setPreparedStatementValue(id);
+            return pstmt.executeUpdate();
+        });
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor) {
@@ -61,31 +115,12 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getObjectResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
-        List<T> results = executeQuery(pstmt, rowMapper);
-        validateSingleResult(results);
-        return results.get(0);
-    }
-
-    private <T> List<T> getListResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
-        return executeQuery(pstmt, rowMapper);
-    }
-
     private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) {
         try (ResultSet resultSet = pstmt.executeQuery()) {
             ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(resultSet, rowMapper);
             return resultSetExtractor.toList();
         } catch (SQLException exception) {
             throw new QueryExecutionFailureException(exception);
-        }
-    }
-
-    private <T> void validateSingleResult(List<T> results) {
-        if (results.isEmpty()) {
-            throw new ResultSizeEmptyException();
-        }
-        if (results.size() > 1) {
-            throw new ResultSizeOverflowException(results.size());
         }
     }
 
@@ -99,17 +134,9 @@ public class JdbcTemplate {
 
     private PreparedStatement getPreparedStatement(Connection conn, String sql) {
         try {
-            return conn.prepareStatement(sql);
+            return conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         } catch (SQLException exception) {
             throw new PreparedStatementCreationFailureException(exception);
         }
-    }
-
-    public void delete(String sql, Long id) {
-        execute(sql, pstmt -> {
-            PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
-            valueSetter.setPreparedStatementValue(id);
-            return pstmt.executeUpdate();
-        });
     }
 }

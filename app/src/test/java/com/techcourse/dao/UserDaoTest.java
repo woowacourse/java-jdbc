@@ -61,9 +61,10 @@ class UserDaoTest {
         String account = "insert-gugu";
         User user = new User(account, "password", "hkkang@woowahan.com");
 
-        userDao.insert(user);
+        User insertedUser = userDao.insert(user);
 
-//        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(insertedUser.getAccount()).isEqualTo(account);
+        assertThat(insertedUser.getId()).isEqualTo(savedUser.getId() + 1L);
     }
 
     @Test

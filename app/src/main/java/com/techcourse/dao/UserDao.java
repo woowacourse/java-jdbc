@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.exception.UserUpdateFailureException;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
@@ -21,9 +22,10 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
-    public void insert(User user) {
+    public User insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        Long id = jdbcTemplate.insert(sql, Long.class, user.getAccount(), user.getPassword(), user.getEmail());
+        return new User(id, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
