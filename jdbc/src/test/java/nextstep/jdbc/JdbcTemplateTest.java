@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DatabaseConnectionFailureException;
 import nextstep.jdbc.exception.PreparedStatementCreationFailureException;
@@ -27,7 +28,7 @@ class JdbcTemplateTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "select * from hyeon9mak";
         when(dataSource.getConnection()).thenReturn(conn);
-        when(conn.prepareStatement(sql)).thenReturn(pstmt);
+        when(conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)).thenReturn(pstmt);
 
         // when
         jdbcTemplate.update(sql, "999", "let's eat");
@@ -60,7 +61,7 @@ class JdbcTemplateTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "select * from hyeon9mak";
         when(dataSource.getConnection()).thenReturn(conn);
-        when(conn.prepareStatement(sql)).thenThrow(new SQLException());
+        when(conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)).thenThrow(new SQLException());
 
         // when // then
         assertThatThrownBy(() -> jdbcTemplate.update(sql, "hyeon9mak best"))
@@ -79,7 +80,7 @@ class JdbcTemplateTest {
         RowMapper<TestClass> rowMapper = rs -> new TestClass();
 
         when(dataSource.getConnection()).thenReturn(conn);
-        when(conn.prepareStatement(sql)).thenReturn(pstmt);
+        when(conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenThrow(new SQLException());
 
         // when // then
