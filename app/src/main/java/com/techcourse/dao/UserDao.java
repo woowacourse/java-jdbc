@@ -12,13 +12,14 @@ import nextstep.web.annotation.Repository;
 @Repository
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-    private final RowMapper<User> rowMapper = rs -> new User(
-            rs.getLong("id"),
-            rs.getString("account"),
-            rs.getString("password"),
-            rs.getString("email")
+    private static final RowMapper<User> ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
     );
+
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -32,7 +33,7 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, rowMapper);
+        return jdbcTemplate.queryForList(sql, ROW_MAPPER);
     }
 
     public Optional<User> findById(Long id) {
@@ -47,7 +48,7 @@ public class UserDao {
 
     private Optional<User> queryForUser(String sql, Object value) {
         try {
-            return Optional.of(jdbcTemplate.query(sql, rowMapper, value));
+            return Optional.of(jdbcTemplate.query(sql, ROW_MAPPER, value));
         } catch (ResultSizeEmptyException exception) {
             return Optional.empty();
         }
