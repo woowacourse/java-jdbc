@@ -15,7 +15,9 @@
 - [x] ResultSetExtractorTest 테스트
 - [x] Controller 에서 Dao 사용하는 방향으로 리팩터링
 
-## 리팩터링 예정
-- [ ] JdbcTemplate 테스트
-- [ ] JdbcTemplate 분리할만한 부분 찾기
+## 리팩터링 
+- [x] JdbcTemplate 리팩터링
+  - ResultSet 생성 및 추출 전략 콜백과 전략을 사용하는 ResultSetRunner 생성
+-[x] JdbcTemplate 테스트
+  - [x] ResultSetRunner 테스트
 - [ ] @Inject 사용

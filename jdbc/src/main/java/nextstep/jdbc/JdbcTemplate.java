@@ -5,7 +5,9 @@ import nextstep.exception.connectioon.ConnectionAcquisitionFailureException;
 import nextstep.exception.statement.StatementExecutionFailureException;
 import nextstep.exception.statement.StatementInitializationFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
-import nextstep.jdbc.resultset.ResultSetExtractor;
+import nextstep.jdbc.resultset.ResultSetRunner;
+import nextstep.jdbc.resultset.strategy.extract.MultipleResultSetStrategy;
+import nextstep.jdbc.resultset.strategy.extract.SingleResultSetStrategy;
 import nextstep.jdbc.statement.StatementExecutionStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -32,21 +33,19 @@ public class JdbcTemplate {
     }
 
     public <T> T executeForObject(String sql, ObjectMapper<T> objectMapper, Object... args) {
-        StatementExecutionStrategy<T> singleObjectStrategy = pstmt -> {
-            ResultSet resultSet = pstmt.executeQuery();
-            ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(objectMapper);
-            return resultSetExtractor.extractSingleObject(resultSet);
-        };
-        return context(sql, singleObjectStrategy, args);
+        ResultSetRunner<T> resultSetRunner = new ResultSetRunner<>(
+                PreparedStatement::executeQuery,
+                new SingleResultSetStrategy<>(objectMapper)
+        );
+        return context(sql, resultSetRunner::runWithClose, args);
     }
 
     public <T> List<T> executeForList(String sql, ObjectMapper<T> objectMapper, Object... args) {
-        StatementExecutionStrategy<List<T>> listStrategy = pstmt -> {
-            ResultSet resultSet = pstmt.executeQuery();
-            ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(objectMapper);
-            return resultSetExtractor.extractList(resultSet);
-        };
-        return context(sql, listStrategy, args);
+        ResultSetRunner<List<T>> resultSetRunner = new ResultSetRunner<>(
+                PreparedStatement::executeQuery,
+                new MultipleResultSetStrategy<>(objectMapper)
+        );
+        return context(sql, resultSetRunner::runWithClose, args);
     }
 
     private <T> T context(String sql, StatementExecutionStrategy<T> executionStrategy, Object... args) {
