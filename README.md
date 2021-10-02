@@ -28,6 +28,6 @@
 - [x] Controller in-memory user 저장 방식 dao 로 변경
 - [x] JdbcTemplate 테스트 작성
 
-- [ ] Autowired 자동 주입 부분 리팩토링
-- [ ] Service 어노테이션이 있는 클래스도 스캔
+- [x] Autowired 자동 주입 부분 리팩토링
+- [ ] User 생성시 생성된 User 반환
 - [ ] 테스트 보충

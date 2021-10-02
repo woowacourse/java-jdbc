@@ -1,4 +1,4 @@
-package nextstep.mvc.controller.tobe;
+package nextstep.mvc.controller.tobe.exception;
 
 public class ControllerInstanceCreationFailureException extends RuntimeException {
 
