@@ -1,5 +1,6 @@
 package com.techcourse.controller;
 
+import com.techcourse.exception.UserNotFoundException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +33,7 @@ public class UserController {
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
         final User user = userDao.findByAccount(account)
-                .orElseThrow();
+                .orElseThrow(() -> new UserNotFoundException(account));
 
         modelAndView.addObject("user", user);
         return modelAndView;

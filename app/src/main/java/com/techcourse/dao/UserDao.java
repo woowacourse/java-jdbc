@@ -2,12 +2,12 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
-import nextstep.web.annotation.Repository;
-import nextstep.jdbc.RowMapper;
-
 import java.util.List;
 import java.util.Optional;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.exception.ResultSizeEmptyException;
+import nextstep.web.annotation.Repository;
 
 @Repository
 public class UserDao {
@@ -37,11 +37,24 @@ public class UserDao {
 
     public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, id));
+        return queryForUser(sql, id);
     }
 
     public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return Optional.ofNullable(jdbcTemplate.query(sql, rowMapper, account));
+        return queryForUser(sql, account);
+    }
+
+    private Optional<User> queryForUser(String sql, Object value) {
+        try {
+            return Optional.of(jdbcTemplate.query(sql, rowMapper, value));
+        } catch (ResultSizeEmptyException exception) {
+            return Optional.empty();
+        }
+    }
+
+    public void deleteById(Long id) {
+        String sql = "delete from users where id = ?";
+        jdbcTemplate.delete(sql, id);
     }
 }

@@ -2,7 +2,9 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.exception.UserNotFoundException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,63 +16,78 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private User savedUser;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao();
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        savedUser = userDao.findByAccount("gugu")
+            .orElseThrow(() -> new UserNotFoundException("gugu"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteById(savedUser.getId());
     }
 
     @Test
     void findAll() {
-        final List<User> users = userDao.findAll();
+        List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        Optional<User> user = userDao.findById(1L);
+        Optional<User> user = userDao.findById(savedUser.getId());
 
         assertThat(user).isNotEmpty();
-        assertThat(user.get().getAccount()).isEqualTo("gugu");
+        assertThat(user.get().getAccount()).isEqualTo(savedUser.getAccount());
     }
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
-        Optional<User> user = userDao.findByAccount(account);
+        Optional<User> user = userDao.findByAccount(savedUser.getAccount());
 
         assertThat(user).isNotEmpty();
-        assertThat(user.get().getAccount()).isEqualTo(account);
+        assertThat(user.get().getAccount()).isEqualTo(savedUser.getAccount());
     }
 
     @Test
     void insert() {
-        final String account = "insert-gugu";
-        final User user = new User(account, "password", "hkkang@woowahan.com");
+        String account = "insert-gugu";
+        User user = new User(account, "password", "hkkang@woowahan.com");
+
         userDao.insert(user);
 
-        final Optional<User> actual = userDao.findById(2L);
-
-        assertThat(actual).isNotEmpty();
-        assertThat(actual.get().getAccount()).isEqualTo(account);
+//        assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
-        final String newPassword = "password99";
-        final User user = userDao.findById(1L).get();
+        String newPassword = "password99";
+        User user = userDao.findById(savedUser.getId())
+            .orElseThrow(() -> new UserNotFoundException(savedUser.getId()));
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final Optional<User> actual = userDao.findById(1L);
+        Optional<User> actual = userDao.findById(savedUser.getId());
 
         assertThat(actual).isNotEmpty();
         assertThat(actual.get().getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void delete() {
+        Long deletingId = 1L;
+
+        userDao.deleteById(1L);
+
+        Optional<User> user = userDao.findById(deletingId);
+        assertThat(user).isEmpty();
     }
 }
