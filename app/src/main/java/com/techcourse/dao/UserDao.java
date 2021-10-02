@@ -30,7 +30,10 @@ public class UserDao {
 
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        int updateCount = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        if (updateCount != 1) {
+            throw new UserUpdateFailureException(user);
+        }
     }
 
     public List<User> findAll() {

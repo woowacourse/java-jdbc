@@ -1,17 +1,18 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.exception.UserNotFoundException;
+import com.techcourse.exception.UserUpdateFailureException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -80,6 +81,21 @@ class UserDaoTest {
 
         assertThat(actual).isNotEmpty();
         assertThat(actual.get().getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void updateWithWrongId() {
+        User user = userDao.findById(savedUser.getId())
+            .orElseThrow(() -> new UserNotFoundException(savedUser.getId()));
+        User nonExistingUser = new User(
+            user.getId() + 1L,
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail()
+        );
+
+        assertThatThrownBy(() -> userDao.update(nonExistingUser))
+            .isExactlyInstanceOf(UserUpdateFailureException.class);
     }
 
     @Test
