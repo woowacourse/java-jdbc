@@ -1,6 +1,6 @@
 package nextstep.jdbc.resultset;
 
-import nextstep.exception.resultset.ResultSetExtractFailureException;
+import nextstep.exception.resultset.ResultSetProcessFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
 
 import java.sql.ResultSet;
@@ -22,7 +22,7 @@ public class ResultSetExtractor<T> {
             return null;
         }
         if (list.size() > 1) {
-            throw new ResultSetExtractFailureException("ResultSet 의 결과가 하나 이상입니다.");
+            throw new ResultSetProcessFailureException("ResultSet 의 결과가 하나 이상입니다.");
         }
         return list.get(0);
     }

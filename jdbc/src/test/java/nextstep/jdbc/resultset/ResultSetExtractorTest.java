@@ -1,6 +1,6 @@
 package nextstep.jdbc.resultset;
 
-import nextstep.exception.resultset.ResultSetExtractFailureException;
+import nextstep.exception.resultset.ResultSetProcessFailureException;
 import nextstep.jdbc.mapper.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -98,7 +98,7 @@ class ResultSetExtractorTest {
 
         // when, when
         assertThatThrownBy(() -> resultSetExtractor.extractSingleObject(resultSet))
-                .isInstanceOf(ResultSetExtractFailureException.class)
+                .isInstanceOf(ResultSetProcessFailureException.class)
                 .hasMessageContaining("ResultSet 의 결과가 하나 이상입니다");
 
         then(resultSetExtractor).should(times(1)).extractList(resultSet);
