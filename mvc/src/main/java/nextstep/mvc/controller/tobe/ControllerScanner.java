@@ -1,13 +1,10 @@
 package nextstep.mvc.controller.tobe;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import nextstep.mvc.controller.tobe.exception.ControllerInstanceCreationFailureException;
@@ -19,52 +16,50 @@ import org.reflections.Reflections;
 public class ControllerScanner {
 
     private final Reflections reflections;
+    private final Map<Class<?>, Object> container;
 
     public ControllerScanner(Object... basePackage) {
         reflections = new Reflections(basePackage);
+        container = new HashMap<>();
+        scanRepositories();
+        scanControllers();
+    }
+
+    private void scanRepositories() {
+        Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(Repository.class);
+        for (Class<?> repository : repositories) {
+            container.put(repository, instantiate(repository));
+        }
+    }
+
+    private void scanControllers() {
+        Set<Class<?>> preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
+        for (Class<?> controller : preInitiatedControllers) {
+            Object controllerInstance = instantiateController(controller);
+            container.put(controller, controllerInstance);
+        }
     }
 
     public Map<Class<?>, Object> getControllers() {
-        Set<Class<?>> preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
-        return instantiateControllers(preInitiatedControllers);
-    }
-
-    private Map<Class<?>, Object> instantiateControllers(Set<Class<?>> preInitiatedControllers) {
-        Map<Class<?>, Object> controllers = new HashMap<>();
-
-        for (Class<?> controller : preInitiatedControllers) {
-            registerController(controller, controllers);
-        }
-
-        return controllers;
-    }
-
-    private void registerController(Class<?> controller, Map<Class<?>, Object> controllers) {
-        Object controllerInstance = instantiateController(controller);
-        controllers.put(controller, controllerInstance);
+        return container.entrySet().stream()
+            .filter(entry -> entry.getKey().isAnnotationPresent(Controller.class))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     private Object instantiateController(Class<?> controllerClass) {
-        Constructor<?> autowiredControllerConstructor = scanAutowiredConstructor(controllerClass);
-        if (autowiredControllerConstructor == null) {
-            return instantiate(controllerClass);
-        }
-        return instantiateDependencyInjectedController(autowiredControllerConstructor);
-    }
-
-    private Constructor<?> scanAutowiredConstructor(Class<?> clazz) {
-        return Arrays.stream(clazz.getDeclaredConstructors())
+        return Arrays.stream(controllerClass.getDeclaredConstructors())
             .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
             .findFirst()
-            .orElse(null);
+            .map(this::instantiateWithDependencyInjected)
+            .orElseGet(() -> instantiate(controllerClass));
     }
 
-    private Object instantiate(Constructor<?> constructor, Object... parameterInstances) {
-        try {
-            return constructor.newInstance(parameterInstances);
-        } catch (ReflectiveOperationException exception) {
-            throw new ControllerInstanceCreationFailureException(exception);
-        }
+    private Object instantiateWithDependencyInjected(Constructor<?> autowiredControllerConstructor) {
+        Object[] objects = Arrays.stream(autowiredControllerConstructor.getParameterTypes())
+            .map(type -> container.getOrDefault(type, instantiate(type)))
+            .toArray();
+
+        return instantiate(autowiredControllerConstructor, objects);
     }
 
     private Object instantiate(Class<?> clazz) {
@@ -75,26 +70,11 @@ public class ControllerScanner {
         }
     }
 
-    private Object instantiateDependencyInjectedController(Constructor<?> autowiredControllerConstructor) {
-        List<Class<?>> repositoryParameterClasses = scanParameters(autowiredControllerConstructor, Repository.class);
-        List<Object> repositoryInstances = createInstances(repositoryParameterClasses);
-        return instantiate(autowiredControllerConstructor, repositoryInstances.toArray());
-    }
-
-    private <T extends Annotation> List<Class<?>> scanParameters(Constructor<?> autowiredConstructors, Class<T> clazz) {
-        Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(clazz);
-        return Arrays.stream(autowiredConstructors.getParameters())
-            .map(Parameter::getType)
-            .filter(repositories::contains)
-            .collect(Collectors.toList());
-    }
-
-    private List<Object> createInstances(List<Class<?>> parameterClasses) {
-        List<Object> instances = new ArrayList<>();
-        for (Class<?> repositoryParameterClass : parameterClasses) {
-            Object repositoryInstance = instantiate(repositoryParameterClass);
-            instances.add(repositoryInstance);
+    private Object instantiate(Constructor<?> constructor, Object... parameterInstances) {
+        try {
+            return constructor.newInstance(parameterInstances);
+        } catch (ReflectiveOperationException exception) {
+            throw new ControllerInstanceCreationFailureException(exception);
         }
-        return instances;
     }
 }
