@@ -23,17 +23,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, @Nullable Object... args) {
-        return update(connection -> connection.prepareStatement(sql),
-                new ArgumentTypePreparedStatementSetter(args));
+        return update(sql, new ArgumentTypePreparedStatementSetter(args));
     }
 
-    public int update(PreparedStatementCreator preparedStatementCreator) {
-        return update(preparedStatementCreator, null);
-    }
-
-    public int update(PreparedStatementCreator preparedStatementCreator,
-                      PreparedStatementSetter preparedStatementSetter) {
-        return execute(preparedStatementCreator, pstmt -> {
+    private int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, pstmt -> {
             if (Objects.nonNull(preparedStatementSetter)) {
                 preparedStatementSetter.setValue(pstmt);
             }
@@ -42,51 +36,47 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        List<T> results = query(connection -> connection.prepareStatement(sql),
+        List<T> results = query(sql,
                 new ArgumentTypePreparedStatementSetter(args),
                 new ResultSetExtractor<>(rowMapper));
+        if (results.size() >= 2) {
+            throw new TooManyResultsException();
+        }
         return results.stream()
                 .findFirst()
-                .orElseThrow(DataAccessException::new);
+                .orElseThrow(EmptyResultException::new);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query((connection -> connection.prepareStatement(sql)),
+        return query(sql,
                 null,
                 new ResultSetExtractor<>(rowMapper));
     }
 
-    public <T> List<T> query(PreparedStatementCreator preparedStatementCreator,
+    private <T> List<T> query(String sql,
                              PreparedStatementSetter preparedStatementSetter,
                              ResultSetExtractor<T> resultSetExtractor) {
-        return execute(preparedStatementCreator, (pstmt -> {
-            ResultSet rs = null;
-            try {
-                if (Objects.nonNull(preparedStatementSetter)) {
-                    preparedStatementSetter.setValue(pstmt);
-                }
-                rs = pstmt.executeQuery();
+        PreparedStatementCallback<List<T>> callback = pstmt -> {
+            try (ResultSet rs = createResultSet(pstmt, preparedStatementSetter)) {
                 return resultSetExtractor.extract(rs);
-            } finally {
-                closeResultSet(rs);
-            }
-        }));
+            } catch (SQLException e) {
+                throw new DataAccessException(e.getMessage());
+            }};
+        return execute(sql, callback);
     }
 
-    private void closeResultSet(ResultSet rs) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+    private ResultSet createResultSet(PreparedStatement preparedStatement,
+                                      PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        if (Objects.nonNull(preparedStatementSetter)) {
+            preparedStatementSetter.setValue(preparedStatement);
         }
+        return preparedStatement.executeQuery();
     }
 
-    private <T> T execute(PreparedStatementCreator preparedStatementCreator,
+    private <T> T execute(String sql,
                           PreparedStatementCallback<T> preparedStatementCallback) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

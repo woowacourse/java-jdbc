@@ -30,16 +30,10 @@ public class UserDao {
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            return pstmt;
-        });
+        jdbcTemplate.update(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail());
     }
 
     public void update(User user) {
