@@ -30,10 +30,7 @@ class JdbcTemplateTest {
         when(conn.prepareStatement(sql)).thenReturn(pstmt);
 
         // when
-        jdbcTemplate.update(sql, statement -> {
-            statement.setString(1, "999");
-            statement.setString(1, "let's eat");
-        });
+        jdbcTemplate.update(sql, "999", "let's eat");
 
         // then
         verify(conn).close();
@@ -51,7 +48,7 @@ class JdbcTemplateTest {
 
         // when // then
         assertThatThrownBy(() -> jdbcTemplate.update(sql, "hyeon9mak best"))
-            .isInstanceOf(DatabaseConnectionFailureException.class);
+            .isExactlyInstanceOf(DatabaseConnectionFailureException.class);
     }
 
     @DisplayName("PreparedStatement 형성에 실패할 경우 PreparedStatementCreationFailureException을 던진다")
@@ -67,7 +64,7 @@ class JdbcTemplateTest {
 
         // when // then
         assertThatThrownBy(() -> jdbcTemplate.update(sql, "hyeon9mak best"))
-            .isInstanceOf(PreparedStatementCreationFailureException.class);
+            .isExactlyInstanceOf(PreparedStatementCreationFailureException.class);
     }
 
     @DisplayName("ResultSet을 못 가져온 경우 QueryExecutionFailureException을 던진다")
@@ -79,12 +76,17 @@ class JdbcTemplateTest {
         PreparedStatement pstmt = mock(PreparedStatement.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "select * from hyeon9mak";
+        RowMapper<TestClass> rowMapper = rs -> new TestClass();
+
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(sql)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenThrow(new SQLException());
 
         // when // then
-        assertThatThrownBy(() -> jdbcTemplate.update(sql, "hyeon9mak best"))
-            .isInstanceOf(QueryExecutionFailureException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, rowMapper, "hyeon9mak the best"))
+            .isExactlyInstanceOf(QueryExecutionFailureException.class);
+    }
+
+    private class TestClass {
     }
 }

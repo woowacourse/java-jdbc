@@ -1,8 +1,10 @@
 package nextstep.jdbc.exception;
 
+import java.sql.SQLException;
+
 public class ResultSetMappingFailureException extends DataAccessException {
 
-    public ResultSetMappingFailureException(String message, Throwable cause) {
-        super(message, cause);
+    public ResultSetMappingFailureException(SQLException exception) {
+        super(exception);
     }
 }

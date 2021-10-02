@@ -5,10 +5,10 @@ import java.sql.SQLException;
 public class DataAccessException extends RuntimeException {
 
     public DataAccessException(SQLException exception) {
-        super(exception.getMessage(), exception.getCause());
+        super(exception);
     }
 
-    public DataAccessException(String message, Throwable cause) {
-        super(message, cause);
+    public DataAccessException(String message) {
+        super(message);
     }
 }

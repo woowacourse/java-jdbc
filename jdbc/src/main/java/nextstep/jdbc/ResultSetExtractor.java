@@ -8,32 +8,23 @@ import nextstep.jdbc.exception.ResultSetMappingFailureException;
 
 public class ResultSetExtractor<T> {
 
+    private final ResultSet resultSet;
     private final RowMapper<T> rowMapper;
 
-    public ResultSetExtractor(RowMapper<T> rowMapper) {
+    public ResultSetExtractor(ResultSet resultSet, RowMapper<T> rowMapper) {
+        this.resultSet = resultSet;
         this.rowMapper = rowMapper;
     }
 
-    public T toObject(ResultSet rs) {
-        try {
-            if (!rs.next()) {
-                return null;
-            }
-            return rowMapper.mapRow(rs);
-        } catch (SQLException exception) {
-           throw new ResultSetMappingFailureException(exception.getMessage(), exception.getCause());
-        }
-    }
-
-    public List<T> toList(ResultSet rs) {
+    public List<T> toList() throws ResultSetMappingFailureException {
         try {
             List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
             }
             return result;
         } catch (SQLException exception) {
-            throw new ResultSetMappingFailureException(exception.getMessage(), exception.getCause());
+            throw new ResultSetMappingFailureException(exception);
         }
     }
 }

@@ -1,8 +1,10 @@
 package nextstep.jdbc.exception;
 
+import java.sql.SQLException;
+
 public class QueryExecutionFailureException extends DataAccessException {
 
-    public QueryExecutionFailureException(String message, Throwable cause) {
-        super(message, cause);
+    public QueryExecutionFailureException(SQLException exception) {
+        super(exception);
     }
 }

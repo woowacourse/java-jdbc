@@ -12,31 +12,21 @@ public class PreparedStatementValueSetter {
         this.pstmt = pstmt;
     }
 
+    public void setPreparedStatementValue(Object arg) {
+        try {
+            pstmt.setObject(1, arg);
+        } catch (SQLException exception) {
+            throw new PreparedStatementSetFailureException(exception);
+        }
+    }
+
     public void setPreparedStatementValues(Object[] args) {
         try {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-        } catch (SQLException e) {
-            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
-        }
-    }
-
-    public void setPreparedStatementValues(PreparedStatementSetter pss) {
-        try {
-            pss.setValues(pstmt);
-        } catch (SQLException e) {
-            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
-        }
-    }
-
-    public void setPreparedStatementValues(Object[] args, int[] argTypes) {
-        try {
-            for (int i = 1; i <= args.length; i++) {
-                pstmt.setObject(i, args[i], argTypes[i]);
-            }
-        } catch (SQLException e) {
-            throw new PreparedStatementSetFailureException(e.getMessage(), e.getCause());
+        } catch (SQLException exception) {
+            throw new PreparedStatementSetFailureException(exception);
         }
     }
 }

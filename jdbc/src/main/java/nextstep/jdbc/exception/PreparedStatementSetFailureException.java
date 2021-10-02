@@ -1,8 +1,10 @@
 package nextstep.jdbc.exception;
 
+import java.sql.SQLException;
+
 public class PreparedStatementSetFailureException extends DataAccessException {
 
-    public PreparedStatementSetFailureException(String message, Throwable cause) {
-        super(message, cause);
+    public PreparedStatementSetFailureException(SQLException exception) {
+        super(exception);
     }
 }
