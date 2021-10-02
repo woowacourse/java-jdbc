@@ -22,6 +22,7 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String SQL_INFO_LOG = "query : {}";
     private static final String INSERT_METHOD = "insert";
+    private static final String DELETE_METHOD = "delete";
 
 
     private final DataSource dataSource;
@@ -70,7 +71,7 @@ public class JdbcTemplate {
     }
 
     public <T> T insert(String sql, Class<T> keyType, Object... args) {
-        if (notInsertMethod(sql)) {
+        if (notMethod(sql, INSERT_METHOD)) {
             throw new InvalidSQLMethodException(INSERT_METHOD, sql);
         }
         return execute(sql, pstmt -> {
@@ -81,8 +82,8 @@ public class JdbcTemplate {
         });
     }
 
-    private boolean notInsertMethod(String sql) {
-        return !sql.startsWith(INSERT_METHOD);
+    private boolean notMethod(String sql, String method) {
+        return !sql.startsWith(method);
     }
 
     private <T> T generatedKey(PreparedStatement pstmt, Class<T> keyType) throws SQLException {
@@ -94,6 +95,9 @@ public class JdbcTemplate {
     }
 
     public void delete(String sql, Long id) {
+        if (notMethod(sql, DELETE_METHOD)) {
+            throw new InvalidSQLMethodException(DELETE_METHOD, sql);
+        }
         execute(sql, pstmt -> {
             PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
             valueSetter.setPreparedStatementValue(id);
