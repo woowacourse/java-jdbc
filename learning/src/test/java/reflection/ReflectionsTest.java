@@ -8,6 +8,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,20 +21,9 @@ class ReflectionsTest extends OutputTest {
         Reflections reflections = new Reflections("examples");
 
         // when
-        Set<Class<?>> controllers = reflections.getTypesAnnotatedWith(Controller.class);
-        for (Class<?> controller : controllers) {
-            System.out.println(controller.getSimpleName());
-        }
-
-        Set<Class<?>> services = reflections.getTypesAnnotatedWith(Service.class);
-        for (Class<?> service : services) {
-            System.out.println(service.getSimpleName());
-        }
-
-        Set<Class<?>> repositories = reflections.getTypesAnnotatedWith(Repository.class);
-        for (Class<?> repository : repositories) {
-            System.out.println(repository.getSimpleName());
-        }
+        printClasses(reflections, Controller.class);
+        printClasses(reflections, Service.class);
+        printClasses(reflections, Repository.class);
 
         // then
         String output = captor.toString().trim();
@@ -43,5 +33,12 @@ class ReflectionsTest extends OutputTest {
                         "JdbcQuestionRepository",
                         "JdbcUserRepository"
         );
+    }
+
+    private <T extends Annotation> void printClasses(Reflections reflections, Class<T> aClass) {
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(aClass);
+        for (Class<?> clazz : classes) {
+            System.out.println(clazz.getSimpleName());
+        }
     }
 }
