@@ -13,12 +13,12 @@ import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.Repository;
 import org.reflections.Reflections;
 
-public class ControllerScanner {
+public class ComponentScanner {
 
     private final Reflections reflections;
     private final Map<Class<?>, Object> container;
 
-    public ControllerScanner(Object... basePackage) {
+    public ComponentScanner(Object... basePackage) {
         reflections = new Reflections(basePackage);
         container = new HashMap<>();
         scanRepositories();
