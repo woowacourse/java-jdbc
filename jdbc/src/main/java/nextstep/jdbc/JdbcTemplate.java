@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.DatabaseConnectionFailureException;
 import nextstep.jdbc.exception.InvalidSQLMethodException;
+import nextstep.jdbc.exception.KeyGenerationFailureException;
 import nextstep.jdbc.exception.PreparedStatementCreationFailureException;
 import nextstep.jdbc.exception.QueryExecutionFailureException;
 import nextstep.jdbc.exception.ResultSizeEmptyException;
@@ -86,12 +87,15 @@ public class JdbcTemplate {
         return !sql.startsWith(method);
     }
 
-    private <T> T generatedKey(PreparedStatement pstmt, Class<T> keyType) throws SQLException {
-        ResultSet generatedKeys = pstmt.getGeneratedKeys();
-        if (generatedKeys.next()) {
-            return generatedKeys.getObject(1, keyType);
+    private <T> T generatedKey(PreparedStatement pstmt, Class<T> keyType) {
+        try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+            if (generatedKeys.next()) {
+                return generatedKeys.getObject(1, keyType);
+            }
+            return null;
+        } catch (SQLException exception) {
+            throw new KeyGenerationFailureException(exception);
         }
-        return null;
     }
 
     public void delete(String sql, Long id) {
