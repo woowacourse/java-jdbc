@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.exception.UserUpdateFailureException;
 import java.util.List;
@@ -8,19 +7,26 @@ import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import nextstep.jdbc.exception.ResultSizeEmptyException;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Repository;
+
+import javax.sql.DataSource;
 
 @Repository
 public class UserDao {
 
-    private static final RowMapper<User> ROW_MAPPER = resultSet -> new User(
+    private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> rowMapper = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email")
     );
 
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    @Autowired
+    public UserDao(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     public User insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -38,7 +44,7 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, ROW_MAPPER);
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public Optional<User> findById(Long id) {
@@ -53,7 +59,7 @@ public class UserDao {
 
     private Optional<User> queryForUser(String sql, Object value) {
         try {
-            return Optional.of(jdbcTemplate.query(sql, ROW_MAPPER, value));
+            return Optional.of(jdbcTemplate.query(sql, rowMapper, value));
         } catch (ResultSizeEmptyException exception) {
             return Optional.empty();
         }

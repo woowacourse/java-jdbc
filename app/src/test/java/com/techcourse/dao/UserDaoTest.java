@@ -14,16 +14,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
+
 class UserDaoTest {
 
     private UserDao userDao;
     private User savedUser;
+    private DataSource dataSource = new DataSourceConfig().dataSource();
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao();
+        userDao = new UserDao(dataSource);
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         savedUser = userDao.findByAccount("gugu")
             .orElseThrow(() -> new UserNotFoundException("gugu"));
