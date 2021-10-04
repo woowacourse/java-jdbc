@@ -10,21 +10,22 @@ import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import nextstep.jdbc.SimpleJdbcInsert;
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Repository;
 
 @Repository
 public class UserDao {
 
-    private static final RowMapper<User> MAPPER = (rs) -> new User(
+    private final JdbcTemplate jdbcTemplate;
+    private final SimpleJdbcInsert jdbcInsert;
+    private final RowMapper<User> MAPPER = (rs) -> new User(
         rs.getLong("id"),
         rs.getString("account"),
         rs.getString("password"),
         rs.getString("email")
     );
 
-    private final JdbcTemplate jdbcTemplate;
-    private final SimpleJdbcInsert jdbcInsert;
-
+    @Autowired
     public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.jdbcInsert = new SimpleJdbcInsert(dataSource, "users", "id");

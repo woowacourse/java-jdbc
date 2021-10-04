@@ -19,8 +19,7 @@ class AnnotationHandlerMappingTest {
     private AnnotationHandlerMapping handlerMapping;
 
     @BeforeEach
-    void setUp() throws Exception {
-        ComponentContainer.initialize(mock(DataSource.class), "samples");
+    void setUp() {
         handlerMapping = new AnnotationHandlerMapping("samples");
         handlerMapping.initialize();
     }

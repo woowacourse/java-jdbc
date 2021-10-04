@@ -20,15 +20,6 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
     @Override
     public void onStartup(ServletContext servletContext) {
-        try {
-            LOG.info("Start Components Initializer");
-            DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-            ComponentContainer.initialize(DataSourceConfig.getInstance(), BASE_PACKAGE);
-        } catch (Exception e) {
-            LOG.error("Initialize Components Error: {}", e.getMessage());
-            throw new ComponentContainerException(e.getMessage());
-        }
-
         final DispatcherServlet dispatcherServlet = new DispatcherServlet();
         dispatcherServlet.addHandlerMapping(new AnnotationHandlerMapping(BASE_PACKAGE));
         dispatcherServlet.addHandlerAdapter(new AnnotationHandlerAdapter());

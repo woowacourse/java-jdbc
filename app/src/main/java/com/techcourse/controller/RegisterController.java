@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
@@ -20,6 +21,7 @@ public class RegisterController {
 
     private final RegisterService registerService;
 
+    @Autowired
     public RegisterController(RegisterService registerService) {
         this.registerService = registerService;
     }

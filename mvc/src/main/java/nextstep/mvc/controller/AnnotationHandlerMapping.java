@@ -3,6 +3,8 @@ package nextstep.mvc.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Set;
 import nextstep.mvc.HandlerMapping;
+import nextstep.mvc.exception.ComponentContainerException;
+import nextstep.web.ComponentContainer;
 import nextstep.web.annotation.Controller;
 import nextstep.web.support.RequestMethod;
 import org.reflections.Reflections;
@@ -25,6 +27,21 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 
     @Override
     public void initialize() {
+        initializeComponentContainer();
+        initializeHandlerExecutions();
+    }
+
+    private void initializeComponentContainer() {
+        try {
+            LOG.info("Start Components Initializer");
+            ComponentContainer.initialize(basePackage);
+        } catch (Exception e) {
+            LOG.error("Initialize Components Error: {}", e.getMessage());
+            throw new ComponentContainerException(e.getMessage());
+        }
+    }
+
+    private void initializeHandlerExecutions() {
         try {
             Reflections reflections = new Reflections(basePackage, new TypeAnnotationsScanner(), new SubTypesScanner());
             Set<Class<?>> annotatedHandlers = reflections.getTypesAnnotatedWith(Controller.class);

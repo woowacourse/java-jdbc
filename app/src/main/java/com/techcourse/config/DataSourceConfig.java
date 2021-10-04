@@ -1,14 +1,21 @@
 package com.techcourse.config;
 
+import javax.sql.DataSource;
+import nextstep.web.annotation.Configuration;
+import nextstep.web.annotation.Initialize;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
 
+@Configuration
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    private DataSourceConfig() {}
+
+    @Initialize
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
@@ -22,6 +29,4 @@ public class DataSourceConfig {
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }

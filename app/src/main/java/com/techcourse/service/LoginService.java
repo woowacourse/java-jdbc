@@ -6,6 +6,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpSession;
+import nextstep.web.annotation.Autowired;
 import nextstep.web.annotation.Service;
 
 @Service
@@ -13,6 +14,7 @@ public class LoginService {
 
     private final UserDao userDao;
 
+    @Autowired
     public LoginService(UserDao userDao) {
         this.userDao = userDao;
     }
