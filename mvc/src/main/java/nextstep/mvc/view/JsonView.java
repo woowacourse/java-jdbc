@@ -1,40 +1,46 @@
 package nextstep.mvc.view;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.web.support.MediaType;
-
 import java.io.IOException;
 import java.util.Map;
+import nextstep.web.support.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JsonView implements View {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JsonView.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Override
-    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (model == null || model.isEmpty()) {
-            return;
-        }
+    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String jsonData = toJsonData(model);
+        LOG.debug("render Json Data\n{}", jsonData);
 
         response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
-
-        final Object renderObject = toJsonObject(model);
-        render(renderObject, response.getOutputStream());
+        response.getWriter().write(jsonData);
     }
 
-    private void render(Object renderObject, ServletOutputStream outputStream) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(outputStream, renderObject);
-    }
-
-    private Object toJsonObject(Map<String, ?> model) {
-        if (model.size() == 1) {
-            return model.values()
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
+    private String toJsonData(Map<String, ?> data) throws JsonProcessingException {
+        if (data.size() == 1) {
+            return MAPPER.writeValueAsString(toSingleData(data));
         }
-        return model;
+
+        return MAPPER.writeValueAsString(data);
+    }
+
+    private Object toSingleData(Map<String, ?> model) {
+        return model.values()
+            .stream()
+            .findAny()
+            .orElseThrow(IllegalStateException::new);
+    }
+
+    @Override
+    public String getViewName() {
+        throw new IllegalStateException();
     }
 }
