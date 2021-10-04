@@ -10,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 
 public class JdbcTemplate {
 
@@ -23,14 +22,9 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, @Nullable Object... args) {
-        return update(sql, new ArgumentTypePreparedStatementSetter(args));
-    }
-
-    private int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        PreparedStatementSetter preparedStatementSetter = new ArgumentTypePreparedStatementSetter(args);
         return execute(sql, pstmt -> {
-            if (Objects.nonNull(preparedStatementSetter)) {
-                preparedStatementSetter.setValue(pstmt);
-            }
+            preparedStatementSetter.setValue(pstmt);
             return pstmt.executeUpdate();
         });
     }
@@ -47,15 +41,9 @@ public class JdbcTemplate {
                 .orElseThrow(EmptyResultException::new);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query(sql,
-                null,
-                new ResultSetExtractor<>(rowMapper));
-    }
-
     private <T> List<T> query(String sql,
-                             PreparedStatementSetter preparedStatementSetter,
-                             ResultSetExtractor<T> resultSetExtractor) {
+                              PreparedStatementSetter preparedStatementSetter,
+                              ResultSetExtractor<T> resultSetExtractor) {
         PreparedStatementCallback<List<T>> callback = pstmt -> {
             try (ResultSet rs = createResultSet(pstmt, preparedStatementSetter)) {
                 return resultSetExtractor.extract(rs);
@@ -67,10 +55,23 @@ public class JdbcTemplate {
 
     private ResultSet createResultSet(PreparedStatement preparedStatement,
                                       PreparedStatementSetter preparedStatementSetter) throws SQLException {
-        if (Objects.nonNull(preparedStatementSetter)) {
-            preparedStatementSetter.setValue(preparedStatement);
-        }
+        preparedStatementSetter.setValue(preparedStatement);
         return preparedStatement.executeQuery();
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, new ResultSetExtractor<>(rowMapper));
+    }
+
+    private <T> List<T> query(String sql,
+                              ResultSetExtractor<T> resultSetExtractor) {
+        PreparedStatementCallback<List<T>> callback = pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return resultSetExtractor.extract(rs);
+            } catch (SQLException e) {
+                throw new DataAccessException(e.getMessage());
+            }};
+        return execute(sql, callback);
     }
 
     private <T> T execute(String sql,
