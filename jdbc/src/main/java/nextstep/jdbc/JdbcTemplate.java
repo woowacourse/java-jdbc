@@ -22,23 +22,25 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return executeUpdate(connection -> makePreparedStatement(sql, connection, args));
+        return executeUpdate(generateStatementStrategy(sql, args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeQueryForObject(connection -> makePreparedStatement(sql, connection, args), rowMapper);
+        return executeQueryForObject(generateStatementStrategy(sql, args), rowMapper);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(connection -> makePreparedStatement(sql, connection, args), rowMapper);
+        return executeQuery(generateStatementStrategy(sql, args), rowMapper);
     }
 
-    private PreparedStatement makePreparedStatement(String sql, Connection connection, Object... args) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
-        return preparedStatement;
+    private StatementStrategy generateStatementStrategy(String sql, Object... args) {
+        return connection -> {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
+            }
+            return preparedStatement;
+        };
     }
 
     private int executeUpdate(StatementStrategy stmt) {
