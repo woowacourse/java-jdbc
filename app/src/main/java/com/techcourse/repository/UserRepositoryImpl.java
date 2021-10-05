@@ -17,6 +17,6 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findByAccount(String account) {
-        return Optional.of(userDao.findByAccount(account));
+        return Optional.ofNullable(userDao.findByAccount(account));
     }
 }
