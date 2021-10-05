@@ -1,7 +1,6 @@
 package com.techcourse.controller;
 
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import com.techcourse.repository.UserRepository;
 import com.techcourse.repository.UserRepositoryImpl;
 import jakarta.servlet.http.HttpServletRequest;
