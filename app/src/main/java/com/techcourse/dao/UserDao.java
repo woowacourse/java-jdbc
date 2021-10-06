@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.techcourse.exception.UserDeleteFailureException;
 import com.techcourse.exception.UserUpdateFailureException;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +68,14 @@ public class UserDao {
 
     public void deleteById(Long id) {
         String sql = "delete from users where id = ?";
-        jdbcTemplate.delete(sql, id);
+        int deleteCount = jdbcTemplate.delete(sql, id);
+        if (deleteCount != 1) {
+            throw new UserDeleteFailureException(id);
+        }
+    }
+
+    public void deleteAll() {
+        String sql = "delete from users";
+        jdbcTemplate.update(sql);
     }
 }
