@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import nextstep.mvc.view.JspView;
 import nextstep.web.annotation.Autowired;
 import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.ModelAndView;
@@ -28,14 +29,18 @@ public class UserController {
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
-        final String account = request.getParameter("account");
+        String account = request.getParameter("account");
         log.debug("user id : {}", account);
 
-        final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        final User user = userDao.findByAccount(account)
+        try {
+            User user = userDao.findByAccount(account)
                 .orElseThrow(() -> new UserNotFoundException(account));
 
-        modelAndView.addObject("user", user);
-        return modelAndView;
+            ModelAndView modelAndView = new ModelAndView(new JsonView());
+            modelAndView.addObject("user", user);
+            return modelAndView;
+        } catch (UserNotFoundException exception) {
+            return new ModelAndView(new JspView("/404.jsp"));
+        }
     }
 }
