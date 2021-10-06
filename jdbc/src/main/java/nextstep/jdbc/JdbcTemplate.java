@@ -25,7 +25,6 @@ public class JdbcTemplate {
     private static final String INSERT_METHOD = "insert";
     private static final String DELETE_METHOD = "delete";
 
-
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {

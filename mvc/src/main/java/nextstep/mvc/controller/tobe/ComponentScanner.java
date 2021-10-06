@@ -34,8 +34,11 @@ public class ComponentScanner {
         Set<Class<?>> configurations = reflections.getTypesAnnotatedWith(Configuration.class);
         for (Class<?> configuration : configurations) {
             Arrays.stream(configuration.getDeclaredMethods())
-                    .filter(method -> method.isAnnotationPresent(Bean.class))
-                    .forEach(method -> container.put(method.getReturnType(), invokeMethod(configuration, method)));
+                .filter(method -> method.isAnnotationPresent(Bean.class))
+                .forEach(method -> container.put(
+                        method.getReturnType(),
+                        invokeMethod(configuration, method))
+                );
         }
     }
 
@@ -63,22 +66,23 @@ public class ComponentScanner {
 
     public Map<Class<?>, Object> getControllers() {
         return container.entrySet().stream()
-                .filter(entry -> entry.getKey().isAnnotationPresent(Controller.class))
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            .filter(entry -> entry.getKey().isAnnotationPresent(Controller.class))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
     private Object instantiateClass(Class<?> controllerClass) {
         return Arrays.stream(controllerClass.getDeclaredConstructors())
-                .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
-                .findFirst()
-                .map(this::instantiateWithDependencyInjected)
-                .orElseGet(() -> instantiate(controllerClass));
+            .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
+            .findFirst()
+            .map(this::instantiateWithDependencyInjected)
+            .orElseGet(() -> instantiate(controllerClass));
     }
 
-    private Object instantiateWithDependencyInjected(Constructor<?> autowiredControllerConstructor) {
+    private Object instantiateWithDependencyInjected(
+        Constructor<?> autowiredControllerConstructor) {
         Object[] objects = Arrays.stream(autowiredControllerConstructor.getParameterTypes())
-                .map(container::get)
-                .toArray();
+            .map(container::get)
+            .toArray();
 
         return instantiate(autowiredControllerConstructor, objects);
     }
