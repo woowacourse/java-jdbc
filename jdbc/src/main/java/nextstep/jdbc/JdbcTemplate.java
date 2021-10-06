@@ -44,14 +44,8 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
             valueSetter.setPreparedStatementValues(args);
-            return getObjectResult(pstmt, rowMapper);
+            return executeQueryForObject(pstmt, rowMapper);
         });
-    }
-
-    private <T> T getObjectResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
-        List<T> results = executeQuery(pstmt, rowMapper);
-        validateSingleResult(results);
-        return results.get(0);
     }
 
     private <T> void validateSingleResult(List<T> results) {
@@ -64,11 +58,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        return execute(sql, pstmt -> getListResult(pstmt, rowMapper));
-    }
-
-    private <T> List<T> getListResult(PreparedStatement pstmt, RowMapper<T> rowMapper) {
-        return executeQuery(pstmt, rowMapper);
+        return execute(sql, pstmt -> executeQuery(pstmt, rowMapper));
     }
 
     public <T> T insert(String sql, Class<T> keyType, Object... args) {
@@ -98,11 +88,11 @@ public class JdbcTemplate {
         }
     }
 
-    public void delete(String sql, Long id) {
+    public int delete(String sql, Long id) {
         if (notMethod(sql, DELETE_METHOD)) {
             throw new InvalidSQLMethodException(DELETE_METHOD, sql);
         }
-        execute(sql, pstmt -> {
+        return execute(sql, pstmt -> {
             PreparedStatementValueSetter valueSetter = new PreparedStatementValueSetter(pstmt);
             valueSetter.setPreparedStatementValue(id);
             return pstmt.executeUpdate();
@@ -121,6 +111,12 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
+    }
+
+    private <T> T executeQueryForObject(PreparedStatement pstmt, RowMapper<T> rowMapper) {
+        List<T> results = executeQuery(pstmt, rowMapper);
+        validateSingleResult(results);
+        return results.get(0);
     }
 
     private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) {

@@ -78,7 +78,6 @@ class JdbcTemplateTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "select * from hyeon9mak";
         RowMapper<TestClass> rowMapper = rs -> new TestClass();
-
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenThrow(new SQLException());
@@ -88,6 +87,6 @@ class JdbcTemplateTest {
             .isExactlyInstanceOf(QueryExecutionFailureException.class);
     }
 
-    private class TestClass {
+    private static class TestClass {
     }
 }
