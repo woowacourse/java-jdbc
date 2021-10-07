@@ -27,7 +27,7 @@ class ResultSetExtractorTest {
         List<Sample> actual = resultSetExtractor.toList();
 
         // then
-        assertThat(actual).hasSize(3);
+        assertThat(actual).hasSize(resultSetSize);
     }
 
     @DisplayName("ResultSet으로부터 결과를 List 자료구조로 추출한다 - 실패, ResultSet 닫힘")

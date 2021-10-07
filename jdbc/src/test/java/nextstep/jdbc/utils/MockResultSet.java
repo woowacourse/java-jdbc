@@ -36,13 +36,6 @@ public class MockResultSet {
         return new MockResultSet(columnNames, data).buildMock();
     }
 
-    public static RowMapper<Sample> sampleRowMapper() {
-        return rs -> new Sample(
-            rs.getString("name"),
-            rs.getInt("number")
-        );
-    }
-
     /**
      * Creates the mock ResultSet with Sample class that has name and number as its fields.
      *
@@ -59,6 +52,13 @@ public class MockResultSet {
             data[i][1] = i;
         }
         return of(columnNames, data);
+    }
+
+    public static RowMapper<Sample> sampleRowMapper() {
+        return rs -> new Sample(
+            rs.getString("name"),
+            rs.getInt("number")
+        );
     }
 
     private MockResultSet(final String[] columnNames, final Object[][] data) {
@@ -78,50 +78,50 @@ public class MockResultSet {
     }
 
     private ResultSet buildMock() throws SQLException {
-        final var rs = mock(ResultSet.class);
+        ResultSet resultSet = mock(ResultSet.class);
 
-        // mock rs.close()
-        doAnswer(invocation -> isClosed = true).when(rs).close();
+        // mock resultSet.close()
+        doAnswer(invocation -> isClosed = true).when(resultSet).close();
 
-        // mock rs.next()
+        // mock resultSet.next()
         doAnswer(invocation -> {
             checkClosed();
             rowIndex++;
             return rowIndex < data.length;
-        }).when(rs).next();
+        }).when(resultSet).next();
 
-        // mock rs.getString(columnName)
+        // mock resultSet.getString(columnName)
         doAnswer(invocation -> {
             checkClosed();
-            final var columnName = invocation.getArgument(0, String.class);
-            final var columnIndex = columnIndices.get(columnName);
+            String columnName = invocation.getArgument(0, String.class);
+            int columnIndex = columnIndices.get(columnName);
             return data[rowIndex][columnIndex];
-        }).when(rs).getString(anyString());
+        }).when(resultSet).getString(anyString());
 
-        // mock rs.getInt(columnName)
+        // mock resultSet.getInt(columnName)
         doAnswer(invocation -> {
             checkClosed();
-            final var columnName = invocation.getArgument(0, String.class);
-            final var columnIndex = columnIndices.get(columnName);
+            String columnName = invocation.getArgument(0, String.class);
+            int columnIndex = columnIndices.get(columnName);
             return data[rowIndex][columnIndex];
-        }).when(rs).getInt(anyString());
+        }).when(resultSet).getInt(anyString());
 
-        // mock rs.getObject(columnIndex)
+        // mock resultSet.getObject(columnIndex)
         doAnswer(invocation -> {
             checkClosed();
-            final var index = invocation.getArgument(0, Integer.class);
+            int index = invocation.getArgument(0, Integer.class);
             return data[rowIndex][index - 1];
-        }).when(rs).getObject(anyInt());
+        }).when(resultSet).getObject(anyInt());
 
-        final var rsmd = mock(ResultSetMetaData.class);
+        final var resultSetMetaData = mock(ResultSetMetaData.class);
 
-        // mock rsmd.getColumnCount()
-        doReturn(columnIndices.size()).when(rsmd).getColumnCount();
+        // mock resultSetMetaData.getColumnCount()
+        doReturn(columnIndices.size()).when(resultSetMetaData).getColumnCount();
 
-        // mock rs.getMetaData()
-        doReturn(rsmd).when(rs).getMetaData();
+        // mock resultSet.getMetaData()
+        doReturn(resultSetMetaData).when(resultSet).getMetaData();
 
-        return rs;
+        return resultSet;
     }
 
     private void checkClosed() throws SQLException {
@@ -135,18 +135,9 @@ public class MockResultSet {
         private final String name;
         private final int number;
 
-
         public Sample(String name, int number) {
             this.name = name;
             this.number = number;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getNumber() {
-            return number;
         }
     }
 }
