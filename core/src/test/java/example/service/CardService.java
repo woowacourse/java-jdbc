@@ -9,12 +9,11 @@ import example.repository.CardRepository;
 public class CardService {
 
     @Inject
-    private final CardRepository cardRepository;
+    private CardRepository cardRepository;
 
-    private final String noInjectObject;
+    private String noInjectObject;
 
-    public CardService(CardRepository cardRepository) {
-        this.cardRepository = cardRepository;
-        noInjectObject = "";
+    public CardRepository getCardRepository() {
+        return cardRepository;
     }
 }
