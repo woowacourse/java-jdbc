@@ -28,3 +28,4 @@
   - [x] ComponentContainer 구현
   - [x] FieldInjectionStrategy 구현
   - [x] ConstructorInjectionStrategy 구현
+  - [x] InjectStrategyRegistry 구현 
