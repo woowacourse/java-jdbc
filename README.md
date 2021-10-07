@@ -25,3 +25,4 @@
   - [x] ComponentScanner 구현
     - @Component 가 붙어있는 어노테이션들을 찾는다. (Controller, Service, Repository etc..)
     - 각각 어노테이션이 붙어있는 클래스를 찾는다.
+  - [x] ComponentContainer 구현
