@@ -20,4 +20,8 @@
   - ResultSet 생성 및 추출 전략 콜백과 전략을 사용하는 ResultSetRunner 생성
 -[x] JdbcTemplate 테스트
   - [x] ResultSetRunner 테스트
-- [ ] @Inject 사용
+- [x] core 모듈 생성
+- [ ] DI 구현
+  - [ ] ComponentScanner 구현
+    - @Component 가 붙어있는 어노테이션들을 찾는다. (Controller, Service, Repository etc..)
+    - 각각 어노테이션이 붙어있는 클래스를 찾는다.
