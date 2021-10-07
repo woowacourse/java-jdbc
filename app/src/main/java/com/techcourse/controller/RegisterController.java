@@ -2,11 +2,9 @@ package com.techcourse.controller;
 
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
-import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Autowired;
