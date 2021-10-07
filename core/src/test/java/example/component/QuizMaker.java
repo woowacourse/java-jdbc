@@ -15,4 +15,12 @@ public class QuizMaker {
         this.answerMaker = answerMaker;
         this.questionMaker = questionMaker;
     }
+
+    public AnswerMaker getAnswerMaker() {
+        return answerMaker;
+    }
+
+    public QuestionMaker getQuestionMaker() {
+        return questionMaker;
+    }
 }

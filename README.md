@@ -27,4 +27,4 @@
     - 각각 어노테이션이 붙어있는 클래스를 찾는다.
   - [x] ComponentContainer 구현
   - [x] FieldInjectionStrategy 구현
-  - [ ] ConstructorInjectionStrategy 구현
+  - [x] ConstructorInjectionStrategy 구현
