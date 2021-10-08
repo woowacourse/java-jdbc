@@ -2,12 +2,16 @@ package di.component;
 
 
 import di.annotation.Component;
+import di.annotation.Configuration;
 import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.reflections.ReflectionUtils.getMethods;
 
 public class ComponentScanner {
 
@@ -41,5 +45,17 @@ public class ComponentScanner {
         return reflections.getTypesAnnotatedWith(annotation)
                 .stream()
                 .filter(type -> !type.isInterface() && !type.isAnnotation());
+    }
+
+    public Set<Method> scanComponentMethodsFromConfiguration() {
+        return scanComponentClasses().stream()
+                .filter(aClass -> aClass.isAnnotationPresent(Configuration.class))
+                .flatMap(this::takeMethodsWithComponent)
+                .collect(Collectors.toSet());
+    }
+
+    private Stream<Method> takeMethodsWithComponent(Class<?> aClass) {
+        Set<Method> methods = getMethods(aClass, method -> method.isAnnotationPresent(Component.class));
+        return methods.stream();
     }
 }
