@@ -1,17 +1,20 @@
 package reflection;
 
 import annotation.Component;
+import annotation.Configuration;
 import annotation.Controller;
 import annotation.Inject;
 import annotation.Repository;
 import annotation.Service;
 import com.google.common.base.Predicate;
 import examples.CustomComponent;
+import examples.DummyDataSource;
 import examples.JdbcQuestionRepository;
 import examples.JdbcUserRepository;
 import examples.MyQnaService;
 import examples.Parent;
 import examples.QnaController;
+import examples.TestConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.reflections.ReflectionUtils;
@@ -23,6 +26,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,7 +63,7 @@ class ReflectionsTest {
                 .filter(Class::isAnnotation)
                 .collect(Collectors.toList());
 
-        assertThat(annotations).hasSize(3);
+        assertThat(annotations).hasSize(4);
     }
 
     @DisplayName("@Component가 붙어있는 어노테이션들을 가지는 클래스를 찾는다.")
@@ -120,5 +125,25 @@ class ReflectionsTest {
         Class<Parent> aClass = Parent.class;
         Set<Field> fields = ReflectionUtils.getFields(aClass, ReflectionUtils.withAnnotation(Inject.class));
         assertThat(fields).hasSize(1);
+    }
+
+    @DisplayName("@Configuration 이 붙어있는 클래스의 내부에 @Component 가 붙어있는 메서드를 찾아 객체를 생성한다.")
+    @Test
+    void findConfigurationAndComponentMethod() throws ReflectiveOperationException {
+        Reflections reflections = new Reflections("examples");
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Configuration.class);
+        Class<?> aClass = classes.stream().findAny().get();
+        Constructor<?>[] constructors = aClass.getConstructors();
+        TestConfiguration testConfiguration = (TestConfiguration) constructors[0].newInstance();
+
+        Set<Method> methods = ReflectionUtils.getMethods(aClass, method -> method.isAnnotationPresent(Component.class));
+
+        List<Object> list = new ArrayList<>();
+        for (Method method : methods) {
+            list.add(method.invoke(testConfiguration));
+        }
+
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0)).isInstanceOf(DummyDataSource.class);
     }
 }
