@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DatabasePopulatorUtilsTest {
+class DatabasePopulatorTest {
 
     private DataSource h2DataSource;
 
@@ -32,16 +32,17 @@ class DatabasePopulatorUtilsTest {
     @Test
     void execute() {
         // given
-        Logger logger = (Logger) LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(DatabasePopulator.class);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         logger.addAppender(listAppender);
         listAppender.start();
 
+        DatabasePopulator databasePopulator = new DatabasePopulator(h2DataSource);
         URL url = getClass().getClassLoader().getResource("create.sql");
         String containsExpect = "create table if not exists test_table";
 
         // when
-        DatabasePopulatorUtils.execute(h2DataSource, url);
+        databasePopulator.execute(url);
 
         // then
         List<ILoggingEvent> list = listAppender.list;

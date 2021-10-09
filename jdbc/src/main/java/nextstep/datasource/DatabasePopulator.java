@@ -12,14 +12,17 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class DatabasePopulatorUtils {
+public class DatabasePopulator {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(DatabasePopulator.class);
 
-    private DatabasePopulatorUtils() {
+    private final DataSource dataSource;
+
+    public DatabasePopulator(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void execute(DataSource dataSource, URL url) {
+    public void execute(URL url) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final Statement statement = connection.createStatement()
@@ -32,7 +35,7 @@ public class DatabasePopulatorUtils {
         }
     }
 
-    private static String readSql(URL url) throws IOException {
+    private String readSql(URL url) throws IOException {
         File file = new File(url.getFile());
         return Files.readString(file.toPath());
     }
