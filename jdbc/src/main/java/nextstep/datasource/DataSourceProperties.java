@@ -6,27 +6,27 @@ public class DataSourceProperties {
     private String user;
     private String password;
 
-    public String url() {
+    public String getUrl() {
         return url;
     }
 
-    public void url(String url) {
-        this.url = url;
-    }
-
-    public String user() {
+    public String getUser() {
         return user;
     }
 
-    public void user(String user) {
-        this.user = user;
-    }
-
-    public String password() {
+    public String getPassword() {
         return password;
     }
 
-    public void password(String password) {
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public void setPassword(String password) {
         this.password = password;
     }
 }

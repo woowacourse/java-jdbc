@@ -27,19 +27,19 @@ public class JdbcDataSourceBuilder implements DataSourceBuilder {
 
     @Override
     public DataSourceBuilder url(String url) {
-        dataSourceProperties.url(url);
+        dataSourceProperties.setUrl(url);
         return this;
     }
 
     @Override
     public DataSourceBuilder user(String user) {
-        dataSourceProperties.user(user);
+        dataSourceProperties.setUser(user);
         return this;
     }
 
     @Override
     public DataSourceBuilder password(String password) {
-        dataSourceProperties.password(password);
+        dataSourceProperties.setPassword(password);
         return this;
     }
 }

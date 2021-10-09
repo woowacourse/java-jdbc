@@ -9,16 +9,16 @@ import java.util.function.Function;
 public enum DataSourceType {
     H2(properties -> {
         JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl(properties.url());
-        jdbcDataSource.setUser(properties.user());
-        jdbcDataSource.setPassword(properties.password());
+        jdbcDataSource.setUrl(properties.getUrl());
+        jdbcDataSource.setUser(properties.getUser());
+        jdbcDataSource.setPassword(properties.getPassword());
         return jdbcDataSource;
     }),
     MYSQL(properties -> {
         MysqlDataSource mysqlDataSource = new MysqlDataSource();
-        mysqlDataSource.setUrl(properties.url());
-        mysqlDataSource.setUser(properties.user());
-        mysqlDataSource.setPassword(properties.password());
+        mysqlDataSource.setUrl(properties.getUrl());
+        mysqlDataSource.setUser(properties.getUser());
+        mysqlDataSource.setPassword(properties.getPassword());
         return mysqlDataSource;
     });
 

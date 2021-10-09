@@ -50,18 +50,15 @@ public class UserDao {
         return jdbcTemplate.executeForList(sql, userMapper);
     }
 
-    public void update(User user) {
+    public int update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final int affectedCount = jdbcTemplate.execute(
+        return jdbcTemplate.execute(
                 sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
                 user.getId()
         );
-        if (affectedCount != 1) {
-            throw new DaoMethodExecutionFailureException("유저 정보 업데이트에 실패했습니다.");
-        }
     }
 
     public int deleteById(long id) {
