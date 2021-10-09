@@ -31,4 +31,4 @@
   - [x] InjectStrategyRegistry 구현 
   - [x] DependencyGraph 구현
   - [x] MethodInjectStrategy 구현
-  
+  - [x] DependencyJudge 구현
