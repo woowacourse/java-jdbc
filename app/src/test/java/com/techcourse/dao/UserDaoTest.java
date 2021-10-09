@@ -2,11 +2,13 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import nextstep.datasource.DatabasePopulatorUtils;
+import nextstep.datasource.DatabasePopulator;
+import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.net.URL;
 import java.util.List;
 
@@ -19,9 +21,14 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
+        DataSourceConfig dataSourceConfig = new DataSourceConfig();
+        DataSource dataSource = dataSourceConfig.dataSource();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        userDao = new UserDao(jdbcTemplate);
         URL url = getClass().getClassLoader().getResource("schema.sql");
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), url);
-        userDao = UserDao.getInstance();
+        DatabasePopulator databasePopulator = new DatabasePopulator(dataSource);
+        databasePopulator.execute(url);
+
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
         final User createdUser = userDao.findByAccount("gugu").orElseThrow(IllegalStateException::new);

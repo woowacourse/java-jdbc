@@ -1,16 +1,16 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import di.annotation.Repository;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.mapper.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
+@Repository
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
@@ -26,17 +26,8 @@ public class UserDao {
             resultSet.getString("email")
     );
 
-    private UserDao(JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public static UserDao getInstance() {
-        if (Objects.isNull(instance)) {
-            instance = new UserDao(
-                    new JdbcTemplate(DataSourceConfig.getInstance())
-            );
-        }
-        return instance;
     }
 
     public int insert(User user) {

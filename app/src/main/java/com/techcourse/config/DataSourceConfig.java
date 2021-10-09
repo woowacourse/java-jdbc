@@ -1,26 +1,19 @@
 package com.techcourse.config;
 
+import di.annotation.Component;
+import di.annotation.Configuration;
 import nextstep.datasource.DataSourceType;
+import nextstep.datasource.DatabasePopulator;
 import nextstep.jdbc.JdbcDataSourceBuilder;
+import nextstep.jdbc.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.util.Objects;
 
+@Configuration
 public class DataSourceConfig {
 
-    private static DataSource INSTANCE;
-
-    private DataSourceConfig() {
-    }
-
-    public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
-        }
-        return INSTANCE;
-    }
-
-    private static DataSource createJdbcDataSource() {
+    @Component
+    public DataSource dataSource() {
         String url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;";
         String user = "";
         String password = "";
@@ -30,5 +23,15 @@ public class DataSourceConfig {
                 .user(user)
                 .password(password)
                 .build();
+    }
+
+    @Component
+    public DatabasePopulator databasePopulator(DataSource dataSource) {
+        return new DatabasePopulator(dataSource);
+    }
+
+    @Component
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
     }
 }
