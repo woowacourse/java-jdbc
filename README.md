@@ -32,3 +32,4 @@
   - [x] DependencyGraph 구현
   - [x] MethodInjectStrategy 구현
   - [x] DependencyJudge 구현
+  - [x] ApplicationContext 구현 

@@ -1,7 +1,10 @@
 package di.component;
 
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.reflections.ReflectionUtils.withAnnotations;
 
 public class ComponentContainer {
 
@@ -17,6 +20,16 @@ public class ComponentContainer {
 
     public Object takeComponent(Class<?> type) {
         return components.get(type);
+    }
+
+    public Map<Class<?>, Object> takeComponentsWithAnnotation(Class<? extends Annotation> annotationClass) {
+        Map<Class<?>, Object> componentsWithAnnotation = new HashMap<>();
+        for (Class<?> aClass : components.keySet()) {
+            if (withAnnotations(annotationClass).apply(aClass)) {
+                componentsWithAnnotation.put(aClass, components.get(aClass));
+            }
+        }
+        return componentsWithAnnotation;
     }
 
     public Map<Class<?>, Object> getComponents() {

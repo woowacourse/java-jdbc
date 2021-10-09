@@ -4,9 +4,18 @@ package di.component;
 import di.annotation.Component;
 import di.annotation.Configuration;
 import org.reflections.Reflections;
+import org.reflections.scanners.FieldAnnotationsScanner;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,8 +26,22 @@ public class ComponentScanner {
 
     private final Reflections reflections;
 
-    public ComponentScanner(Object... basePackage) {
-        reflections = new Reflections(basePackage);
+    public ComponentScanner(String... packagePaths) {
+        ClassLoader classLoader = ClasspathHelper.contextClassLoader();
+        Collection<URL> urls = new ArrayList<>();
+        for (String path : packagePaths) {
+            urls.addAll(ClasspathHelper.forPackage(path, classLoader));
+        }
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
+                .setUrls(urls)
+                .addClassLoader(classLoader)
+                .setScanners(
+                        new ResourcesScanner(),
+                        new FieldAnnotationsScanner(),
+                        new TypeAnnotationsScanner(),
+                        new SubTypesScanner());
+
+        reflections = new Reflections(configurationBuilder);
     }
 
     public Set<Class<?>> scanComponentClasses() {

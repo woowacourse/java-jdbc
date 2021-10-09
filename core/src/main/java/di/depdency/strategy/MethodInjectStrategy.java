@@ -24,8 +24,10 @@ public class MethodInjectStrategy implements InjectStrategy<Method> {
     @Override
     public Set<Class<?>> findDependencies(Method type) {
         Class<?>[] parameterTypes = type.getParameterTypes();
-        return Arrays.stream(parameterTypes)
+        Set<Class<?>> dependencies = Arrays.stream(parameterTypes)
                 .collect(Collectors.toSet());
+        dependencies.add(type.getDeclaringClass());
+        return dependencies;
     }
 
     @Override
@@ -39,6 +41,6 @@ public class MethodInjectStrategy implements InjectStrategy<Method> {
             parameters[i] = componentContainer.takeComponent(parameterTypes[i]);
         }
         Object instance = type.invoke(declaredClassInstance, parameters);
-        componentContainer.register(instance.getClass(), instance);
+        componentContainer.register(type.getReturnType(), instance);
     }
 }

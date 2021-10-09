@@ -10,24 +10,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
 
-    private final Object[] basePackage;
+    private Object[] basePackage;
     private final Map<HandlerKey, HandlerExecution> handlerExecutions;
+    private final Map<Class<?>, Object> controllers;
 
     public AnnotationHandlerMapping(Object... basePackage) {
         this.basePackage = basePackage;
         this.handlerExecutions = new HashMap<>();
+        this.controllers = new HashMap<>();
+    }
+
+    public AnnotationHandlerMapping(Map<Class<?>, Object> controllers) {
+        this.handlerExecutions = new HashMap<>();
+        this.controllers = controllers;
     }
 
     public void initialize() {
-        final ControllerScanner controllerScanner = new ControllerScanner(basePackage);
-        final Map<Class<?>, Object> controllers = controllerScanner.getControllers();
         final Set<Method> methods = getRequestMappingMethods(controllers.keySet());
         for (Method method : methods) {
             final RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);

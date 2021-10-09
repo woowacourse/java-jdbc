@@ -53,7 +53,7 @@ class MethodInjectStrategyTest {
         );
         Method method = extractFirstMethod(methods);
 
-        assertThat(methodInjectStrategy.findDependencies(method)).contains(CardRepository.class);
+        assertThat(methodInjectStrategy.findDependencies(method)).contains(TestConfiguration.class, CardRepository.class);
     }
 
     @DisplayName("객체를 생성하여 ComponentContainer에 등록한다.")
