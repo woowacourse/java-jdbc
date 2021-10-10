@@ -58,7 +58,7 @@ public class JdbcTemplate {
         try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
+            while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
             return results;
