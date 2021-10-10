@@ -16,8 +16,7 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource) {
-        };
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) throws SQLException {
