@@ -1,27 +1,20 @@
 package com.techcourse.config;
 
+import nextstep.web.annotation.Bean;
+import nextstep.web.annotation.Configuration;
 import org.h2.jdbcx.JdbcDataSource;
 
-import java.util.Objects;
+import javax.sql.DataSource;
 
+@Configuration
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
-
-    public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
-        }
-        return INSTANCE;
-    }
-
-    private static JdbcDataSource createJdbcDataSource() {
+    @Bean
+    public DataSource dataSource() {
         final JdbcDataSource jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }

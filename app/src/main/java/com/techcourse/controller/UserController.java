@@ -1,9 +1,12 @@
 package com.techcourse.controller;
 
+import com.techcourse.exception.UserNotFoundException;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import nextstep.mvc.view.JspView;
+import nextstep.web.annotation.Autowired;
 import nextstep.mvc.view.JsonView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
@@ -17,16 +20,27 @@ public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
+    private final UserDao userDao;
+
+    @Autowired
+    public UserController(UserDao userDao) {
+        this.userDao = userDao;
+    }
+
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
-        final String account = request.getParameter("account");
+        String account = request.getParameter("account");
         log.debug("user id : {}", account);
 
-        final ModelAndView modelAndView = new ModelAndView(new JsonView());
-        final User user = InMemoryUserRepository.findByAccount(account)
-                .orElseThrow();
+        try {
+            User user = userDao.findByAccount(account)
+                .orElseThrow(() -> new UserNotFoundException(account));
 
-        modelAndView.addObject("user", user);
-        return modelAndView;
+            ModelAndView modelAndView = new ModelAndView(new JsonView());
+            modelAndView.addObject("user", user);
+            return modelAndView;
+        } catch (UserNotFoundException exception) {
+            return new ModelAndView(new JspView("/404.jsp"));
+        }
     }
 }

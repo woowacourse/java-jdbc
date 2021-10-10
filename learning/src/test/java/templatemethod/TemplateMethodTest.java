@@ -35,6 +35,7 @@ class TemplateMethodTest {
             }
         };
 
-        ghostMethod.steal();
+        HalflingThief thief = new HalflingThief(ghostMethod);
+        thief.steal();
     }
 }
