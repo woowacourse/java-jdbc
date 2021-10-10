@@ -31,15 +31,11 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
     public Object queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
         preparedStatementSetter.setValues(pstmt);
-        ResultSet rs = executeQuery(pstmt);
+        ResultSet rs = pstmt.executeQuery();
 
         try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
@@ -57,7 +53,7 @@ public class JdbcTemplate {
         Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
         preparedStatementSetter.setValues(pstmt);
-        ResultSet rs = executeQuery(pstmt);
+        ResultSet rs = pstmt.executeQuery();
 
         try (conn; pstmt; rs) {
             log.debug("query : {}", sql);
