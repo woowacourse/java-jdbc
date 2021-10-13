@@ -25,22 +25,20 @@ public class UserDao {
     public void insert(User user) throws SQLException {
         jdbcTemplate.update(
             "insert into users (account, password, email) values (?, ?, ?)",
-            pstmt -> {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            });
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail()
+        );
     }
 
     public void update(User user) throws SQLException {
         jdbcTemplate.update(
             "update users set account = ?, password = ?, email = ?  where id = ?",
-            pstmt -> {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.setLong(4, user.getId());
-            });
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail(),
+            user.getId()
+        );
     }
 
     public List<User> findAll() throws SQLException {

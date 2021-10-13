@@ -20,6 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(String sql, Object... parameters) throws SQLException {
+        update(sql, createPreparedStatementSetter(parameters));
+    }
+
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -29,6 +33,14 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         }
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(Object... parameters) {
+        return pstmt -> {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
+        };
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
