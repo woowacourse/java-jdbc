@@ -31,7 +31,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
+    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
         Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);
         preparedStatementSetter.setValues(pstmt);
@@ -47,8 +47,8 @@ public class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
-        List<Object> results = new ArrayList<>();
+    public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
 
         Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql);

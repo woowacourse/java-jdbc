@@ -2,10 +2,10 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
@@ -14,6 +14,13 @@ public class UserDao {
     public UserDao(DataSource dataSource) {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
+
+    private final RowMapper<User> rowMapper = rs -> new User(
+        rs.getLong(1),
+        rs.getString(2),
+        rs.getString(3),
+        rs.getString(4)
+    );
 
     public void insert(User user) throws SQLException {
         jdbcTemplate.update(
@@ -37,45 +44,35 @@ public class UserDao {
     }
 
     public List<User> findAll() throws SQLException {
-        List<User> users = new ArrayList<>();
-
-        return (List<User>) jdbcTemplate.query(
+        return jdbcTemplate.queryForList(
             "select id, account, password, email from users",
             pstmt -> {
             },
-            rs -> users.add(
-                new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4))
-            )
+            rowMapper
         );
     }
 
     public User findById(Long id) throws SQLException {
-        return (User) jdbcTemplate.queryForObject(
+        return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where id = ?",
-            pstmt -> pstmt.setLong(1, id)
-            ,
-            rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-            )
+            pstmt -> pstmt.setLong(1, id),
+            rowMapper
         );
     }
 
     public User findByAccount(String account) throws SQLException {
-        return (User) jdbcTemplate.queryForObject(
+        return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where account = ?",
             pstmt -> pstmt.setString(1, account),
-            rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4))
+            rowMapper
+        );
+    }
+
+    public void deleteAll() throws SQLException {
+        jdbcTemplate.update(
+            "delete users",
+            pstmt -> {
+            }
         );
     }
 }
