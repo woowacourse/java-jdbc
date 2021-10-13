@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -22,7 +21,7 @@ public class UserDao {
         rs.getString(4)
     );
 
-    public void insert(User user) throws SQLException {
+    public void insert(User user) {
         jdbcTemplate.update(
             "insert into users (account, password, email) values (?, ?, ?)",
             user.getAccount(),
@@ -31,7 +30,7 @@ public class UserDao {
         );
     }
 
-    public void update(User user) throws SQLException {
+    public void update(User user) {
         jdbcTemplate.update(
             "update users set account = ?, password = ?, email = ?  where id = ?",
             user.getAccount(),
@@ -41,7 +40,7 @@ public class UserDao {
         );
     }
 
-    public List<User> findAll() throws SQLException {
+    public List<User> findAll() {
         return jdbcTemplate.queryForList(
             "select id, account, password, email from users",
             pstmt -> {
@@ -50,7 +49,7 @@ public class UserDao {
         );
     }
 
-    public User findById(Long id) throws SQLException {
+    public User findById(Long id) {
         return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where id = ?",
             pstmt -> pstmt.setLong(1, id),
@@ -58,7 +57,7 @@ public class UserDao {
         );
     }
 
-    public User findByAccount(String account) throws SQLException {
+    public User findByAccount(String account) {
         return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where account = ?",
             pstmt -> pstmt.setString(1, account),
@@ -66,7 +65,7 @@ public class UserDao {
         );
     }
 
-    public void deleteAll() throws SQLException {
+    public void deleteAll() {
         jdbcTemplate.update(
             "delete users",
             pstmt -> {
