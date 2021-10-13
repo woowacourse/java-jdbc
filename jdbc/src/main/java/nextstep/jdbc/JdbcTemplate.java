@@ -44,10 +44,11 @@ public class JdbcTemplate {
         };
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
+            PreparedStatementSetter preparedStatementSetter = createPreparedStatementSetter(parameters);
             preparedStatementSetter.setValues(pstmt);
             ResultSet rs = pstmt.executeQuery();
 

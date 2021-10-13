@@ -52,16 +52,16 @@ public class UserDao {
     public User findById(Long id) {
         return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where id = ?",
-            pstmt -> pstmt.setLong(1, id),
-            rowMapper
+            rowMapper,
+            id
         );
     }
 
     public User findByAccount(String account) {
         return jdbcTemplate.queryForObject(
             "select id, account, password, email from users where account = ?",
-            pstmt -> pstmt.setString(1, account),
-            rowMapper
+            rowMapper,
+            account
         );
     }
 
