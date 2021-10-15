@@ -57,7 +57,7 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
-            return null;
+            throw new EmptyResultDataAccessException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
