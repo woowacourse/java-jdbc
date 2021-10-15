@@ -43,8 +43,6 @@ public class UserDao {
     public List<User> findAll() {
         return jdbcTemplate.queryForList(
             "select id, account, password, email from users",
-            pstmt -> {
-            },
             rowMapper
         );
     }
@@ -67,9 +65,7 @@ public class UserDao {
 
     public void deleteAll() {
         jdbcTemplate.update(
-            "delete users",
-            pstmt -> {
-            }
+            "delete users"
         );
     }
 }

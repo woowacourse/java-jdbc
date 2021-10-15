@@ -64,7 +64,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> results = new ArrayList<>();
 
         try (
@@ -72,6 +72,7 @@ public class JdbcTemplate {
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
         ) {
+            PreparedStatementSetter preparedStatementSetter = createPreparedStatementSetter(parameters);
             preparedStatementSetter.setValues(pstmt);
 
             log.debug("query : {}", sql);
