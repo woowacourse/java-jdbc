@@ -10,16 +10,16 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     private final RowMapper<User> rowMapper = rs -> new User(
         rs.getLong(1),
         rs.getString(2),
         rs.getString(3),
         rs.getString(4)
     );
+
+    public UserDao(DataSource dataSource) {
+        jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     public void insert(User user) {
         jdbcTemplate.update(
