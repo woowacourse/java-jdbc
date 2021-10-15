@@ -25,7 +25,8 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
+        try (
+            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             preparedStatementSetter.setValues(pstmt);
@@ -45,12 +46,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
+        try (
+            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
         ) {
             PreparedStatementSetter preparedStatementSetter = createPreparedStatementSetter(parameters);
             preparedStatementSetter.setValues(pstmt);
-            ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
 
