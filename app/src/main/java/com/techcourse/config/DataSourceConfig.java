@@ -1,27 +1,37 @@
 package com.techcourse.config;
 
-import org.h2.jdbcx.JdbcDataSource;
+import di.annotation.Component;
+import di.annotation.Configuration;
+import nextstep.datasource.DataSourceType;
+import nextstep.datasource.DatabasePopulator;
+import nextstep.jdbc.JdbcDataSourceBuilder;
+import nextstep.jdbc.JdbcTemplate;
 
-import java.util.Objects;
+import javax.sql.DataSource;
 
+@Configuration
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    @Component
+    public DataSource dataSource() {
+        String url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;";
+        String user = "";
+        String password = "";
 
-    public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
-        }
-        return INSTANCE;
+        return JdbcDataSourceBuilder.create(DataSourceType.H2)
+                .url(url)
+                .user(user)
+                .password(password)
+                .build();
     }
 
-    private static JdbcDataSource createJdbcDataSource() {
-        final JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
+    @Component
+    public DatabasePopulator databasePopulator(DataSource dataSource) {
+        return new DatabasePopulator(dataSource);
     }
 
-    private DataSourceConfig() {}
+    @Component
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
 }
