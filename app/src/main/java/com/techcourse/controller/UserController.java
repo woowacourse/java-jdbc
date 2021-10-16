@@ -3,7 +3,6 @@ package com.techcourse.controller;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
@@ -18,6 +17,7 @@ import org.slf4j.LoggerFactory;
 public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
+    private static final UserDao USER_DAO = new UserDao(DataSourceConfig.getInstance());
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) {
@@ -25,11 +25,7 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final ModelAndView modelAndView = new ModelAndView(new JsonView());
-
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        UserDao userDao = new UserDao(DataSourceConfig.getInstance());
-
-        final User user = userDao.findByAccount(account);
+        final User user = USER_DAO.findByAccount(account);
 
         modelAndView.addObject("user", user);
         return modelAndView;
