@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.InsertStatement;
+import nextstep.jdbc.StatementStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,20 +23,17 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
+    public void jdbcContextWithStatementStrategy(
+            String sql,
+            StatementStrategy stmt,
+            Object... args
+    ) {
         Connection conn = null;
         PreparedStatement pstmt = null;
+
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            pstmt = stmt.makePreparedStatement(sql, conn, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -55,6 +53,16 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    public void insert(User user) {
+        final InsertStatement insertStatement = new InsertStatement();
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcContextWithStatementStrategy(
+                sql,
+                insertStatement,
+                user.getAccount(), user.getPassword(), user.getEmail()
+        );
     }
 
     public void update(User user) {
