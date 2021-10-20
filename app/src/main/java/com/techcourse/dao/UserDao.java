@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.JdbcContext;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,16 +17,16 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-    private final JdbcContext jdbcContext;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.jdbcContext = new JdbcContext(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcContext.executeQuery(
+        jdbcTemplate.update(
                 sql,
                 user.getAccount(), user.getPassword(), user.getEmail()
         );
@@ -34,7 +34,7 @@ public class UserDao {
 
     public void update(User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcContext.executeQuery(
+        jdbcTemplate.update(
                 sql,
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
         );
