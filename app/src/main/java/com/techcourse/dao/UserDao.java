@@ -10,7 +10,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.InsertStatement;
 import nextstep.jdbc.JdbcContext;
-import nextstep.jdbc.StatementStrategy;
+import nextstep.jdbc.UpdateStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,66 +32,30 @@ public class UserDao {
         jdbcContext.workWithStatementStrategy(
                 insertStatement,
                 sql,
-                insertStatement,
                 user.getAccount(), user.getPassword(), user.getEmail()
         );
+        log.debug("query : {}", sql);
     }
 
     public void update(User user) {
+        final UpdateStatement updateStatement = new UpdateStatement();
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        jdbcContext.workWithStatementStrategy(
+                updateStatement,
+                sql,
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
+        );
+        log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            rs = pstmt.executeQuery();
-
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()
+        ) {
             log.debug("query : {}", sql);
 
             List<User> users = new ArrayList<>();
@@ -107,27 +71,6 @@ public class UserDao {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 

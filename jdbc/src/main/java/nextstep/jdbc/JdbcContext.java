@@ -18,29 +18,14 @@ public class JdbcContext {
     }
 
     public void workWithStatementStrategy(StatementStrategy stmt, String sql, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = stmt.makePreparedStatement(sql, conn, args);
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = stmt.makePreparedStatement(sql, conn, args)
+        ) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 }
