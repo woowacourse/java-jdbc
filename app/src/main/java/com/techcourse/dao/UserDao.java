@@ -8,9 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.InsertStatement;
 import nextstep.jdbc.JdbcContext;
-import nextstep.jdbc.UpdateStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,25 +25,19 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        final InsertStatement insertStatement = new InsertStatement();
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcContext.workWithStatementStrategy(
-                insertStatement,
+        jdbcContext.executeQuery(
                 sql,
                 user.getAccount(), user.getPassword(), user.getEmail()
         );
-        log.debug("query : {}", sql);
     }
 
     public void update(User user) {
-        final UpdateStatement updateStatement = new UpdateStatement();
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcContext.workWithStatementStrategy(
-                updateStatement,
+        jdbcContext.executeQuery(
                 sql,
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
         );
-        log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {

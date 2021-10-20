@@ -17,11 +17,15 @@ public class JdbcContext {
         this.dataSource = dataSource;
     }
 
-    public void workWithStatementStrategy(StatementStrategy stmt, String sql, Object... args) {
+    public void executeQuery(String sql, Object... args) {
+        final PreparedStatementSetter stmt = new PreparedStatementSetter();
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = stmt.makePreparedStatement(sql, conn, args)
+                PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
+            log.debug("query : {}", sql);
+
+            stmt.makePreparedStatement(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
