@@ -3,14 +3,21 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
+
+    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private UserDao userDao;
 
@@ -20,7 +27,20 @@ class UserDaoTest {
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        final User anotherUser = new User("oz", "password", "oz@woowahan.com");
         userDao.insert(user);
+        userDao.insert(anotherUser);
+    }
+
+    @AfterEach
+    void tearDown() {
+        try (Connection connection = DataSourceConfig.getInstance().getConnection())
+        {
+            connection.prepareStatement("drop table users")
+                    .executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     @Test
@@ -28,6 +48,7 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(2);
     }
 
     @Test
@@ -39,7 +60,7 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
+        final String account = "oz";
         final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -51,7 +72,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(3L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
