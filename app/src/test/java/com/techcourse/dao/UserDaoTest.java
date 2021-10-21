@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -19,8 +18,10 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final User user1 = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user1);
+        final User user2 = new User("solong", "password", "solong@woowahan.com");
+        userDao.insert(user2);
     }
 
     @Test
@@ -28,6 +29,8 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users.get(0).getAccount()).isEqualTo("gugu");
+        assertThat(users.get(1).getAccount()).isEqualTo("solong");
     }
 
     @Test
@@ -51,7 +54,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(3L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
