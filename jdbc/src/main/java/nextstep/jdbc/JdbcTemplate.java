@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.exception.DataAccessException;
+import nextstep.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,15 @@ public class JdbcTemplate {
                 createPreparedStatementSetter(args));
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
+        final List<T> results = query(sql, new RowMapperResultSetExtractor<>(rm),
+                createPreparedStatementSetter(args));
+        if (results.size() < 1) {
+            throw new IncorrectResultSizeDataAccessException();
+        }
+        return results.iterator().next();
+    }
+
     public void execute(String sql, PreparedStatementSetter pss) {
         try (
                 Connection conn = dataSource.getConnection();
@@ -39,7 +50,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -54,7 +65,7 @@ public class JdbcTemplate {
             return extractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 

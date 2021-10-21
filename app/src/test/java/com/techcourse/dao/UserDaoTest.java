@@ -19,8 +19,8 @@ class UserDaoTest {
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final User user1 = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user1);
         final User user2 = new User("solong", "password", "solong@woowahan.com");
+        userDao.insert(user1);
         userDao.insert(user2);
     }
 

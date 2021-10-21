@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import com.google.j2objc.annotations.ObjectiveCName;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
