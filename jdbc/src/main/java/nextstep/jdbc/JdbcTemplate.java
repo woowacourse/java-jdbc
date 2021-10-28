@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.exception.DataAccessException;
 import nextstep.exception.IncorrectResultSizeDataAccessException;
@@ -30,13 +31,16 @@ public class JdbcTemplate {
                 createPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rm, Object... args) {
         final List<T> results = query(sql, new RowMapperResultSetExtractor<>(rm),
                 createPreparedStatementSetter(args));
-        if (results.size() < 1) {
+        if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException();
         }
-        return results.iterator().next();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(results.get(0));
     }
 
     public void execute(String sql, PreparedStatementSetter pss) {
