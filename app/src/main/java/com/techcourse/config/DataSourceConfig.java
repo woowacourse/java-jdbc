@@ -2,10 +2,8 @@ package com.techcourse.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import javax.sql.DataSource;
-import org.h2.jdbcx.JdbcDataSource;
-
 import java.util.Objects;
+import javax.sql.DataSource;
 
 public class DataSourceConfig {
 

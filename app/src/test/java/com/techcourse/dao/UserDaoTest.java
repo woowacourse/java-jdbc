@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,11 @@ class UserDaoTest {
         user2 = new User(userId.incrementAndGet(), "solong", "password", "solong@woowahan.com");
         userDao.insert(user1);
         userDao.insert(user2);
+    }
+
+    @AfterEach
+    void afterAll() {
+        userDao.deleteAll();
     }
 
     @Test

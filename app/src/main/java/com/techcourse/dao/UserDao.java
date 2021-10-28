@@ -52,4 +52,9 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, rowMapper, account)
                 .orElseThrow(IllegalArgumentException::new);
     }
+
+    public void deleteAll() {
+        final String sql = "delete from users";
+        jdbcTemplate.update(sql);
+    }
 }
