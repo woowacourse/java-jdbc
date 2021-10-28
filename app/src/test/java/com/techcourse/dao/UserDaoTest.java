@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import nextstep.exception.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +58,16 @@ class UserDaoTest {
         final User user = userDao.findByAccount(user1.getAccount());
 
         assertThat(user.getAccount()).isEqualTo(user1.getAccount());
+    }
+
+    @Test
+    void findByAccount_fail() {
+        final User new_user = new User(userId.incrementAndGet(), user1.getAccount(),
+                user1.getPassword(), user1.getEmail());
+        userDao.insert(new_user);
+
+        assertThatThrownBy(() -> userDao.findByAccount(new_user.getAccount()))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
