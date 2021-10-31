@@ -1,26 +1,40 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import nextstep.exception.IncorrectResultSizeDataAccessException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 class UserDaoTest {
 
+    private static final AtomicLong userId = new AtomicLong(0);
+
     private UserDao userDao;
+    private User user1;
+    private User user2;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        user1 = new User(userId.incrementAndGet(), "gugu", "password", "hkkang@woowahan.com");
+        user2 = new User(userId.incrementAndGet(), "solong", "password", "solong@woowahan.com");
+        userDao.insert(user1);
+        userDao.insert(user2);
+    }
+
+    @AfterEach
+    void afterAll() {
+        userDao.deleteAll();
     }
 
     @Test
@@ -28,21 +42,32 @@ class UserDaoTest {
         final List<User> users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users.get(0).getAccount()).isEqualTo(user1.getAccount());
+        assertThat(users.get(1).getAccount()).isEqualTo(user2.getAccount());
     }
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(user1.getId());
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.getAccount()).isEqualTo(user1.getAccount());
     }
 
     @Test
     void findByAccount() {
-        final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(user1.getAccount());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.getAccount()).isEqualTo(user1.getAccount());
+    }
+
+    @Test
+    void findByAccount_fail() {
+        final User new_user = new User(userId.incrementAndGet(), user1.getAccount(),
+                user1.getPassword(), user1.getEmail());
+        userDao.insert(new_user);
+
+        assertThatThrownBy(() -> userDao.findByAccount(new_user.getAccount()))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
@@ -51,7 +76,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(userId.incrementAndGet());
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -59,12 +84,12 @@ class UserDaoTest {
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(user1.getId());
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findById(user1.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
