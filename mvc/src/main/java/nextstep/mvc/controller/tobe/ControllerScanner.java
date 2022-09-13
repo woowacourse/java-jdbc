@@ -16,19 +16,19 @@ public class ControllerScanner {
 
     private final Reflections reflections;
 
-    public ControllerScanner(Object... basePackage) {
+    public ControllerScanner(final Object... basePackage) {
         reflections = new Reflections(basePackage);
     }
 
     public Map<Class<?>, Object> getControllers() {
-        Set<Class<?>> preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
+        final var preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
         return instantiateControllers(preInitiatedControllers);
     }
 
-    Map<Class<?>, Object> instantiateControllers(Set<Class<?>> preInitiatedControllers) {
-        final Map<Class<?>, Object> controllers = new HashMap<>();
+    Map<Class<?>, Object> instantiateControllers(final Set<Class<?>> preInitiatedControllers) {
+        final var controllers = new HashMap<Class<?>, Object>();
         try {
-            for (Class<?> clazz : preInitiatedControllers) {
+            for (final var clazz : preInitiatedControllers) {
                 controllers.put(clazz, clazz.getDeclaredConstructor().newInstance());
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {

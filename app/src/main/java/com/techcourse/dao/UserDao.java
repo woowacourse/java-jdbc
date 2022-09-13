@@ -17,12 +17,12 @@ public class UserDao {
 
     private final DataSource dataSource;
 
-    public UserDao(DataSource dataSource) {
+    public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void insert(User user) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+    public void insert(final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -54,7 +54,7 @@ public class UserDao {
         }
     }
 
-    public void update(User user) {
+    public void update(final User user) {
         // todo
     }
 
@@ -63,8 +63,8 @@ public class UserDao {
         return null;
     }
 
-    public User findById(Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
+    public User findById(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -109,7 +109,7 @@ public class UserDao {
         }
     }
 
-    public User findByAccount(String account) {
+    public User findByAccount(final String account) {
         // todo
         return null;
     }

@@ -8,12 +8,12 @@ public class HandlerExecutor {
 
     private final HandlerAdapterRegistry handlerAdapterRegistry;
 
-    public HandlerExecutor(HandlerAdapterRegistry handlerAdapterRegistry) {
+    public HandlerExecutor(final HandlerAdapterRegistry handlerAdapterRegistry) {
         this.handlerAdapterRegistry = handlerAdapterRegistry;
     }
 
-    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        final HandlerAdapter handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handler);
+    public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+        final var handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handler);
         return handlerAdapter.handle(request, response, handler);
     }
 }

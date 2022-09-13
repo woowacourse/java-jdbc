@@ -23,12 +23,13 @@ public class ManualHandlerMapping implements HandlerMapping {
         controllers.put("/logout", new LogoutController());
 
         log.info("Initialized Handler Mapping!");
-        controllers.keySet().forEach(path -> log.info("Path : {}, Controller : {}", path, controllers.get(path).getClass()));
+        controllers.keySet()
+                .forEach(path -> log.info("Path : {}, Controller : {}", path, controllers.get(path).getClass()));
     }
 
     @Override
-    public Controller getHandler(HttpServletRequest request) {
-        final String requestURI = request.getRequestURI();
+    public Controller getHandler(final HttpServletRequest request) {
+        final var requestURI = request.getRequestURI();
         log.debug("Request Mapping Uri : {}", requestURI);
         return controllers.get(requestURI);
     }

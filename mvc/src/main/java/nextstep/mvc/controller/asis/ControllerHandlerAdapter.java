@@ -9,13 +9,13 @@ import nextstep.mvc.view.ModelAndView;
 public class ControllerHandlerAdapter implements HandlerAdapter {
 
     @Override
-    public boolean supports(Object handler) {
+    public boolean supports(final Object handler) {
         return handler instanceof Controller;
     }
 
     @Override
-    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        String forwardView = ((Controller) handler).execute(request, response);
+    public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+        final var forwardView = ((Controller) handler).execute(request, response);
         return new ModelAndView(new JspView(forwardView));
     }
 }

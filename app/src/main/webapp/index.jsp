@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -12,8 +11,7 @@
             <a class="navbar-brand ps-3" href="/index.jsp">대시보드</a>
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <c:choose>
-            <c:when test="${not empty sessionScope.user}">
+            <% if (session.getAttribute("user") != null) { %>
             <div class="navbar-nav d-none d-md-inline-block ms-auto me-0 me-md-3 my-2 my-md-0">
                 <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
                     <li class="nav-item dropdown">
@@ -26,13 +24,11 @@
                     </li>
                 </ul>
             </div>
-            </c:when>
-            <c:otherwise>
+            <% } else { %>
             <div class="navbar-nav d-none d-md-inline-block ms-auto me-0 me-md-3 my-2 my-md-0">
                 <a class="nav-link" href="/login" role="button"><i class="fas fa-user fa-fw"></i>&nbsp;로그인</a>
             </div>
-            </c:otherwise>
-            </c:choose>
+            <% } %>
         </nav>
         <div id="layoutSidenav">
             <div id="layoutSidenav_nav">

@@ -2,29 +2,33 @@ plugins {
     id 'java'
 }
 
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'ch.qos.logback:logback-classic:1.2.3'
-    implementation 'com.google.guava:guava:29.0-jre'
-
-    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:2.0.0'
+    implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+    implementation 'javax.servlet.jsp:javax.servlet.jsp-api:2.3.3'
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.0.0'
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api:2.0.0'
-    implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 
-    implementation 'org.reflections:reflections:0.9.11'
+    implementation 'org.reflections:reflections:0.10.2'
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.3'
-    testImplementation 'org.mockito:mockito-core:3.12.3'
-    testImplementation 'org.assertj:assertj-core:3.20.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'ch.qos.logback:logback-classic:1.2.10'
+
+    testImplementation 'org.assertj:assertj-core:3.22.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation 'org.mockito:mockito-core:3.+'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
 }

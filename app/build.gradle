@@ -1,22 +1,10 @@
 plugins {
-    id 'application'
-    id 'org.sonarqube' version '3.3'
+    id 'java'
     id 'idea'
 }
 
-application {
-    mainClass = 'com.techcourse.JwpApplication'
-}
-
-idea {
-    module {
-        inheritOutputDirs = false
-        outputDir file("webapp/WEB-INF/classes")
-    }
-}
-
-group = 'nextstep.jwp'
-version = '1.0'
+group 'org.example'
+version '1.0-SNAPSHOT'
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
@@ -29,31 +17,32 @@ dependencies {
     implementation project(':mvc')
     implementation project(':jdbc')
 
-    implementation 'ch.qos.logback:logback-classic:1.2.3'
-    implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.0-M16'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.0-M16'
+    implementation 'ch.qos.logback:logback-classic:1.2.10'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.4'
+    implementation 'com.h2database:h2:2.1.214'
 
-    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.0.10'
-    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.0.10'
-
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
-
-    implementation 'com.h2database:h2:1.4.200'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.3'
-    testImplementation 'org.mockito:mockito-core:3.12.3'
-    testImplementation 'org.assertj:assertj-core:3.20.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'org.assertj:assertj-core:3.22.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation 'org.mockito:mockito-core:3.+'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
 }
 
-sonarqube {
-    properties {
-        property "sonar.sourceEncoding", "UTF-8"
-        property "sonar.projectKey", "woowacourse_jwp-dashboard-jdbc"
-        property "sonar.organization", "woowacourse"
-        property "sonar.host.url", "https://sonarcloud.io"
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir file("src/main/webapp/WEB-INF/classes")
+    }
+}
+
+sourceSets {
+    main {
+        java.destinationDirectory.set(file('src/main/webapp/WEB-INF/classes'))
     }
 }

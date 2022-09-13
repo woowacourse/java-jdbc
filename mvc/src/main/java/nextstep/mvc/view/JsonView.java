@@ -12,7 +12,7 @@ import java.util.Map;
 public class JsonView implements View {
 
     @Override
-    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
         if (model == null || model.isEmpty()) {
             return;
         }
@@ -23,12 +23,12 @@ public class JsonView implements View {
         render(renderObject, response.getOutputStream());
     }
 
-    private void render(Object renderObject, ServletOutputStream outputStream) throws IOException {
+    private void render(final Object renderObject, final ServletOutputStream outputStream) throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(outputStream, renderObject);
     }
 
-    private Object toJsonObject(Map<String, ?> model) {
+    private Object toJsonObject(final Map<String, ?> model) {
         if (model.size() == 1) {
             return model.values()
                     .stream()
