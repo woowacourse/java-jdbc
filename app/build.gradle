@@ -17,6 +17,9 @@ dependencies {
     implementation project(':mvc')
     implementation project(':jdbc')
 
+    implementation 'org.springframework:spring-tx:5.3.23'
+    implementation 'org.springframework:spring-jdbc:5.3.23'
+
     implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.0-M16'
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.0-M16'
     implementation 'ch.qos.logback:logback-classic:1.2.10'

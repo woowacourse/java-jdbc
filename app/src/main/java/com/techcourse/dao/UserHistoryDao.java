@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 
 public class UserHistoryDao {
@@ -12,7 +13,7 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (userId, account, password, email, createdAt, createdBy) values (?, ?, ?, ?, ?, ?)";
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
@@ -21,5 +22,6 @@ public class UserHistoryDao {
                 userHistory.getCreatedAt(),
                 userHistory.getCreateBy()
         );
+        throw new DataAccessException();
     }
 }
