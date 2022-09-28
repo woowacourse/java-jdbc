@@ -6,9 +6,8 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
+
+import java.sql.SQLException;
 
 public class UserService {
 
@@ -16,10 +15,10 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserService(final JdbcTemplate jdbcTemplate) {
-        this.userDao = new UserDao(jdbcTemplate);
-        this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        this.jdbcTemplate = jdbcTemplate;
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final JdbcTemplate jdbcTemplate1) {
+        this.userDao = userDao;
+        this.userHistoryDao = userHistoryDao;
+        this.jdbcTemplate = jdbcTemplate1;
     }
 
     public User findById(final long id) {
@@ -31,18 +30,22 @@ public class UserService {
     }
 
     public void edit(final User user, final String createBy) {
-        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
-        final var definition = new DefaultTransactionDefinition();
-        definition.setIsolationLevel(TransactionDefinition.ISOLATION_READ_UNCOMMITTED);
-        final var transactionStatus = transactionManager.getTransaction(definition);
+        final var connection = jdbcTemplate.getConnection();
 
-        try {
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-        } catch (RuntimeException e) {
-            transactionManager.rollback(transactionStatus);
+        try (connection) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new DataAccessException(ex);
+            }
             throw new DataAccessException(e);
         }
-        transactionManager.commit(transactionStatus);
     }
 }

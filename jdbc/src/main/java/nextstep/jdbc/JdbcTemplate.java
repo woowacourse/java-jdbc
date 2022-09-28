@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,11 +20,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    public Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
-    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final String sql, final PreparedStatementSetter pss) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
@@ -35,6 +40,19 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... parameters) {
         update(sql, createPreparedStatementSetter(parameters));
+    }
+
+    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            pss.setParameters(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void update(final Connection connection, final String sql, final Object... parameters) {
+        update(connection, sql, createPreparedStatementSetter(parameters));
     }
 
     public void update(final PreparedStatementCreator psc, final KeyHolder holder) {

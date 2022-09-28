@@ -15,4 +15,4 @@ create table if not exists user_history (
     created_at datetime not null,
     created_by varchar(100) not null,
     primary key(id)
-    );
+);
