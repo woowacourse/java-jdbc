@@ -2,9 +2,9 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,16 +20,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) {
-        try (final var conn = dataSource.getConnection();
+        try (final var conn = DataSourceUtils.getConnection(dataSource);
              final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
@@ -42,21 +38,8 @@ public class JdbcTemplate {
         update(sql, createPreparedStatementSetter(parameters));
     }
 
-    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
-        try (final var pstmt = connection.prepareStatement(sql)) {
-            pss.setParameters(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public void update(final Connection connection, final String sql, final Object... parameters) {
-        update(connection, sql, createPreparedStatementSetter(parameters));
-    }
-
     public void update(final PreparedStatementCreator psc, final KeyHolder holder) {
-        try (final var conn = dataSource.getConnection();
+        try (final var conn = DataSourceUtils.getConnection(dataSource);
              final var ps = psc.createPreparedStatement(conn)) {
             ps.executeUpdate();
 
@@ -85,7 +68,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
-        try (final var conn = dataSource.getConnection();
+        try (final var conn = DataSourceUtils.getConnection(dataSource);
              final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);
