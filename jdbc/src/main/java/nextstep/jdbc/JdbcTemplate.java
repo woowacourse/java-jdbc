@@ -25,8 +25,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) {
-        try (final var conn = DataSourceUtils.getConnection(dataSource);
-             final var pstmt = conn.prepareStatement(sql)) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -39,8 +39,8 @@ public class JdbcTemplate {
     }
 
     public void update(final PreparedStatementCreator psc, final KeyHolder holder) {
-        try (final var conn = DataSourceUtils.getConnection(dataSource);
-             final var ps = psc.createPreparedStatement(conn)) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try (final var ps = psc.createPreparedStatement(conn)) {
             ps.executeUpdate();
 
             final var rs = ps.getGeneratedKeys();
@@ -68,8 +68,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
-        try (final var conn = DataSourceUtils.getConnection(dataSource);
-             final var pstmt = conn.prepareStatement(sql)) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);
         } catch (SQLException e) {

@@ -9,6 +9,7 @@ import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,7 +29,6 @@ class UserServiceTest {
         userDao.insert(user);
     }
 
-    // 트랜잭션 정상 동작 확인을 위한 테스트
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -50,7 +50,8 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(jdbcTemplate.getDataSource(), appUserService);
+        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        final var userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

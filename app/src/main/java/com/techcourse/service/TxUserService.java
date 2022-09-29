@@ -2,19 +2,16 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 import nextstep.jdbc.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import javax.sql.DataSource;
-import java.sql.SQLException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class TxUserService implements UserService {
 
-    private final DataSource dataSource;
+    private final PlatformTransactionManager transactionManager;
     private final UserService userService;
 
-    public TxUserService(final DataSource dataSource, final UserService userService) {
-        this.dataSource = dataSource;
+    public TxUserService(final PlatformTransactionManager transactionManager, final UserService userService) {
+        this.transactionManager = transactionManager;
         this.userService = userService;
     }
 
@@ -30,33 +27,22 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        /* ===== 트랜잭션 영역(low level) ===== */
-        TransactionSynchronizationManager.initSynchronization();
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        try (connection) {
-            connection.setAutoCommit(false);
-        /* ===== 트랜잭션 영역(low level) ===== */
+        /* ===== 트랜잭션 영역 ===== */
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
+        try {
+        /* ===== 트랜잭션 영역 ===== */
 
-        /* ===== 비즈니스 로직 영역 ===== */
+        /* ===== 애플리케이션 영역 ===== */
             userService.changePassword(id, newPassword, createBy);
-        /* ===== 비즈니스 로직 영역 ===== */
+        /* ===== 애플리케이션 영역 ===== */
 
-
-        /* ===== 트랜잭션 영역(low level) ===== */
-            connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+        /* ===== 트랜잭션 영역 ===== */
+        } catch (RuntimeException e) {
+            transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            TransactionSynchronizationManager.clearSynchronization();
         }
-        /* ===== 트랜잭션 영역(low level) ===== */
+        transactionManager.commit(transactionStatus);
+        /* ===== 트랜잭션 영역 ===== */
     }
 }
