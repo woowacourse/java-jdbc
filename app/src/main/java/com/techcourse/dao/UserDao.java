@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,10 @@ public class UserDao {
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.dataSource = null;
     }
 
     public void insert(final User user) {
