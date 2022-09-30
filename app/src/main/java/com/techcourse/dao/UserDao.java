@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.ArrayList;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
@@ -61,8 +62,26 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+
+        try (final var conn = getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            try (final var rs = pstmt.executeQuery()) {
+                final var users = new ArrayList<User>();
+                if (rs.next()) {
+                    users.add(new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4)));
+                }
+                return users;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public User findById(final Long id) {
@@ -89,8 +108,26 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        try (final var conn = getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, account);
+            log.debug("query : {}", sql);
+            try (final var rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4));
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     private Connection getConnection() {
