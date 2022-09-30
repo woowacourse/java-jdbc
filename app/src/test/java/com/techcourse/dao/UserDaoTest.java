@@ -26,7 +26,7 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotNull();
+        assertThat(users).isNotEmpty();
     }
 
     @Test
