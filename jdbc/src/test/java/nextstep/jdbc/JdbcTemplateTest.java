@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.atLeastOnce;
@@ -13,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.fixture.Tester;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,12 +97,38 @@ class JdbcTemplateTest {
         RowMapper<Tester> rowMapper = (rs, rowNum) -> new Tester(rs.getLong(1), rs.getString(2));
 
         // when
-        final var member = template.queryForObject(sql, rowMapper, pss).get();
+        final var actual = template.queryForObject(sql, rowMapper, pss).get();
 
         // then
-        assertThat(member).isEqualTo(new Tester(1L, "awesomeo"));
+        final var expected = new Tester(1L, "awesomeo");
+        assertThat(actual).isEqualTo(expected);
 
         verify(this.preparedStatement).setLong(1, id);
+        verify(this.resultSet).close();
+        verify(this.preparedStatement).close();
+        verify(this.connection).close();
+    }
+
+    @Test
+    @DisplayName("PreparedStatementSetter와 RowMapper를 입력받아 결과 객체 리스트를 리턴한다")
+    void testQueryForListSucceeds() throws SQLException {
+        // given
+        final var sql = "SELECT id, name FROM member;";
+        var id = 1L;
+
+        given(this.resultSet.next()).willReturn(true, false);
+        given(this.resultSet.getLong(1)).willReturn(1L);
+        given(this.resultSet.getString(2)).willReturn("awesomeo");
+
+        RowMapper<Tester> rowMapper = (rs, rowNum) -> new Tester(rs.getLong(1), rs.getString(2));
+
+        // when
+        final var actual = template.queryForList(sql, rowMapper);
+
+        // then
+        var expected = List.of(new Tester(1L, "awesomeo"));
+        assertThat(actual).isEqualTo(expected);
+
         verify(this.resultSet).close();
         verify(this.preparedStatement).close();
         verify(this.connection).close();
