@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.ParameterSource;
 import nextstep.jdbc.RowMapper;
@@ -43,20 +44,28 @@ public class UserDao {
         return jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(id);
 
-        return jdbcTemplate.executeQuery(sql, parameterSource, rowMapper).get(0); //  TODO IndexOutOfBoundsException 대응되도록 수정 필요
+        List<User> users = jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
+        if (users.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(users.get(0));
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(account);
 
-        return jdbcTemplate.executeQuery(sql, parameterSource, rowMapper).get(0);
+        List<User> users = jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
+        if (users.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(users.get(0));
     }
 
     private final RowMapper<User> rowMapper = (resultSet) ->

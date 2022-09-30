@@ -16,7 +16,7 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
     }
 
     public void insert(final User user) {
