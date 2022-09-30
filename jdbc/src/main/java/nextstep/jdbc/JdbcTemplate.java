@@ -19,21 +19,14 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter pss) {
-        try (var conn = dataSource.getConnection();
-             var ps = conn.prepareStatement(sql)) {
-            log.info("Executing SQL: {}", sql);
-
+        return execute(sql, ps -> {
             pss.setValues(ps);
             return ps.executeUpdate();
-        } catch (SQLException e) {
-            log.error("Error in executing SQL statement: {}", sql, e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        try (var conn = dataSource.getConnection();
-             var ps = conn.prepareStatement(sql)) {
+        return execute(sql, ps -> {
             pss.setValues(ps);
             try (var rs = ps.executeQuery()) {
                 return new SingleResultSetExtractor<T>(rowMapper).extractData(rs);
@@ -41,21 +34,24 @@ public class JdbcTemplate {
                 log.error("Error in executing SQL statement: {}", sql, e);
                 throw new DataAccessException(e);
             }
-        } catch (SQLException e) {
-            log.error("Error in executing SQL statement: {}", sql, e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        try (var conn = dataSource.getConnection();
-             var ps = conn.prepareStatement(sql)) {
+        return execute(sql, ps -> {
             try (var rs = ps.executeQuery()) {
                 return new MultipleResultSetExtractor<T>(rowMapper).extractData(rs);
             } catch (SQLException e) {
                 log.error("Error in executing SQL statement: {}", sql, e);
                 throw new DataAccessException(e);
             }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action) {
+        try (var conn = dataSource.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+            return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error("Error in executing SQL statement: {}", sql, e);
             throw new DataAccessException(e);
