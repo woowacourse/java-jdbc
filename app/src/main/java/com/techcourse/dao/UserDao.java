@@ -1,12 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.PreparedStatementSetter;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,30 +66,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, id);
-            try (var rs = pstmt.executeQuery()) {
-
-                log.debug("query : {}", sql);
-
-                if (rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
-                }
-                return null;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(rs.getLong("id"), rs.getString("account"),
+                rs.getString("password"), rs.getString("email"));
+        final PreparedStatementSetter pss = ps -> ps.setLong(1, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, pss)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다 id = " + id));
     }
 
     public User findByAccount(final String account) {
