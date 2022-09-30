@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.ParameterSource;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +31,15 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(user.getAccount());
+        parameterSource.addParam(user.getPassword());
+        parameterSource.addParam(user.getEmail());
 
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
+            setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -46,14 +49,16 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(user.getAccount());
+        parameterSource.addParam(user.getPassword());
+        parameterSource.addParam(user.getEmail());
+        parameterSource.addParam(user.getId());
 
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
+            setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -63,9 +68,11 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
+        ParameterSource parameterSource = new ParameterSource();
 
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
+            setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
             return query(pstmt);
         } catch (SQLException e) {
@@ -76,12 +83,14 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(id);
 
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, id);
+            setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
-            return query(pstmt).get(0); //  TODO: IndexOutOfBoundsException 대응되도록 수정 필요
+            return query(pstmt).get(0); //  TODO IndexOutOfBoundsException 대응되도록 수정 필요
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -90,15 +99,23 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(account);
 
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, account);
+            setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
             return query(pstmt).get(0);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParams(PreparedStatement pstmt, ParameterSource parameterSource) throws SQLException {
+        for (var index = 0; index < parameterSource.getParamCount(); index++) {
+            pstmt.setObject(index + 1, parameterSource.getParam(index));
         }
     }
 
