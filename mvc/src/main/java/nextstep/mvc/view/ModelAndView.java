@@ -1,8 +1,10 @@
 package nextstep.mvc.view;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class ModelAndView {
 
@@ -14,20 +16,19 @@ public class ModelAndView {
         this.model = new HashMap<>();
     }
 
-    public ModelAndView addObject(final String attributeName, final Object attributeValue) {
+    public void addObject(final String attributeName, final Object attributeValue) {
         model.put(attributeName, attributeValue);
-        return this;
     }
 
     public Object getObject(final String attributeName) {
         return model.get(attributeName);
     }
 
-    public Map<String, Object> getModel() {
-        return Collections.unmodifiableMap(model);
-    }
-
     public View getView() {
         return view;
+    }
+
+    public void render(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        view.render(model, request, response);
     }
 }

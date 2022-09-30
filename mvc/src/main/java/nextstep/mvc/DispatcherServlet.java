@@ -1,12 +1,12 @@
 package nextstep.mvc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.mvc.view.ModelAndView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -15,24 +15,15 @@ public class DispatcherServlet extends HttpServlet {
 
     private final HandlerMappingRegistry handlerMappingRegistry;
     private final HandlerAdapterRegistry handlerAdapterRegistry;
-    private HandlerExecutor handlerExecutor;
 
-    public DispatcherServlet() {
-        handlerMappingRegistry = new HandlerMappingRegistry();
-        handlerAdapterRegistry = new HandlerAdapterRegistry();
+    public DispatcherServlet(HandlerMappingRegistry handlerMappingRegistry, HandlerAdapterRegistry handlerAdapterRegistry) {
+        this.handlerMappingRegistry = handlerMappingRegistry;
+        this.handlerAdapterRegistry = handlerAdapterRegistry;
     }
 
     @Override
     public void init() {
-        handlerExecutor = new HandlerExecutor(handlerAdapterRegistry);
-    }
-
-    public void addHandlerMapping(final HandlerMapping handlerMapping) {
-        handlerMappingRegistry.addHandlerMapping(handlerMapping);
-    }
-
-    public void addHandlerAdapter(final HandlerAdapter handlerAdapter) {
-        handlerAdapterRegistry.addHandlerAdapter(handlerAdapter);
+        handlerMappingRegistry.initialize();
     }
 
     @Override
@@ -41,21 +32,12 @@ public class DispatcherServlet extends HttpServlet {
 
         try {
             final var handler = handlerMappingRegistry.getHandler(request);
-            if (!handler.isPresent()) {
-                response.setStatus(404);
-                return;
-            }
-
-            final var modelAndView = handlerExecutor.handle(request, response, handler.get());
-            render(modelAndView, request, response);
+            final var adapter = handlerAdapterRegistry.getAdapter(handler);
+            final var modelAndView = adapter.handle(request, response, handler);
+            modelAndView.render(request, response);
         } catch (Throwable e) {
             log.error("Exception : {}", e.getMessage(), e);
             throw new ServletException(e.getMessage());
         }
-    }
-
-    private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        final var view = modelAndView.getView();
-        view.render(modelAndView.getModel(), request, response);
     }
 }

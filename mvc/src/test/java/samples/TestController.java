@@ -30,4 +30,11 @@ public class TestController {
         modelAndView.addObject("id", request.getAttribute("id"));
         return modelAndView;
     }
+
+    @RequestMapping(value = "/get-and-post", method = {RequestMethod.POST, RequestMethod.GET})
+    public ModelAndView multiMethod(final HttpServletRequest request, final HttpServletResponse response) {
+        final var modelAndView = new ModelAndView(new JspView(""));
+        modelAndView.addObject("id", request.getAttribute("id"));
+        return modelAndView;
+    }
 }
