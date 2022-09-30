@@ -36,15 +36,7 @@ public class UserDao {
         parameterSource.addParam(user.getPassword());
         parameterSource.addParam(user.getEmail());
 
-        try (final var conn = getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, parameterSource);
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeUpdate(sql, parameterSource);
     }
 
     public void update(final User user) {
@@ -55,21 +47,33 @@ public class UserDao {
         parameterSource.addParam(user.getEmail());
         parameterSource.addParam(user.getId());
 
-        try (final var conn = getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, parameterSource);
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeUpdate(sql, parameterSource);
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         ParameterSource parameterSource = new ParameterSource();
 
+        return executeQuery(sql, parameterSource);
+    }
+
+    public User findById(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(id);
+
+        return executeQuery(sql, parameterSource).get(0); //  TODO IndexOutOfBoundsException 대응되도록 수정 필요
+    }
+
+    public User findByAccount(final String account) {
+        final var sql = "select id, account, password, email from users where account = ?";
+        ParameterSource parameterSource = new ParameterSource();
+        parameterSource.addParam(account);
+
+        return executeQuery(sql, parameterSource).get(0);
+    }
+
+    private List<User> executeQuery(String sql, ParameterSource parameterSource) {
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, parameterSource);
@@ -81,32 +85,12 @@ public class UserDao {
         }
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        ParameterSource parameterSource = new ParameterSource();
-        parameterSource.addParam(id);
-
+    private void executeUpdate(String sql, ParameterSource parameterSource) {
         try (final var conn = getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, parameterSource);
             log.debug("query : {}", sql);
-            return query(pstmt).get(0); //  TODO IndexOutOfBoundsException 대응되도록 수정 필요
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-        ParameterSource parameterSource = new ParameterSource();
-        parameterSource.addParam(account);
-
-        try (final var conn = getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, parameterSource);
-            log.debug("query : {}", sql);
-            return query(pstmt).get(0);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
