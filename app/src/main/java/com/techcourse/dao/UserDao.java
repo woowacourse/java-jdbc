@@ -48,8 +48,8 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        jdbcTemplate.insert(
+    public int insert(final User user) {
+        return jdbcTemplate.insert(
                 "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail()
         );
