@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,7 +11,7 @@ import nextstep.jdbc.fixture.Tester;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class MultipleResultSetExtractorTest {
+class ResultSetExtractorTest {
 
     @Test
     @DisplayName("ResultSet을 입력받아 RowMapper에 정의된 콜백에 따라 객체 리스트를 반환한다")
@@ -24,7 +23,7 @@ class MultipleResultSetExtractorTest {
         when(resultSet.getString(2)).thenReturn("awesomeo", "panda");
 
         RowMapper<Tester> rowMapper = (rs, rowNum) -> new Tester(rs.getLong(1), rs.getString(2));
-        final var multipleResultSetExtractor = new MultipleResultSetExtractor<>(rowMapper);
+        final var multipleResultSetExtractor = new ResultSetExtractor<>(rowMapper);
 
         // when
         final var actual = multipleResultSetExtractor.extractData(resultSet);

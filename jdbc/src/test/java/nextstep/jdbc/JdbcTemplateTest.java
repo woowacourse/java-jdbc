@@ -89,7 +89,7 @@ class JdbcTemplateTest {
         final var sql = "SELECT id, name FROM member WHERE id=?";
         var id = 1L;
 
-        given(this.resultSet.next()).willReturn(true);
+        given(this.resultSet.next()).willReturn(true, false);
         given(this.resultSet.getLong(1)).willReturn(1L);
         given(this.resultSet.getString(2)).willReturn("awesomeo");
 
