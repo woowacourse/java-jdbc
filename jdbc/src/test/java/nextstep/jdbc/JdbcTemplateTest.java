@@ -113,7 +113,7 @@ class JdbcTemplateTest {
     @DisplayName("PreparedStatementSetter와 RowMapper를 입력받아 결과 객체 리스트를 리턴한다")
     void testQueryForListSucceeds() throws SQLException {
         // given
-        final var sql = "SELECT id, name FROM member;";
+        final var sql = "SELECT id, name FROM member";
         var id = 1L;
 
         given(this.resultSet.next()).willReturn(true, false);
