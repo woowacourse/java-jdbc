@@ -133,7 +133,30 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, account);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            log.debug("query : {}", sql);
+
+            if (resultSet.next()) {
+                return new User(resultSet.getLong(1), resultSet.getString(2), resultSet.getString(3),
+                        resultSet.getString(4));
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PreparedStatement createPreparedStatement(final Connection connection, final String sql,
+                                                      final String account)
+            throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1, account);
+        return preparedStatement;
     }
 }
