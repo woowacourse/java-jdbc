@@ -18,12 +18,8 @@ public class UserDao {
 
     private final DataSource dataSource;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.dataSource = jdbcTemplate.getDataSource();
     }
 
     public void insert(final User user) {
