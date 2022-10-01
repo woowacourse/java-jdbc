@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -90,14 +92,27 @@ public class JdbcTemplate {
 			}
 		}
 
+		public <T> List<T> getResultList(Class<T> type) {
+			try {
+				List<T> results = new ArrayList<>();
+				while (rs.next()) {
+					results.add(createResult(type));
+				}
+				return results;
+			} catch (SQLException | IllegalAccessException e) {
+				log.error(e.getMessage(), e);
+				throw new RuntimeException(e);
+			} finally {
+				close(conn, pstmt);
+			}
+		}
+
 		public <T> T getResult(Class<T> type) {
 			try {
-				Field[] fields = type.getDeclaredFields();
-				T result = newInstance(type);
 				if (rs.next()) {
-					createResult(fields, result);
+					return createResult(type);
 				}
-				return result;
+				return null;
 			} catch (SQLException | IllegalAccessException e) {
 				log.error(e.getMessage(), e);
 				throw new RuntimeException(e);
@@ -117,7 +132,9 @@ public class JdbcTemplate {
 			return result;
 		}
 
-		private <T> void createResult(Field[] fields, T result) throws IllegalAccessException, SQLException {
+		private <T> T createResult(Class<T> type) throws IllegalAccessException, SQLException {
+			Field[] fields = type.getDeclaredFields();
+			T result = newInstance(type);
 			int parameterIndex = 1;
 			for (Field field : fields) {
 				field.setAccessible(true);
@@ -129,6 +146,7 @@ public class JdbcTemplate {
 					field.set(result, rs.getString(parameterIndex++));
 				}
 			}
+			return result;
 		}
 
 	}
