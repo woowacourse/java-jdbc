@@ -1,6 +1,7 @@
 package nextstep.jdbc.core;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,13 +29,7 @@ public class JdbcTemplate {
 
         return execute(sql, (preparedStatement -> {
             var resultSet = preparedStatement.executeQuery();
-
-            var rows = new ArrayList<T>();
-            while (resultSet.next()) {
-                rows.add(rowMapper.mapRow(resultSet));
-            }
-
-            return rows;
+            return toRows(rowMapper, resultSet);
         }));
     }
 
@@ -45,14 +40,16 @@ public class JdbcTemplate {
         return execute(sql, (preparedStatement -> {
             setParams(preparedStatement, args);
             var resultSet = preparedStatement.executeQuery();
-
-            var rows = new ArrayList<T>();
-            while (resultSet.next()) {
-                rows.add(rowMapper.mapRow(resultSet));
-            }
-
-            return DataAccessUtils.singleResult(rows);
+            return DataAccessUtils.singleResult(toRows(rowMapper, resultSet));
         }));
+    }
+
+    private <T> List<T> toRows(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        var rows = new ArrayList<T>();
+        while (resultSet.next()) {
+            rows.add(rowMapper.mapRow(resultSet));
+        }
+        return rows;
     }
 
     public void update(final String sql, final Object... args) {
