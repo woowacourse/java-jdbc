@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,16 +15,16 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = jdbcTemplate.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
@@ -43,7 +42,7 @@ public class UserDao {
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = jdbcTemplate.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
@@ -62,7 +61,7 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select * from users";
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = jdbcTemplate.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -85,7 +84,7 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = jdbcTemplate.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, id);
@@ -111,7 +110,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = jdbcTemplate.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, account);
