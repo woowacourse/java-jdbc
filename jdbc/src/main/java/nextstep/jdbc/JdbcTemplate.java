@@ -54,6 +54,11 @@ public class JdbcTemplate {
         }, args);
     }
 
+    public int update(final String sql,
+                      final Object... args) {
+        return connect(sql, PreparedStatement::executeUpdate, args);
+    }
+
     private <T> T connect(final String sql,
                           final ExecuteStrategy<T> strategy,
                           final Object... args) {
