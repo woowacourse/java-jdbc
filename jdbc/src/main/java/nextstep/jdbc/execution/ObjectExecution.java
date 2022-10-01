@@ -19,9 +19,10 @@ public class ObjectExecution<T> extends AbstractExecution<T> {
         for (int i = 0; i < arguments.length; i++) {
             statement.setObject(i + 1, arguments[i]);
         }
-        ResultSet resultSet = statement.executeQuery();
-        if (resultSet.next()) {
-            return rowMapper.rowMap(resultSet, resultSet.getRow());
+        try (ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) {
+                return rowMapper.rowMap(resultSet, resultSet.getRow());
+            }
         }
         return null;
     }
