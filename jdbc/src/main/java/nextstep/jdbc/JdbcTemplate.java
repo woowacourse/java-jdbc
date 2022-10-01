@@ -1,7 +1,5 @@
 package nextstep.jdbc;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,7 +40,7 @@ public class JdbcTemplate {
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
 
-            return rowMapper.mapToObject(resultSet, ONE_OBJECT_ROW_NUM);
+            return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -56,7 +54,7 @@ public class JdbcTemplate {
             List<T> objects = new ArrayList<>();
             int rowNum = 1;
             while (resultSet.next()) {
-                objects.add(rowMapper.mapToObject(resultSet, rowNum++));
+                objects.add(rowMapper.mapRow(resultSet, rowNum++));
             }
 
             return objects;
