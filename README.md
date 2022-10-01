@@ -23,7 +23,7 @@
     - `Connection`을 이용하여 `Statement`를 얻는다.
     - 특징에 맞게 세부사항을 구현한다.
 
-- [ ] `execute`를 구현한다(insert, update) : param 값은 지정할 수 있지만 resultSet이 따로 필요없는 경우
+- [x] `execute`를 구현한다(insert, update) : param 값은 지정할 수 있지만 resultSet이 따로 필요없는 경우
     - param을 설정할 수 있어야한다.
-        - [ ] Map을 활용한 방식으로 구현해본다.
+        - [x] Map을 활용한 방식으로 구현해본다.
     - return으로는 뭘 줄까? -> 일단 return type이 필요없으므로 `void`.. 더 고민해보자

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
@@ -17,50 +18,33 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.execute(sql, Map.of(1, user.getAccount(),
+                2, user.getPassword(),
+                3, user.getEmail()));
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
-            statement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.execute(sql, Map.of(1, user.getAccount(),
+                2, user.getPassword(),
+                3, user.getEmail(),
+                4, user.getId()));
     }
 
     public List<User> findAll() {
