@@ -2,11 +2,15 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -29,11 +33,30 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(PreparedStatement preparedStatement, Object[] args) throws SQLException {
+    public <T> List<T> query(final String sql, Object[] args, RowMapper<T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setArguments(pstmt, args);
+            return mapResultSetToList(rowMapper, pstmt.executeQuery());
+        } catch (SQLException e) {
+            log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         int parameterIndex = 1;
         for (Object arg : args) {
-            preparedStatement.setObject(parameterIndex++, arg);
+            pstmt.setObject(parameterIndex++, arg);
         }
+    }
+
+    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.mapRow(rs, rs.getRow()));
+        }
+        return result;
     }
 
     public DataSource getDataSource() {
