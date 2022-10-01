@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,11 @@ class UserDaoTest {
         userDao.insert(josh);
     }
 
+    @AfterEach
+    void refresh() {
+        userDao.deleteAll();
+    }
+
     @Test
     void findAll() {
         final var users = userDao.findAll();
@@ -41,7 +47,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(gugu.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -60,7 +66,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(user.getId());
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -68,12 +74,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(gugu.getId());
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(gugu.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
