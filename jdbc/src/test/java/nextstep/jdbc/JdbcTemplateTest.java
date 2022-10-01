@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,18 +67,7 @@ class JdbcTemplateTest {
 
         // when
         final String sql = "select account, password, email from users where account = ?";
-        final String result = jdbcTemplate.query(sql, Map.of(1, "roma"),
-                rs -> {
-                    try {
-                        return String.format("%s/%s/%s",
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email"));
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-        );
+        final String result = jdbcTemplate.query(sql, getRowMapper(), "roma");
 
         // then
         assertAll(
@@ -113,18 +103,7 @@ class JdbcTemplateTest {
 
         // when
         final String sql = "select account, password, email from users";
-        final List<String> result = jdbcTemplate.queryForList(sql, Map.of(),
-                rs -> {
-                    try {
-                        return String.format("%s/%s/%s",
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email"));
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-        );
+        final List<String> result = jdbcTemplate.queryForList(sql, getRowMapper());
 
         // then
         assertAll(
@@ -135,5 +114,18 @@ class JdbcTemplateTest {
                 () -> verify(resultSet).close()
         );
 
+    }
+
+    private Function<ResultSet, String> getRowMapper() {
+        return rs -> {
+            try {
+                return String.format("%s/%s/%s",
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email"));
+            } catch (final SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

@@ -4,7 +4,6 @@ import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -12,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -28,36 +25,38 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.execute(sql, Map.of(1, user.getAccount(),
-                2, user.getPassword(),
-                3, user.getEmail()));
+        jdbcTemplate.execute(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.execute(sql, Map.of(1, user.getAccount(),
-                2, user.getPassword(),
-                3, user.getEmail(),
-                4, user.getId()));
+        jdbcTemplate.execute(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.queryForList(sql, Map.of(), getRowMapper());
+        return jdbcTemplate.queryForList(sql, getRowMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, Map.of(1, id), getRowMapper());
+        return jdbcTemplate.query(sql, getRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, Map.of(1, account), getRowMapper());
+        return jdbcTemplate.query(sql, getRowMapper(), account);
     }
 
     private static Function<ResultSet, User> getRowMapper() {

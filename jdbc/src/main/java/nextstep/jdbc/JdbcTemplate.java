@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int DEFAULT_PARAM_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -23,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final Map<Integer, Object> params) {
+    public void execute(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
@@ -35,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(final String sql, final Map<Integer, Object> params, final Function<ResultSet, T> function) {
+    public <T> T query(final String sql, final Function<ResultSet, T> function, final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -61,8 +62,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(final String sql, final Map<Integer, Object> params,
-                                    final Function<ResultSet, T> function) {
+    public <T> List<T> queryForList(final String sql, final Function<ResultSet, T> function, final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -89,10 +89,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(final PreparedStatement statement, final Map<Integer, Object> params)
+    private void setParams(final PreparedStatement statement, final Object... params)
             throws SQLException {
-        for (final Entry<Integer, Object> param : params.entrySet()) {
-            statement.setObject(param.getKey(), param.getValue());
+        int paramIndex = DEFAULT_PARAM_INDEX;
+        for (final Object param : params) {
+            statement.setObject(paramIndex++, param);
         }
     }
 }
