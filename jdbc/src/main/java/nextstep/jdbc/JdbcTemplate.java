@@ -30,7 +30,7 @@ public class JdbcTemplate {
     }
 
     private void setArguments(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        int parameterIndex = 0;
+        int parameterIndex = 1;
         for (Object arg : args) {
             preparedStatement.setObject(parameterIndex++, arg);
         }
