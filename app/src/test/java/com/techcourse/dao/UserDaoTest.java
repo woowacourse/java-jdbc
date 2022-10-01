@@ -7,25 +7,36 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class UserDaoTest {
 
     private UserDao userDao;
+
+    private User gugu;
+    private User josh;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        gugu = new User("gugu", "password", "hkkang@woowahan.com");
+        josh = new User("josh", "password", "whgusrms96@gmail.com");
+
+        userDao.insert(gugu);
+        userDao.insert(josh);
     }
 
     @Test
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertAll(
+                () -> assertThat(users.size()).isEqualTo(2),
+                () -> assertThat(users).contains(gugu),
+                () -> assertThat(users).contains(josh)
+        );
     }
 
     @Test
