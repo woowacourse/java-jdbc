@@ -4,13 +4,9 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -32,22 +28,26 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select * from users";
+
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return (User) jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
