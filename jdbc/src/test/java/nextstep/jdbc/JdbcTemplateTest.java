@@ -1,10 +1,12 @@
 package nextstep.jdbc;
 
-import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import nextstep.support.DataSourceConfig;
 import nextstep.support.DatabasePopulatorUtils;
 import nextstep.support.Member;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,30 +29,41 @@ class JdbcTemplateTest {
         String sql = "insert into member (name, age) values (?, ?)";
 
         // when & then
-        assertThatNoException().isThrownBy(
-                () -> jdbcTemplate.update(sql, new Object[]{"hello jdbc!", 10})
-        );
+        jdbcTemplate.update(sql, new Object[]{"hello jdbc!", 10});
+
+        String assertSql = "select * from member where age = 10";
+        Member member = jdbcTemplate.queryForObject(assertSql, null, MEMBER_ROW_MAPPER);
+        assertThat(member.getName()).isEqualTo("hello jdbc!");
     }
 
     @Test
     void query() {
         // given
+        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)", null);
         String sql = "select * from member";
 
-        // when & then
-        assertThatNoException().isThrownBy(
-                () -> jdbcTemplate.query(sql, MEMBER_ROW_MAPPER
-                )
-        );
+        // when
+        List<Member> members = jdbcTemplate.query(sql, MEMBER_ROW_MAPPER);
+
+        // then
+        assertThat(members).hasSize(1);
     }
 
     @Test
     void queryForObject() {
         // given
-        String sql = "select * from member where id = ?";
+        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)", null);
 
-        assertThatNoException().isThrownBy(
-                () -> jdbcTemplate.queryForObject(sql, new Object[]{1L}, MEMBER_ROW_MAPPER)
-        );
+        // when
+        String sql = "select * from member where age = ?";
+        Member member = jdbcTemplate.queryForObject(sql, new Object[]{10}, MEMBER_ROW_MAPPER);
+
+        // then
+        assertThat(member.getName()).isEqualTo("hello");
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("truncate table member", null);
     }
 }
