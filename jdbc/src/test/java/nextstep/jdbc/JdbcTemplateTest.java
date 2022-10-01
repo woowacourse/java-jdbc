@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -116,16 +115,11 @@ class JdbcTemplateTest {
 
     }
 
-    private Function<ResultSet, String> getRowMapper() {
-        return rs -> {
-            try {
-                return String.format("%s/%s/%s",
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email"));
-            } catch (final SQLException e) {
-                throw new RuntimeException(e);
-            }
-        };
+    private ResultSetFunction<ResultSet, String> getRowMapper() {
+        return rs -> String.format("%s/%s/%s",
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        );
     }
 }

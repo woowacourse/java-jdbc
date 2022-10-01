@@ -6,9 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +33,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(final String sql, final Function<ResultSet, T> function, final Object... params) {
+    public <T> T query(final String sql, final ResultSetFunction<ResultSet, T> function, final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -62,7 +59,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(final String sql, final Function<ResultSet, T> function, final Object... params) {
+    public <T> List<T> queryForList(final String sql, final ResultSetFunction<ResultSet, T> function,
+                                    final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
