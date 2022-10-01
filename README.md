@@ -4,7 +4,7 @@
 
 - [ ] UserDaoTest의 모든 테스트 케이스가 통과한다.
     - [x] insert를 완성한다
-    - [ ] update를 완성한다
+    - [x] update를 완성한다
     - [ ] findAll을 완성한다
     - [ ] findById를 완성한다
     - [ ] findByAccount를 완성한다
