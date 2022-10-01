@@ -2,9 +2,7 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -41,18 +39,6 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, Object[] arguments, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < arguments.length; i++) {
-                statement.setObject(i + 1, arguments[i]);
-            }
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.rowMap(resultSet, resultSet.getRow());
-            }
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return connector.execute(new ObjectExecution<>(sql, arguments, rowMapper));
     }
 }

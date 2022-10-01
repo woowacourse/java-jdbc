@@ -24,9 +24,4 @@ public class ListExecution<T> extends AbstractExecution<List<T>> {
         }
         return results;
     }
-
-    @Override
-    public String getSql() {
-        return sql;
-    }
 }
