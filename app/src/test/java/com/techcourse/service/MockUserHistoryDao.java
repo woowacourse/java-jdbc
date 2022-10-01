@@ -3,7 +3,7 @@ package com.techcourse.service;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import nextstep.jdbc.dao.DataAccessException;
-import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.core.JdbcTemplate;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
