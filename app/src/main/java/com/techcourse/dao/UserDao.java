@@ -26,14 +26,17 @@ public class UserDao {
     }
 
     public void save(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         log.debug("query : {}", sql);
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "UPDATE users SET password = ? WHERE account = ?";
+        jdbcTemplate.update(sql, user.getPassword(), user.getAccount());
+
+        log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
