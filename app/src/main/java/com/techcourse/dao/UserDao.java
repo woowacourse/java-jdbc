@@ -1,16 +1,10 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 import com.techcourse.domain.User;
 
@@ -18,125 +12,49 @@ import nextstep.jdbc.JdbcTemplate;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+        rs.getLong("id"),
+        rs.getString("account"),
+        rs.getString("password"),
+        rs.getString("email")
+    );
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account =?, password = ?, email = ? ";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        List<User> users = new ArrayList<>();
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery();
-        ) {
-            while (rs.next()) {
-                users.add(new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)));
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            pstmt.setLong(1, id);
-            ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            pstmt.setString(1, account);
-            ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
