@@ -1,6 +1,8 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
@@ -21,21 +23,37 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(final StatementCallback statementCallback, final Object[] objects,
-                          final ResultSetExtractor<T> resultSetExtractor) {
-        statementCallback.setPreparedSql(objects);
-        return statementCallback.doInStatement(resultSetExtractor);
+    private <T> T execute(final StatementCallback<T> statementCallback, final PreparedStatement pstmt) {
+        return statementCallback.doInStatement(pstmt);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects)
+    private <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... objects)
             throws DataAccessException {
+        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql, objects);
         try (Connection connection = dataSource.getConnection();
-             StatementCallback statementCallback = new StatementCallback(connection.prepareStatement(sql))) {
-            return execute(statementCallback, objects, new RowMapperResultSetExtractor<>(rowMapper));
+             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(connection)) {
+
+            class QueryStatementCallback implements StatementCallback<T> {
+
+                @Override
+                public T doInStatement(final PreparedStatement pstmt) {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return resultSetExtractor.extractData(resultSet);
+                    } catch (SQLException e) {
+                        throw new DataAccessException();
+                    }
+                }
+            }
+            return execute(new QueryStatementCallback(), pstmt);
         } catch (SQLException e) {
             log.error("query exception", e);
             throw new DataAccessException();
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... objects)
+            throws DataAccessException {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), objects);
     }
 
     public <T> List<T> query(final String sql, final Class<T> cls, Object... objects) throws DataAccessException {
@@ -44,14 +62,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... objects)
             throws DataAccessException {
-        try (Connection connection = dataSource.getConnection();
-             StatementCallback statementCallback = new StatementCallback(connection.prepareStatement(sql))) {
-            return DataAccessUtils.nullableSingleResult(
-                    execute(statementCallback, objects, new RowMapperResultSetExtractor<>(rowMapper)));
-        } catch (SQLException e) {
-            log.error("queryForObject exception", e);
-            throw new DataAccessException();
-        }
+        return DataAccessUtils.nullableSingleResult(query(sql, new RowMapperResultSetExtractor<>(rowMapper), objects));
     }
 
     public <T> T queryForObject(final String sql, final Class<T> cls, Object... objects) throws DataAccessException {
