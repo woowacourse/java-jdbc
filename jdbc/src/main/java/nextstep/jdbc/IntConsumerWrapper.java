@@ -13,8 +13,7 @@ public final class IntConsumerWrapper {
             try {
                 consumer.accept(i);
             } catch (Exception e) {
-                log.error("accept exception", e);
-                throw new DataAccessException();
+                throw new RuntimeException("accept exception", e);
             }
         };
     }

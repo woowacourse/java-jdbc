@@ -40,14 +40,13 @@ public class JdbcTemplate {
                     try (ResultSet resultSet = pstmt.executeQuery()) {
                         return resultSetExtractor.extractData(resultSet);
                     } catch (SQLException e) {
-                        throw new DataAccessException();
+                        throw new DataAccessException("query exception", e);
                     }
                 }
             }
             return execute(new QueryStatementCallback(), pstmt);
         } catch (SQLException e) {
-            log.error("query exception", e);
-            throw new DataAccessException();
+            throw new DataAccessException("query exception", e);
         }
     }
 
@@ -81,15 +80,13 @@ public class JdbcTemplate {
                     try {
                         return pstmt.executeUpdate();
                     } catch (SQLException e) {
-                        log.error("update Error", e);
-                        throw new DataAccessException();
+                        throw new DataAccessException("update Error", e);
                     }
                 }
             }
             return execute(new UpdateStatementCallback(), pstmt);
         } catch (SQLException e) {
-            log.error("query exception", e);
-            throw new DataAccessException();
+            throw new DataAccessException("update exception", e);
         }
     }
 }

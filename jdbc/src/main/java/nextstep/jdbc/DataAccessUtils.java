@@ -11,12 +11,10 @@ public class DataAccessUtils {
 
     public static <T> T nullableSingleResult(final List<T> results) {
         if (results.isEmpty()) {
-            log.error("Result is Empty");
-            throw new DataAccessException();
+            throw new DataAccessException("Result is Empty");
         }
         if (results.size() > 1) {
-            log.error("Result size is not only one");
-            throw new DataAccessException();
+            throw new DataAccessException("Result size is not only one");
         }
         return results.get(0);
     }
