@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.lang.Nullable;
 
-public class StatementCallback implements AutoCloseable {
+public abstract class StatementCallback implements AutoCloseable {
 
     private PreparedStatement pstmt;
 
@@ -23,12 +23,10 @@ public class StatementCallback implements AutoCloseable {
                 .forEach(IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, objects[index])));
     }
 
-    public <T> T doInStatement(final ResultSetExtractor<T> resultSetExtractor) {
-        try (ResultSet resultSet = pstmt.executeQuery()) {
-            return resultSetExtractor.extractData(resultSet);
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
+    public abstract <T> T doInStatement(final ResultSetExtractor<T> resultSetExtractor);
+
+    protected PreparedStatement getPstmt() {
+        return pstmt;
     }
 
     @Override

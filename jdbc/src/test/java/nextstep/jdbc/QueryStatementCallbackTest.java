@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 
-class StatementCallbackTest {
+class QueryStatementCallbackTest {
 
     private StatementCallback statementCallback;
     private PreparedStatement preparedStatement;
@@ -23,7 +23,7 @@ class StatementCallbackTest {
     void setUp() throws SQLException {
         this.preparedStatement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
-        this.statementCallback = new StatementCallback(preparedStatement);
+        this.statementCallback = new QueryStatementCallback(preparedStatement);
 
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(preparedStatement.executeQuery(anyString())).willReturn(resultSet);
