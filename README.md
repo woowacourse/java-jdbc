@@ -24,5 +24,4 @@
 
 - 리팩터링은 UserDaoTest를 활용해 진행한다.
 - 중복을 제거하기 위한 라이브러리는 JdbcTemplate 클래스에 구현한다.
-- DataSource는 DataSourceConfig 클래스의 getInstance()
-  메서드를 호출하면 된다.
+- DataSource는 DataSourceConfig 클래스의 getInstance() 메서드를 호출하면 된다.
