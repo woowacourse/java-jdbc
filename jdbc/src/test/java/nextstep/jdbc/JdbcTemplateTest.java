@@ -10,6 +10,10 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private static final RowMapper<Member> MEMBER_ROW_MAPPER = (resultSet, rowNum) -> new Member(
+            resultSet.getLong("id"),
+            resultSet.getString("name"),
+            resultSet.getInt("age"));
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     @BeforeEach
@@ -35,10 +39,7 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatNoException().isThrownBy(
-                () -> jdbcTemplate.query(sql, ((resultSet, rowNum) -> new Member(
-                        resultSet.getLong("id"),
-                        resultSet.getString("name"),
-                        resultSet.getInt("age")))
+                () -> jdbcTemplate.query(sql, MEMBER_ROW_MAPPER
                 )
         );
     }
@@ -46,5 +47,10 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() {
         // given
+        String sql = "select * from member where id = ?";
+
+        assertThatNoException().isThrownBy(
+                () -> jdbcTemplate.queryForObject(sql, new Object[]{1L}, MEMBER_ROW_MAPPER)
+        );
     }
 }
