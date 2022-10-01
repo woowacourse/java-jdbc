@@ -68,4 +68,28 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final Class<T> cls, Object... objects) throws DataAccessException {
         return queryForObject(sql, new SingleColumnRowMapper<>(cls), objects);
     }
+
+    public int update(final String sql, final Object... objects) throws DataAccessException {
+        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql, objects);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(connection)) {
+
+            class UpdateStatementCallback implements StatementCallback<Integer> {
+
+                @Override
+                public Integer doInStatement(final PreparedStatement pstmt) {
+                    try {
+                        return pstmt.executeUpdate();
+                    } catch (SQLException e) {
+                        log.error("update Error", e);
+                        throw new DataAccessException();
+                    }
+                }
+            }
+            return execute(new UpdateStatementCallback(), pstmt);
+        } catch (SQLException e) {
+            log.error("query exception", e);
+            throw new DataAccessException();
+        }
+    }
 }

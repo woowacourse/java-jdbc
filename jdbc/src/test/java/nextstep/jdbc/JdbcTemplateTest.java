@@ -17,17 +17,16 @@ class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
     private Connection connection;
-    private DataSource dataSource;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
 
     @BeforeEach
     void setUp() throws Exception {
         this.connection = mock(Connection.class);
-        this.dataSource = mock(DataSource.class);
         this.preparedStatement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
 
+        DataSource dataSource = mock(DataSource.class);
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
         given(preparedStatement.executeQuery()).willReturn(resultSet);
@@ -39,17 +38,19 @@ class JdbcTemplateTest {
     void closeWhenQuery() throws SQLException {
         jdbcTemplate.query("SELECT name FROM MEMBER", String.class);
 
+        verify(preparedStatement).executeQuery();
         verify(connection).close();
         verify(preparedStatement).close();
         verify(resultSet).close();
     }
 
     @Test
-    void closeWhenQueryForObject() throws SQLException {
-        jdbcTemplate.query("SELECT name FROM MEMBER WHERE id = ?", String.class, 1);
+    void closeWhenUpdate() throws SQLException {
+        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)", "huni", "12",
+                "e@email.com");
 
+        verify(preparedStatement).executeUpdate();
         verify(connection).close();
         verify(preparedStatement).close();
-        verify(resultSet).close();
     }
 }
