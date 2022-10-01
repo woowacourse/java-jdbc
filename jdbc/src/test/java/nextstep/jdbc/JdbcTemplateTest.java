@@ -28,6 +28,21 @@ class JdbcTemplateTest {
     private final ResultSet resultSet = mock(ResultSet.class);
 
     @Test
+    void insert() throws SQLException {
+        final String sql = "";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.getGeneratedKeys()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getLong(1)).thenReturn(1L);
+
+        final Long createdId = jdbcTemplate.insert(conn -> conn.prepareStatement(sql));
+
+        assertThat(createdId).isEqualTo(createdId);
+    }
+
+    @Test
     void query() throws SQLException {
         final String sql = "";
 
