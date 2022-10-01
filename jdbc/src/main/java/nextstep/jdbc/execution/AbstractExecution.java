@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.execution;
 
 public abstract class AbstractExecution<T> implements Execution<T> {
 

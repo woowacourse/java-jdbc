@@ -1,8 +1,9 @@
-package nextstep.jdbc;
+package nextstep.jdbc.execution;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import nextstep.jdbc.RowMapper;
 
 public class ObjectExecution<T> extends AbstractExecution<T> {
 
