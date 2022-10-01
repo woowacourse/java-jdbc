@@ -15,9 +15,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final JdbcConnector connector;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.connector = new JdbcConnector(dataSource);
     }
 
     public void update(String sql, Object[] objects) {
@@ -35,17 +37,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = statement.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.rowMap(resultSet, resultSet.getRow()));
-            }
-            return results;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return connector.execute(new ListExecution<>(sql, rowMapper));
     }
 
     public <T> T queryForObject(String sql, Object[] arguments, RowMapper<T> rowMapper) {
