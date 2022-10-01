@@ -2,4 +2,4 @@
 
 ## 1단계
 - JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당한다.
-- 개발자는 SQL 쿼리 작성 및 조회 결과를 추출하는 것만 집중할 수 있도록 JDBC 라이브러리를 구현한다.
+  - DB connection 및 prepareStatement 처리를 JdbcTemplate에서 진행한다.
