@@ -21,7 +21,7 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.execute(sql,
+        jdbcTemplate.update(sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail());
@@ -30,7 +30,7 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.execute(sql,
+        jdbcTemplate.update(sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
@@ -46,13 +46,13 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, getRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, getRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, getRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, getRowMapper(), account);
     }
 
     private RowMapper<User> getRowMapper() {

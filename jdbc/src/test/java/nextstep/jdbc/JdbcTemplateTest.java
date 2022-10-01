@@ -40,7 +40,7 @@ class JdbcTemplateTest {
     void execute() {
         // given & when
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql,
+        jdbcTemplate.update(sql,
                 Map.of(1, "account", 2, "password", 3, "email"));
 
         // then
@@ -66,7 +66,7 @@ class JdbcTemplateTest {
 
         // when
         final String sql = "select account, password, email from users where account = ?";
-        final String result = jdbcTemplate.query(sql, getRowMapper(), "roma");
+        final String result = jdbcTemplate.queryForObject(sql, getRowMapper(), "roma");
 
         // then
         assertAll(

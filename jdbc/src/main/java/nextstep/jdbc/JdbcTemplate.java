@@ -7,12 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int DEFAULT_PARAM_INDEX = 1;
 
     private final DataSource dataSource;
@@ -21,72 +18,62 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final Object... params) {
+    public void update(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-
             setParams(statement, params);
             statement.execute();
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        ResultSet resultSet = null;
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-
             setParams(statement, params);
-            resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                return rowMapper.map(resultSet);
-            }
-
-            throw new DataAccessException();
+            return executeQuery(rowMapper, statement);
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (final SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-
             setParams(statement, params);
-            resultSet = statement.executeQuery();
-
-            final List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
-            }
-
-            return result;
+            return executeQueryForList(rowMapper, statement);
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (final SQLException ignored) {
-            }
         }
     }
 
-    private void setParams(final PreparedStatement statement, final Object... params)
+    private <T> T executeQuery(final RowMapper<T> rowMapper, final PreparedStatement statement) {
+        T result = null;
+        try (final ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) {
+                result = rowMapper.map(resultSet);
+            }
+        } catch (final SQLException e) {
+            throw new DataAccessException("query exception!", e);
+        }
+        return result;
+    }
+
+    private static <T> List<T> executeQueryForList(final RowMapper<T> rowMapper, final PreparedStatement statement)
+            throws SQLException {
+        final List<T> result = new ArrayList<>();
+        try (final ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                result.add(rowMapper.map(resultSet));
+            }
+        } catch (final SQLException e) {
+            throw new DataAccessException("query exception!", e);
+        }
+        return result;
+    }
+
+    private void setParams(final PreparedStatement statement, final Object[] params)
             throws SQLException {
         int paramIndex = DEFAULT_PARAM_INDEX;
         for (final Object param : params) {
