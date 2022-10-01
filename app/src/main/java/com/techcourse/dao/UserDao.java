@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
@@ -75,66 +76,26 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        ResultSet resultSet = null;
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, id);
-            resultSet = statement.executeQuery();
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-
-            return null;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-        }
+        return jdbcTemplate.query(sql, Map.of(1, id), getRowMapper());
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        ResultSet resultSet = null;
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        return jdbcTemplate.query(sql, Map.of(1, account), getRowMapper());
+    }
 
-            statement.setString(1, account);
-            resultSet = statement.executeQuery();
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-
-            return null;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
+    private static Function<ResultSet, User> getRowMapper() {
+        return rs -> {
             try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (final SQLException ignored) {
+                return new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email"));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-        }
+        };
     }
 }

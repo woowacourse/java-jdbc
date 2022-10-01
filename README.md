@@ -22,8 +22,21 @@
     - `DataSource`를 이용하여 `Connection`을 연결한다.
     - `Connection`을 이용하여 `Statement`를 얻는다.
     - 특징에 맞게 세부사항을 구현한다.
+    - 작업을 마치면 리소스들을 `close` 한다.
 
 - [x] `execute`를 구현한다(insert, update) : param 값은 지정할 수 있지만 resultSet이 따로 필요없는 경우
     - param을 설정할 수 있어야한다.
         - [x] Map을 활용한 방식으로 구현해본다.
     - return으로는 뭘 줄까? -> 일단 return type이 필요없으므로 `void`.. 더 고민해보자
+- [x] `query`를 구현한다.(findById, findByAccount) : param 값을 지정받고, 조회 결과를 반환하는 경우
+    - param을 설정할 수 있어야한다.
+        - [x] execute와 마찬가지로 구현해본다. ( Map 버전 )
+    - `resultSet`은 statement가 close되면 null로 바뀌게 된다.
+        - 이를 해결하기 위해서는?
+            - 내부에서 resultSet에 대한 처리를 마친 후에 반환한다.
+            - resultSet을 내부적으로 처리해서 반환한다.
+    - [x] Functional interface를 활용한다.
+
+**로직 개선안**
+
+- [ ] 함수형 인터페이스를 바로 쓰면 예외처리를 해야하는 문제를 해결한다.
