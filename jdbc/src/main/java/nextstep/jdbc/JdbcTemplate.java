@@ -1,12 +1,10 @@
 package nextstep.jdbc;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.apache.commons.lang3.ObjectUtils.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
@@ -35,6 +33,23 @@ public class JdbcTemplate {
                 return result.get(0);
             } catch (NullPointerException e) {
                 return null;
+            }
+        }, args);
+    }
+
+    public <T> List<T> queryForList(final String sql,
+                                    final RowMapper<T> rowMapper,
+                                    final Object... args) {
+        return connect(sql, pstmt -> {
+            try (final var resultSet = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                for (int i = 0; resultSet.next(); i++) {
+                    result.add(rowMapper.mapRow(resultSet, i));
+                }
+
+                return result;
+            } catch (NullPointerException e) {
+                return new ArrayList<>();
             }
         }, args);
     }
