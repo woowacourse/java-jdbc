@@ -46,20 +46,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
 
-        return jdbcTemplate.query(sql, new Object[0], USER_ROW_MAPPER);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        Object[] params = {id};
 
-        return jdbcTemplate.queryForObject(sql, params, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        Object[] params = {account};
 
-        return jdbcTemplate.queryForObject(sql, params, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }

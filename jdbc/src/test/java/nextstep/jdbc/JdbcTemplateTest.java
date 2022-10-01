@@ -43,10 +43,10 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.update(sql)).isInstanceOf(DataAccessException.class),
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, new Object[0], (rs1, rowNum) -> "dummy"))
+                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, (rs1, rowNum) -> "dummy"))
                         .isInstanceOf(DataAccessException.class),
                 () -> assertThatThrownBy(
-                        () -> jdbcTemplate.queryForObject(sql, new Object[0], (rs1, rowNum) -> "dummy"))
+                        () -> jdbcTemplate.queryForObject(sql, (rs1, rowNum) -> "dummy"))
                         .isInstanceOf(DataAccessException.class)
         );
     }
@@ -76,7 +76,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        List<Object> result = jdbcTemplate.query(sql, new Object[0], ((rs1, rowNum) -> "dummy"));
+        List<Object> result = jdbcTemplate.query(sql, ((rs1, rowNum) -> "dummy"));
 
         assertAll(
                 () -> assertThat(result).isEmpty(),
@@ -100,7 +100,7 @@ class JdbcTemplateTest {
                 .beforeFirst();
         when(rs.next()).thenReturn(true);
 
-        Object result = jdbcTemplate.queryForObject(sql, new Object[0], ((rs1, rowNum) -> "dummy"));
+        Object result = jdbcTemplate.queryForObject(sql, ((rs1, rowNum) -> "dummy"));
 
         assertAll(
                 () -> assertThat(result).isNotNull(),
@@ -128,7 +128,7 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(
-                        () -> jdbcTemplate.queryForObject(sql, new Object[0], (rs1, rowNum) -> "dummy"))
+                        () -> jdbcTemplate.queryForObject(sql, (rs1, rowNum) -> "dummy"))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(dataSource).getConnection(),
                 () -> verify(conn).prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY),
