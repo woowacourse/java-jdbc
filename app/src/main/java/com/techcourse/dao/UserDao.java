@@ -45,7 +45,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        final List<User> users = jdbcTemplate.query(sql, (rs, rowNum) ->
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
                         new User(
                                 rs.getLong("id"),
                                 rs.getString("account"),
@@ -53,25 +53,17 @@ public class UserDao {
                                 rs.getString("email")
                         ),
                 id);
-
-        return users.stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("조건에 맞는 결과가 DB에 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
 
-        final List<User> users = jdbcTemplate.query(sql, (rs, rowNum) ->
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
                         new User(
                                 rs.getLong("id"),
                                 rs.getString("account"),
                                 rs.getString("password"),
                                 rs.getString("email")
                         ), account);
-
-        return users.stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("조건에 맞는 결과가 DB에 없습니다."));
     }
 }

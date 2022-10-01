@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -14,6 +15,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 class JdbcTemplateTest {
 
@@ -65,5 +67,16 @@ class JdbcTemplateTest {
                 (rs, rowNum) -> any(), 1L);
 
         verify(preparedStatement).executeQuery();
+    }
+
+    @DisplayName("queryForObject로 검색했을 때, 검색 결과가 1이 아니면 예외가 발생한다.")
+    @Test
+    void exceptionQueryForObjectIfResultSizeIsNotOne() throws SQLException {
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+
+        assertThatThrownBy(() ->
+                jdbcTemplate.queryForObject("SELECT id, account, password, email FROM users WHERE id = ?",
+                        (rs, rowNum) -> any(), 1L))
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }
