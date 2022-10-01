@@ -73,4 +73,8 @@ public class User {
     public int hashCode() {
         return Objects.hash(account, password, email);
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }
