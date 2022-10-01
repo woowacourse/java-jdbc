@@ -24,7 +24,8 @@ public class JdbcTemplate {
             setArguments(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
+            throw new DataAccessException(e);
         }
     }
 
