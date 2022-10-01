@@ -12,7 +12,6 @@ import org.springframework.jdbc.core.RowMapper;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int PREPARED_STATEMENT_START_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -66,12 +65,12 @@ public class JdbcTemplate {
             final var connection = dataSource.getConnection();
             final var preparedStatement = connection.prepareStatement(sql)) {
 
-            for (int i = PREPARED_STATEMENT_START_INDEX; i < args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
             }
             return strategy.execute(preparedStatement);
         } catch (SQLException e) {
-            log.error("Not Data Access : {}", e.getMessage());
+            log.error("Not Connect : {}", e.getMessage());
             throw new DataAccessException(e);
         }
     }
