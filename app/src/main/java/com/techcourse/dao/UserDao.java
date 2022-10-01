@@ -56,11 +56,22 @@ public class UserDao {
 
         return users.stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException(""));
+                .orElseThrow(() -> new RuntimeException("조건에 맞는 결과가 DB에 없습니다."));
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
+
+        final List<User> users = jdbcTemplate.query(sql, (rs, rowNum) ->
+                        new User(
+                                rs.getLong("id"),
+                                rs.getString("account"),
+                                rs.getString("password"),
+                                rs.getString("email")
+                        ), account);
+
+        return users.stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("조건에 맞는 결과가 DB에 없습니다."));
     }
 }
