@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,25 +41,21 @@ public class UserDao {
         jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()});
     }
 
+
+
     public List<User> findAll() {
         String sql = "SELECT * from users";
+        RowMapper<User> rowMapper = getUserRowMapper();
+        return jdbcTemplate.query(sql, rowMapper);
+    }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            List<User> users = new ArrayList<>();
-            while (resultSet.next()) {
-                users.add(new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
-            }
-            return users;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    private static RowMapper<User> getUserRowMapper() {
+        return (resultSet, rowNum) -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
     }
 
     public User findById(final Long id) {
