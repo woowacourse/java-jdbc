@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.ArrayList;
+import java.util.Collections;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,8 +89,41 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select * from users";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+
+        try {
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            List<User> users = new ArrayList<>();
+            while (resultSet.next()) {
+                long id = resultSet.getLong("id");
+                String account = resultSet.getString("account");
+                String password = resultSet.getString("password");
+                String email = resultSet.getString("email");
+                users.add(new User(id, account, password, email));
+            }
+            return users;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (preparedStatement != null) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException ignored) {}
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException ignored) {}
+            }
+        }
+
     }
 
     public User findById(final Long id) {
