@@ -48,6 +48,23 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParamsToStatement(preparedStatement, params);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<T> objects = new ArrayList<>();
+            int rowNum = 1;
+            while (resultSet.next()) {
+                objects.add(rowMapper.mapToObject(resultSet, rowNum++));
+            }
+
+            return objects;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void setParamsToStatement(PreparedStatement preparedStatement, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             preparedStatement.setObject(i + 1, params[i]);
