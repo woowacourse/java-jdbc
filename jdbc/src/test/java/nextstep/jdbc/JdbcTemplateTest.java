@@ -115,7 +115,7 @@ class JdbcTemplateTest {
 
     }
 
-    private ResultSetFunction<ResultSet, String> getRowMapper() {
+    private RowMapper<String> getRowMapper() {
         return rs -> String.format("%s/%s/%s",
                 rs.getString("account"),
                 rs.getString("password"),

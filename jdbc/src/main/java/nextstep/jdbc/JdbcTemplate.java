@@ -33,7 +33,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(final String sql, final ResultSetFunction<ResultSet, T> function, final Object... params) {
+    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -42,7 +42,7 @@ public class JdbcTemplate {
             resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
-                return function.apply(resultSet);
+                return rowMapper.map(resultSet);
             }
 
             throw new DataAccessException();
@@ -59,8 +59,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(final String sql, final ResultSetFunction<ResultSet, T> function,
-                                    final Object... params) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -70,7 +69,7 @@ public class JdbcTemplate {
 
             final List<T> result = new ArrayList<>();
             while (resultSet.next()) {
-                result.add(function.apply(resultSet));
+                result.add(rowMapper.map(resultSet));
             }
 
             return result;

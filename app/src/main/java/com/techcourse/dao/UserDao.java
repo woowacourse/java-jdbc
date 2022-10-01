@@ -1,11 +1,10 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.ResultSetFunction;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
@@ -56,7 +55,7 @@ public class UserDao {
         return jdbcTemplate.query(sql, getRowMapper(), account);
     }
 
-    private ResultSetFunction<ResultSet, User> getRowMapper() {
+    private RowMapper<User> getRowMapper() {
         return rs -> new User(
                 rs.getLong("id"),
                 rs.getString("account"),
