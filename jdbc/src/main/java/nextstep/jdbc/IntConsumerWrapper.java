@@ -18,4 +18,7 @@ public final class IntConsumerWrapper {
             }
         };
     }
+
+    private IntConsumerWrapper() {
+    }
 }

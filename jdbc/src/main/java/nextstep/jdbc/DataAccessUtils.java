@@ -20,4 +20,7 @@ public class DataAccessUtils {
         }
         return results.get(0);
     }
+
+    private DataAccessUtils() {
+    }
 }
