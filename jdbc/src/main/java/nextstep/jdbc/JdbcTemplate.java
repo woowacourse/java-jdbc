@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -44,6 +46,8 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return function.apply(resultSet);
             }
+
+            throw new DataAccessException();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -55,7 +59,34 @@ public class JdbcTemplate {
             } catch (final SQLException ignored) {
             }
         }
-        return null;
+    }
+
+    public <T> List<T> queryForList(final String sql, final Map<Integer, Object> params,
+                                    final Function<ResultSet, T> function) {
+        ResultSet resultSet = null;
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            setParams(statement, params);
+            resultSet = statement.executeQuery();
+
+            final List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(function.apply(resultSet));
+            }
+
+            return result;
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch (final SQLException ignored) {
+            }
+        }
     }
 
     private void setParams(final PreparedStatement statement, final Map<Integer, Object> params)

@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -10,9 +11,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -80,12 +81,59 @@ class JdbcTemplateTest {
 
         // then
         assertAll(
-                () -> Assertions.assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
+                () -> assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
                 () -> verify(statement).setObject(1, "roma"),
                 () -> verify(statement).executeQuery(),
                 () -> verify(connection).close(),
                 () -> verify(statement).close(),
                 () -> verify(resultSet).close()
         );
+    }
+
+    @Test
+    @DisplayName("queryForList 메서드는 주어진 sql문과 param Map을 이용해 쿼리를 실행하고 주어진 function에 따른 객체의 리스트를 반환한다.")
+    void queryForList() throws SQLException {
+        // given
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        given(statement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next())
+                .willReturn(true)
+                .willReturn(true)
+                .willReturn(false);
+        given(resultSet.getString("account"))
+                .willReturn("roma")
+                .willReturn("jason");
+        given(resultSet.getString("password"))
+                .willReturn("1234")
+                .willReturn("4321");
+        given(resultSet.getString("email"))
+                .willReturn("roma@service.apply")
+                .willReturn("jason@service.apply");
+
+        // when
+        final String sql = "select account, password, email from users";
+        final List<String> result = jdbcTemplate.queryForList(sql, Map.of(),
+                rs -> {
+                    try {
+                        return String.format("%s/%s/%s",
+                                rs.getString("account"),
+                                rs.getString("password"),
+                                rs.getString("email"));
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+
+        // then
+        assertAll(
+                () -> assertThat(result).contains("roma/1234/roma@service.apply", "jason/4321/jason@service.apply"),
+                () -> verify(statement).executeQuery(),
+                () -> verify(connection).close(),
+                () -> verify(statement).close(),
+                () -> verify(resultSet).close()
+        );
+
     }
 }

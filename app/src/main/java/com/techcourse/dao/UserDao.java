@@ -1,11 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -18,16 +15,13 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -51,26 +45,7 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
-             final ResultSet resultSet = statement.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            final List<User> users = new ArrayList<>();
-            if (resultSet.next()) {
-                final User selectedOne = new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-                users.add(selectedOne);
-            }
-            return users;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForList(sql, Map.of(), getRowMapper());
     }
 
     public User findById(final Long id) {
@@ -93,7 +68,7 @@ public class UserDao {
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email"));
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 throw new RuntimeException(e);
             }
         };

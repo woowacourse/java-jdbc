@@ -28,7 +28,7 @@
     - param을 설정할 수 있어야한다.
         - [x] Map을 활용한 방식으로 구현해본다.
     - return으로는 뭘 줄까? -> 일단 return type이 필요없으므로 `void`.. 더 고민해보자
-- [x] `query`를 구현한다.(findById, findByAccount) : param 값을 지정받고, 조회 결과를 반환하는 경우
+- [x] `query`를 구현한다.(findById, findByAccount) : param 값을 지정받고, 조회 결과를 반환하는 경우 ( 단건조회 )
     - param을 설정할 수 있어야한다.
         - [x] execute와 마찬가지로 구현해본다. ( Map 버전 )
     - `resultSet`은 statement가 close되면 null로 바뀌게 된다.
@@ -36,7 +36,14 @@
             - 내부에서 resultSet에 대한 처리를 마친 후에 반환한다.
             - resultSet을 내부적으로 처리해서 반환한다.
     - [x] Functional interface를 활용한다.
+- [x] `queryForList`를 구현한다.(findAll) : 조회 결과로 리스트를 반환하는 경우
+    - param을 설정할 수 있어야하지만 findAll에서는 필요없다.
+        - [x] 일단 Map 버전으로 구현해본다.
+    - [x] List 형식으로 반환하도록 구현한다.
 
-**로직 개선안**
+**리팩토링 포인트**
 
 - [ ] 함수형 인터페이스를 바로 쓰면 예외처리를 해야하는 문제를 해결한다.
+- [ ] param이 필요없는 경우 map에 빈 맵을 주는 것을 개선한다.
+- [ ] 예외를 처리한다.
+  - [ ] `query`의 결과가 하나가 아닌 경우 
