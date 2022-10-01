@@ -29,13 +29,27 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             log.debug("query : {}", sql);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    Class<User> userClass = User.class;
+                    Field id = userClass.getDeclaredField("id");
+                    id.setAccessible(true);
+                    id.set(user, rs.getLong(1));
+                }
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
