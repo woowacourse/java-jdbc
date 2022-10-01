@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.execution.support.ArgumentsSetter;
 
 public class ObjectExecution<T> extends AbstractExecution<T> {
 
@@ -16,9 +17,8 @@ public class ObjectExecution<T> extends AbstractExecution<T> {
 
     @Override
     public T execute(PreparedStatement statement) throws SQLException {
-        for (int i = 0; i < arguments.length; i++) {
-            statement.setObject(i + 1, arguments[i]);
-        }
+        ArgumentsSetter.setArguments(statement, arguments);
+
         try (ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return rowMapper.rowMap(resultSet, resultSet.getRow());

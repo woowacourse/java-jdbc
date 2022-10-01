@@ -2,6 +2,7 @@ package nextstep.jdbc.execution;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import nextstep.jdbc.execution.support.ArgumentsSetter;
 
 public class UpdateExecution extends AbstractExecution<Void> {
 
@@ -11,9 +12,7 @@ public class UpdateExecution extends AbstractExecution<Void> {
 
     @Override
     public Void execute(PreparedStatement statement) throws SQLException {
-        for (int i = 0; i < arguments.length; i++) {
-            statement.setObject(i + 1, arguments[i]);
-        }
+        ArgumentsSetter.setArguments(statement, arguments);
         statement.executeUpdate();
         return null;
     }
