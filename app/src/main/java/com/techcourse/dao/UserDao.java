@@ -31,7 +31,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        var sql = "UPDATE users SET account = ?, password = ?, email = ? where id = ?";
+        var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
