@@ -20,7 +20,7 @@ public class StatementCallback implements AutoCloseable {
             return;
         }
         IntStream.range(0, objects.length)
-                .forEach(IntConsumerWrapper.accept(index -> pstmt.setObject(index, objects[index])));
+                .forEach(IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, objects[index])));
     }
 
     public <T> T doInStatement(final ResultSetExtractor<T> resultSetExtractor) {

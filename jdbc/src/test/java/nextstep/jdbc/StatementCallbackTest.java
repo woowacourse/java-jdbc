@@ -32,9 +32,9 @@ class StatementCallbackTest {
     @Test
     void setPreparedStatement() throws SQLException {
         statementCallback.setPreparedSql(1, 2, 3);
-        verify(preparedStatement).setObject(0, 1);
-        verify(preparedStatement).setObject(1, 2);
-        verify(preparedStatement).setObject(2, 3);
+        verify(preparedStatement).setObject(1, 1);
+        verify(preparedStatement).setObject(2, 2);
+        verify(preparedStatement).setObject(3, 3);
     }
 
     @Test
