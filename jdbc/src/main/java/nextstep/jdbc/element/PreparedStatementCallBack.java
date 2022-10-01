@@ -2,9 +2,8 @@ package nextstep.jdbc.element;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.List;
 
 @FunctionalInterface
-public interface SqlSetter {
+public interface PreparedStatementCallBack {
     PreparedStatement execute(PreparedStatement stmt, String sql, Object[] args) throws SQLException;
 }

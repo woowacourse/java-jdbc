@@ -18,10 +18,10 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T executeOrThrow(String sql, DataAccessor<T> dataAccessor) {
+    public <T> T executeOrThrow(String sql, DataAccessCallBack<T> dataAccessCallBack) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            return dataAccessor.execute(stmt);
+            return dataAccessCallBack.execute(stmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);

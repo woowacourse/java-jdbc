@@ -6,12 +6,12 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.element.JdbcExecutor;
 import nextstep.jdbc.element.RowMapper;
-import nextstep.jdbc.element.SqlSetter;
-import nextstep.jdbc.element.SqlSetterImpl;
+import nextstep.jdbc.element.PreparedStatementCallBack;
+import nextstep.jdbc.element.PreparedStatementCallBackImpl;
 
 public class JdbcTemplate {
 
-    private static final SqlSetter SQL_SETTER = new SqlSetterImpl();
+    private static final PreparedStatementCallBack STATEMENT_CALL_BACK = new PreparedStatementCallBackImpl();
 
     private final JdbcExecutor jdbcExecutor;
 
@@ -21,7 +21,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = SQL_SETTER.execute(stmt, sql, args);
+            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             try (final ResultSet rs = statement.executeQuery()) {
                 List<T> result = new LinkedList<>();
                 while (rs.next()) {
@@ -34,7 +34,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = SQL_SETTER.execute(stmt, sql, args);
+            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             try (final ResultSet rs = statement.executeQuery()) {
                 rs.next();
                 return rowMapper.mapRow(rs);
@@ -44,7 +44,7 @@ public class JdbcTemplate {
 
     public Integer executeUpdate(String sql, Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = SQL_SETTER.execute(stmt, sql, args);
+            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             return statement.executeUpdate();
         });
     }
