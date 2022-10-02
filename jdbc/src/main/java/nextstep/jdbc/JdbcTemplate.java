@@ -41,7 +41,18 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
             setArgsToPreparedStatement(preparedStatement, args);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            return executeGetObjectQuery(rowMapper, preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
+                                               final PreparedStatement preparedStatement) {
+        try (
+                ResultSet resultSet = preparedStatement.executeQuery()
+        ) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
@@ -59,8 +70,18 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
             setArgsToPreparedStatement(preparedStatement, args);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            return executeGetListQuery(rowMapper, preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 
+    private static <T> ArrayList<T> executeGetListQuery(final RowMapper<T> rowMapper,
+                                                        final PreparedStatement preparedStatement) {
+        try (
+                ResultSet resultSet = preparedStatement.executeQuery()
+        ) {
             ArrayList<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
