@@ -9,10 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.RowMapperResultSetExtractor;
-import org.springframework.lang.Nullable;
 
 public class JdbcTemplate {
 
@@ -41,12 +38,13 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
+            try (rs) {
+                log.debug("query : {}", sql);
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs, rs.getRow());
+                }
+                return null;
             }
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -61,8 +59,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            ResultSet rs = pstmt.executeQuery();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery();) {
 
             log.debug("query : {}", sql);
             return extractData(rs, rowMapper);

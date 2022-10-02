@@ -15,6 +15,10 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    static RowMapper<User> userMapper = (rs, rowNum) -> new User( rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -43,11 +47,6 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql, userMapper, id);
     }
-
-    static RowMapper<User> userMapper = (rs, rowNum) -> new User( rs.getLong("id"),
-            rs.getString("account"),
-            rs.getString("password"),
-            rs.getString("email"));
 
     public User findByAccount(final String account) {
         final var sql  = "select id, account, password, email from users where account = ?";
