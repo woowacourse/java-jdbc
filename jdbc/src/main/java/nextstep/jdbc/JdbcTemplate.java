@@ -9,7 +9,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
 
 public class JdbcTemplate {
 
@@ -24,7 +23,6 @@ public class JdbcTemplate {
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             setArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
