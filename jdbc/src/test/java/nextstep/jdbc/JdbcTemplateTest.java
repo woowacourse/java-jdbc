@@ -19,21 +19,6 @@ import org.springframework.jdbc.core.RowMapper;
 
 class JdbcTemplateTest {
 
-    @DisplayName("JdbcTemplate 이 연결된 connection을 반환해줄 수 있다.")
-    @Test
-    void getConnection() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-
-        when(dataSource.getConnection()).thenReturn(connection);
-
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final Connection gottenConnection = jdbcTemplate.getConnection();
-
-        assertThat(gottenConnection).isEqualTo(connection);
-        verify(dataSource).getConnection();
-    }
-
     @DisplayName("인자와 함께 query 메소드를 호출하여 예외없이 조회 결과를 반환한다.")
     @Test
     void queryWithArgs() throws SQLException {

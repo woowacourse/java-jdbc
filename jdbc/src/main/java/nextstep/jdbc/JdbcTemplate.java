@@ -23,10 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
