@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -62,6 +63,17 @@ class JdbcTemplateTest {
         final String selectSql = "select * from users where id = ?";
         final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 1L);
         assertThat(user.getUsername()).isEqualTo("east");
+    }
+
+    @Test
+    void update_Delete() {
+        final String sql = "delete from users where id = ?";
+
+        jdbcTemplate.update(sql, 1L);
+
+        final String selectSql = "select * from users where id = ?";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(selectSql, User.class, 1L))
+                .isInstanceOf(RuntimeException.class);
     }
 
     static class User {
