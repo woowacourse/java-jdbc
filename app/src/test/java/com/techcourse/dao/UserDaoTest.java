@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,18 +19,14 @@ class UserDaoTest {
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var gugu = new User("gugu", "password", "hkkang@woowahan.com");
-        final var lala = new User("lala", "password", "lala@woowahan.com");
-        final var skrr = new User("skrr", "password", "skrr@woowahan.com");
         userDao.insert(gugu);
-        userDao.insert(lala);
-        userDao.insert(skrr);
     }
 
     @Test
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).hasSize(3);
+        assertThat(users).isNotEmpty();
     }
 
     @Test
