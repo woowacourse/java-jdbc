@@ -2,6 +2,11 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,17 +18,25 @@ import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
+    private DataSource dataSource;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        final var dataSource = DataSourceConfig.getInstance();
+        this.dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
         final var jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void setDown() {
+        execute("TRUNCATE TABLE users");
+        execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1;");
     }
 
     @Test
@@ -70,5 +83,15 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    private void execute(final String query) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(query)
+        ) {
+            pstmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
