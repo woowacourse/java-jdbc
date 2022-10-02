@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowMapperResultSetExecutor<T> implements ResultSetExecutor {
+public class RowMapperResultSetExecutor<T> implements ResultSetExecutor<List<T>> {
 
     private final RowMapper<T> rowMapper;
 

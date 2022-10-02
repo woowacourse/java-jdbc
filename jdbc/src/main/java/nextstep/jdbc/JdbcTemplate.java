@@ -36,12 +36,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return (List<T>) query(sql, new RowMapperResultSetExecutor<>(rowMapper));
+        return query(sql, new RowMapperResultSetExecutor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> results = (List<T>) query(sql, new RowMapperResultSetExecutor<>(rowMapper), args);
-        return results.get(0);
+        return query(sql, new RowMapperResultSetExecutor<>(rowMapper), args).get(0);
     }
 
     private <T> T query(final String sql, final ResultSetExecutor<T> executor, final Object... args) {
