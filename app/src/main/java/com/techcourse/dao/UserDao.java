@@ -1,80 +1,52 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.DaoTemplateCallBack;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UserDao {
+public class UserDao extends DaoTemplateCallBack {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
-
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        super(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        super(jdbcTemplate);
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
+        super.execute(sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
+        super.execute(sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        ResultSet rs = null;
-        final List<User> users = new ArrayList<>();
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return super.queryAll(sql, (pstmt, rs) -> {
+            List<User> users = new ArrayList<>();
             while (rs.next()) {
                 final var user = new User(
                         rs.getLong(1),
@@ -84,24 +56,13 @@ public class UserDao {
                 users.add(user);
             }
             return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        ResultSet rs = null;
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return super.queryOneLong(sql, id, (pstmt, rs) -> {
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
@@ -110,24 +71,13 @@ public class UserDao {
                         rs.getString(4));
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        ResultSet rs = null;
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return super.queryOneString(sql, account, (pstmt, rs) -> {
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
@@ -136,9 +86,6 @@ public class UserDao {
                         rs.getString(4));
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 }
