@@ -14,7 +14,7 @@
   - [x] user 를 저장할 수 있다.
   - [x] user 정보를 수정할 수 있다.
   - [x] id 로 일치하는 유저를 찾아 조회할 수 있다.
-- [ ] UserDao가 아닌 JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당하고 있다.
+- [x] UserDao가 아닌 JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당하고 있다.
   - [x] UserDao 가 JdbcTemplate 에 의존하도록 수정한다.
   - [x] JdbcTemplate 에 query 메소드를 구현한다.
     - [x] query() 메소드는 List 형태로 반환한다.
@@ -22,3 +22,7 @@
     - [x] query() 메소드는 인자를 받을 수도 있고 안 받을 수도 있다.
   - [x] 단건 조회를 하는 queryForObject 메소드를 구현한다.
     - [x] DataAccessUtils.nullableSingleResult() 를 이용하여 반환 전에 데이터가 0 건인지 2건 이상인지를 검증한다.
+  - [x] update 메소드를 통해서 데이터를 변경할 수 있다.
+    - [x] INSERT 문의 경우 데이터를 새롭게 생성해 저장한다.
+    - [x] UPDATE 문의 경우 데이터를 변경한다.
+    - [x] PreparedStatement 의 executeUpdate() 메소드를 통해 변경된 데이터의 row 수를 반환한다.

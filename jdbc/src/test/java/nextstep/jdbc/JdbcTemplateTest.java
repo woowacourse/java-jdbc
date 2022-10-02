@@ -86,6 +86,45 @@ class JdbcTemplateTest {
         final Object result = jdbcTemplate.queryForObject(sql, getMockRowMapper(), "dwoo");
 
         assertThat(result.toString()).isEqualTo("[result]");
+        verify(jdbcTemplate).queryForObject(any(), any(), any());
+    }
+
+    @DisplayName("updat 메소드를 호출하여 데이터를 저장할 수 있고, 저장된 row 수를 반환한다.")
+    @Test
+    void insert() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final int updatedRowCount = jdbcTemplate.update(sql, "dwoo", "password", "email@email.com");
+
+        assertThat(updatedRowCount).isEqualTo(1);
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @DisplayName("update 메소드를 호출하여 데이터를 변경에 성공하면 변경된 row수를 반환한다.")
+    @Test
+    void update() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        final var sql = "update users set account = ?, password = ?, email = ? WHERE id = ?";
+        final int updatedRowCount = jdbcTemplate.update(sql, 1L);
+
+        assertThat(updatedRowCount).isEqualTo(1);
+        verify(preparedStatement).executeUpdate();
     }
 
     private static RowMapper<Object> getMockRowMapper() {

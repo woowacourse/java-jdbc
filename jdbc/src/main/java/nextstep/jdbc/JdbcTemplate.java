@@ -47,6 +47,19 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(results);
     }
 
+    public int update(final String sql, @Nullable Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            setArgumentPreparedStatement(preparedStatement, args);
+
+            return preparedStatement.executeUpdate();
+        } catch(SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private void setArgumentPreparedStatement(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             final int parameterIndex = i + 1;
