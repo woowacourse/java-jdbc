@@ -102,4 +102,16 @@ public class JdbcTemplate {
         }
         throw new RuntimeException();
     }
+
+    public void update(String sql, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            setParameters(pstmt, args);
+
+            pstmt.executeUpdate();
+        } catch (Exception exception) {
+            throw new DataAccessException();
+        }
+    }
 }

@@ -30,7 +30,6 @@ class JdbcTemplateTest {
         statement.executeUpdate();
     }
 
-
     @Test
     @DisplayName("select 쿼리를 이용해 지정한 객체로 불러올 수 있다.")
     void queryForObject() throws Exception{
@@ -39,6 +38,30 @@ class JdbcTemplateTest {
         final User user = (User) jdbcTemplate.queryForObject(sql, User.class, 1L);
 
         assertThat(user.getUsername()).isEqualTo("test");
+    }
+
+    @Test
+    @DisplayName("insert 쿼리를 이용해 데이터를 삽입할 수 있다.")
+    void update_Insert() {
+        final String sql = "insert into users (username) values (?)";
+
+        jdbcTemplate.update(sql, "east");
+
+        final String selectSql = "select * from users where id = ?";
+        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 2L);
+        assertThat(user.getUsername()).isEqualTo("east");
+    }
+
+    @Test
+    @DisplayName("update 쿼리를 이용해 데이터를 수정할 수 있다.")
+    void update_Update() {
+        final String sql = "update users set username = ? where id = ?";
+
+        jdbcTemplate.update(sql, "east", 1L);
+
+        final String selectSql = "select * from users where id = ?";
+        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 1L);
+        assertThat(user.getUsername()).isEqualTo("east");
     }
 
     static class User {
