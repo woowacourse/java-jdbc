@@ -23,19 +23,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Long insert(final String sql, Object ... args) {
+    public Long insert(final String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt= conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            int index = 1;
-            for (Object arg : args) {
-                if (arg instanceof String) {
-                    pstmt.setString(index++, (String)arg);
-                } else if (arg instanceof Long) {
-                    pstmt.setLong(index++, (Long)arg);
-                }
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            setSqlParameters(pstmt, args);
             pstmt.executeUpdate();
-
             return getGeneratedKey(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
