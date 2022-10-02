@@ -50,41 +50,37 @@ public class JdbcTemplate {
     public List<Object> finds(Class<?> classType, String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             setSqlParameters(pstmt, args);
-            Constructor<?> properConstructor = getProperConstructor(classType);
-
-            List<Object> bindingObjects = new ArrayList<>();
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                while (resultSet.next()) {
-                    bindingObjects.add(makeInstanceFromSqlResult(resultSet, properConstructor));
-                }
-            }
-            return bindingObjects;
+            return makeObjectsFromSql(pstmt, classType);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException();
         }
     }
 
-    public Object find(Class<?> classType, String sql, Object...args) {
-        List<Object> result = finds(classType, sql, args);
-        if (result.size() != 1) {
-            throw new IllegalStateException();
+    private List<Object> makeObjectsFromSql(PreparedStatement pstmt, Class<?> classType) {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
+            Constructor<?> constructor = getProperConstructor(classType);
+            return bindingObjects(resultSet, constructor);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
         }
-        return result.get(0);
     }
 
-    private Object makeInstanceFromSqlResult(ResultSet resultSet, Constructor<?> constructor) {
-        int index = 1;
-        Class<?>[] parameterTypes = constructor.getParameterTypes();
-
-        List<Object> constructorParameters = new ArrayList<>();
-        for (Class<?> parameterType : parameterTypes) {
-            constructorParameters.add(extractData(parameterType, resultSet, index++));
+    private List<Object> bindingObjects(ResultSet resultSet, Constructor<?> constructor) throws SQLException {
+        List<Object> objects = new ArrayList<>();
+        while (resultSet.next()) {
+            objects.add(bindingObject(resultSet, constructor));
         }
+        return objects;
+    }
 
+
+    private Object bindingObject(ResultSet resultSet, Constructor<?> constructor) {
         try {
+            List<Object> constructorParameters = extractDatas(resultSet,
+                    constructor.getParameterTypes());
             return constructor.newInstance(constructorParameters.toArray());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
@@ -92,12 +88,21 @@ public class JdbcTemplate {
         }
     }
 
-    private Object extractData(Class<?> parameterType, ResultSet resultSet, int index) {
+    private List<Object> extractDatas(ResultSet resultSet, Class<?>[] dataTypes) {
+        int index = 1;
+        List<Object> datas = new ArrayList<>();
+        for (Class<?> dataType : dataTypes) {
+            datas.add(extractData(dataType, resultSet, index++));
+        }
+        return datas;
+    }
+
+    private Object extractData(Class<?> dataType, ResultSet resultSet, int index) {
         try {
-            if (String.class.equals(parameterType)) {
+            if (String.class.equals(dataType)) {
                 return resultSet.getString(index);
             }
-            if (Long.TYPE.equals(parameterType)) {
+            if (Long.TYPE.equals(dataType)) {
                 return resultSet.getLong(index);
             }
             throw new IllegalStateException();
@@ -105,6 +110,14 @@ public class JdbcTemplate {
             e.printStackTrace();
             throw new RuntimeException();
         }
+    }
+
+    public Object find(Class<?> classType, String sql, Object... args) {
+        List<Object> result = finds(classType, sql, args);
+        if (result.size() != 1) {
+            throw new IllegalStateException();
+        }
+        return result.get(0);
     }
 
     private void setSqlParameters(PreparedStatement pstmt, Object... args) throws SQLException {
