@@ -56,12 +56,19 @@ public class UserDao {
                                 rs.getLong("id"),
                                 rs.getString("account"),
                                 rs.getString("password"),
-                                rs.getString("email"))
-                , id);
+                                rs.getString("email")),
+                id);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, (ResultSet rs, int rowNum) ->
+                        new User(
+                                rs.getLong("id"),
+                                rs.getString("account"),
+                                rs.getString("password"),
+                                rs.getString("email")),
+                account);
     }
 }

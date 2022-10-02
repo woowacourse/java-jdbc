@@ -65,7 +65,4 @@ public class JdbcTemplate {
             }
         }
     }
-
-    public void queryForObject(final String sql, final Object o, final Long id) {
-    }
 }
