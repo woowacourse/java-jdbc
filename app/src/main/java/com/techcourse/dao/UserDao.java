@@ -4,7 +4,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
