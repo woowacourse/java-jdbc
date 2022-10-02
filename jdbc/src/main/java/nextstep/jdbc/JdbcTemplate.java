@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -24,13 +26,41 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    public <T> T queryForObject(String sql, Object[] parameters, RowMapper<T> rowMapper) {
-        try {
+    public <T> List<T> query(String sql, Object[] parameters, RowMapper<T> rowMapper) {
+        try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
 
-            for (int i = 1; i <= parameters.length; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
+            ResultSet rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            List<T> result = new ArrayList<>();
+            int rowNum = 1;
+
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs, rowNum));
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(String sql, Object[] parameters, RowMapper<T> rowMapper) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
             }
 
             ResultSet rs = pstmt.executeQuery();

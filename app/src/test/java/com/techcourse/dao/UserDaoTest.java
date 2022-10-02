@@ -2,7 +2,7 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.*;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.techcourse.config.DataSourceConfig;
@@ -13,10 +13,10 @@ import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+    private static UserDao userDao;
 
-    @BeforeEach
-    void setup() {
+    @BeforeAll
+    static void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
@@ -27,7 +27,6 @@ class UserDaoTest {
     @Test
     void findAll() {
         final var users = userDao.findAll();
-
         assertThat(users).isNotEmpty();
     }
 

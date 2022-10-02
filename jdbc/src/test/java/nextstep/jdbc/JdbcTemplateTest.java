@@ -3,6 +3,8 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -59,6 +61,42 @@ class JdbcTemplateTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("쿼리 결과가 2개 이상입니다.");
         }
+
+    }
+
+    @Nested
+    @DisplayName("query()는")
+    class query {
+
+        @Test
+        @DisplayName("데이터가 정상적으로 조회 된 경우 이를 반환한다.")
+        void query() {
+            List<Object> result = jdbcTemplate.query(
+                "select column_test from jdbc_tests",
+                new Object[] {},
+                rowMapper);
+
+            assertAll(
+                () -> assertThat(result).hasSize(2),
+                () -> assertThat(result.get(0)).isInstanceOf(String.class),
+                () -> assertThat(result).containsOnly("a", "b")
+            );
+        }
+
+        @Test
+        @DisplayName("데이터가 존재하지 않는 경우 null이 아닌 빈 배열을 반환한다.")
+        void noData() {
+            List<Object> result = jdbcTemplate.query(
+                "select column_test from jdbc_tests where column_test=?",
+                new Object[] {"c"},
+                rowMapper);
+
+            assertAll(
+                () -> assertThat(result).isNotNull(),
+                () -> assertThat(result).isEmpty()
+            );
+        }
+
     }
 
 }

@@ -58,8 +58,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return (List<User>)jdbcTemplate.query(sql, new Object[] {}, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -68,7 +68,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        return (User)jdbcTemplate.queryForObject(sql, new Object[] {account}, USER_ROW_MAPPER);
     }
 }
