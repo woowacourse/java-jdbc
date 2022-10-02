@@ -6,26 +6,21 @@ import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.util.List;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final RowMapper<User> rowMapper = (resultSet, count) -> new User(resultSet.getLong("id"),
+    private static final RowMapper<User> rowMapper = (resultSet, count) -> new User(
+            resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
-            resultSet.getString("email"));
-    private final DataSource dataSource;
+            resultSet.getString("email")
+    );
+
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
