@@ -14,7 +14,7 @@ public class UpdatePreparedStatement extends AbstractPreparedStatementExecutor {
     }
 
     @Override
-    protected void execute(final PreparedStatement preparedStatement) throws SQLException {
+    protected void executeQuery(final PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.setString(1, user.getAccount());
         preparedStatement.setString(2, user.getPassword());
         preparedStatement.setString(3, user.getEmail());
