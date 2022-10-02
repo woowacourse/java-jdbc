@@ -15,3 +15,4 @@
   - [x] user 정보를 수정할 수 있다.
   - [x] id 로 일치하는 유저를 찾아 조회할 수 있다.
 - [ ] UserDao가 아닌 JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당하고 있다.
+  - [x] UserDao 가 JdbcTemplate 에 의존하도록 수정한다.
