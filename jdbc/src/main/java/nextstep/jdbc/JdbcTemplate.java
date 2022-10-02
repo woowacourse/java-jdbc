@@ -29,7 +29,7 @@ public class JdbcTemplate {
             setParameters(pstmt, params);
             pstmt.executeUpdate();
         } catch (final SQLException e) {
-            throw new RuntimeException("커넥션 연결에 실패했습니다.");
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -45,7 +45,7 @@ public class JdbcTemplate {
                 return rowMapper.rowMap(rs, rs.getRow());
             }
         } catch (final SQLException e) {
-            throw new RuntimeException("커넥션 연결에 실패했습니다.");
+            throw new DataAccessException(e.getMessage());
         }
         return null;
     }
@@ -64,7 +64,7 @@ public class JdbcTemplate {
             }
             return result;
         } catch (final SQLException e) {
-            throw new RuntimeException("커넥션 연결에 실패했습니다.");
+            throw new DataAccessException(e.getMessage());
         }
     }
 
