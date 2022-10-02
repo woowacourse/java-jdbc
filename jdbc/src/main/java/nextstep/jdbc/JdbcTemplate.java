@@ -25,11 +25,11 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public Object queryForObject(String sql, RowMapper rowMapper, Object... args) {
-        return query(sql, rowMapper::mapRow, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, args);
     }
 
-    public List<Object> queryForList(String sql, RowMapper rowMapper) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
         return queryList(sql, rowMapper);
     }
 
