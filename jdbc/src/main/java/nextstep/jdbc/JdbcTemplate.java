@@ -22,7 +22,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter ps) {
+    public void update(final String sql, final Object... objects) {
+        update(sql, pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                final var parameterIndex = i + 1;
+                final var object =objects[i];
+                pstmt.setObject(parameterIndex, object);
+            }
+        });
+    }
+
+    private void update(final String sql, final PreparedStatementSetter ps) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
