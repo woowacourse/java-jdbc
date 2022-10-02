@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.techcourse.domain.User;
 
-import nextstep.jdbc.DataAccessException;
+import nextstep.jdbc.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 
 public class UserDao {
@@ -154,12 +154,6 @@ public class UserDao {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.iterator().next();
-    }
-
-    class IncorrectResultSizeDataAccessException extends DataAccessException {
-        public IncorrectResultSizeDataAccessException(int expectedSize, int actualSize) {
-            super("Incorrect result size: expected " + expectedSize + ", actual " + actualSize);
-        }
     }
 
     @FunctionalInterface
