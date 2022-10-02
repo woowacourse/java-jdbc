@@ -31,7 +31,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account=?, password=?, email=?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
@@ -45,7 +46,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
