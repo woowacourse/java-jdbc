@@ -15,7 +15,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.RowMapper;
 
 class JdbcTemplateTest {
 
@@ -113,6 +112,6 @@ class JdbcTemplateTest {
     }
 
     private static RowMapper<Object> getMockRowMapper() {
-        return (resultSet, rowNumber) -> any();
+        return (resultSet) -> any();
     }
 }

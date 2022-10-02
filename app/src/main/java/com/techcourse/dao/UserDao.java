@@ -4,7 +4,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
@@ -44,7 +44,7 @@ public class UserDao {
     }
 
     private static RowMapper<User> createUserRowMapper() {
-        return (resultSet, resultNumber) -> {
+        return (resultSet) -> {
             final long id = resultSet.getLong("id");
             final String account = resultSet.getString("account");
             final String password = resultSet.getString("password");
