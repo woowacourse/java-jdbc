@@ -71,47 +71,47 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
+        return query(sql,
+                pstmt -> pstmt.setLong(1, id),
+                rs -> new User(
                         rs.getLong(1),
                         rs.getString(2),
                         rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
+                        rs.getString(4))
+        );
+    }
+
+    private <T> T query(final String sql, final PreparedStatementSetter ps, final RowMapper<T> rowMapper) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            ps.set(pstmt);
+            return execute(pstmt, rowMapper);
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
+    }
+
+    private <T> T execute(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                return rowMapper.mapTow(rs);
+            }
+            return null;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @FunctionalInterface
+    interface RowMapper<T> {
+        T mapTow(final ResultSet rs) throws SQLException;
     }
 
     public User findByAccount(final String account) {
