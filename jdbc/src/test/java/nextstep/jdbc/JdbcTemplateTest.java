@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,11 @@ class JdbcTemplateTest {
         jdbcDataSource.setPassword("");
         DatabasePopulatorUtils.execute(jdbcDataSource);
         jdbcTemplate = new JdbcTemplate(jdbcDataSource);
+    }
+
+    @AfterEach
+    void refresh() {
+        jdbcTemplate.deleteAll("delete from users");
     }
 
     @DisplayName("insert 쿼리를 완성시켜 실행시킨다.")

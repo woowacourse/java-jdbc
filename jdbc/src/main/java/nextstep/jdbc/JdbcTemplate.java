@@ -142,4 +142,14 @@ public class JdbcTemplate {
         }
         throw new IllegalStateException();
     }
+
+    public void deleteAll(final String sql) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
 }
