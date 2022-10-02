@@ -29,7 +29,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -46,7 +46,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -66,15 +66,14 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     private <T> List<T> extractData(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
-        int rowNum = 0;
         while (rs.next()) {
-            results.add(rowMapper.mapRow(rs, rowNum++));
+            results.add(rowMapper.mapRow(rs, rs.getRow()));
         }
         return results;
     }
