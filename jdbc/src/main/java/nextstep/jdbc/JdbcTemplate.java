@@ -70,7 +70,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> extractData(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> extractData(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
         int rowNum = 0;
         while (rs.next()) {
