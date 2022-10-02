@@ -44,21 +44,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            int argIdx = 0;
-            for (Object arg : args) {
-                argIdx++;
-                if (arg instanceof String) {
-                    pstmt.setString(argIdx, (String) arg);
-                    continue;
-                }
-                if (arg instanceof Long) {
-                    pstmt.setLong(argIdx, (Long) arg);
-                    continue;
-                }
-                if (arg instanceof Integer) {
-                    pstmt.setLong(argIdx, (Integer) arg);
-                }
-            }
+            setPreparedStatement(pstmt, args);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs, 0);
@@ -77,7 +63,34 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    public void update(final String sql, final Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setPreparedStatement(pstmt, args);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setPreparedStatement(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        int argIdx = 0;
+        for (Object arg : args) {
+            argIdx++;
+            if (arg instanceof String) {
+                pstmt.setString(argIdx, (String) arg);
+                continue;
+            }
+            if (arg instanceof Long) {
+                pstmt.setLong(argIdx, (Long) arg);
+                continue;
+            }
+            if (arg instanceof Integer) {
+                pstmt.setLong(argIdx, (Integer) arg);
+            }
+        }
     }
 }
