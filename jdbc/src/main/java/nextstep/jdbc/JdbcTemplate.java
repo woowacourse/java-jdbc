@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
@@ -42,12 +43,12 @@ public class JdbcTemplate {
             setParameters(pstmt, params);
             final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rowMapper.rowMap(rs, rs.getRow());
+                return Optional.of(rowMapper.rowMap(rs, rs.getRow()));
             }
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
-        return null;
+        return Optional.empty();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {

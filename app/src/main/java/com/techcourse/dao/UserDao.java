@@ -34,12 +34,14 @@ public class UserDao {
 
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, rowMapper(), id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, rowMapper(), account)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
     }
 
     private RowMapper<User> rowMapper() {
