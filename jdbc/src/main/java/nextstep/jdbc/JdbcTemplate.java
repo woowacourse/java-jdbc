@@ -21,54 +21,43 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setStatement(statement, args);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("sql 실행 중 에러가 발생하였습니다.");
-        }
+    public void update(final String sql, Object... args) {
+        execute(sql, preparedStatement -> {
+            setStatement(preparedStatement, args);
+            return preparedStatement.executeUpdate();
+        });
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement statement = conn.prepareStatement(sql);
-        ) {
-            setStatement(statement, args);
-            ResultSet rs = statement.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return execute(sql, preparedStatement -> {
+            setStatement(preparedStatement, args);
+            ResultSet rs = preparedStatement.executeQuery();
             return ResultSetExtractor.extract(rowMapper, rs);
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("sql 실행 중 에러가 발생하였습니다.");
-        }
+        });
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper) {
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement statement = conn.prepareStatement(sql);
-            ResultSet rs = statement.executeQuery();
-        ) {
+        return execute(sql, preparedStatement -> {
+            ResultSet rs = preparedStatement.executeQuery();
             return ResultSetExtractor.extractList(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("sql 실행 중 에러가 발생하였습니다.");
-        }
+        });
     }
 
     private void setStatement(final PreparedStatement statement, final Object[] data) throws SQLException {
         for (int i = 0; i < data.length; i++) {
             statement.setObject(i + 1, data[i]);
+        }
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            return callback.doInStatement(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("sql 실행 중 에러가 발생하였습니다.");
         }
     }
 }
