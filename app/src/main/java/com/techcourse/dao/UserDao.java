@@ -1,16 +1,11 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.core.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
