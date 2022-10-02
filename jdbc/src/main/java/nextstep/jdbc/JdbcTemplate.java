@@ -20,4 +20,13 @@ public class JdbcTemplate {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
+
+    public void executeQuery(final PreparedStatementExecutor executor) {
+        try (Connection connection = getConnection()) {
+            executor.execute(connection);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }

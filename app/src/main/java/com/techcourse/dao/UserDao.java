@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.statement.InsertPreparedStatement;
+import com.techcourse.dao.statement.UpdatePreparedStatement;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.PreparedStatementExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,40 +25,13 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        try (Connection conn = jdbcTemplate.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        PreparedStatementExecutor executor = new InsertPreparedStatement(user);
+        jdbcTemplate.executeQuery(executor);
     }
 
     public void update(final User user) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        try (Connection connection = jdbcTemplate.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setLong(4, user.getId());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        PreparedStatementExecutor executor = new UpdatePreparedStatement(user);
+        jdbcTemplate.executeQuery(executor);
     }
 
     public List<User> findAll() {
