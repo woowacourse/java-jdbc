@@ -2,14 +2,12 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -37,7 +35,7 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
-            return getResult(preparedStatement, rowMapper);
+            return getResult(preparedStatement, new ResultSetExtractor<>(rowMapper));
         } catch (SQLException e) {
             throw new DataAccessException("Query 에러가 발생했습니다.");
         }
@@ -48,7 +46,7 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
-            List<T> result = getResult(preparedStatement, rowMapper);
+            List<T> result = getResult(preparedStatement, new ResultSetExtractor<>(rowMapper));
             checkResultSizeIsOne(result);
             return result.iterator().next();
         } catch (SQLException e) {
@@ -56,7 +54,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> void checkResultSizeIsOne(List<T> result) {
+    private <T> void checkResultSizeIsOne(final List<T> result) {
         if (result.isEmpty()) {
             throw new DataAccessException("결과가 없습니다.");
         }
@@ -65,18 +63,14 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getResult(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            final List<T> result = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            return result;
+    private <T> List<T> getResult(final PreparedStatement preparedStatement,
+                                  final ResultSetExtractor<T> resultSetExtractor) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return resultSetExtractor.extractData(resultSet);
         }
     }
 
-    private void setParameters(Object[] args, PreparedStatement preparedStatement) throws SQLException {
+    private void setParameters(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
         int index = 1;
         for (Object arg : args) {
             preparedStatement.setObject(index++, arg);
