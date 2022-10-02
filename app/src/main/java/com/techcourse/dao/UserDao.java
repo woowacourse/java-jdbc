@@ -19,32 +19,20 @@ public class UserDao {
                     rs.getString("password"),
                     rs.getString("email"));
 
-    // AS-IS
-    private final DataSource dataSource;
 
-    // TO-BE
     private final JdbcTemplate jdbcTemplate;
 
-    // AS-IS
-//    public UserDao(final DataSource dataSource) {
-//        this.dataSource = dataSource;
-//    }
-
-    // TO-BE
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.dataSource = dataSource;
     }
 
     public void insert(final User user) {
-        log.info("insert user : {}", user.toString());
         final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        log.info("update user : {}", user.toString());
         final var sql = "UPDATE users SET account = ?, password = ?, email =? WHERE id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());

@@ -24,10 +24,8 @@ public class JdbcTemplate {
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
 
-            setArgument(pstmt, args);
-
+            setArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -35,7 +33,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArgument(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
             pstmt.setObject(index, arg);
@@ -47,7 +45,7 @@ public class JdbcTemplate {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArgument(pstmt, args);
+            setArguments(pstmt, args);
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
