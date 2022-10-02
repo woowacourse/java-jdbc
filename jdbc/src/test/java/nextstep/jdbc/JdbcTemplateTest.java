@@ -77,7 +77,7 @@ class JdbcTemplateTest {
 
         // when, then
         final var sql = "select id, account, password, email from users where account = ?";
-        TestUser user =  jdbcTemplate.queryForObject(sql, ROW_MAPPER, "gugu");
+        TestUser user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, "gugu");
 
         assertAll(
             () -> assertThat(user.getAccount()).isEqualTo("gugu"),
@@ -97,7 +97,7 @@ class JdbcTemplateTest {
 
         // when, then
         final var sql = "select id, account, password, email from users";
-        List<TestUser> users =  jdbcTemplate.query(sql, ROW_MAPPER);
+        List<TestUser> users = jdbcTemplate.query(sql, ROW_MAPPER);
 
         assertAll(
             () -> assertThat(users).hasSize(2),
