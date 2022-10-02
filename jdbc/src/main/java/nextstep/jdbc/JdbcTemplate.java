@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -37,7 +36,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
-            return getResult(preparedStatement, rowMapper);
+            return getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
         } catch (SQLException e) {
             throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
         }
@@ -48,21 +47,10 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
-            List<T> results = getResult(preparedStatement, rowMapper);
+            List<T> results = getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
             return DataAccessUtils.nullableSingleResult(results);
         } catch (SQLException e) {
             throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
-        }
-    }
-
-    private <T> List<T> getResult(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            return result;
         }
     }
 
@@ -70,6 +58,13 @@ public class JdbcTemplate {
         int index = 1;
         for (Object arg : args) {
             preparedStatement.setObject(index++, arg);
+        }
+    }
+
+    private <T> List<T> getResult(PreparedStatement preparedStatement,
+                                  RowMapperResultSetExtractor<T> rowMapperResultSetExtractor) throws SQLException {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return rowMapperResultSetExtractor.extractData(resultSet);
         }
     }
 }
