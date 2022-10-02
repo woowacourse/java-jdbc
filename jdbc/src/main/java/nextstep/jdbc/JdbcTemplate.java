@@ -23,15 +23,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... objects) {
-        update(sql, dynamicPreparedStatementSetter(objects));
-    }
-
-    private void update(final String sql, final PreparedStatementSetter ps) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            ps.setValues(pstmt);
+            setParams(pstmt, objects);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -54,15 +50,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        return queryForObject(sql, dynamicPreparedStatementSetter(objects), rowMapper);
-    }
-
-    public <T> T queryForObject(final String sql, final PreparedStatementSetter ps, final RowMapper<T> rowMapper) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            ps.setValues(pstmt);
+            setParams(pstmt, objects);
 
             final List<T> results = execute(pstmt, rowMapper);
             return nullableSingleResult(results);
@@ -103,13 +95,11 @@ public class JdbcTemplate {
         return results.iterator().next();
     }
 
-    private PreparedStatementSetter dynamicPreparedStatementSetter(final Object... objects) {
-        return pstmt -> {
-            for (int i = 0; i < objects.length; i++) {
-                final var parameterIndex = i + 1;
-                final var object = objects[i];
-                pstmt.setObject(parameterIndex, object);
-            }
-        };
+    private void setParams(final PreparedStatement pstmt, final Object... objects) throws SQLException {
+        for (int i = 0; i < objects.length; i++) {
+            final var parameterIndex = i + 1;
+            final var object = objects[i];
+            pstmt.setObject(parameterIndex, object);
+        }
     }
 }
