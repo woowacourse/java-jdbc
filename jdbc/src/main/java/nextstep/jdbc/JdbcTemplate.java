@@ -31,14 +31,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        int index = 1;
-        for (Object arg : args) {
-            pstmt.setObject(index, arg);
-            index++;
-        }
-    }
-
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
@@ -84,6 +76,14 @@ public class JdbcTemplate {
                 }
             } catch (SQLException ignored) {
             }
+        }
+    }
+
+    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        int index = 1;
+        for (Object arg : args) {
+            pstmt.setObject(index, arg);
+            index++;
         }
     }
 }
