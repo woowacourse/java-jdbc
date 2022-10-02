@@ -37,8 +37,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-            try (rs) {
+            try (ResultSet rs = pstmt.executeQuery();) {
                 log.debug("query : {}", sql);
                 if (rs.next()) {
                     return rowMapper.mapRow(rs, rs.getRow());
