@@ -62,7 +62,19 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, user.getAccount());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getEmail());
+            statement.setLong(4, user.getId());
+
+            statement.executeUpdate();
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<User> findAll() {
