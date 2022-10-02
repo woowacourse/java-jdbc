@@ -1,12 +1,13 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.domain.User;
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserDaoTest {
 
