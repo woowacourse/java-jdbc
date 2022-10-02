@@ -26,22 +26,29 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    public Object queryForObject(String sql, Class<?> clazz, Object... args) {
+    public List<Object> query(String sql, Class<?> clazz, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            List<Object> objects = new ArrayList<>();
 
             setParameters(pstmt, args);
-
             final ResultSet resultSet = pstmt.executeQuery();
-
             final Constructor<?> constructor = getConstructor(clazz);
 
-            List<Object> parameters = extractData(resultSet, constructor);
+            while (resultSet.next()){
+                List<Object> parameters = extractData(resultSet, constructor);
+                objects.add(constructor.newInstance(parameters.toArray()));
+            }
 
-            return constructor.newInstance(parameters.toArray());
+            return objects;
         } catch (Exception exception) {
             throw new RuntimeException();
         }
+    }
+
+    public Object queryForObject(String sql, Class<?> clazz, Object... args) {
+        final List<Object> objects = query(sql, clazz, args);
+        return objects.get(0);
     }
 
     private void setParameters(PreparedStatement pstmt, Object[] objects) throws SQLException {
@@ -75,7 +82,6 @@ public class JdbcTemplate {
 
         final Class<?>[] parameterTypes = constructor.getParameterTypes();
         int index = 1;
-        resultSet.next();
 
         for (Class<?> parameterType : parameterTypes) {
             parameters.add(bindData(resultSet, parameterType, index++));

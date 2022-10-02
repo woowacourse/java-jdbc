@@ -6,3 +6,6 @@ create table users
     username varchar(100) not null,
     primary key (id)
 );
+
+insert into users (username) values ('test');
+insert into users (username) values ('east');

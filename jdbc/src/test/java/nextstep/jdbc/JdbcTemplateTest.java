@@ -3,8 +3,8 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,11 +24,6 @@ class JdbcTemplateTest {
         DatabasePopulatorUtils.execute(jdbcDataSource);
 
         this.jdbcTemplate = new JdbcTemplate(jdbcDataSource);
-
-        final Connection connection = jdbcDataSource.getConnection();
-        final PreparedStatement statement = connection.prepareStatement("insert into users (username) values (?)");
-        statement.setString(1, "test");
-        statement.executeUpdate();
     }
 
     @Test
@@ -42,6 +37,19 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("select 쿼리를 이용해 지정한 클래스의 객체 List를 불러올 수 있다.")
+    void query() {
+        final String sql = "select * from users";
+
+        final List<User> users = jdbcTemplate.query(sql, User.class)
+                .stream()
+                .map(User.class::cast)
+                .collect(Collectors.toList());
+
+        assertThat(users).hasSize(2);
+    }
+
+    @Test
     @DisplayName("insert 쿼리를 이용해 데이터를 삽입할 수 있다.")
     void update_Insert() {
         final String sql = "insert into users (username) values (?)";
@@ -49,7 +57,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "east");
 
         final String selectSql = "select * from users where id = ?";
-        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 2L);
+        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 3L);
         assertThat(user.getUsername()).isEqualTo("east");
     }
 
@@ -70,6 +78,7 @@ class JdbcTemplateTest {
         final String sql = "delete from users where id = ?";
 
         jdbcTemplate.update(sql, 1L);
+        jdbcTemplate.update(sql, 2L);
 
         final String selectSql = "select * from users where id = ?";
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(selectSql, User.class, 1L))
