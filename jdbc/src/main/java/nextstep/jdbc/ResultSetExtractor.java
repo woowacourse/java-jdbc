@@ -5,13 +5,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.jdbc.core.RowMapper;
 
 public class ResultSetExtractor {
 
     public static <T> T extract(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         if (rs.next()) {
-            return rowMapper.mapRow(rs, 1);
+            return rowMapper.mapRow(rs);
         }
         return null;
     }
@@ -20,7 +19,7 @@ public class ResultSetExtractor {
         List<T> result = new ArrayList<>();
 
         while (rs.next()) {
-            result.add(rowMapper.mapRow(rs, rs.getRow()));
+            result.add(rowMapper.mapRow(rs));
         }
         return result;
     }

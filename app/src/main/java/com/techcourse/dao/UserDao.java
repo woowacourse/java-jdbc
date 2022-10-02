@@ -4,15 +4,15 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.springframework.jdbc.core.RowMapper;
 
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs) -> new User(
         rs.getLong("id"),
         rs.getString("account"),
         rs.getString("password"),
