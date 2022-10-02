@@ -17,17 +17,22 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final String... params) {
+    public void update(final String sql, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setString(i + 1, params[i]);
-            }
+
+            setParameters(pstmt, params);
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new RuntimeException("커넥션 연결에 실패했습니다.");
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
         }
     }
 }
