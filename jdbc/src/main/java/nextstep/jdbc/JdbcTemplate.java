@@ -60,11 +60,11 @@ public class JdbcTemplate {
 
     private <T> List<T> query(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         try (final var rs = pstmt.executeQuery()) {
-            List<T> users = new ArrayList<>();
-            if (rs.next()) {
-                users.add(rowMapper.mapRow(rs));
+            List<T> entities = new ArrayList<>();
+            while (rs.next()) {
+                entities.add(rowMapper.mapRow(rs));
             }
-            return users;
+            return entities;
         }
     }
 }
