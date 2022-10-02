@@ -9,13 +9,13 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int EMPTY_ARGS_SIZE = 0;
 
     private final DataSource dataSource;
 
@@ -40,6 +40,11 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        return DataAccessUtils.nullableSingleResult(results);
     }
 
     private void setArgumentPreparedStatement(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {

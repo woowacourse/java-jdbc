@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,6 +74,18 @@ class JdbcTemplateTest {
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
+    }
+
+    @DisplayName("queryForObject 메소드를 호출하여 한 건의 조회를 반환할 수 있다.")
+    @Test
+    void queryForObject() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(jdbcTemplate.queryForObject(any(), any(), any())).thenReturn(List.of("result"));
+
+        final String sql = "select result from table where account = ?";
+        final Object result = jdbcTemplate.queryForObject(sql, getMockRowMapper(), "dwoo");
+
+        assertThat(result.toString()).isEqualTo("[result]");
     }
 
     private static RowMapper<Object> getMockRowMapper() {

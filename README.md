@@ -20,3 +20,5 @@
     - [x] query() 메소드는 List 형태로 반환한다.
     - [x] query() 메소드의 반환타입은 RowMapper 의 타입에 따라 결정된다.
     - [x] query() 메소드는 인자를 받을 수도 있고 안 받을 수도 있다.
+  - [x] 단건 조회를 하는 queryForObject 메소드를 구현한다.
+    - [x] DataAccessUtils.nullableSingleResult() 를 이용하여 반환 전에 데이터가 0 건인지 2건 이상인지를 검증한다.
