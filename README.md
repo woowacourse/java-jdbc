@@ -4,6 +4,8 @@
 
 ## 💻 기능 요구 사항
 
+> 기존 MVC 코드를 [이전에 제가 구현한 코드](https://github.com/RIANAEH/jwp-dashboard-mvc/tree/step3) 로 변경해서 사용했습니다. 
+
 ### 1단계 - JDBC 라이브러리 구현하기
 
 - [X] 직접 DataSource를 이용해 UserDao를 구현한다.
