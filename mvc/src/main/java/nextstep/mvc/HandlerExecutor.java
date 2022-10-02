@@ -3,8 +3,12 @@ package nextstep.mvc;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.ModelAndView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HandlerExecutor {
+
+    private static final Logger log = LoggerFactory.getLogger(HandlerExecutor.class);
 
     private final HandlerAdapterRegistry handlerAdapterRegistry;
 

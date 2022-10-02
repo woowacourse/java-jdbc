@@ -1,39 +1,36 @@
 package nextstep.mvc.view;
 
+import static nextstep.web.support.MediaType.APPLICATION_JSON_UTF8_VALUE;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.web.support.MediaType;
-
-import java.io.IOException;
 import java.util.Map;
 
 public class JsonView implements View {
 
+    private final ObjectMapper objectMapper;
+
+    public JsonView() {
+        this.objectMapper = new ObjectMapper();
+    }
+
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        if (model == null || model.isEmpty()) {
-            return;
-        }
-
-        response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
-
-        final Object renderObject = toJsonObject(model);
-        render(renderObject, response.getOutputStream());
+    public void render(final Map<String, ?> model, final HttpServletRequest request, HttpServletResponse response) throws Exception {
+        response.setContentType(APPLICATION_JSON_UTF8_VALUE);
+        final String body = getBody(model);
+        response.getWriter().write(body);
     }
 
-    private void render(final Object renderObject, final ServletOutputStream outputStream) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(outputStream, renderObject);
+    private String getBody(final Map<String, ?> model) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(getAttribute(model));
     }
 
-    private Object toJsonObject(final Map<String, ?> model) {
+    private Object getAttribute(final Map<String, ?> model) {
         if (model.size() == 1) {
-            return model.values()
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
+            final String key = (String) model.keySet().toArray()[0];
+            return model.get(key);
         }
         return model;
     }
