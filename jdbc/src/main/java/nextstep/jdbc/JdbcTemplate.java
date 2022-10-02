@@ -93,11 +93,12 @@ public class JdbcTemplate {
     }
 
     private <T> T nullableSingleResult(List<T> results) {
+        final int expectedSize = 1;
         if (results == null || results.isEmpty()) {
-            throw new IncorrectResultSizeDataAccessException(1, 0);
+            throw new EmptyResultDataAccessException(expectedSize);
         }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        if (results.size() > expectedSize) {
+            throw new IncorrectResultSizeDataAccessException(expectedSize, results.size());
         }
         return results.iterator().next();
     }
