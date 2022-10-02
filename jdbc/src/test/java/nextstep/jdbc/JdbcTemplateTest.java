@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +19,11 @@ class JdbcTemplateTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate = new JdbcTemplate(DataSourceConfigForTest.getInstance());
+    }
+
+    @AfterEach
+    void setDown() {
+        DataSourceConfigForTest.truncate();
     }
 
     @Nested
@@ -97,6 +103,41 @@ class JdbcTemplateTest {
             );
         }
 
+    }
+
+    @Nested
+    @DisplayName("update()는")
+    class update {
+
+        @Test
+        @DisplayName("파라미터 정보를 올바르게 가져와 실행시킨다.")
+        void withParameters() {
+            jdbcTemplate.update("insert into jdbc_tests values ('d')", new Object[] {});
+
+            Object result = jdbcTemplate.queryForObject(
+                "select column_test from jdbc_tests where column_test=?",
+                new Object[] {"d"},
+                rowMapper);
+
+            assertAll(
+                () -> assertThat(result).isInstanceOf(String.class),
+                () -> assertThat((String)result).isEqualTo("d")
+            );
+        }
+
+        @Test
+        @DisplayName("파라미터가 없어도 정상적으로 실행된다.")
+        void withoutParameters() {
+            jdbcTemplate.update("delete from jdbc_tests where column_test='c'", new Object[] {});
+
+            assertThatThrownBy(
+                () -> jdbcTemplate.queryForObject(
+                    "select column_test from jdbc_tests where column_test=?",
+                    new Object[] {"c"},
+                    rowMapper))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("쿼리 결과가 존재하지 않습니다.");
+        }
     }
 
 }

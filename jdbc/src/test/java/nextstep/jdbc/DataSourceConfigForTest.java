@@ -19,6 +19,12 @@ public class DataSourceConfigForTest {
         return INSTANCE;
     }
 
+    public static void truncate() {
+        ResourceDatabasePopulator resourceDatabasePopulator = new ResourceDatabasePopulator(false, false, "UTF-8",
+            new ClassPathResource("truncate.sql"));
+        resourceDatabasePopulator.execute(INSTANCE);
+    }
+
     private static JdbcDataSource createJdbcDataSource() {
         final var jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");

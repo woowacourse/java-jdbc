@@ -84,4 +84,22 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    public void update(String sql, Object[] parameters) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
+
+            pstmt.executeUpdate();
+
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }
