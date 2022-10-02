@@ -25,36 +25,22 @@ public class JdbcTemplate {
     public <T> T query(final String sqlFormat,
                        final ResultSetWrapper<T> resultSetWrapper,
                        final Object... sqlArguments) {
-
-        final String sql = generateSql(sqlFormat, sqlArguments);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return resultSetWrapper.execute(resultSet);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
+        assert results != null;
+        return results.get(0);
     }
 
     public <T> List<T> queryForList(final String sqlFormat,
                                     final ResultSetWrapper<T> resultSetWrapper,
                                     final Object... sqlArguments) {
-
         final String sql = generateSql(sqlFormat, sqlArguments);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             final ResultSet resultSet = preparedStatement.executeQuery()) {
 
             log.debug("query : {}", sql);
-
             List<T> results = new ArrayList<>();
+
             while (resultSet.next()) {
                 results.add(resultSetWrapper.execute(resultSet));
             }
