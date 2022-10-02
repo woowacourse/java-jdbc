@@ -15,10 +15,7 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
 
     private static RowMapper<TestUser> getMapper() {
-        return (rs, rowNum) -> new TestUser(rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4));
+        return (rs, rowNum) -> new TestUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4));
     }
 
     @BeforeEach
@@ -37,12 +34,9 @@ class JdbcTemplateTest {
         final var selectQuery = "select id, account, password, email from users";
         List<TestUser> users = jdbcTemplate.query(selectQuery, ROW_MAPPER);
 
-        assertAll(
-            () -> assertThat(users).hasSize(1),
-            () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
+        assertAll(() -> assertThat(users).hasSize(1), () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
             () -> assertThat(users.get(0).checkPassword("password")).isTrue(),
-            () -> assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com")
-        );
+            () -> assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com"));
     }
 
     @Test
@@ -60,13 +54,10 @@ class JdbcTemplateTest {
         final var selectQuery = "select id, account, password, email from users";
         List<TestUser> users = jdbcTemplate.query(selectQuery, ROW_MAPPER);
 
-        assertAll(
-            () -> assertThat(users).hasSize(1),
-            () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
+        assertAll(() -> assertThat(users).hasSize(1), () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
             () -> assertThat(users.get(0).checkPassword("password")).isFalse(),
             () -> assertThat(users.get(0).checkPassword("new password")).isTrue(),
-            () -> assertThat(users.get(0).getEmail()).isEqualTo("new email@woowahan.com")
-        );
+            () -> assertThat(users.get(0).getEmail()).isEqualTo("new email@woowahan.com"));
     }
 
     @Test
@@ -79,11 +70,9 @@ class JdbcTemplateTest {
         final var sql = "select id, account, password, email from users where account = ?";
         TestUser user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, "gugu");
 
-        assertAll(
-            () -> assertThat(user.getAccount()).isEqualTo("gugu"),
+        assertAll(() -> assertThat(user.getAccount()).isEqualTo("gugu"),
             () -> assertThat(user.checkPassword("password")).isTrue(),
-            () -> assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com")
-        );
+            () -> assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com"));
     }
 
     @Test
@@ -99,14 +88,11 @@ class JdbcTemplateTest {
         final var sql = "select id, account, password, email from users";
         List<TestUser> users = jdbcTemplate.query(sql, ROW_MAPPER);
 
-        assertAll(
-            () -> assertThat(users).hasSize(2),
-            () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
+        assertAll(() -> assertThat(users).hasSize(2), () -> assertThat(users.get(0).getAccount()).isEqualTo("gugu"),
             () -> assertThat(users.get(1).getAccount()).isEqualTo("neo"),
             () -> assertThat(users.get(0).checkPassword("password")).isTrue(),
             () -> assertThat(users.get(1).checkPassword("password")).isTrue(),
             () -> assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com"),
-            () -> assertThat(users.get(1).getEmail()).isEqualTo("neo@woowahan.com")
-        );
+            () -> assertThat(users.get(1).getEmail()).isEqualTo("neo@woowahan.com"));
     }
 }
