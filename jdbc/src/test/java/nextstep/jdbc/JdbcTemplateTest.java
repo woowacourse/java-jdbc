@@ -40,8 +40,7 @@ class JdbcTemplateTest {
     void execute() {
         // given & when
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql,
-                Map.of(1, "account", 2, "password", 3, "email"));
+        jdbcTemplate.update(sql, "account", "password", "email");
 
         // then
         assertAll(
