@@ -13,11 +13,9 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
 
-    public UserDao(final JdbcTemplate jdbcTemplate, final DataSource dataSource) {
+    public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.dataSource = dataSource;
     }
 
     public void insert(final User user) {
