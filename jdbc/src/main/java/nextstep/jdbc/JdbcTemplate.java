@@ -37,13 +37,13 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
-            try (ResultSet rs = pstmt.executeQuery();) {
-                log.debug("query : {}", sql);
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
-                }
-                return null;
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
+            if (rs.next()) {
+                return rowMapper.mapRow(rs, rs.getRow());
             }
+            return null;
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -58,8 +58,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery();) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
             return extractData(rs, rowMapper);
