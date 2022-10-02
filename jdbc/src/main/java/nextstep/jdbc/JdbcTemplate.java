@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import nextstep.jdbc.util.DataConverter;
+import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class JdbcTemplate {
     private String generateSql(final String sqlFormat, final Object[] sqlArguments) {
         String sql = sqlFormat;
         for (Object sqlArgument : sqlArguments) {
-            final String expectedData = DataConverter.convertObjectToString(sqlArgument);
+            final String expectedData = SqlArgumentConverter.convertObjectToString(sqlArgument);
             sql = sql.replaceFirst(SQL_FORMAT_ARGUMENT, expectedData);
         }
         return sql;
