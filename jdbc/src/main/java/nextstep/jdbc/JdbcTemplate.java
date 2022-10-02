@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.RowMapperResultSetExtractor;
@@ -40,7 +41,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        return DataAccessUtils.nullableSingleResult(results);
+        try {
+            return DataAccessUtils.nullableSingleResult(results);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     public int update(final String sql, @Nullable Object... args) {
