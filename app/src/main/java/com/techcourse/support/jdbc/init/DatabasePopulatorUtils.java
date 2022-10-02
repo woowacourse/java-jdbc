@@ -19,9 +19,9 @@ public class DatabasePopulatorUtils {
         Connection connection = null;
         Statement statement = null;
         try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final var stream = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql");
+            final var sql = new String(stream.readAllBytes());
+
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
