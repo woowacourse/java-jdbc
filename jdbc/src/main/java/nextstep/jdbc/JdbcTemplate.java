@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,17 @@ public class JdbcTemplate {
             setSqlParameters(pstmt, args);
             pstmt.executeUpdate();
             return getGeneratedKey(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void update(final String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setSqlParameters(pstmt, args);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

@@ -67,4 +67,19 @@ class JdbcTemplateTest {
                 () -> assertThat(results.get(0)).isEqualTo(user)
         );
     }
+
+    @DisplayName("update 쿼리를 완성시켜 실행시킨다.")
+    @Test
+    void update() {
+        TestUser user = new TestUser("account", "password", "email");
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+
+        sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), id);
+        sql = "select id, account, password, email from users where id = ?";
+        Object result = jdbcTemplate.find(TestUser.class, sql, id);
+
+        assertThat((TestUser)result).isEqualTo(user);
+    }
 }
