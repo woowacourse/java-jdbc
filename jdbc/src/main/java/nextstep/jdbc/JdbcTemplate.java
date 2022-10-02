@@ -50,8 +50,8 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParamsToStatement(preparedStatement, params);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> objects = new ArrayList<>();
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            final List<T> objects = new ArrayList<>();
             int rowNum = 1;
             while (resultSet.next()) {
                 objects.add(rowMapper.mapRow(resultSet, rowNum++));
