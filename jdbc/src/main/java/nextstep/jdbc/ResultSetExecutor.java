@@ -1,9 +1,8 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
-import java.util.List;
 
-public interface ResultSetExecutor<T> {
+public interface ResultSetExecutor {
 
-    List<T> execute(final Connection connection, final String sql);
+    Object execute(Connection connection, String sql, Object[] columns);
 }

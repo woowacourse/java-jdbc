@@ -2,11 +2,9 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -27,16 +25,16 @@ public class JdbcTemplate {
         }
     }
 
-    public List<?> executeQueryForList(final ResultSetExecutor<?> executor, final String sql) {
+    public Object executeQueryForList(final ResultSetExecutor executor, final String sql) {
         try (Connection connection = getConnection()) {
-            return executor.execute(connection, sql);
+            return executor.execute(connection, sql, null);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public Object executeQueryForObject(final SingleResultSetExecutor<?> executor,
+    public Object executeQueryForObject(final ResultSetExecutor executor,
                                         final String sql,
                                         final Object[] columns) {
         try (Connection connection = getConnection()) {

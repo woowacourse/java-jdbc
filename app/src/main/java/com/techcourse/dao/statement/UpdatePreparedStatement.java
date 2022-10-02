@@ -1,12 +1,11 @@
 package com.techcourse.dao.statement;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import nextstep.jdbc.PreparedStatementExecutor;
+import nextstep.jdbc.AbstractPreparedStatementExecutor;
 
-public class UpdatePreparedStatement implements PreparedStatementExecutor {
+public class UpdatePreparedStatement extends AbstractPreparedStatementExecutor {
 
     private final User user;
 
@@ -15,15 +14,11 @@ public class UpdatePreparedStatement implements PreparedStatementExecutor {
     }
 
     @Override
-    public void execute(final Connection connection, final String sql) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setLong(4, user.getId());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    protected void execute(final PreparedStatement preparedStatement) throws SQLException {
+        preparedStatement.setString(1, user.getAccount());
+        preparedStatement.setString(2, user.getPassword());
+        preparedStatement.setString(3, user.getEmail());
+        preparedStatement.setLong(4, user.getId());
+        preparedStatement.executeUpdate();
     }
 }
