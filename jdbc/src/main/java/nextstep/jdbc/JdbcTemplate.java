@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,24 @@ public class JdbcTemplate {
             throw new RuntimeException("커넥션 연결에 실패했습니다.");
         }
         return null;
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, params);
+            final List<T> result = new ArrayList<>();
+            final ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                result.add(rowMapper.rowMap(rs, rs.getRow()));
+            }
+            return result;
+        } catch (final SQLException e) {
+            throw new RuntimeException("커넥션 연결에 실패했습니다.");
+        }
     }
 
     private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
