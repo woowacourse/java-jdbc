@@ -29,6 +29,10 @@ public class JdbcTemplate {
         return query(sql, rowMapper::mapRow, args);
     }
 
+    public List<Object> queryForList(String sql, RowMapper rowMapper) {
+        return queryList(sql, rowMapper);
+    }
+
     private <T> T execute(String sql, ExecuteStrategy<T> strategy, Object... args) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
@@ -49,6 +53,21 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(resultSet, i));
             }
             return result.get(0);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
+
+    private <T> List<T> queryList(String sql, RowMapper<T> rowMapper) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            ResultSet resultSet = pstmt.executeQuery();
+            List<T> result = new ArrayList<>();
+            for (int i = 0; resultSet.next(); i++) {
+                result.add(rowMapper.mapRow(resultSet, i));
+            }
+            return result;
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException();
