@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
@@ -33,13 +32,13 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, rowMapper(), id);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
     }
 
     private RowMapper<User> rowMapper() {
