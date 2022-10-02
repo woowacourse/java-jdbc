@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
@@ -27,7 +29,7 @@ public class JdbcTemplate {
         final String sql = generateSql(sqlFormat, sqlArguments);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+            ResultSet resultSet = preparedStatement.executeQuery()) {
 
             log.debug("query : {}", sql);
 
@@ -35,6 +37,44 @@ public class JdbcTemplate {
                 return resultSetWrapper.execute(resultSet);
             }
             return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> queryForList(final String sqlFormat,
+                                    final ResultSetWrapper<T> resultSetWrapper,
+                                    final Object... sqlArguments) {
+
+        final String sql = generateSql(sqlFormat, sqlArguments);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            log.debug("query : {}", sql);
+
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(resultSetWrapper.execute(resultSet));
+            }
+
+            if (results.isEmpty()) {
+                return null;
+            }
+            return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void update(final String sqlFormat, final Object... sqlArguments) {
+        String sql = generateSql(sqlFormat, sqlArguments);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
