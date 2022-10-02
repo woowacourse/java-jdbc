@@ -1,16 +1,19 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.techcourse.domain.User;
+
+import nextstep.jdbc.JdbcTemplate;
 
 public class UserDao {
 
@@ -29,34 +32,31 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        update(sql, pstmt -> {
+                    pstmt.setString(1, user.getAccount());
+                    pstmt.setString(2, user.getPassword());
+                    pstmt.setString(3, user.getEmail());
+                }
+        );
+    }
 
+    private void update(final String sql, final PreparedStatementSetter ps) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            ps.set(pstmt);
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
+    }
+
+    @FunctionalInterface
+    interface PreparedStatementSetter {
+        void set(final PreparedStatement pstmt) throws SQLException;
     }
 
     public void update(final User user) {
