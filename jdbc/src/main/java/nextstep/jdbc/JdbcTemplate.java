@@ -24,7 +24,6 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-
             log.debug("query : {}", sql);
 
             int rowNum = 0;
@@ -36,6 +35,45 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        ResultSet rs = null;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            int argIdx = 0;
+            for (Object arg : args) {
+                argIdx++;
+                if (arg instanceof String) {
+                    pstmt.setString(argIdx, (String) arg);
+                    continue;
+                }
+                if (arg instanceof Long) {
+                    pstmt.setLong(argIdx, (Long) arg);
+                    continue;
+                }
+                if (arg instanceof Integer) {
+                    pstmt.setLong(argIdx, (Integer) arg);
+                }
+            }
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs, 0);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 
