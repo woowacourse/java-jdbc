@@ -78,32 +78,9 @@ class JdbcTemplateTest {
         final String sql = "delete from users where id = ?";
 
         jdbcTemplate.update(sql, 1L);
-        jdbcTemplate.update(sql, 2L);
 
         final String selectSql = "select * from users where id = ?";
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(selectSql, User.class, 1L))
                 .isInstanceOf(RuntimeException.class);
-    }
-
-    static class User {
-        private long id;
-        private String username;
-
-        public User(long id, String username) {
-            this.id = id;
-            this.username = username;
-        }
-
-        public User(String username) {
-            this.username = username;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public String getUsername() {
-            return username;
-        }
     }
 }
