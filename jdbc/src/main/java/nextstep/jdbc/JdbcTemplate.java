@@ -32,13 +32,33 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
             return getResult(preparedStatement, rowMapper);
         } catch (SQLException e) {
+            throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParameters(args, preparedStatement);
+            List<T> result = getResult(preparedStatement, rowMapper);
+            if (result.isEmpty()) {
+                throw new DataAccessException("결과값이 비어있습니다.");
+            }
+            if (result.size() > 1) {
+                throw new DataAccessException("잘못된 개수의 결과값이 반환되었습니다.");
+            }
+            return result.get(0);
+
+        } catch (SQLException e) {
+
             throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
         }
     }
