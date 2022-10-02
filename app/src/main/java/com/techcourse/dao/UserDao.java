@@ -49,11 +49,7 @@ public class UserDao {
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(id);
 
-        List<User> users = jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
-        if (users.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(users.get(0));
+        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
     }
 
     public Optional<User> findByAccount(final String account) {
@@ -61,11 +57,7 @@ public class UserDao {
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(account);
 
-        List<User> users = jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
-        if (users.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(users.get(0));
+        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
     }
 
     private final RowMapper<User> rowMapper = (resultSet) ->

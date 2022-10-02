@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,14 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public <T> Optional<T> executeQueryForObject(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
+        List<T> entities = executeQuery(sql, parameterSource, rowMapper);
+        if (entities.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(entities.get(0));
     }
 
     public void executeUpdate(String sql, ParameterSource parameterSource) {
