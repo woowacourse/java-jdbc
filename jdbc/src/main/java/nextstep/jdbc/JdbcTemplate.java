@@ -58,6 +58,7 @@ public class JdbcTemplate {
     }
 
     private void checkMultiResult(final ResultSet resultSet) throws SQLException {
+        resultSet.next();
         if (!resultSet.isAfterLast()) {
             throw new DataAccessException("쿼리 결과가 한 개가 아닙니다.");
         }
@@ -66,7 +67,7 @@ public class JdbcTemplate {
     private ResultSet getResultSet(final PreparedStatement prepareStatement, final Object[] params)
             throws SQLException {
         for (int i = 0; i < params.length; i++) {
-            prepareStatement.setObject(i - 1, params[i]);
+            prepareStatement.setObject(i + 1, params[i]);
         }
 
         return prepareStatement.executeQuery();
