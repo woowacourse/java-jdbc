@@ -21,10 +21,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> executeQuery(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
-        try (final var conn = getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, parameterSource);
-            return query(pstmt, rowMapper);
+        try (final var connection = getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
+            setParams(preparedStatement, parameterSource);
+            return query(preparedStatement, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -32,37 +32,36 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, ParameterSource parameterSource) {
-        try (final var conn = getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, parameterSource);
-            pstmt.executeUpdate();
+        try (final var connection = getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
+            setParams(preparedStatement, parameterSource);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void setParams(PreparedStatement pstmt, ParameterSource parameterSource) throws SQLException {
+    private void setParams(PreparedStatement preparedStatement, ParameterSource parameterSource) throws SQLException {
         for (var index = 0; index < parameterSource.getParamCount(); index++) {
-            pstmt.setObject(index + 1, parameterSource.getParam(index));
+            preparedStatement.setObject(index + 1, parameterSource.getParam(index));
         }
     }
 
     private Connection getConnection() {
         try {
             return dataSource.getConnection();
-        } catch (NullPointerException e) {
-            throw new IllegalStateException("DataSource가 설정되지 않았습니다.");
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> query(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
-        try (final var rs = pstmt.executeQuery()) {
+    private <T> List<T> query(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        try (final var resultSet = preparedStatement.executeQuery()) {
             List<T> entities = new ArrayList<>();
-            while (rs.next()) {
-                entities.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                entities.add(rowMapper.mapRow(resultSet));
             }
             return entities;
         }
