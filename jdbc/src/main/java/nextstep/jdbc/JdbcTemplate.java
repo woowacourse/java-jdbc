@@ -31,7 +31,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            ps.set(pstmt);
+            ps.setValues(pstmt);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -62,7 +62,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            ps.set(pstmt);
+            ps.setValues(pstmt);
 
             final List<T> results = execute(pstmt, rowMapper);
             return nullableSingleResult(results);
