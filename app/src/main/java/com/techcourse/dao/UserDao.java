@@ -1,9 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -14,11 +11,9 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -27,17 +22,18 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        final var sqlFormat = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sqlFormat, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        // todo
+        final var sqlFormat = "update users set account=?, password=?,email=? where id = ?";
+        jdbcTemplate.update(sqlFormat, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, (resultSet) -> new User(
+        final var sqlFormat = "select id, account, password, email from users";
+        return jdbcTemplate.queryForList(sqlFormat, (resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
@@ -46,9 +42,9 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final var sqlFormat = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, (resultSet) -> new User(
+        return jdbcTemplate.query(sqlFormat, (resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
@@ -57,9 +53,9 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        final var sqlFormat = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, (resultSet) -> new User(
+        return jdbcTemplate.query(sqlFormat, (resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
