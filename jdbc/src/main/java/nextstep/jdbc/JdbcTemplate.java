@@ -39,10 +39,16 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             StatementUtils.setArguments(pstmt, args);
-            return DataAccessUtils.mapResultSetToList(rowMapper, pstmt.executeQuery());
+            return executeQuer(rowMapper, pstmt);
         } catch (SQLException e) {
             log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
             throw new DataAccessException(e);
+        }
+    }
+
+    private static <T> List<T> executeQuer(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return DataAccessUtils.mapResultSetToList(rowMapper, rs);
         }
     }
 
@@ -50,12 +56,17 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
             StatementUtils.setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-            DataAccessUtils.validateResultSetSize(rs);
-            return DataAccessUtils.mapResultSetToObject(rowMapper, rs);
+            return executeQueryForObject(rowMapper, pstmt);
         } catch (SQLException e) {
             log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
             throw new DataAccessException(e);
+        }
+    }
+
+    private static <T> T executeQueryForObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            DataAccessUtils.validateResultSetSize(rs);
+            return DataAccessUtils.mapResultSetToObject(rowMapper, rs);
         }
     }
 
