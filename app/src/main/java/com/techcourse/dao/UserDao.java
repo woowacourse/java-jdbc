@@ -5,15 +5,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = createUserRowMapper();
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -59,25 +60,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        List<User> users = new ArrayList<>();
         final String sql = "select id, account, password, email from users";
 
-        try (Connection connection = jdbcTemplate.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet resultSet = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            while (resultSet.next()) {
-                final User user = new User(resultSet.getLong(1), resultSet.getString(2),
-                        resultSet.getString(3), resultSet.getString(4));
-                users.add(user);
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -145,5 +130,15 @@ public class UserDao {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private static RowMapper<User> createUserRowMapper() {
+        return (resultSet, resultNumber) -> {
+            final long id = resultSet.getLong("id");
+            final String account = resultSet.getString("account");
+            final String password = resultSet.getString("password");
+            final String email = resultSet.getString("email");
+            return new User(id, account, password, email);
+        };
     }
 }

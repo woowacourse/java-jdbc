@@ -16,3 +16,7 @@
   - [x] id 로 일치하는 유저를 찾아 조회할 수 있다.
 - [ ] UserDao가 아닌 JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당하고 있다.
   - [x] UserDao 가 JdbcTemplate 에 의존하도록 수정한다.
+  - [x] JdbcTemplate 에 query 메소드를 구현한다.
+    - [x] query() 메소드는 List 형태로 반환한다.
+    - [x] query() 메소드의 반환타입은 RowMapper 의 타입에 따라 결정된다.
+    - [x] query() 메소드는 인자를 받을 수도 있고 안 받을 수도 있다.
