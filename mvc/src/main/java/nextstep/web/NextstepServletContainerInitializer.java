@@ -1,26 +1,26 @@
 package nextstep.web;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.HandlesTypes;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 
 @HandlesTypes(WebApplicationInitializer.class)
 public class NextstepServletContainerInitializer implements ServletContainerInitializer {
 
     @Override
     public void onStartup(Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
-            throws ServletException {
+        throws ServletException {
         final List<WebApplicationInitializer> initializers = new LinkedList<>();
 
         if (webAppInitializerClasses != null) {
             for (Class<?> waiClass : webAppInitializerClasses) {
                 try {
-                    initializers.add((WebApplicationInitializer) waiClass.getDeclaredConstructor().newInstance());
+                    initializers.add((WebApplicationInitializer)waiClass.getDeclaredConstructor().newInstance());
                 } catch (Throwable e) {
                     throw new ServletException("Failed to instantiate WebApplicationInitializer class", e);
                 }

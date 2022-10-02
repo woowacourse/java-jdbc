@@ -13,8 +13,8 @@ public class HandlerAdapterRegistry {
 
     public HandlerAdapter getHandlerAdapter(final Object handler) {
         return handlerAdapters.stream()
-                .filter(ha -> ha.supports(handler))
-                .findFirst()
-                .orElseThrow(IllegalArgumentException::new);
+            .filter(adapter -> adapter.supports(handler))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("handlerAdapter not found for given handler"));
     }
 }

@@ -1,16 +1,22 @@
 package nextstep.mvc.controller.tobe;
 
-import jakarta.servlet.http.HttpServletRequest;
-import nextstep.mvc.HandlerMapping;
-import nextstep.web.annotation.RequestMapping;
-import nextstep.web.support.RequestMethod;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.reflections.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletRequest;
+import nextstep.mvc.HandlerMapping;
+import nextstep.web.annotation.RequestMapping;
+import nextstep.web.support.RequestMethod;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
 
@@ -25,33 +31,38 @@ public class AnnotationHandlerMapping implements HandlerMapping {
     }
 
     public void initialize() {
-        final var controllerScanner = new ControllerScanner(basePackage);
-        final var controllers = controllerScanner.getControllers();
+        final var controllers = new ControllerScanner(basePackage).getControllers();
         final var methods = getRequestMappingMethods(controllers.keySet());
         for (final var method : methods) {
             final var requestMapping = method.getAnnotation(RequestMapping.class);
-            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
+            log.debug("register handlerExecution : url is {}, request method : {}, method is {}",
+                requestMapping.value(), requestMapping.method(), method);
             addHandlerExecutions(controllers, method, requestMapping);
         }
 
         log.info("Initialized AnnotationHandlerMapping!");
     }
 
-    private void addHandlerExecutions(final Map<Class<?>, Object> controllers, final Method method, final RequestMapping rm) {
-        final var handlerKeys = mapHandlerKeys(rm.value(), rm.method());
+    private void addHandlerExecutions(final Map<Class<?>, Object> controllers, final Method method,
+        final RequestMapping requestMapping) {
+        final List<HandlerKey> handlerKeys = mapHandlerKeys(requestMapping.value(), requestMapping.method());
         handlerKeys.forEach(handlerKey -> {
-            handlerExecutions.put(handlerKey, new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
+            handlerExecutions.put(handlerKey,
+                new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
         });
     }
 
     private List<HandlerKey> mapHandlerKeys(final String value, final RequestMethod[] originalMethods) {
-        var targetMethods = originalMethods;
-        if (targetMethods.length == 0) {
-            targetMethods = RequestMethod.values();
+        return Arrays.stream(getTargetMethods(originalMethods))
+            .map(method -> new HandlerKey(value, method))
+            .collect(Collectors.toList());
+    }
+
+    private RequestMethod[] getTargetMethods(final RequestMethod[] originalMethods) {
+        if (originalMethods.length == 0) {
+            return RequestMethod.values();
         }
-        return Arrays.stream(targetMethods)
-                .map(method -> new HandlerKey(value, method))
-                .collect(Collectors.toList());
+        return originalMethods;
     }
 
     @SuppressWarnings("unchecked")
@@ -59,7 +70,7 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         final var requestMappingMethods = new HashSet<Method>();
         for (final var clazz : controllers) {
             requestMappingMethods
-                    .addAll(ReflectionUtils.getAllMethods(clazz, ReflectionUtils.withAnnotation(RequestMapping.class)));
+                .addAll(ReflectionUtils.getAllMethods(clazz, ReflectionUtils.withAnnotation(RequestMapping.class)));
         }
         return requestMappingMethods;
     }

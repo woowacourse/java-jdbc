@@ -31,7 +31,7 @@ class AnnotationHandlerMappingTest {
         final var handlerExecution = (HandlerExecution) handlerMapping.getHandler(request);
         final var modelAndView = handlerExecution.handle(request, response);
 
-        assertThat(modelAndView.getObject("id")).isEqualTo("gugu");
+        assertThat(modelAndView.getAttribute("id")).isEqualTo("gugu");
     }
 
     @Test
@@ -46,6 +46,6 @@ class AnnotationHandlerMappingTest {
         final var handlerExecution = (HandlerExecution) handlerMapping.getHandler(request);
         final var modelAndView = handlerExecution.handle(request, response);
 
-        assertThat(modelAndView.getObject("id")).isEqualTo("gugu");
+        assertThat(modelAndView.getAttribute("id")).isEqualTo("gugu");
     }
 }
