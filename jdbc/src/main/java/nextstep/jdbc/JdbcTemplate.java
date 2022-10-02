@@ -21,11 +21,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query, final Object... values) {
+    public void update(String query, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
             log.debug("query : {}", query);
-            setArguments(pstmt, values);
+            setArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -50,7 +50,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void setArguments(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
