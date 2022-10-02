@@ -5,8 +5,17 @@ import java.util.List;
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
+
+    private static final RowMapper<User> ROW_MAPPER =
+            rs -> new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4)
+            );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -40,13 +49,7 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql,
-                rs -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4))
-        );
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -54,11 +57,7 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql,
                 pstmt -> pstmt.setLong(1, id),
-                rs -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4))
+                ROW_MAPPER
         );
     }
 
@@ -67,11 +66,7 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql,
                 pstmt -> pstmt.setString(1, account),
-                rs -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4))
+                ROW_MAPPER
         );
     }
 }
