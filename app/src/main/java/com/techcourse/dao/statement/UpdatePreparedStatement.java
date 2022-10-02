@@ -19,6 +19,5 @@ public class UpdatePreparedStatement extends AbstractPreparedStatementExecutor {
         preparedStatement.setString(2, user.getPassword());
         preparedStatement.setString(3, user.getEmail());
         preparedStatement.setLong(4, user.getId());
-        preparedStatement.executeUpdate();
     }
 }

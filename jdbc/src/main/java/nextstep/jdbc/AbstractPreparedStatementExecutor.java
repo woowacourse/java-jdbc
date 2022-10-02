@@ -10,6 +10,7 @@ public abstract class AbstractPreparedStatementExecutor implements PreparedState
     public void execute(final Connection connection, final String sql) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             executeQuery(preparedStatement);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
