@@ -15,15 +15,12 @@ public class UpdatePreparedStatement implements PreparedStatementExecutor {
     }
 
     @Override
-    public void execute(final Connection connection) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
+    public void execute(final Connection connection, final String sql) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getAccount());
             preparedStatement.setString(2, user.getPassword());
             preparedStatement.setString(3, user.getEmail());
             preparedStatement.setLong(4, user.getId());
-            preparedStatement.executeUpdate();
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);

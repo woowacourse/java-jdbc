@@ -4,5 +4,5 @@ import java.sql.Connection;
 
 public interface PreparedStatementExecutor {
 
-    void execute(Connection connection);
+    void execute(Connection connection, String sql);
 }

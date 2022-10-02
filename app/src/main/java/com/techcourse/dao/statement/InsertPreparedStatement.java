@@ -15,9 +15,7 @@ public class InsertPreparedStatement implements PreparedStatementExecutor {
     }
 
     @Override
-    public void execute(final Connection connection) {
-        String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
+    public void execute(final Connection connection, final String sql) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getAccount());
             preparedStatement.setString(2, user.getPassword());

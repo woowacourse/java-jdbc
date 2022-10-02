@@ -18,34 +18,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() throws SQLException {
+    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
+        try (Connection connection = getConnection()) {
+            executor.execute(connection, sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<?> executeQueryForList(final ResultSetExecutor<?> executor, final String sql) {
+        try (Connection connection = getConnection()) {
+            return executor.execute(connection, sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Object executeQueryForObject(final SingleResultSetExecutor<?> executor,
+                                        final String sql,
+                                        final Object[] columns) {
+        try (Connection connection = getConnection()) {
+            return executor.execute(connection, sql, columns);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Connection getConnection() throws SQLException {
         return dataSource.getConnection();
-    }
-
-    public void executeQuery(final PreparedStatementExecutor executor) {
-        try (Connection connection = getConnection()) {
-            executor.execute(connection);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public List<?> executeQueryForList(final ResultSetExecutor<?> executor) {
-        try (Connection connection = getConnection()) {
-            return executor.execute(connection);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Object executeQueryForObject(final SingleResultSetExecutor<?> executor, final Object[] columns) {
-        try (Connection connection = getConnection()) {
-            return executor.execute(connection, columns);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
     }
 }

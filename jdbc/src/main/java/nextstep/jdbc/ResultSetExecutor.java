@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface ResultSetExecutor<T> {
 
-    List<T> execute(final Connection connection);
+    List<T> execute(final Connection connection, final String sql);
 }

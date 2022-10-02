@@ -2,8 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.dao.statement.InsertPreparedStatement;
 import com.techcourse.dao.statement.SelectAllResultSet;
-import com.techcourse.dao.statement.SelectByAccountResultSet;
-import com.techcourse.dao.statement.SelectByIdResultSet;
+import com.techcourse.dao.statement.SelectResultSet;
 import com.techcourse.dao.statement.UpdatePreparedStatement;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -22,22 +21,27 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        jdbcTemplate.executeQuery(new InsertPreparedStatement(user));
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.executeQuery(new InsertPreparedStatement(user), sql);
     }
 
     public void update(final User user) {
-        jdbcTemplate.executeQuery(new UpdatePreparedStatement(user));
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.executeQuery(new UpdatePreparedStatement(user), sql);
     }
 
     public List<User> findAll() {
-        return (List<User>) jdbcTemplate.executeQueryForList(new SelectAllResultSet());
+        final String sql = "select * from users";
+        return (List<User>) jdbcTemplate.executeQueryForList(new SelectAllResultSet(), sql);
     }
 
     public User findById(final Long id) {
-        return (User) jdbcTemplate.executeQueryForObject(new SelectByIdResultSet(), new Object[]{id});
+        String sql = "select * from users where id = ?";
+        return (User) jdbcTemplate.executeQueryForObject(new SelectResultSet(), sql, new Object[]{id});
     }
 
     public User findByAccount(final String account) {
-        return (User) jdbcTemplate.executeQueryForObject(new SelectByAccountResultSet(), new Object[]{account});
+        String sql = "select * from users where account = ?";
+        return (User) jdbcTemplate.executeQueryForObject(new SelectResultSet(), sql, new Object[]{account});
     }
 }
