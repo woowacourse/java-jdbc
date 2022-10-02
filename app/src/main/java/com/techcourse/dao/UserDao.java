@@ -1,16 +1,16 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -23,7 +23,7 @@ public class UserDao {
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.dataSource = jdbcTemplate.getDataSource();
     }
 
     public void insert(final User user) {
@@ -41,7 +41,7 @@ public class UserDao {
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -49,13 +49,15 @@ public class UserDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
         }
     }
 
@@ -64,8 +66,25 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users";
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            final List<User> users = new ArrayList<>();
+            final ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                final long id = resultSet.getLong("id");
+                final String account = resultSet.getString("account");
+                final String password = resultSet.getString("password");
+                final String email = resultSet.getString("email");
+                users.add(new User(id, account, password, email));
+            }
+
+            return users;
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public User findById(final Long id) {
@@ -90,7 +109,7 @@ public class UserDao {
                         rs.getString(4));
             }
             return null;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -98,19 +117,22 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
         }
     }
 
