@@ -5,9 +5,9 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
@@ -18,7 +18,6 @@ public class UserDao {
                     rs.getString("account"),
                     rs.getString("password"),
                     rs.getString("email"));
-
 
     private final JdbcTemplate jdbcTemplate;
 
