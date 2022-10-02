@@ -23,13 +23,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... objects) {
-        update(sql, pstmt -> {
-            for (int i = 0; i < objects.length; i++) {
-                final var parameterIndex = i + 1;
-                final var object =objects[i];
-                pstmt.setObject(parameterIndex, object);
-            }
-        });
+        update(sql, dynamicPreparedStatementSetter(objects));
     }
 
     private void update(final String sql, final PreparedStatementSetter ps) {
@@ -59,6 +53,9 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        return queryForObject(sql, dynamicPreparedStatementSetter(objects), rowMapper);
+    }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter ps, final RowMapper<T> rowMapper) {
         try (final Connection conn = dataSource.getConnection();
@@ -103,5 +100,15 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.iterator().next();
+    }
+
+    private PreparedStatementSetter dynamicPreparedStatementSetter(final Object... objects) {
+        return pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                final var parameterIndex = i + 1;
+                final var object = objects[i];
+                pstmt.setObject(parameterIndex, object);
+            }
+        };
     }
 }
