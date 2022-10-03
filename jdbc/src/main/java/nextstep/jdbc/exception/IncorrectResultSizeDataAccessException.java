@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.exception;
 
 public class IncorrectResultSizeDataAccessException extends DataAccessException {
 
