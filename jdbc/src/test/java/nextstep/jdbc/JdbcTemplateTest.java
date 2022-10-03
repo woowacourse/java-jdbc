@@ -115,6 +115,35 @@ class JdbcTemplateTest {
         }
     }
 
+    @Nested
+    @DisplayName("query 메서드는")
+    class Query {
+
+        private ResultSet resultSet;
+
+        @BeforeEach
+        void setUp() {
+            resultSet = Mockito.mock(ResultSet.class);
+        }
+
+        @Test
+        @DisplayName("결과행이 1개 이상인 SELECT 쿼리를 처리할 수 있다.")
+        void success_select_only() throws SQLException {
+            String sql = "select * from users";
+            RowMapper<User> rowMapper = (rs, rowNum) ->
+                new User(rs.getString(1), rs.getString(2));
+
+            when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, true, false);
+            when(resultSet.getString(1)).thenReturn("leo", "leo2");
+            when(resultSet.getString(2)).thenReturn("password");
+            List<User> users = jdbcTemplate.query(sql, rowMapper);
+
+            assertThat(users).hasSize(2);
+        }
+    }
+
     private static class User {
 
         private final String account;
