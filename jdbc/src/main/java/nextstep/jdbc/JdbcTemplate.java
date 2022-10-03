@@ -22,6 +22,33 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void execute(final String sql) throws DataAccessException {
+        try(
+                final var conn = dataSource.getConnection();
+                final var pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.execute();
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void update(final String sql, @Nullable final Object... args) {
+        try(
+                final var conn = dataSource.getConnection();
+                final var pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            setPstmt(pstmt, args);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
         final List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
