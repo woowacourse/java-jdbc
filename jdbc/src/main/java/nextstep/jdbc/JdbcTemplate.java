@@ -53,10 +53,10 @@ public class JdbcTemplate {
     }
 
     private void bindPrepareStatement(final PreparedStatement ps, final Object[] objects) throws SQLException {
-        int rowNum = 1;
+        int parameterIndex = 1;
         for (Object object : objects) {
-            ps.setObject(rowNum, object);
-            rowNum++;
+            ps.setObject(parameterIndex, object);
+            parameterIndex++;
         }
     }
 }
