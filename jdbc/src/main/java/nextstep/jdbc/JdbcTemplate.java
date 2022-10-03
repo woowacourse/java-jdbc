@@ -36,12 +36,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
@@ -53,20 +49,6 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcConnectionException("Fail to get JDBC Connection", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (final SQLException ignored) {
-            }
         }
     }
 }
