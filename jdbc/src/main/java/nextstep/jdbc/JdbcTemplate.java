@@ -23,7 +23,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
@@ -32,10 +32,10 @@ public class JdbcTemplate {
             for (int i = 0; i < args.length; i++) {
                 statement.setObject(i + 1, args[i]);
             }
-            statement.executeUpdate();
+            return statement.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to execute a sql.", e);
+            throw new DataAccessException("Failed to execute a update query.", e);
         }
     }
 
