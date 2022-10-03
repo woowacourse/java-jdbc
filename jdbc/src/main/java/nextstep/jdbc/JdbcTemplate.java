@@ -60,19 +60,7 @@ public class JdbcTemplate {
     private void setParams(final PreparedStatement preparedStatement, final Object[] params) throws SQLException {
         int size = params.length;
         for (int i = 0; i < size; i++) {
-            setObject(preparedStatement, i + 1, params[i]);
-        }
-    }
-
-    private void setObject(final PreparedStatement preparedStatement, final int index, final Object param)
-            throws SQLException {
-        if (param instanceof String) {
-            preparedStatement.setString(index, (String) param);
-            return;
-        }
-
-        if (param instanceof Long) {
-            preparedStatement.setLong(index, (Long) param);
+            preparedStatement.setObject(i + 1, params[i]);
         }
     }
 
