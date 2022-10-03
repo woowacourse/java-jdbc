@@ -22,9 +22,6 @@ class UserDaoTest {
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
-
-        jdbcTemplate.update("truncate table users");
-        jdbcTemplate.update("alter table users alter column id restart with 1");
     }
 
     @Test
