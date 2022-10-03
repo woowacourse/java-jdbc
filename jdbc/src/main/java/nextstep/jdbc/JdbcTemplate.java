@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -92,14 +91,14 @@ public class JdbcTemplate {
 			}
 		}
 
-		public <T> List<T> getResultList(final Class<T> type) {
+		public <T> List<T> getResultList(final RowMapper<T> rowMapper) {
 			try {
 				List<T> results = new ArrayList<>();
 				while (rs.next()) {
-					results.add(createResult(type));
+					results.add(rowMapper.mapRow(rs));
 				}
 				return results;
-			} catch (SQLException | IllegalAccessException e) {
+			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
 				throw new RuntimeException(e);
 			} finally {
@@ -107,48 +106,19 @@ public class JdbcTemplate {
 			}
 		}
 
-		public <T> T getResult(final Class<T> type) {
+		public <T> T getResult(final RowMapper<T> rowMapper) {
 			try {
 				if (rs.next()) {
-					return createResult(type);
+					return rowMapper.mapRow(rs);
 				}
 				return null;
-			} catch (SQLException | IllegalAccessException e) {
+			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
 				throw new RuntimeException(e);
 			} finally {
 				close(conn, pstmt);
 			}
 		}
-
-		private <T> T newInstance(final Class<T> type) {
-			T result;
-			try {
-				result = type.getConstructor().newInstance();
-			} catch (ReflectiveOperationException e) {
-				log.error(e.getMessage(), e);
-				throw new RuntimeException(e);
-			}
-			return result;
-		}
-
-		private <T> T createResult(final Class<T> type) throws IllegalAccessException, SQLException {
-			Field[] fields = type.getDeclaredFields();
-			T result = newInstance(type);
-			int parameterIndex = 1;
-			for (Field field : fields) {
-				field.setAccessible(true);
-				Class<?> fieldType = field.getType();
-				if (fieldType.equals(Long.class)) {
-					field.set(result, rs.getLong(parameterIndex++));
-				}
-				if (fieldType.equals(String.class)) {
-					field.set(result, rs.getString(parameterIndex++));
-				}
-			}
-			return result;
-		}
-
 	}
 
 	private static void close(final Connection conn, final PreparedStatement pstmt) {

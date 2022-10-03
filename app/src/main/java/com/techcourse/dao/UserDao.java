@@ -4,14 +4,19 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
+
+	private static final RowMapper<User> USER_MAPPER = (rs -> new User(
+		rs.getLong("id"),
+		rs.getString("account"),
+		rs.getString("password"),
+		rs.getString("email")
+	));
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -39,20 +44,20 @@ public class UserDao {
 	public List<User> findAll() {
 		return jdbcTemplate.createQuery("select id, account, password, email from users")
 			.executeQuery()
-			.getResultList(User.class);
+			.getResultList(USER_MAPPER);
 	}
 
 	public User findById(final Long id) {
 		return jdbcTemplate.createQuery("select id, account, password, email from users where id = ?")
 			.setLong(1, id)
 			.executeQuery()
-			.getResult(User.class);
+			.getResult(USER_MAPPER);
 	}
 
 	public User findByAccount(final String account) {
 		return jdbcTemplate.createQuery("select id, account, password, email from users where account = ?")
 			.setString(1, account)
 			.executeQuery()
-			.getResult(User.class);
+			.getResult(USER_MAPPER);
 	}
 }
