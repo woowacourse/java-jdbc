@@ -33,56 +33,26 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("query : {}", sql);
-
-        ResultSet resultSet = null;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setParams(preparedStatement, params);
-            resultSet = preparedStatement.executeQuery();
-
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return execute(sql, rowMapper, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("query : {}", sql);
 
-        ResultSet resultSet = null;
+        List<T> result = execute(sql, rowMapper, params);
+        validateResultSize(result);
+        return result.get(0);
+    }
+
+    private <T> List<T> execute(final String sql, final RowMapper<T> rowMapper, final Object[] params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
             setParams(preparedStatement, params);
-            resultSet = preparedStatement.executeQuery();
+            return toList(preparedStatement.executeQuery(), rowMapper);
 
-            if (resultSet.next()) {
-                return rowMapper.map(resultSet);
-            }
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            throw new DataAccessException(e);
         }
     }
 
@@ -105,7 +75,21 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    private <T> List<T> toList(final ResultSet resultSet, final RowMapper<T> rowMapper) {
+        try (resultSet) {
+            List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(rowMapper.map(resultSet));
+            }
+            return result;
+        } catch (SQLException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private <T> void validateResultSize(final List<T> result) {
+        if (result.size() != 1) {
+            throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
+        }
     }
 }
