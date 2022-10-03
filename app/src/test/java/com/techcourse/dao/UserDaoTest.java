@@ -1,22 +1,25 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
