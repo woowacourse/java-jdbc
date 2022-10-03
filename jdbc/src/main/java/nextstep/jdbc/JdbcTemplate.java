@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -69,6 +70,9 @@ public class JdbcTemplate {
 
     private <T> List<T> extractData(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         Assert.notNull(rowMapper, "RowMapper is required");
+        if (resultSet == null) {
+            return Collections.emptyList();
+        }
 
         final List<T> results = new ArrayList<>();
         int rowNum = 0;
