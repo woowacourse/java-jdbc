@@ -18,7 +18,6 @@ import java.util.List;
 
 class JdbcTemplateTest {
 
-    private DataSource dataSource;
     private ResultSet resultSet;
     private Connection connection;
     private PreparedStatement preparedStatement;
@@ -26,7 +25,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        this.dataSource = mock(DataSource.class);
+        final DataSource dataSource = mock(DataSource.class);
         this.connection = mock(Connection.class);
         this.resultSet = mock(ResultSet.class);
         this.preparedStatement = mock(PreparedStatement.class);

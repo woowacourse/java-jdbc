@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -34,12 +34,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, args);
-            resultSet = preparedStatement.executeQuery();
-
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             final ResultSet resultSet = createResultSet(preparedStatement, args)) {
             log.debug("query : {}", sql);
 
             List<T> values = new ArrayList<>();
@@ -50,14 +47,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
+    }
+
+    private ResultSet createResultSet(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
+        setParameters(preparedStatement, args);
+        return preparedStatement.executeQuery();
     }
 
     private void setParameters(final PreparedStatement pstmt, final Object... args) {
