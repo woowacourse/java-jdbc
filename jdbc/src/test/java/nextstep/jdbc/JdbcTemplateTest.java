@@ -1,12 +1,23 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
+
+    private static final RowMapper<UserObject> OBJECT_ROW_MAPPER =
+            (rs, rowNum) -> new UserObject
+                    (
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4)
+                    );
 
     private JdbcTemplate jdbcTemplate;
 
@@ -22,28 +33,53 @@ class JdbcTemplateTest {
 
     @Test
     void insert() {
-        int count = jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
-                "brorae", "password", "brorae@woowa.com");
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        int count = jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
 
-        assertThat(count).isEqualTo(1);
+        String selectSql = "select id, account, password, email from users";
+        List<UserObject> users = jdbcTemplate.query(selectSql, OBJECT_ROW_MAPPER);
+
+        assertAll(
+                () -> assertThat(count).isEqualTo(1),
+                () -> assertThat(users.get(0)).isEqualTo(new UserObject(1L, "brorae", "password", "brorae@woowa.com"))
+        );
     }
 
     @Test
     void update() {
-        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
-                "brorae", "password", "brorae@woowa.com");
-        int count = jdbcTemplate.update("update users set account=?, password=?, email=? where account=?",
-                "rennon", "password123", "rennon@woowa.com", "brorae");
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
 
-        assertThat(count).isEqualTo(1);
+        String updateSql = "update users set account=?, password=?, email=? where id=?";
+        int count = jdbcTemplate.update(updateSql, "rennon", "password123", "rennon@woowa.com", 1L);
+
+        String selectSql = "select id, account, password, email from users";
+        List<UserObject> users = jdbcTemplate.query(selectSql, OBJECT_ROW_MAPPER);
+
+        assertAll(
+                () -> assertThat(count).isEqualTo(1),
+                () -> assertThat(users.get(0)).isEqualTo(new UserObject(1L, "rennon", "password123", "rennon@woowa.com"))
+        );
     }
 
     @Test
-    void delete() {
-        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
-                "brorae", "password", "brorae@woowa.com");
-        int count = jdbcTemplate.update("delete from users where id=?", 1L);
+    void queryForObject() {
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
 
-        assertThat(count).isEqualTo(1);
+        String selectSql = "select id, account, password, email from users where id=?";
+        UserObject userObject = jdbcTemplate.queryForObject(selectSql, OBJECT_ROW_MAPPER, 1L);
+
+        assertThat(userObject).isEqualTo(new UserObject(1L, "brorae", "password", "brorae@woowa.com"));
+    }
+
+    @Test
+    void query() {
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
+
+        List<UserObject> users = jdbcTemplate.query("select id, account, password, email from users", OBJECT_ROW_MAPPER);
+
+        assertThat(users).hasSize(1);
     }
 }
