@@ -11,6 +11,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nextstep.jdbc.exception.DataAccessException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -51,7 +53,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)
+             PreparedStatement statement = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)
         ) {
             log.debug("query : {}", sql);
             return callback.doInStatement(statement);
