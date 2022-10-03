@@ -43,7 +43,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
-    private RowMapper<User> userRowMapper = rs -> new User(
+    private final RowMapper<User> userRowMapper = rs -> new User(
             rs.getLong(1),
             rs.getString(2),
             rs.getString(3),
