@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,13 @@ public class UserDao {
 
     private JdbcTemplate jdbcTemplate;
 
+    private final RowMapper<User> autoRowMapper = (resultSet) -> new User(
+            resultSet.getInt("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
+
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -21,6 +29,7 @@ public class UserDao {
     public int insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.debug("query : {}", sql);
+
         return jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
@@ -33,6 +42,7 @@ public class UserDao {
     public int update(final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         log.debug("query : {}", sql);
+
         return jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
@@ -46,54 +56,29 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select * from users";
         log.debug("query : {}", sql);
-        return jdbcTemplate.queryForList(sql, (resultSet) ->
-                new User(
-                        resultSet.getInt("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
+
+        return jdbcTemplate.queryForList(sql, autoRowMapper);
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+    public Optional<User> findById(final Long id) {
+        String sql = "select id, account, password, email from users where id = ?";
         log.debug("query : {}", sql);
-        Optional<User> user = jdbcTemplate.queryForObject(
-                (connection) -> {
-                    PreparedStatement pstmt = connection.prepareStatement(sql);
-                    pstmt.setLong(1, id);
-                    return pstmt;
-                },
-                (resultSet) -> new User(
-                        resultSet.getInt("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
-        if (user.isEmpty()) {
-            throw new RuntimeException();
-        }
-        return user.get();
+
+        return jdbcTemplate.queryForObject(connection -> {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setLong(1, id);
+            return pstmt;
+        }, autoRowMapper);
     }
 
-    public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+    public Optional<User> findByAccount(final String account) {
+        String sql = "select id, account, password, email from users where account = ?";
         log.debug("query : {}", sql);
-        Optional<User> user = jdbcTemplate.queryForObject(
-                (connection) -> {
-                    PreparedStatement pstmt = connection.prepareStatement(sql);
-                    pstmt.setString(1, account);
-                    return pstmt;
-                },
-                (resultSet) -> new User(
-                        resultSet.getInt("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
-        if (user.isEmpty()) {
-            throw new RuntimeException();
-        }
-        return user.get();
+
+        return jdbcTemplate.queryForObject(connection -> {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            pstmt.setString(1, account);
+            return pstmt;
+        }, autoRowMapper);
     }
 }
