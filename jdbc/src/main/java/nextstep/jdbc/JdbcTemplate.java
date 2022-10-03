@@ -54,29 +54,9 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(rowMapper, new SimplePreparedStatementSetter(sql, args));
-        if (result.size() > 1) {
+        if (result.size() != 1) {
             throw new RuntimeException();
         }
         return Optional.ofNullable(result.get(0));
-    }
-
-    private static class SimplePreparedStatementSetter implements PreparedStatementSetter {
-
-        private final String sql;
-        private final Object[] args;
-
-        public SimplePreparedStatementSetter(final String sql, final Object[] args) {
-            this.sql = sql;
-            this.args = args;
-        }
-
-        @Override
-        public PreparedStatement setPreparedStatement(final Connection connection) throws SQLException {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int index = 0; index < args.length; index++) {
-                pstmt.setObject(index + 1, args[index]);
-            }
-            return pstmt;
-        }
     }
 }
