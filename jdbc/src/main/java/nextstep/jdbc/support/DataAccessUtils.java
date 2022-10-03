@@ -23,22 +23,11 @@ public class DataAccessUtils {
         return result;
     }
 
-    public static void validateResultSetSize(final ResultSet rs) throws SQLException {
-        int size = getResultSetSize(rs);
+    public static <T> T getSingleResult(final List<T> result) {
+        int size = result.size();
         if (size != 1) {
             throw new DataAccessException(String.format(INCORRECT_RESULT_SIZE_MESSAGE, size));
         }
-    }
-
-    private static int getResultSetSize(final ResultSet rs) throws SQLException {
-        rs.last();
-        int size = rs.getRow();
-        rs.beforeFirst();
-        return size;
-    }
-
-    public static <T> T mapResultSetToObject(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        rs.next();
-        return rowMapper.mapRow(rs, 1);
+        return result.get(0);
     }
 }
