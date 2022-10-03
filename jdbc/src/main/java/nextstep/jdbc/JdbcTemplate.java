@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +28,19 @@ public class JdbcTemplate {
         return update(sql, statement -> setParameters(statement, args));
     }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql, statement -> {
+            final ResultSet resultSet = statement.executeQuery();
+            return getObjects(rowMapper, resultSet);
+        });
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, getSingleObjectQueryCallback(rowMapper, args));
+        return execute(sql, statement -> {
+            setParameters(statement, args);
+            final ResultSet resultSet = statement.executeQuery();
+            return getSingleObject(rowMapper, resultSet);
+        });
     }
 
     private PreparedStatementCallback<Integer> getUpdateCallback(
@@ -38,13 +51,12 @@ public class JdbcTemplate {
         };
     }
 
-    private <T> PreparedStatementCallback<T> getSingleObjectQueryCallback(final RowMapper<T> rowMapper,
-                                                                          final Object[] args) {
-        return statement -> {
-            setParameters(statement, args);
-            final ResultSet resultSet = statement.executeQuery();
-            return getSingleObject(rowMapper, resultSet);
-        };
+    private <T> List<T> getObjects(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while(resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
     }
 
     private <T> T getSingleObject(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
@@ -63,6 +75,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        log.debug("query : {}", sql);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(statement);

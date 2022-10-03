@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +63,38 @@ class JdbcTemplateTest {
                 () -> verify(statement).setObject(3, "email"),
                 () -> verify(statement).executeUpdate()
         );
+    }
+
+    @DisplayName("RowMapper를 통해 데이터를 객체 List로 조회할 수 있다.")
+    @Test
+    void query_RowMapper() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
+        when(resultSet.getString("account"))
+                .thenReturn("forky")
+                .thenReturn("boki");
+        when(resultSet.getString("password"))
+                .thenReturn("password12")
+                .thenReturn("password34");
+        when(resultSet.getString("email"))
+                .thenReturn("forky@email.com")
+                .thenReturn("boki@email.com");
+
+        final String sql = "select id, account, password, email from users";
+        final List<String> result = jdbcTemplate.query(sql, rs -> {
+            final String account = rs.getString("account");
+            final String password = rs.getString("password");
+            final String email = rs.getString("email");
+            return String.join("/", account, password, email);
+        });
+
+        assertThat(result).containsExactly(
+                "forky/password12/forky@email.com", "boki/password34/boki@email.com");
     }
 
     @DisplayName("RowMapper를 통해 데이터를 객체로 조회할 수 있다.")
