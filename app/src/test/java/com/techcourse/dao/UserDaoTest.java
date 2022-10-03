@@ -29,12 +29,14 @@ class UserDaoTest {
     @Test
     void findAll() {
         final var users = userDao.findAll();
+
         assertThat(users).hasSize(1);
     }
 
     @Test
     void findById() {
         final var user = userDao.findById(1L);
+
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 

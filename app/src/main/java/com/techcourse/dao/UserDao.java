@@ -75,7 +75,23 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        log.debug("query : {}", sql);
+        Optional<User> user = jdbcTemplate.queryForObject(
+                (connection) -> {
+                    PreparedStatement pstmt = connection.prepareStatement(sql);
+                    pstmt.setString(1, account);
+                    return pstmt;
+                },
+                (resultSet) -> new User(
+                        resultSet.getInt("id"),
+                        resultSet.getString("account"),
+                        resultSet.getString("password"),
+                        resultSet.getString("email")
+                ));
+        if (user.isEmpty()) {
+            throw new RuntimeException();
+        }
+        return user.get();
     }
 }
