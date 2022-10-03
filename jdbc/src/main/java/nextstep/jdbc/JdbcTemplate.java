@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -20,8 +21,8 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
-
         log.debug("execute prepared SQL update");
+
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -41,5 +42,27 @@ public class JdbcTemplate {
 
     public DataSource getDataSource() {
         return dataSource;
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        Assert.notNull(sql, "SQL must not be null");
+        log.debug("Executing SQL query [{}]", sql);
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setValues(statement, args);
+            final ResultSet resultSet = statement.executeQuery();
+            return extractData(resultSet, rowMapper);
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T extractData(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        Assert.notNull(rowMapper, "RowMapper is required");
+        if (!resultSet.next()) {
+            return null;
+        }
+        return rowMapper.mapRow(resultSet, 0);
     }
 }
