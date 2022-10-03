@@ -51,16 +51,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) {
-        for (int i = 0; i < args.length; i++) {
-            try {
-                pstmt.setObject(i + 1,  args[i]);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -101,6 +91,16 @@ public class JdbcTemplate {
                     conn.close();
                 }
             } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object... args) {
+        for (int i = 0; i < args.length; i++) {
+            try {
+                pstmt.setObject(i + 1,  args[i]);
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
     }
