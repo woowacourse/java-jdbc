@@ -18,6 +18,7 @@ class UserDaoTest {
 
     private UserDao userDao;
     private DataSource dataSource;
+    private Long guguId;
 
     @BeforeEach
     void setup() {
@@ -26,7 +27,7 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(dataSource));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        guguId = userDao.insert(user);
     }
 
     @AfterEach
@@ -54,9 +55,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        User gugu = userDao.findByAccount("gugu");
-        System.out.println("gugu.getId() = " + gugu.getId());
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(guguId);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -73,9 +72,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        Long id = userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(id);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -83,12 +82,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(guguId);
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(guguId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

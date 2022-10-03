@@ -14,5 +14,7 @@
 - [x] JdbcTemplate 중복 코드 없애기
 - [x] JdbcTemplate 예외 상황에 대한 테스트 추가
 - [x] Dao 테스트 격리 고민해보기
+- [x] insert 메서드를 분리해 id 값 가져오기
+- [x] update 메서드에서 update 수를 반환하도록 수정
 
 </details>

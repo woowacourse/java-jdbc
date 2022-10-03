@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -36,7 +37,27 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public Long insert(final String sql, final Object... parameters) {
+        validateSql(sql);
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            setParameters(statement, parameters);
+            log.debug("query : {}", sql);
+            statement.executeUpdate();
+
+            final ResultSet generatedKeys = statement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return generatedKeys.getLong(1);
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int update(final String sql, final Object... parameters) {
         validateSql(sql);
 
         try (final Connection connection = dataSource.getConnection();
@@ -44,7 +65,7 @@ public class JdbcTemplate {
 
             setParameters(statement, parameters);
             log.debug("query : {}", sql);
-            statement.executeUpdate();
+            return statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
