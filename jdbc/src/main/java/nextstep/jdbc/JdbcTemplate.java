@@ -25,11 +25,11 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
             log.debug("query : {}", sql);
-            
+
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -58,21 +58,17 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        ResultSet resultSet = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(pstmt, args);
-            resultSet = pstmt.executeQuery();
+        final List<T> resultObjects = query(sql, rowMapper, args);
 
-            log.debug("query : {}", sql);
-
-            return mapObject(rowMapper, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            close(resultSet);
+        if (resultObjects.size() == 0) {
+            throw new EmptyResultDataAccessException();
         }
+
+        if (resultObjects.size() != 1) {
+            throw new DataAccessException();
+        }
+
+        return resultObjects.get(0);
     }
 
     private void setArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
