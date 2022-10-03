@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,5 +62,27 @@ class JdbcTemplateTest {
                 () -> verify(statement).setObject(3, "email"),
                 () -> verify(statement).executeUpdate()
         );
+    }
+
+    @DisplayName("RowMapper를 통해 데이터를 객체로 조회할 수 있다.")
+    @Test
+    void queryForObject_RowMapper() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenReturn("forky");
+        when(resultSet.getString("password")).thenReturn("password12");
+        when(resultSet.getString("email")).thenReturn("forky@email.com");
+
+        final String sql = "select id, account, password, email from users where id = ?";
+        final String result = jdbcTemplate.queryForObject(sql, rs -> {
+            final String account = rs.getString("account");
+            final String password = rs.getString("password");
+            final String email = rs.getString("email");
+            return String.join("/", account, password, email);
+        }, 1L);
+
+        assertThat(result).isEqualTo("forky/password12/forky@email.com");
     }
 }
