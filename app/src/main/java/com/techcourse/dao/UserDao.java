@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
@@ -37,21 +36,18 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select * from users";
 
-        return jdbcTemplate.query(sql, User.class)
-                .stream()
-                .map(User.class::cast)
-                .collect(Collectors.toList());
+        return jdbcTemplate.query(sql, User.class);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return (User) jdbcTemplate.queryForObject(sql, User.class, id);
+        return jdbcTemplate.queryForObject(sql, User.class, id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select * from users where account = ?";
 
-        return (User) jdbcTemplate.queryForObject(sql, User.class, account);
+        return jdbcTemplate.queryForObject(sql, User.class, account);
     }
 }

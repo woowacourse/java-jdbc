@@ -22,19 +22,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
-    public List<Object> query(String sql, Class<?> clazz, Object... args) {
+    public <T> List<T> query(String sql, Class<T> clazz, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            List<Object> objects = new ArrayList<>();
+
 
             setParameters(pstmt, args);
             final ResultSet resultSet = pstmt.executeQuery();
-            final Constructor<?> constructor = getConstructor(clazz);
+            final Constructor<T> constructor = getConstructor(clazz);
 
+            List<T> objects = new ArrayList<>();
             while (resultSet.next()){
                 List<Object> parameters = extractData(resultSet, constructor);
                 objects.add(constructor.newInstance(parameters.toArray()));
@@ -46,8 +43,8 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, Class<?> clazz, Object... args) {
-        final List<Object> objects = query(sql, clazz, args);
+    public <T> T queryForObject(String sql, Class<T> clazz, Object... args) {
+        final List<T> objects = query(sql, clazz, args);
         return objects.get(0);
     }
 
@@ -64,11 +61,11 @@ public class JdbcTemplate {
         }
     }
 
-    private Constructor<?> getConstructor(Class<?> clazz) {
+    private <T> Constructor<T> getConstructor(Class<T> clazz) {
         final Field[] declaredFields = clazz.getDeclaredFields();
-        Class<?>[] types = new Class[declaredFields.length];
+        Class<T>[] types = new Class[declaredFields.length];
         for (int i = 0; i < declaredFields.length; i++) {
-            types[i] = declaredFields[i].getType();
+            types[i] = (Class<T>) declaredFields[i].getType();
         }
         try {
             return clazz.getDeclaredConstructor(types);
@@ -77,7 +74,7 @@ public class JdbcTemplate {
         }
     }
 
-    private List<Object> extractData(ResultSet resultSet, Constructor<?> constructor) throws SQLException {
+    private <T> List<Object> extractData(ResultSet resultSet, Constructor<T> constructor) throws SQLException {
         List<Object> parameters = new ArrayList<>();
 
         final Class<?>[] parameterTypes = constructor.getParameterTypes();

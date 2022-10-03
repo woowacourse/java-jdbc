@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +30,7 @@ class JdbcTemplateTest {
     void queryForObject() throws Exception{
         final String sql = "select * from users where id = ?";
 
-        final User user = (User) jdbcTemplate.queryForObject(sql, User.class, 1L);
+        final User user = jdbcTemplate.queryForObject(sql, User.class, 1L);
 
         assertThat(user.getUsername()).isEqualTo("test");
     }
@@ -41,10 +40,7 @@ class JdbcTemplateTest {
     void query() {
         final String sql = "select * from users";
 
-        final List<User> users = jdbcTemplate.query(sql, User.class)
-                .stream()
-                .map(User.class::cast)
-                .collect(Collectors.toList());
+        final List<User> users = jdbcTemplate.query(sql, User.class);
 
         assertThat(users).hasSize(2);
     }
@@ -57,7 +53,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "east");
 
         final String selectSql = "select * from users where id = ?";
-        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 3L);
+        final User user = jdbcTemplate.queryForObject(selectSql, User.class, 3L);
         assertThat(user.getUsername()).isEqualTo("east");
     }
 
@@ -69,7 +65,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "east", 1L);
 
         final String selectSql = "select * from users where id = ?";
-        final User user = (User) jdbcTemplate.queryForObject(selectSql, User.class, 1L);
+        final User user = jdbcTemplate.queryForObject(selectSql, User.class, 1L);
         assertThat(user.getUsername()).isEqualTo("east");
     }
 
