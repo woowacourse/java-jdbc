@@ -50,7 +50,35 @@ public class JdbcTemplate {
             return queryResult;
         } catch (SQLException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException |
                  InstantiationException | IllegalAccessException e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final Object object, final Class<T> t) {
+        final String parsedSql = sql.replaceAll("\\?", String.valueOf(object));
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(parsedSql);
+             final ResultSet resultSet = statement.executeQuery()) {
+            final List<T> queryResult = new ArrayList<>();
+            while (resultSet.next()) {
+                final ResultSetMetaData metaData = resultSet.getMetaData();
+                final int columnCount = metaData.getColumnCount();
+                final Class[] classes = new Class[columnCount];
+                final Object[] params = new Object[columnCount];
+                for (int i = 0; i < columnCount; i++) {
+                    final String columnClassName = metaData.getColumnClassName(i + 1);
+                    final Class<?> aClass = ClassLoader.getSystemClassLoader().loadClass(columnClassName);
+                    classes[i] = aClass;
+                    params[i] = resultSet.getObject(i + 1, aClass);
+                }
+                final Constructor<?> constructor = t.getDeclaredConstructor(classes);
+                queryResult.add((T) constructor.newInstance(params));
+            }
+            return queryResult.get(0);
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException | InstantiationException |
+                 IllegalAccessException | SQLException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
