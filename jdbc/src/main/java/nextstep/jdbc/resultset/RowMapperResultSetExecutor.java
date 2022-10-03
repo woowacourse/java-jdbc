@@ -1,9 +1,10 @@
-package nextstep.jdbc;
+package nextstep.jdbc.resultset;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import nextstep.jdbc.exception.DataAccessException;
 
 public class RowMapperResultSetExecutor<T> implements ResultSetExecutor<List<T>> {
 
