@@ -69,8 +69,4 @@ public class JdbcTemplate {
             return DataAccessUtils.mapResultSetToObject(rowMapper, rs);
         }
     }
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
 }

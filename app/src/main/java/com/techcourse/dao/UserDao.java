@@ -18,16 +18,13 @@ public class UserDao {
             rs.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
         this.jdbcTemplate = jdbcTemplate;
     }
 
