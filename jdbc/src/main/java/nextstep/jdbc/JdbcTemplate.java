@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ public class JdbcTemplate {
 
             return ResultDataExtractor.extractData(resultSet, clazz);
         } catch (Exception exception) {
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
     }
 
@@ -41,7 +42,7 @@ public class JdbcTemplate {
 
             return ResultDataExtractor.extractSingleData(resultSet, clazz);
         } catch (Exception exception) {
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
     }
 

@@ -6,46 +6,56 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.DataTypeNotSupportedException;
 
 public class ResultDataExtractor {
 
-    public static <T> List<T> extractData(ResultSet resultSet, Class<T> clazz) throws Exception {
+    public static <T> List<T> extractData(ResultSet resultSet, Class<T> clazz)  {
         final Constructor<T> constructor = getConstructor(clazz);
 
         List<T> objects = new ArrayList<>();
-        while (resultSet.next()){
-            List<Object> parameters = extractData(resultSet, constructor);
-            objects.add(constructor.newInstance(parameters.toArray()));
+        try {
+            while (resultSet.next()) {
+                List<Object> parameters = extractData(resultSet, constructor);
+                objects.add(constructor.newInstance(parameters.toArray()));
+            }
+        } catch (Exception exception){
+            throw new DataAccessException();
         }
 
         return objects;
     }
 
-    public static <T> T extractSingleData(ResultSet resultSet, Class<T> clazz) throws Exception {
+    public static <T> T extractSingleData(ResultSet resultSet, Class<T> clazz) {
         final Constructor<T> constructor = getConstructor(clazz);
 
-        if (!resultSet.next()){
+        try {
+            if (!resultSet.next()) {
+                throw new DataAccessException();
+            }
+
+            final List<Object> parameters = extractData(resultSet, constructor);
+            return constructor.newInstance(parameters.toArray());
+        } catch (Exception exception) {
             throw new DataAccessException();
         }
-
-        final List<Object> parameters = extractData(resultSet, constructor);
-        return constructor.newInstance(parameters.toArray());
     }
 
     private static <T> Constructor<T> getConstructor(Class<T> clazz) {
         final Field[] declaredFields = clazz.getDeclaredFields();
-        Class<T>[] types = new Class[declaredFields.length];
+        Class[] types = new Class[declaredFields.length];
         for (int i = 0; i < declaredFields.length; i++) {
-            types[i] = (Class<T>) declaredFields[i].getType();
+            types[i] = declaredFields[i].getType();
         }
         try {
             return clazz.getDeclaredConstructor(types);
         } catch (NoSuchMethodException exception) {
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
     }
 
-    private static <T> List<Object> extractData(ResultSet resultSet, Constructor<T> constructor) throws SQLException {
+    private static <T> List<Object> extractData(ResultSet resultSet, Constructor<T> constructor) {
         List<Object> parameters = new ArrayList<>();
 
         final Class<?>[] parameterTypes = constructor.getParameterTypes();
@@ -72,8 +82,8 @@ public class ResultDataExtractor {
                 return resultSet.getInt(index);
             }
         } catch (SQLException exception){
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
-        throw new RuntimeException();
+        throw new DataTypeNotSupportedException();
     }
 }
