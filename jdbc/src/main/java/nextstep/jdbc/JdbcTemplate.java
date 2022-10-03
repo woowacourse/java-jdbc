@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,7 +22,18 @@ public class JdbcTemplate {
         execute(sql, pstmt -> setParameters(pstmt, args).executeUpdate());
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, args);
+            final ResultSet resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
+            }
+            throw new DataAccessException("잘못된 결과입니다.");
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
