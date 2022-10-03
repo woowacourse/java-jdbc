@@ -61,12 +61,56 @@ class JdbcTemplateTest {
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
             Mockito.verify(preparedStatement).setObject(2, "password");
-            Mockito.verify(preparedStatement).executeUpdate();
         }
     }
 
+    @Nested
+    @DisplayName("queryForObject 메서드는")
+    class QueryForObject {
 
-    public static class User {
+        private ResultSet resultSet;
+
+        @BeforeEach
+        void setUp() {
+            resultSet = Mockito.mock(ResultSet.class);
+        }
+
+        @Test
+        @DisplayName("결과행이 1개인 SELECT 쿼리를 처리할 수 있다.")
+        void success_select_only() throws SQLException {
+            String sql = "select * from users where account = leo";
+            RowMapper<User> rowMapper = (rs, rowNum) ->
+                new User(rs.getString(1), rs.getString(2));
+
+            when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.getString(1)).thenReturn("leo");
+            when(resultSet.getString(2)).thenReturn("password");
+            User actual = jdbcTemplate.queryForObject(sql, rowMapper);
+
+            User expected = new User("leo", "password");
+            assertThat(actual).usingRecursiveComparison()
+                .isEqualTo(expected);
+        }
+
+        @Test
+        @DisplayName("파라미터가 있는 결과행이 1개인 SELECT 쿼리를 처리할 수 있다.")
+        void success_select_parameters() throws SQLException {
+            String sql = "select * from users where account = ?";
+            RowMapper<User> rowMapper = (rs, rowNum) ->
+                new User(rs.getString(1), rs.getString(2));
+
+            when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.getString(1)).thenReturn("leo");
+            when(resultSet.getString(2)).thenReturn("password");
+            jdbcTemplate.queryForObject(sql, List.of("leo"), rowMapper);
+
+            Mockito.verify(preparedStatement).setObject(1, "leo");
+        }
+    }
+
+    private static class User {
 
         private final String account;
         private final String password;

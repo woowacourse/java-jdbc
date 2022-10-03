@@ -2,16 +2,19 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 public class JdbcTemplate {
 
+    private static final int PARAMETER_START_INDEX = 1;
+
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    public static final int PARAMETER_START_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -29,18 +32,49 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final List<Object> parameters) throws DataAccessException {
+    public <T> int update(final String sql, final List<T> parameters) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            int index = PARAMETER_START_INDEX;
-            for (Object object : values) {
-                preparedStatement.setObject(index, object);
-                index++;
-            }
+            setParameters(preparedStatement, parameters);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper)
+        throws DataAccessException {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            return rowMapper.mapRow(resultSet, 1);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T, K> T queryForObject(final String sql, final List<K> parameters,
+                                final RowMapper<T> rowMapper) throws DataAccessException {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameters(preparedStatement, parameters);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            return rowMapper.mapRow(resultSet, 1);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> void setParameters(PreparedStatement preparedStatement, List<T> parameters)
+        throws SQLException {
+        int index = PARAMETER_START_INDEX;
+        for (T parameter : parameters) {
+            preparedStatement.setObject(index, parameter);
+            index++;
         }
     }
 }
