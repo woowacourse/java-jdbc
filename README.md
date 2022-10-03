@@ -10,4 +10,7 @@
 
 리팩터링
 
+- [x] try-with-resources 를 사용하도록 수정
+- [ ] null 대신 Optional.empty() 를 반환하도록 수정
+
 </details>
