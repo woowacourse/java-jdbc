@@ -23,20 +23,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    private static void validateSql(String sql) {
         if (sql == null) {
             throw new IllegalArgumentException("SQL은 null일 수 없습니다.");
         }
+    }
+
+    private static void setParameters(PreparedStatement statement, Object[] parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            statement.setObject(i + 1, parameters[i]);
+        }
+    }
+
+    public void update(final String sql, final Object... parameters) {
+        validateSql(sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            for (int i = 0; i < parameters.length; i++) {
-                statement.setObject(i + 1, parameters[i]);
-            }
-
+            setParameters(statement, parameters);
             log.debug("query : {}", sql);
-
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -44,24 +50,27 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        validateSql(sql);
+
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            for (int i = 0; i < parameters.length; i++) {
-                statement.setObject(i + 1, parameters[i]);
-            }
+            setParameters(statement, parameters);
             log.debug("query : {}", sql);
-
             final ResultSet resultSet = statement.executeQuery();
 
-            final List<T> elements = new ArrayList<>();
-            while (resultSet.next()) {
-                elements.add(rowMapper.mapRow(resultSet, 0));
-            }
-            return elements;
+            return mapResultSet(rowMapper, resultSet);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static <T> List<T> mapResultSet(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        final List<T> elements = new ArrayList<>();
+        while (resultSet.next()) {
+            elements.add(rowMapper.mapRow(resultSet, 0));
+        }
+        return elements;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) throws DataAccessException {
