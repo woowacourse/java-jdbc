@@ -63,6 +63,7 @@ public class JdbcTemplate {
         while (rs.next()) {
             result.add(rowMapper.mapRow(rs));
         }
+        rs.close();
         return result;
     }
 
