@@ -59,9 +59,9 @@ class JdbcTemplateTest {
         jdbcTemplate.execute(sql, "account", "password", "email", 1);
 
         // then
-        verify(preparedStatement).executeUpdate();
         verify(connection).close();
         verify(preparedStatement).close();
+        verify(preparedStatement).executeUpdate();
     }
 
     @Test
@@ -77,6 +77,7 @@ class JdbcTemplateTest {
         List<Object> result = jdbcTemplate.query(sql, rowMapper);
 
         // then
+        verify(resultSet).close();
         verify(connection).close();
         verify(preparedStatement).close();
         assertThat(result).hasSize(2);
@@ -96,6 +97,7 @@ class JdbcTemplateTest {
         Object result = jdbcTemplate.queryForObject(sql, rowMapper, 1);
 
         // then
+        verify(resultSet).close();
         verify(connection).close();
         verify(preparedStatement).close();
         assertThat(result).isEqualTo(object);

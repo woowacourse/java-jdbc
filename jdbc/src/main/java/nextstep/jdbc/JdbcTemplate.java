@@ -21,7 +21,7 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... parameters) {
-        Executable<Void> executable = (resultSet, preparedStatement) -> {
+        Executable<Void> executable = preparedStatement -> {
             preparedStatement.executeUpdate();
             return null;
         };
@@ -31,48 +31,41 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> result = query(sql, rowMapper, parameters);
         if (result.size() != 1) {
-            throw new RuntimeException("결과는 " + result.size() + "가 아닌 1개여야합니다.");
+            throw new DataAccessException("결과는 " + result.size() + "가 아닌 1개여야합니다.");
         }
 
         return result.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Executable<List<T>> executable = (resultSet, preparedStatement) -> {
-            resultSet = preparedStatement.executeQuery();
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
+        Executable<List<T>> executable = preparedStatement -> {
+            try(ResultSet resultSet = preparedStatement.executeQuery()){
+                List<T> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(rowMapper.mapRow(resultSet));
+                }
+                return result;
             }
-            return result;
         };
         return executeQuery(executable, sql, parameters);
     }
 
     private  <T> T executeQuery(Executable<T> executable, String sql, Object... parameters) {
-        ResultSet resultSet = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             setParameters(preparedStatement, parameters);
             log.debug("query : {}", sql);
 
-            return executable.execute(resultSet, preparedStatement);
+            return executable.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+    private void setParameters(PreparedStatement preparedStatement, Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
+            preparedStatement.setObject(i + 1, parameters[i]);
         }
     }
 }
