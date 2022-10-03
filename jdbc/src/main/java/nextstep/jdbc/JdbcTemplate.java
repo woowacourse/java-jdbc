@@ -21,30 +21,30 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return executeQuery(sql, args, rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return executeQuery(sql, args, rowMapper).get(0);
+    }
+
     public void update(final String sql, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
-        log.debug("execute prepared SQL update");
+        log.debug("execute SQL update [{}]", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
             setValues(statement, args);
             statement.executeUpdate();
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private void setValues(final PreparedStatement statement, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    private <T> List<T> executeQuery(final String sql, final Object[] args, final RowMapper<T> rowMapper) {
         Assert.notNull(sql, "SQL must not be null");
-        log.debug("Executing SQL query [{}]", sql);
+        log.debug("execute SQL query [{}]", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -52,21 +52,13 @@ public class JdbcTemplate {
             final ResultSet resultSet = statement.executeQuery();
             return extractData(resultSet, rowMapper);
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Assert.notNull(sql, "SQL must not be null");
-        log.debug("Executing SQL query [{}]", sql);
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setValues(statement, args);
-            final ResultSet resultSet = statement.executeQuery();
-            return extractData(resultSet, rowMapper).get(0);
-        } catch (final SQLException e) {
-            throw new RuntimeException(e);
+    private void setValues(final PreparedStatement statement, final Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + 1, args[i]);
         }
     }
 
