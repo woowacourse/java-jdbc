@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.ArrayList;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import nextstep.jdbc.JdbcTemplate;
@@ -18,16 +17,19 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    public static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -44,20 +46,7 @@ public class UserDao {
             }
         };
 
-        execute(sql, consumer);
-    }
-
-    private void execute(final String sql, final Consumer<PreparedStatement> consumer) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            consumer.accept(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.execute(sql, consumer);
     }
 
     public void update(final User user) {
@@ -75,7 +64,7 @@ public class UserDao {
             }
         };
 
-        execute(sql, consumer);
+        jdbcTemplate.execute(sql, consumer);
     }
 
     public List<User> findAll() {
@@ -96,27 +85,7 @@ public class UserDao {
             }
         };
 
-        return queryForList(sql, consumer, rowMapper);
-    }
-
-    private <T> List<T> queryForList(final String sql, final Consumer<PreparedStatement> consumer, final Function<ResultSet, T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            consumer.accept(pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while(rs.next()) {
-                    result.add(rowMapper.apply(rs));
-                }
-                return result;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForList(sql, consumer, rowMapper);
     }
 
     public User findById(final Long id) {
@@ -144,26 +113,7 @@ public class UserDao {
             }
         };
 
-        return queryForObject(sql, consumer, function);
-    }
-
-    private <T> T queryForObject(final String sql, final Consumer<PreparedStatement> consumer, final Function<ResultSet, T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            consumer.accept(pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.apply(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, consumer, function);
     }
 
     public User findByAccount(final String account) {
@@ -191,6 +141,6 @@ public class UserDao {
             }
         };
 
-        return queryForObject(sql, consumer, rowMapper);
+        return jdbcTemplate.queryForObject(sql, consumer, rowMapper);
     }
 }
