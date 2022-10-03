@@ -14,7 +14,7 @@ public class DataAccessUtils {
     private DataAccessUtils() {
     }
 
-    public static <T> List<T> mapResultSetToList(final RowMapper<T> rowMapper, final ResultSet rs)
+    public static <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs)
             throws SQLException {
         List<T> result = new ArrayList<>();
         while (rs.next()) {
