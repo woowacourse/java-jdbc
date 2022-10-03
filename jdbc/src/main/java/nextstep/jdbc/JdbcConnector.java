@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.ImpossibleSQLExecutionException;
 
 public class JdbcConnector implements Connector {
 
@@ -22,7 +23,7 @@ public class JdbcConnector implements Connector {
             }
             return queryExecutor.executePreparedStatement(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new ImpossibleSQLExecutionException();
         }
     }
 }
