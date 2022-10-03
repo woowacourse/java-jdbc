@@ -15,10 +15,12 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        if (userDao.findAll().size() == 0) {
+            final var user = new User("gugu", "password", "hkkang@woowahan.com");
+            userDao.insert(user);
+        }
     }
 
     @Test
