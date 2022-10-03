@@ -1,7 +1,11 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.jdbc.core.RowMapper;
 
 class JdbcTemplateTest {
 
@@ -23,7 +28,7 @@ class JdbcTemplateTest {
         DataSource dataSource = Mockito.mock(DataSource.class);
         connection = Mockito.mock(Connection.class);
         preparedStatement = Mockito.mock(PreparedStatement.class);
-        Mockito.when(dataSource.getConnection()).thenReturn(connection);
+        when(dataSource.getConnection()).thenReturn(connection);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
@@ -40,7 +45,7 @@ class JdbcTemplateTest {
                 "insert into users (account, password) values (%s, %s)",
                 user.getAccount(), user.getPassword());
 
-            Mockito.when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+            when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
             jdbcTemplate.update(sql);
 
             Mockito.verify(preparedStatement).executeUpdate();
@@ -56,7 +61,7 @@ class JdbcTemplateTest {
 
             String sql = "insert into users (account, password) values (?, ?)";
 
-            Mockito.when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+            when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
             jdbcTemplate.update(sql, values);
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
