@@ -30,8 +30,8 @@ public class JdbcTemplate {
 			pstmt = conn.prepareStatement(sql);
 		} catch (SQLException e) {
 			log.error(e.getMessage(), e);
-			close(conn, pstmt);
-			throw new RuntimeException(e);
+			close(null, conn, pstmt);
+			throw new DataAccessException(e);
 		}
 		return new SqlBuilder(conn, pstmt);
 	}
@@ -52,19 +52,19 @@ public class JdbcTemplate {
 				pstmt.setString(parameterIndex, parameter);
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				close(conn, pstmt);
-				throw new RuntimeException(e);
+				close(rs, conn, pstmt);
+				throw new DataAccessException(e);
 			}
 			return this;
 		}
 
-		public SqlBuilder setLong(final int parameterIndex, final Long parameter){
+		public SqlBuilder setLong(final int parameterIndex, final Long parameter) {
 			try {
 				pstmt.setLong(parameterIndex, parameter);
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				close(conn, pstmt);
-				throw new RuntimeException(e);
+				close(rs, conn, pstmt);
+				throw new DataAccessException(e);
 			}
 			return this;
 		}
@@ -74,9 +74,9 @@ public class JdbcTemplate {
 				pstmt.executeUpdate();
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				throw new RuntimeException(e);
+				throw new DataAccessException(e);
 			} finally {
-				close(conn, pstmt);
+				close(rs, conn, pstmt);
 			}
 		}
 
@@ -86,8 +86,8 @@ public class JdbcTemplate {
 				return this;
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				close(conn, pstmt);
-				throw new RuntimeException(e);
+				close(rs, conn, pstmt);
+				throw new DataAccessException(e);
 			}
 		}
 
@@ -100,9 +100,9 @@ public class JdbcTemplate {
 				return results;
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				throw new RuntimeException(e);
+				throw new DataAccessException(e);
 			} finally {
-				close(conn, pstmt);
+				close(rs, conn, pstmt);
 			}
 		}
 
@@ -114,25 +114,34 @@ public class JdbcTemplate {
 				return null;
 			} catch (SQLException e) {
 				log.error(e.getMessage(), e);
-				throw new RuntimeException(e);
+				throw new DataAccessException(e);
 			} finally {
-				close(conn, pstmt);
+				close(rs, conn, pstmt);
 			}
 		}
 	}
 
-	private static void close(final Connection conn, final PreparedStatement pstmt) {
+	private static void close(final ResultSet rs, final Connection conn, final PreparedStatement pstmt) {
+		try {
+			if (rs != null) {
+				rs.close();
+			}
+		} catch (SQLException e) {
+			log.debug("Could not close ResultSet", e);
+		}
 		try {
 			if (pstmt != null) {
 				pstmt.close();
 			}
-		} catch (SQLException ignored) {
+		} catch (SQLException e) {
+			log.debug("Could not close PreparedStatement", e);
 		}
 		try {
 			if (conn != null) {
 				conn.close();
 			}
-		} catch (SQLException ignored) {
+		} catch (SQLException e) {
+			log.debug("Could not close Connection", e);
 		}
 	}
 }
