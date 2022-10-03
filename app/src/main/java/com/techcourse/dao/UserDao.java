@@ -37,26 +37,30 @@ public class UserDao {
     public List<User> findAll() {
         return jdbcTemplate.queryForList(
                 "select id, account, password, email from users",
-                userMapper());
+                userMapper()
+        );
     }
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForOne(
                 "select id, account, password, email from users where id = ?",
                 userMapper(),
-                id);
+                id
+        );
     }
 
     public User findByAccount(final String account) {
         return jdbcTemplate.queryForOne(
                 "select id, account, password, email from users where account = ?",
                 userMapper(),
-                account);
+                account
+        );
     }
 
     public int update(final User user) {
         return jdbcTemplate.command(
                 "update users set password = ? where id = ?",
-                user.getPassword(), user.getId());
+                user.getPassword(), user.getId()
+        );
     }
 }
