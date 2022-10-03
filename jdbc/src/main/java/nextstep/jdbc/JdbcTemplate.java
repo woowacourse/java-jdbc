@@ -21,47 +21,55 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        return execute(sql, preparedStatement -> {
             log.debug("query : {}", sql);
-
             setParameters(preparedStatement, args);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return update(preparedStatement);
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             final ResultSet resultSet = createResultSet(preparedStatement, args)) {
-            log.debug("query : {}", sql);
+        return execute(sql, preparedStatement -> {
+            setParameters(preparedStatement, args);
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                log.debug("query : {}", sql);
 
-            List<T> values = new ArrayList<>();
-            while (resultSet.next()) {
-                values.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                final List<T> values = new ArrayList<>();
+                while (resultSet.next()) {
+                    values.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                }
+                return values;
             }
-            return values;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        });
+    }
+
+    private void setParameters(final PreparedStatement preparedStatement, final Object... args) {
+        for (int i = 0; i < args.length; i++) {
+            try {
+                preparedStatement.setObject(i + 1, args[i]);
+            } catch (final SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException("파라미터 바인딩에 실패했습니다.");
+            }
         }
     }
 
-    private ResultSet createResultSet(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
-        setParameters(preparedStatement, args);
-        return preparedStatement.executeQuery();
+    private <R> R execute(final String sql, final PreparedStatementCallback<PreparedStatement, R> action) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return action.doInStatement(preparedStatement);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("데이터 접근에 실패했습니다.");
+        }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) {
-        for (int i = 0; i < args.length; i++) {
-            try {
-                pstmt.setObject(i + 1, args[i]);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    private int update(final PreparedStatement preparedStatement) {
+        try {
+            return preparedStatement.executeUpdate();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("정상적인 쿼리가 아닙니다.");
         }
     }
 }
