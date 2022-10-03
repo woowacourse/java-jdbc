@@ -5,6 +5,7 @@ import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
@@ -29,31 +30,26 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select * from users";
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new User(rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")));
+        return jdbcTemplate.query(sql, rowMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql,
-                (rs, rowNum) -> new User(rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")),
-                id);
+        return jdbcTemplate.queryForObject(sql, rowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql,
-                (rs, rowNum) -> new User(rs.getLong("id"),
+        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
+    }
+
+    private RowMapper<User> rowMapper() {
+        return (rs, rowNum) ->
+                new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
-                        rs.getString("email")),
-                account);
+                        rs.getString("email"));
     }
 }
