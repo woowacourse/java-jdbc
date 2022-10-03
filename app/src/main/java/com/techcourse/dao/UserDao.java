@@ -36,6 +36,7 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
+
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, rs -> {
@@ -53,7 +54,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        List<User> users = jdbcTemplate.query(sql, rs -> {
+        return jdbcTemplate.queryForObject(sql, rs -> {
             try {
                 return new User(
                         rs.getLong(1),
@@ -64,13 +65,11 @@ public class UserDao {
                 throw new DataAccessException();
             }
         }, id);
-
-        return users.get(0);
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        List<User> users = jdbcTemplate.query(sql, rs -> {
+        return jdbcTemplate.queryForObject(sql, rs -> {
             try {
                 return new User(
                         rs.getLong(1),
@@ -81,7 +80,5 @@ public class UserDao {
                 throw new DataAccessException();
             }
         }, account);
-
-        return users.get(0);
     }
 }

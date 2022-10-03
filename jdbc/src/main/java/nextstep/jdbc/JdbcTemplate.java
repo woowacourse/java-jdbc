@@ -56,4 +56,25 @@ public class JdbcTemplate {
             // TODO: 더 추상화된 예외 메시지를 사용해야함
         }
     }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
+            }
+
+            T result = null;
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                result = rowMapper.run(rs);
+            }
+
+            return result;
+        } catch (final SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+            // TODO: 더 추상화된 예외 메시지를 사용해야함
+        }
+    }
 }
