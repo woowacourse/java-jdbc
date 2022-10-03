@@ -40,7 +40,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryList(sql, userResultSetExtractor);
+        return jdbcTemplate.queryForList(sql, userResultSetExtractor);
     }
 
     public User findById(final Long id) {

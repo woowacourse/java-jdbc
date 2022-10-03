@@ -87,7 +87,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when
-        final List<TestUser> actual = jdbcTemplate.queryList(sql, getResultSetExecutor(), "corinne");
+        final List<TestUser> actual = jdbcTemplate.queryForList(sql, getResultSetExecutor(), "corinne");
 
         // then
         assertAll(

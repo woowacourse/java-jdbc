@@ -32,7 +32,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> queryList(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... params) {
+    public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... params) {
         return execute(sql, stmt -> {
             final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
             setParameters(preparedStatement, params);
