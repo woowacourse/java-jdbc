@@ -7,28 +7,28 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
 
-public enum TypeExecutor {
+public enum ParameterInjector {
 
-    INTEGER(Integer.class, TypeExecutor::setInt),
-    LONG(Long.class, TypeExecutor::setLong),
-    STRING(String.class, TypeExecutor::setString),
-    DEFAULT(Object.class, TypeExecutor::setObject);
+    INTEGER(Integer.class, ParameterInjector::setInt),
+    LONG(Long.class, ParameterInjector::setLong),
+    STRING(String.class, ParameterInjector::setString),
+    DEFAULT(Object.class, ParameterInjector::setObject);
 
     private final Class type;
     private final TriConsumer<PreparedStatement, Integer, Object> consumer;
 
-    TypeExecutor(final Class type, final TriConsumer<PreparedStatement, Integer, Object> consumer) {
+    ParameterInjector(final Class type, final TriConsumer<PreparedStatement, Integer, Object> consumer) {
         this.type = type;
         this.consumer = consumer;
     }
 
-    public static void execute(final PreparedStatement preparedStatement, final int index, final Object value) {
-        final TypeExecutor typeExecutor = Arrays.stream(values())
+    public static void inject(final PreparedStatement preparedStatement, final int index, final Object value) {
+        final ParameterInjector parameterInjector = Arrays.stream(values())
                 .filter(it -> it.type.equals(value.getClass()))
                 .findFirst()
                 .orElseGet(() -> DEFAULT);
-        typeExecutor.consumer
-                .apply(preparedStatement, index, value);
+        parameterInjector.consumer
+                .consume(preparedStatement, index, value);
     }
 
     private static void setInt(final PreparedStatement preparedStatement, final int index, final Object value) {

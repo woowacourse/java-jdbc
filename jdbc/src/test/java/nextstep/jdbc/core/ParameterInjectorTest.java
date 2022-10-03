@@ -1,6 +1,5 @@
 package nextstep.jdbc.core;
 
-import nextstep.jdbc.core.TypeExecutor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;
@@ -9,7 +8,7 @@ import java.sql.SQLException;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-class TypeExecutorTest {
+class ParameterInjectorTest {
 
     @Test
     void Integer형_파라미터를_지정한다() throws SQLException {
@@ -17,7 +16,7 @@ class TypeExecutorTest {
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         // when
-        TypeExecutor.execute(preparedStatement, 1, 1);
+        ParameterInjector.inject(preparedStatement, 1, 1);
 
         // then
         verify(preparedStatement).setInt(1, 1);
@@ -29,7 +28,7 @@ class TypeExecutorTest {
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         // when
-        TypeExecutor.execute(preparedStatement, 1, 1L);
+        ParameterInjector.inject(preparedStatement, 1, 1L);
 
         // then
         verify(preparedStatement).setLong(1, 1L);
@@ -41,7 +40,7 @@ class TypeExecutorTest {
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         // when
-        TypeExecutor.execute(preparedStatement, 1, "corinne");
+        ParameterInjector.inject(preparedStatement, 1, "corinne");
 
         // then
         verify(preparedStatement).setString(1, "corinne");
@@ -53,7 +52,7 @@ class TypeExecutorTest {
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         // when
-        TypeExecutor.execute(preparedStatement, 1, 0.12);
+        ParameterInjector.inject(preparedStatement, 1, 0.12);
 
         // then
         verify(preparedStatement).setObject(1, 0.12);

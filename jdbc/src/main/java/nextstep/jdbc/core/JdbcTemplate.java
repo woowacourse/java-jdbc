@@ -56,7 +56,7 @@ public class JdbcTemplate {
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... params) {
         for (int i = 0; i < params.length; i++) {
-            TypeExecutor.execute(preparedStatement, i + 1, params[i]);
+            ParameterInjector.inject(preparedStatement, i + 1, params[i]);
         }
     }
 
