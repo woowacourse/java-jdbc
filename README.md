@@ -65,10 +65,10 @@
 - [x] insert와 update요청이 모두 JdbcTemplate#insert 에 의존하는 문제
     - command와 query로 분리
     - CUD는 `command`, R은 `queryForList`, `queryForOne`으로 구현
-- [ ] JdbcTemplateTest 관련
+- [x] JdbcTemplateTest 관련
     - 리뷰어 아서 제공 실제
       구현된 [테스트 코드 링크](https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/test/java/org/springframework/jdbc/core/JdbcTemplateTests.java)
-    - 참고하여 테스트 추가 예정
+    - 참고하여 테스트 코드 추가
 - [x] 라이브러리 사용자가 커서를 옮기는 `rs.next()`를 직접 호출하는 부분은 확실히 개선이 필요하다고 느껴짐
     - 클라이언트는 복수, 단수와 상관 없이 단일 행에 대한 RowMapper만 구현하도록 개선
     - JdbcTemplate 내부에서 커서를 핸들링하도록 개선
