@@ -63,6 +63,15 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T executeQueryAndExtractData(final PreparedStatement statement, final ResultSetExecutor<T> executor) {
+        try (final ResultSet resultSet = statement.executeQuery()) {
+            return executor.extractData(resultSet);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to execute a sql.", e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, new RowMapperResultSetExecutor<>(rowMapper), args);
         validateResultSize(result);
@@ -75,15 +84,6 @@ public class JdbcTemplate {
         }
         if (result.size() > RESULT_SIZE_OF_ONE) {
             throw new DataAccessException("A result is over one.");
-        }
-    }
-
-    private <T> T executeQueryAndExtractData(final PreparedStatement statement, final ResultSetExecutor<T> executor) {
-        try (final ResultSet resultSet = statement.executeQuery()) {
-            return executor.extractData(resultSet);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to execute a sql.", e);
         }
     }
 }

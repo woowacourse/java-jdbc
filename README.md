@@ -14,6 +14,8 @@
 
 ## 🧹 JdbcTemplate
 
+- 단위 테스트를 추가해 내부 동작이 의도에 맞게 동작하는지 확인했다. 
+
 ### update()
 
 - PreparedStatement의 executeUpdate()를 래핑한다.
