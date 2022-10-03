@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +42,7 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
         log.debug("Executing SQL query [{}]", sql);
 
@@ -58,11 +56,28 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T extractData(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
-        Assert.notNull(rowMapper, "RowMapper is required");
-        if (!resultSet.next()) {
-            return null;
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        Assert.notNull(sql, "SQL must not be null");
+        log.debug("Executing SQL query [{}]", sql);
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setValues(statement, args);
+            final ResultSet resultSet = statement.executeQuery();
+            return extractData(resultSet, rowMapper).get(0);
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
         }
-        return rowMapper.mapRow(resultSet, 0);
+    }
+
+    private <T> List<T> extractData(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        Assert.notNull(rowMapper, "RowMapper is required");
+
+        final List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, rowNum++));
+        }
+        return results;
     }
 }
