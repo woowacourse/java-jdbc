@@ -17,20 +17,18 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        query(sql, params, PreparedStatement::execute);
+        query(sql, PreparedStatement::execute, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return query(sql, params, statement -> QueryExecutor.getInstance()
-                .executeQuery(rowMapper, statement));
+        return query(sql, statement -> QueryExecutor.executeQuery(rowMapper, statement), params);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return query(sql, params, statement -> QueryExecutor.getInstance()
-                .executeQueryForList(rowMapper, statement));
+        return query(sql, statement -> QueryExecutor.executeQueryForList(rowMapper, statement), params);
     }
 
-    private <T> T query(final String sql, final Object[] params, final StatementCallBack<T> strategy) {
+    private <T> T query(final String sql, final StatementCallBack<T> strategy, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(statement, params);

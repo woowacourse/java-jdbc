@@ -8,41 +8,44 @@ import java.util.List;
 
 public class QueryExecutor {
 
-    private static final QueryExecutor INSTANCE;
-
-    static {
-        INSTANCE = new QueryExecutor();
-    }
-
     private QueryExecutor() {
     }
 
-    public static QueryExecutor getInstance() {
-        return INSTANCE;
+    public static <T> T executeQuery(final RowMapper<T> rowMapper, final PreparedStatement statement) {
+        return getSingleResult(execute(rowMapper, statement, QueryExecutor::extractResults));
     }
 
-    public <T> T executeQuery(final RowMapper<T> rowMapper, final PreparedStatement statement) {
-        T result = null;
+    public static <T> List<T> executeQueryForList(final RowMapper<T> rowMapper, final PreparedStatement statement) {
+        return execute(rowMapper, statement, QueryExecutor::extractResults);
+    }
+
+    private static <T> List<T> execute(final RowMapper<T> rowMapper, final PreparedStatement statement,
+                                       final ExtractStrategy<T> strategy) {
         try (final ResultSet resultSet = statement.executeQuery()) {
-            if (resultSet.next()) {
-                result = rowMapper.map(resultSet);
-            }
+            return strategy.extract(rowMapper, resultSet);
         } catch (final SQLException e) {
             throw new DataAccessException("query exception!", e);
         }
-        return result;
     }
 
-    public <T> List<T> executeQueryForList(final RowMapper<T> rowMapper, final PreparedStatement statement) {
+    private static <T> List<T> extractResults(final RowMapper<T> rowMapper, final ResultSet resultSet)
+            throws SQLException {
         final List<T> result = new ArrayList<>();
-        try (final ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException("query exception!", e);
+        while (resultSet.next()) {
+            result.add(rowMapper.map(resultSet));
         }
         return result;
     }
 
+    private static <T> T getSingleResult(final List<T> results) {
+        if (results.size() > 1) {
+            throw new DataAccessException("more than one result!");
+        }
+
+        if (results.isEmpty()) {
+            throw new DataAccessException("query result is null");
+        }
+
+        return results.get(0);
+    }
 }
