@@ -27,7 +27,7 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()) {
             final List<T> results = new ArrayList<>();
             int rowNum = 0;
-            if (rs.next()) {
+            while (rs.next()) {
                 rowNum += 1;
                 final T row = rowMapper.mapToRow(rs, rowNum);
                 results.add(row);
