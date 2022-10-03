@@ -54,28 +54,28 @@ public class JdbcTemplate {
     private void setParameters(final PreparedStatement pstmt, final Object... args) {
         for (int i = 0; i < args.length; i++) {
             try {
-                pstmt.setString(i + 1, (String) args[i]);
+                pstmt.setObject(i + 1,  args[i]);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public <T> List<T> query(final String sql, final Long id, final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
+            setParameters(pstmt, args);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
 
             List<T> values = new ArrayList<>();
             while (rs.next()) {
-                values.add(rowMapper.mapRow(rs, 1));
+                values.add(rowMapper.mapRow(rs, rs.getRow()));
             }
             return values;
         } catch (SQLException e) {
