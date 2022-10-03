@@ -6,12 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -24,8 +21,10 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql, final Object... params) {
+        final PreparedStatementCreator creator = preparedStatementCreator(params);
+
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator(params).apply(conn, sql)
+             PreparedStatement pstmt = creator.create(conn, sql)
         ) {
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
@@ -36,8 +35,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        final PreparedStatementCreator creator = preparedStatementCreator(params);
+
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator(params).apply(conn, sql)
+             PreparedStatement pstmt = creator.create(conn, sql)
         ) {
             log.debug("query : {}", sql);
 
@@ -55,8 +56,10 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        final PreparedStatementCreator creator = preparedStatementCreator(params);
+
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator(params).apply(conn, sql)
+             PreparedStatement pstmt = creator.create(conn, sql)
         ) {
             log.debug("query : {}", sql);
 
@@ -72,19 +75,14 @@ public class JdbcTemplate {
         }
     }
 
-    private BiFunction<Connection, String, PreparedStatement> preparedStatementCreator(final Object... params) {
+    private PreparedStatementCreator preparedStatementCreator(final Object... params) {
         return (conn, sql) -> {
-            try {
-                final PreparedStatement pstmt = conn.prepareStatement(sql);
-                int index = 1;
-                for (Object param : params) {
-                    pstmt.setObject(index++, param);
-                }
-                return pstmt;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
+            final PreparedStatement pstmt = conn.prepareStatement(sql);
+            int index = 1;
+            for (Object param : params) {
+                pstmt.setObject(index++, param);
             }
+            return pstmt;
         };
     }
 }
