@@ -22,23 +22,23 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            StatementUtils.setArguments(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
-            throw new DataAccessException(e);
-        }
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(sql, pstmt -> {
+            pstmt.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return DataAccessUtils.getResults(rowMapper, rs);
+            }
+        }, args);
+    }
+
+    private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             StatementUtils.setArguments(pstmt, args);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return DataAccessUtils.mapResultSetToList(rowMapper, rs);
-            }
+            return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
             throw new DataAccessException(e);
