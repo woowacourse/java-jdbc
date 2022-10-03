@@ -44,17 +44,14 @@ class JdbcTemplateTest {
         DataSource dataSource = mock(DataSource.class);
         Connection conn = mock(Connection.class);
         PreparedStatement ps = mock(PreparedStatement.class);
-        ResultSet rs = mock(ResultSet.class);
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(anyString())).thenReturn(ps);
-        when(ps.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true, false);
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         // when
         String sql = "insert query";
-        TestUser testUser = jdbcTemplate.queryForObject(sql, (resultSet, rowNum) -> new TestUser(), "eden");
+        TestUser testUser = jdbcTemplate.queryForObject(sql, (resultSet) -> List.of(new TestUser()), "eden");
 
         // then
         assertThat(testUser).isNotNull();
@@ -69,17 +66,14 @@ class JdbcTemplateTest {
         DataSource dataSource = mock(DataSource.class);
         Connection conn = mock(Connection.class);
         PreparedStatement ps = mock(PreparedStatement.class);
-        ResultSet rs = mock(ResultSet.class);
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(anyString())).thenReturn(ps);
-        when(ps.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true, true, false);
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         // when
         String sql = "insert query";
-        List<TestUser> testUser = jdbcTemplate.queryForList(sql, (resultSet, rowNum) -> new TestUser(), "eden");
+        List<TestUser> testUser = jdbcTemplate.queryForList(sql, (resultSet) -> List.of(new TestUser(), new TestUser()), "eden");
 
         // then
         assertThat(testUser).hasSize(2);

@@ -4,8 +4,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.support.DataAccessUtils;
-import org.springframework.jdbc.core.RowMapper;
 
 public class JdbcTemplate {
 
@@ -32,7 +30,7 @@ public class JdbcTemplate {
         return connector.execute(sql,new FindExecutor<>(rowMapper), parameters);
     }
 
-    private <T> T forObject(final List<T> ts) {
-        return DataAccessUtils.nullableSingleResult(ts);
+    private <T> T forObject(final List<T> results) {
+        return DataAccessUtils.getSingleResult(results);
     }
 }
