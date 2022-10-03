@@ -1,11 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -42,42 +37,17 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-
-        ResultSet rs = null;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            rs = pstmt.executeQuery();
-
-            List<User> users = new ArrayList<>();
-
-            if (rs.next()) {
-                users.add(new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)));
-            }
-            return users;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, userRowMapper, id);
+        return jdbcTemplate.query(sql, userRowMapper, id).get(0);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, userRowMapper, account);
+        return jdbcTemplate.query(sql, userRowMapper, account).get(0);
     }
 
     private RowMapper<User> userRowMapper = rs -> new User(
