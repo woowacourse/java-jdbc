@@ -9,4 +9,6 @@
 
 ## 구현한 기능
 - UserDao 에서 Connection, Statement, ResultSet을 try-with-resources로 관리하도록 통일
-- 모든 유저 조회 기능 구현
+- 모든 유저 조회
+- 모든 유저 삭제
+- id로 유저 조회
