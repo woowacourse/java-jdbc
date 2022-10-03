@@ -24,9 +24,8 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, @NonNull final RowMapper<T> rowMapper, final Object... params) {
         ResultSet resultSet = null;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+             PreparedStatement pstmt = connection.prepareStatement(sql);) {
             prepareStatementSetParamters(pstmt, params);
-
 
             resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
@@ -46,6 +45,11 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> result = query(sql, rowMapper, params);
+        return singleResult(result);
+    }
+
     public int executeUpdate(final String sql, final Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -56,10 +60,21 @@ public class JdbcTemplate {
         }
     }
 
-    private void prepareStatementSetParamters(final PreparedStatement pstmt, final Object[] params)
+    private PreparedStatement prepareStatementSetParamters(final PreparedStatement pstmt, final Object[] params)
             throws SQLException {
         for (int i = 1; i <= params.length; i++) {
             pstmt.setObject(i, params[i - 1]);
         }
+        return pstmt;
+    }
+
+    private <T> T singleResult(final List<T> values) {
+        if (values.isEmpty()) {
+            throw new RuntimeException("쿼리 결과가 비어있습니다.");
+        }
+        if (values.size() > 1) {
+            throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
+        }
+        return values.get(0);
     }
 }
