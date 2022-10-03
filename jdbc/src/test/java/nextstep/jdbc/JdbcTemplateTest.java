@@ -1,5 +1,83 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.dao.support.DataAccessUtils;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
+    private ResultSet resultSet;
+    private Connection connection;
+    private PreparedStatement preparedStatement;
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void setUp() throws SQLException {
+        this.dataSource = mock(DataSource.class);
+        this.connection = mock(Connection.class);
+        this.resultSet = mock(ResultSet.class);
+        this.preparedStatement = mock(PreparedStatement.class);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+    }
+
+    @DisplayName("JdbcTemplate를 이용해 DB로부터 객체를 조회한다.")
+    @Test
+    void query() throws SQLException {
+        // given
+        final String sql = "select id, account from user where id = ?";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getString("account")).thenReturn("sun");
+
+        // when
+        final List<TestUser> users = jdbcTemplate.query(sql, (rs, rowNum) ->
+                new TestUser(rs.getLong("id"), rs.getString("account")), 1L);
+        final TestUser actual = DataAccessUtils.singleResult(users);
+
+        // then
+        assertAll(
+                () -> assertThat(actual).usingRecursiveComparison().isEqualTo(new TestUser(1, "sun")),
+                () -> verify(preparedStatement).setObject(1, 1L),
+                () -> verify(preparedStatement).executeQuery(),
+                () -> verify(resultSet).close(),
+                () -> verify(preparedStatement).close(),
+                () -> verify(connection).close()
+        );
+    }
+
+    @DisplayName("JdbcTemplate를 이용해 DB에 저장한다.")
+    @Test
+    void update() throws SQLException {
+        // given
+        final String sql = "insert into user values (?, ?)";
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        // when
+        final int insertedRows = jdbcTemplate.update(sql, 1L, "sun");
+
+        // then
+        assertAll(
+                () -> assertThat(insertedRows).isOne(),
+                () -> verify(preparedStatement).setObject(1, 1L),
+                () -> verify(preparedStatement).setObject(2, "sun"),
+                () -> verify(preparedStatement).close(),
+                () -> verify(connection).close()
+        );
+    }
 }
