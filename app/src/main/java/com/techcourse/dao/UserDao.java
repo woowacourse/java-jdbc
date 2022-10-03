@@ -82,9 +82,16 @@ public class UserDao {
         }
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         // todo
-        return null;
+        final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
+        try {
+            final User user = jdbcTemplate.queryForObject(sql, rowMapper(), account);
+            log.info("User: {}", user);
+            return Optional.ofNullable(user);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     private RowMapper<User> rowMapper() {

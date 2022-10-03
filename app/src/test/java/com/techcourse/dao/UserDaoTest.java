@@ -39,7 +39,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(account).get();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
