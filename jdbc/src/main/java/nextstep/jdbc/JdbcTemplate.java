@@ -9,8 +9,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.lang.Nullable;
 
 public class JdbcTemplate {
 
@@ -44,7 +42,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args)
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args)
             throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
