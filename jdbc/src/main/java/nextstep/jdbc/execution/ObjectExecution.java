@@ -19,10 +19,9 @@ public class ObjectExecution<T> extends AbstractExecution<T> {
     public T execute(PreparedStatement statement) throws SQLException {
         ArgumentsSetter.setArguments(statement, arguments);
 
-        try (ResultSet resultSet = statement.executeQuery()) {
-            if (resultSet.next()) {
-                return rowMapper.rowMap(resultSet, resultSet.getRow());
-            }
+        ResultSet resultSet = statement.executeQuery();
+        if (resultSet.next()) {
+            return rowMapper.rowMap(resultSet, resultSet.getRow());
         }
         return null;
     }
