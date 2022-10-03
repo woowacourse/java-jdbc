@@ -7,55 +7,27 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
+    private final JdbcExecutor jdbcExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcExecutor = new JdbcExecutor(dataSource);
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+        return jdbcExecutor.execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, args);
+        return jdbcExecutor.execute(sql, args, (pstmt) -> {
             ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            return createMethodByRowMapper(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+            return createResultByRowMapper(rowMapper, rs);
+        });
     }
 
-    private <T> List<T> createMethodByRowMapper(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> List<T> createResultByRowMapper(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         List<T> result = new ArrayList<>();
         while (rs.next()) {
             result.add(rowMapper.mapRow(rs));
