@@ -1,5 +1,6 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
+import nextstep.jdbc.core.TypeExecutor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;

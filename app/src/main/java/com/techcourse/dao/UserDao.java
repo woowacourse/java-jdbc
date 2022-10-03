@@ -1,8 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.ResultSetExtractor;
+import nextstep.jdbc.core.JdbcTemplate;
+import nextstep.jdbc.support.ResultSetExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

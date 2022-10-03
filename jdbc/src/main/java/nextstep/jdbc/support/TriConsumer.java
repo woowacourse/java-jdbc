@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.support;
 
 @FunctionalInterface
 public interface TriConsumer<T, U, R> {

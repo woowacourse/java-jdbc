@@ -6,7 +6,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

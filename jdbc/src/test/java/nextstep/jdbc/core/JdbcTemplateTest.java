@@ -1,6 +1,7 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.support.ResultSetExtractor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

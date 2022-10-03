@@ -1,6 +1,8 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.support.ResultSetExtractor;
+import nextstep.jdbc.support.StatementCallback;
 
 import javax.sql.DataSource;
 import java.sql.*;

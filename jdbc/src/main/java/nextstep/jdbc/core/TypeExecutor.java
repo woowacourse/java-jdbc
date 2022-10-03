@@ -1,6 +1,7 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.support.TriConsumer;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -14,8 +15,8 @@ public enum TypeExecutor {
     DEFAULT(Object.class, TypeExecutor::setObject);
 
     private final Class type;
-
     private final TriConsumer<PreparedStatement, Integer, Object> consumer;
+
     TypeExecutor(final Class type, final TriConsumer<PreparedStatement, Integer, Object> consumer) {
         this.type = type;
         this.consumer = consumer;

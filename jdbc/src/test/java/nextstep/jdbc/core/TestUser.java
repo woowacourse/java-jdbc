@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 public class TestUser {
 
