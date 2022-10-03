@@ -41,7 +41,7 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
 
         List<T> result = execute(sql, rowMapper, params);
-        validateResultSize(result);
+        validateSingleSize(result);
         return result.get(0);
     }
 
@@ -76,7 +76,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> void validateResultSize(final List<T> result) {
+    private <T> void validateSingleSize(final List<T> result) {
         if (result.size() != SINGLE_COUNT) {
             throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
         }
