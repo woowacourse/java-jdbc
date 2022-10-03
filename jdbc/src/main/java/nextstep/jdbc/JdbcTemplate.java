@@ -7,10 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -32,19 +32,15 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... params) {
         return doExecute(sql, preparedStatement -> {
-            try {
-                setParamsToStatement(preparedStatement, params);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                resultSet.next();
+            setParamsToStatement(preparedStatement, params);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
 
-                return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
         });
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params)  {
+    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params) {
 
         return doExecute(sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
@@ -71,8 +67,8 @@ public class JdbcTemplate {
     }
 
     private <T> T doExecute(String sql, PreparedStatementCallback<T> callback) {
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
