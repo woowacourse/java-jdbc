@@ -25,27 +25,27 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        String sql = "update users set password = ? where id = ?";
+        String sql = "UPDATE users SET password = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
-        String sql = "select id, account, password, email from users";
+        String sql = "SELECT id, account, password, email FROM users";
         return jdbcTemplate.queryForList(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
-        String sql = "select id, account, password, email from users where id = ?";
+        String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
-        String sql = "select id, account, password, email from users where account = ? limit 1";
+        String sql = "SELECT id, account, password, email FROM users WHERE account = ? LIMIT 1";
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
