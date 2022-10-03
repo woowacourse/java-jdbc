@@ -1,6 +1,10 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,93 +33,164 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        Consumer<PreparedStatement> consumer = pstmt -> {
+            try {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
 
+        execute(sql, consumer);
+    }
+
+    private void execute(final String sql, final Consumer<PreparedStatement> consumer) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            consumer.accept(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        Consumer<PreparedStatement> consumer = pstmt -> {
+            try {
+                pstmt.setObject(1, user.getAccount());
+                pstmt.setObject(2, user.getPassword());
+                pstmt.setObject(3, user.getEmail());
+                pstmt.setObject(4, user.getId());
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
+
+        execute(sql, consumer);
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
-    }
+        final var sql = "select id, account, password, email from users";
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        Consumer<PreparedStatement> consumer = pstmt -> { };
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
+        Function<ResultSet, User> rowMapper = rs -> {
+            try {
                 return new User(
                         rs.getLong(1),
                         rs.getString(2),
                         rs.getString(3),
                         rs.getString(4));
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
             }
-            return null;
+        };
+
+        return queryForList(sql, consumer, rowMapper);
+    }
+
+    private <T> List<T> queryForList(final String sql, final Consumer<PreparedStatement> consumer, final Function<ResultSet, T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            consumer.accept(pstmt);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                while(rs.next()) {
+                    result.add(rowMapper.apply(rs));
+                }
+                return result;
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+        }
+    }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+    public User findById(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
 
+        Consumer<PreparedStatement> consumer = pstmt -> {
             try {
-                if (conn != null) {
-                    conn.close();
+                pstmt.setObject(1, id);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
+
+        Function<ResultSet, User> function = rs -> {
+            try {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
+
+        return queryForObject(sql, consumer, function);
+    }
+
+    private <T> T queryForObject(final String sql, final Consumer<PreparedStatement> consumer, final Function<ResultSet, T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            consumer.accept(pstmt);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.apply(rs);
                 }
-            } catch (SQLException ignored) {}
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        Consumer<PreparedStatement> consumer = pstmt -> {
+            try {
+                pstmt.setObject(1, account);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
+
+        Function<ResultSet, User> rowMapper = rs -> {
+            try {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException();
+            }
+        };
+
+        return queryForObject(sql, consumer, rowMapper);
     }
 }
