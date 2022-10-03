@@ -23,13 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private static void validateSql(String sql) {
-        if (sql == null) {
-            throw new IllegalArgumentException("SQL은 null일 수 없습니다.");
+    private void validateSql(final String sql) {
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new IllegalArgumentException("SQL은 null이거나 빈 값일 수 없습니다.");
         }
     }
 
-    private static void setParameters(PreparedStatement statement, Object[] parameters) throws SQLException {
+    private void setParameters(final PreparedStatement statement, final Object[] parameters)
+            throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             statement.setObject(i + 1, parameters[i]);
         }
@@ -65,7 +66,8 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> mapResultSet(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+    private <T> List<T> mapResultSet(final RowMapper<T> rowMapper, final ResultSet resultSet)
+            throws SQLException {
         final List<T> elements = new ArrayList<>();
         while (resultSet.next()) {
             elements.add(rowMapper.mapRow(resultSet, 0));
@@ -73,7 +75,8 @@ public class JdbcTemplate {
         return elements;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) throws DataAccessException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters)
+            throws DataAccessException {
         final List<T> results = query(sql, rowMapper, parameters);
         if (results.size() == 0) {
             throw new EmptyResultDataAccessException(1);
