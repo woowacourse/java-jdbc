@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.jdbcparam.JdbcParamType;
@@ -47,10 +49,21 @@ public class JdbcTemplate {
         }
     }
 
-    public ResultSet find(final String sql, Object... params) {
-        return (ResultSet) runContext(sql, statement -> {
+    public <T> List<T> find(final String sql, RowMapper<T> rowMapper, Object... params) {
+        return (List<T>) runContext(sql, statement -> {
             setParams(statement, params);
-            return statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
+            return mapWithMapper(resultSet, rowMapper);
         });
+    }
+
+    private <T> List<T> mapWithMapper(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            final T mappedValue = rowMapper.mapRow(resultSet);
+            result.add(mappedValue);
+        }
+        resultSet.close();
+        return result;
     }
 }

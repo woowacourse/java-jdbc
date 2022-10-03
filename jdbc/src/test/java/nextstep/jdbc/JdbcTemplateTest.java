@@ -11,8 +11,10 @@ import static org.mockito.Mockito.verify;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.example.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ class JdbcTemplateTest {
 
     private Connection connection;
     private PreparedStatement statement;
+    private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -28,6 +31,7 @@ class JdbcTemplateTest {
         DataSource dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
+        resultSet = mock(ResultSet.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
 
         given(dataSource.getConnection())
@@ -78,17 +82,31 @@ class JdbcTemplateTest {
     void find() throws SQLException {
         // given
         willDoNothing().given(statement).setLong(1, 1L);
+        given(statement.executeQuery()).willReturn(resultSet);
+        given(resultSet.getLong(anyString())).willReturn(1L);
+        given(resultSet.getString(anyString())).willReturn("returnAny");
+        given(resultSet.next()).willReturn(true,false);
+
         final String sql = "select id, account, password, email from users where id = ?";
+        final RowMapper<User> rowMapper = resultSet -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
 
         // when
-        jdbcTemplate.find(sql, 1L);
+        jdbcTemplate.find(sql, rowMapper, 1L);
         
         // then
         assertAll(
                 () -> verify(statement).setLong(1, 1L),
                 () -> verify(statement).executeQuery(),
+                () -> verify(resultSet).getLong(anyString()),
+                () -> verify(resultSet, times(3)).getString(anyString()),
                 () -> verify(statement).close(),
-                () -> verify(connection).close()
+                () -> verify(connection).close(),
+                () -> verify(resultSet).close()
         );
     }
 }
