@@ -111,8 +111,27 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            log.info("query : {}", sql);
+            preparedStatement.setString(1, account);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return new User(
+                        resultSet.getLong("id"),
+                        resultSet.getString("account"),
+                        resultSet.getString("password"),
+                        resultSet.getString("email")
+                );
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            e.printStackTrace();
+        }
+        throw new IllegalArgumentException("id에 해당하는 유저가 없습니다.");
     }
 
     public void deleteAll() {
