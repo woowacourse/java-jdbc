@@ -1,13 +1,13 @@
 package nextstep.jdbc;
 
 import java.sql.ResultSet;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.element.JdbcExecutor;
-import nextstep.jdbc.element.RowMapper;
 import nextstep.jdbc.element.PreparedStatementCallBack;
 import nextstep.jdbc.element.PreparedStatementCallBackImpl;
+import nextstep.jdbc.element.RowMapper;
 
 public class JdbcTemplate {
 
@@ -19,11 +19,11 @@ public class JdbcTemplate {
         this.jdbcExecutor = new JdbcExecutor(dataSource);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
             final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             try (final ResultSet rs = statement.executeQuery()) {
-                List<T> result = new LinkedList<>();
+                List<T> result = new ArrayList<>();
                 while (rs.next()) {
                     result.add(rowMapper.mapRow(rs));
                 }
@@ -32,7 +32,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
             final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             try (final ResultSet rs = statement.executeQuery()) {
@@ -42,7 +42,7 @@ public class JdbcTemplate {
         });
     }
 
-    public Integer executeUpdate(String sql, Object... args) {
+    public Integer executeUpdate(final String sql, final Object... args) {
         return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
             final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
             return statement.executeUpdate();
