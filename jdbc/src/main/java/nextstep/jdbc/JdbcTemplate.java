@@ -2,7 +2,10 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +23,26 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         return execute(PreparedStatement::executeUpdate, sql, args);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(preparedStatement -> executeQueryAndMappingList(preparedStatement, rowMapper), sql, args);
+    }
+
+    private <T> List<T> executeQueryAndMappingList(final PreparedStatement preparedStatement,
+                                                   final RowMapper<T> rowMapper) {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            List<T> results = new ArrayList<>();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.map(resultSet));
+            }
+
+            return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
     }
 
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... args) {

@@ -1,9 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
 import nextstep.jdbc.JdbcTemplate;
-import org.h2.jdbcx.JdbcDataSource;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +16,12 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> ROW_MAPPER = (rs) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
@@ -36,31 +41,14 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public int update(final User user) {
+    public void update(final User user) {
         String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=? ";
-        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         String sql = "SELECT * FROM users";
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
-             final ResultSet resultSet = statement.executeQuery()) {
-            List<User> users = new ArrayList<>();
-            while (resultSet.next()) {
-                users.add(new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
