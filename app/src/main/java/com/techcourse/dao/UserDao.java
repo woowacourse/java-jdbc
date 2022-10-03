@@ -144,7 +144,25 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        String sql = "SELECT id, account, password, email FROM users WHERE account=? ";
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, account);
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new User(
+                            resultSet.getLong(1),
+                            resultSet.getString(2),
+                            resultSet.getString(3),
+                            resultSet.getString(4)
+                    );
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
