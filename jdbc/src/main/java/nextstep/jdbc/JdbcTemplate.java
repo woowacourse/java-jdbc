@@ -5,7 +5,10 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -58,12 +61,47 @@ public class JdbcTemplate {
         }
     }
 
-    public Connection getConnection() {
+    public <T> List<T> query(final String sql, final Long id, final RowMapper<T> rowMapper) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
         try {
-            return dataSource.getConnection();
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setLong(1, id);
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            List<T> values = new ArrayList<>();
+            while (rs.next()) {
+                values.add(rowMapper.mapRow(rs, 1));
+            }
+            return values;
         } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
