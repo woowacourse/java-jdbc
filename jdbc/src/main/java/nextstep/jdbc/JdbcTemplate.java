@@ -24,8 +24,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        final UpdateExecutor<Integer> executor = PreparedStatement::executeUpdate;
-        executeUpdate(sql, executor, parameters);
+        final SqlExecutor<Integer> executor = PreparedStatement::executeUpdate;
+        execute(sql, executor, parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -62,7 +62,7 @@ public class JdbcTemplate {
         return result;
     }
 
-    private <T> void executeUpdate(final String sql, final UpdateExecutor<T> executor, final Object... parameters) {
+    private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
             log.debug("query : {}", sql);
@@ -71,28 +71,18 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, parameters[i]);
             }
 
-            executor.execute(pstmt);
+            return executor.execute(pstmt);
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new JdbcConnectionException("Fail to get JDBC Connection", e);
         }
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> executor, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-
+        final SqlExecutor<T> sqlExecutor = pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 return executor.executeQuery(rs);
             }
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcConnectionException("Fail to get JDBC Connection", e);
-        }
+        };
+        return execute(sql, sqlExecutor, parameters);
     }
 }
