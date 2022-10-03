@@ -57,28 +57,20 @@ public class UserDao {
         String sql = "select * from users";
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.queryForList(sql, autoRowMapper);
+        return jdbcTemplate.query(sql, autoRowMapper);
     }
 
     public Optional<User> findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.queryForObject(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            return pstmt;
-        }, autoRowMapper);
+        return jdbcTemplate.queryForObject(sql, autoRowMapper, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.queryForObject(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, account);
-            return pstmt;
-        }, autoRowMapper);
+        return jdbcTemplate.queryForObject(sql, autoRowMapper, account);
     }
 }
