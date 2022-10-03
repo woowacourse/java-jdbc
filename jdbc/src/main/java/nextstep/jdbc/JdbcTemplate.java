@@ -39,13 +39,16 @@ public class JdbcTemplate {
     private String parseSql(final String sql, final Object... objects) {
         String parsedSql = sql;
         for (final Object object : objects) {
-            if (object.getClass().isAssignableFrom(String.class)) {
-                parsedSql = parsedSql.replaceFirst("\\?", "'" + object + "'");
-                continue;
-            }
-            parsedSql = parsedSql.replaceFirst("\\?", String.valueOf(object));
+            parsedSql = parseSql(parsedSql, object);
         }
         return parsedSql;
+    }
+
+    private String parseSql(String parsedSql, final Object object) {
+        if (object.getClass().isAssignableFrom(String.class)) {
+            return parsedSql.replaceFirst("\\?", "'" + object + "'");
+        }
+        return parsedSql.replaceFirst("\\?", String.valueOf(object));
     }
 
     private <T> List<T> query(final Class<T> t, final ResultSet resultSet)
@@ -102,7 +105,7 @@ public class JdbcTemplate {
 
     private void checkCompleted(final int effectedRow) {
         if (effectedRow == 0) {
-            throw new RuntimeException("쿼리가 정상적으로 적용되지 않았습니다.");
+            throw new RuntimeException("쿼리가 적용되지 않았습니다.");
         }
     }
 }

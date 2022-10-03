@@ -37,7 +37,7 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select * from users where id = ?";
+        final var sql = "SELECT * FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, User.class, id);
     }
 

@@ -16,7 +16,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,19 +41,21 @@ class JdbcTemplateTest {
         this.resultSet = mock(ResultSet.class);
         this.resultSetMetaData = mock(ResultSetMetaData.class);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
         given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.getMetaData()).willReturn(resultSetMetaData);
+
         // 쿼리 결과 데이터가 두 개라고 가정한다
         given(resultSet.next()).willReturn(true, true, false);
-        given(resultSet.getMetaData()).willReturn(resultSetMetaData);
         final var fields = User.class.getDeclaredFields();
         given(resultSetMetaData.getColumnCount()).willReturn(fields.length);
-        final List<String> fieldTypeNames = Arrays.stream(fields).peek(it -> it.setAccessible(true))
+        final var fieldTypeNames = Arrays.stream(fields).peek(it -> it.setAccessible(true))
                 .map(it -> it.getType().getName())
                 .collect(Collectors.toList());
-        final String firstValue = fieldTypeNames.get(0);
-        final List<String> secondValues = fieldTypeNames.subList(1, fields.length);
+        final var firstValue = fieldTypeNames.get(0);
+        final var secondValues = fieldTypeNames.subList(1, fields.length);
         secondValues.addAll(fieldTypeNames);
         secondValues.addAll(fieldTypeNames);
         given(resultSetMetaData.getColumnClassName(anyInt())).willReturn(firstValue,
@@ -68,7 +69,7 @@ class JdbcTemplateTest {
         final var sql = "SELECT * FROM users WHERE id = ?";
 
         // when
-        final User user = jdbcTemplate.queryForObject(sql, User.class, 1L);
+        final var user = jdbcTemplate.queryForObject(sql, User.class, 1L);
 
         // then
         assertThat(user).usingRecursiveComparison()
@@ -81,7 +82,7 @@ class JdbcTemplateTest {
         final var sql = "Select * FROM users";
 
         // when
-        final List<User> result = jdbcTemplate.query(sql, User.class);
+        final var result = jdbcTemplate.query(sql, User.class);
 
         // then
         assertThat(result).usingRecursiveFieldByFieldElementComparator()
@@ -91,8 +92,8 @@ class JdbcTemplateTest {
     @Test
     void DB_값을_수정한다() throws SQLException {
         // given
-        given(preparedStatement.executeUpdate()).willReturn(1);
         final var sql = "UPDATE users SET name = ? WHERE = ?";
+        given(preparedStatement.executeUpdate()).willReturn(1);
 
         // when
         jdbcTemplate.execute(sql, "안영윤", 1L);
@@ -107,8 +108,8 @@ class JdbcTemplateTest {
     @Test
     void 수정에_실패할_경우_예외_발생() throws SQLException {
         // given
-        given(preparedStatement.executeUpdate()).willReturn(0);
         final var sql = "UPDATE users SET name = ? WHERE = ?";
+        given(preparedStatement.executeUpdate()).willReturn(0);
 
         // when, then
         assertThatThrownBy(() -> jdbcTemplate.execute(sql, "안영윤", 1L))
