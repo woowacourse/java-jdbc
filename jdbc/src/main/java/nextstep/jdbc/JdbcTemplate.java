@@ -23,7 +23,7 @@ public class JdbcTemplate {
 		this.dataSource = dataSource;
 	}
 
-	public SqlBuilder createQuery(String sql) {
+	public SqlBuilder createQuery(final String sql) {
 		Connection conn = null;
 		PreparedStatement pstmt = null;
 		try {
@@ -43,12 +43,12 @@ public class JdbcTemplate {
 		private final PreparedStatement pstmt;
 		private ResultSet rs;
 
-		public SqlBuilder(Connection conn, PreparedStatement pstmt) {
+		public SqlBuilder(final Connection conn, final PreparedStatement pstmt) {
 			this.conn = conn;
 			this.pstmt = pstmt;
 		}
 
-		public SqlBuilder setString(int parameterIndex, String parameter) {
+		public SqlBuilder setString(final int parameterIndex, final String parameter) {
 			try {
 				pstmt.setString(parameterIndex, parameter);
 			} catch (SQLException e) {
@@ -59,7 +59,7 @@ public class JdbcTemplate {
 			return this;
 		}
 
-		public SqlBuilder setLong(int parameterIndex, Long parameter){
+		public SqlBuilder setLong(final int parameterIndex, final Long parameter){
 			try {
 				pstmt.setLong(parameterIndex, parameter);
 			} catch (SQLException e) {
@@ -92,7 +92,7 @@ public class JdbcTemplate {
 			}
 		}
 
-		public <T> List<T> getResultList(Class<T> type) {
+		public <T> List<T> getResultList(final Class<T> type) {
 			try {
 				List<T> results = new ArrayList<>();
 				while (rs.next()) {
@@ -107,7 +107,7 @@ public class JdbcTemplate {
 			}
 		}
 
-		public <T> T getResult(Class<T> type) {
+		public <T> T getResult(final Class<T> type) {
 			try {
 				if (rs.next()) {
 					return createResult(type);
@@ -121,7 +121,7 @@ public class JdbcTemplate {
 			}
 		}
 
-		private <T> T newInstance(Class<T> type) {
+		private <T> T newInstance(final Class<T> type) {
 			T result;
 			try {
 				result = type.getConstructor().newInstance();
@@ -132,7 +132,7 @@ public class JdbcTemplate {
 			return result;
 		}
 
-		private <T> T createResult(Class<T> type) throws IllegalAccessException, SQLException {
+		private <T> T createResult(final Class<T> type) throws IllegalAccessException, SQLException {
 			Field[] fields = type.getDeclaredFields();
 			T result = newInstance(type);
 			int parameterIndex = 1;
@@ -151,7 +151,7 @@ public class JdbcTemplate {
 
 	}
 
-	private static void close(Connection conn, PreparedStatement pstmt) {
+	private static void close(final Connection conn, final PreparedStatement pstmt) {
 		try {
 			if (pstmt != null) {
 				pstmt.close();
