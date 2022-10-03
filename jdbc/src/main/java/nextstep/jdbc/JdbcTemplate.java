@@ -20,12 +20,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        return execute(sql, getUpdateCallback(preparedStatementSetter));
-    }
-
     public int update(final String sql, final Object... args) {
         return update(sql, statement -> setParameters(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, statement -> {
+            preparedStatementSetter.setValues(statement);
+            return statement.executeUpdate();
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
@@ -43,27 +46,15 @@ public class JdbcTemplate {
         });
     }
 
-    private PreparedStatementCallback<Integer> getUpdateCallback(
-            final PreparedStatementSetter preparedStatementSetter) {
-        return statement -> {
-            preparedStatementSetter.setValues(statement);
-            return statement.executeUpdate();
-        };
-    }
-
-    private <T> List<T> getObjects(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        final List<T> results = new ArrayList<>();
-        while(resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet));
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            return callback.doInPreparedStatement(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
-        return results;
-    }
-
-    private <T> T getSingleObject(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        if (!resultSet.next()) {
-            throw new DataAccessException("해당하는 데이터가 없습니다.");
-        }
-        return rowMapper.mapRow(resultSet);
     }
 
     private void setParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
@@ -74,14 +65,18 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
-        log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            return callback.doInPreparedStatement(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    private <T> List<T> getObjects(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
         }
+        return results;
+    }
+
+    private <T> T getSingleObject(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        if (!resultSet.next()) {
+            throw new DataAccessException("해당하는 데이터가 없습니다.");
+        }
+        return rowMapper.mapRow(resultSet);
     }
 }
