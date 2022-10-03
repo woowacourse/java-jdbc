@@ -1,12 +1,13 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -46,12 +47,18 @@ class UserDaoTest {
     @Test
     void insert() {
         final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        String password = "password";
+        String email = "hkkang@woowahan.com";
+        final var user = new User(account, password, email);
         userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(actual.getAccount()).isEqualTo(account),
+                () -> assertThat(actual.getPassword()).isEqualTo(password),
+                () -> assertThat(actual.getEmail()).isEqualTo(email)
+        );
     }
 
     @Test
@@ -64,6 +71,10 @@ class UserDaoTest {
 
         final var actual = userDao.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertAll(
+                () -> assertThat(actual.getPassword()).isEqualTo(newPassword),
+                () -> assertThat(actual.getAccount()).isEqualTo("gugu"),
+                () -> assertThat(actual.getEmail()).isEqualTo("hkkang@woowahan.com")
+        );
     }
 }
