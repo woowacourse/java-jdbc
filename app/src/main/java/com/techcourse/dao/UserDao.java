@@ -4,16 +4,19 @@ import com.techcourse.domain.User;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 
 import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = (resultSet) ->
+        new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+        );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -37,26 +40,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, getUserRowMapper());
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
-    }
-
-    private RowMapper<User> getUserRowMapper() {
-        return (resultSet) ->
-            new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4)
-            );
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
