@@ -21,57 +21,58 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Executable<Void> executable = (resultSet, preparedStatement) -> {
+            preparedStatement.executeUpdate();
+            return null;
+        };
+        executeQuery(executable, sql, parameters);
+    }
 
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> result = query(sql, rowMapper, parameters);
+        if (result.size() != 1) {
+            throw new RuntimeException("결과는 " + result.size() + "가 아닌 1개여야합니다.");
         }
+
+        return result.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        Executable<List<T>> executable = (resultSet, preparedStatement) -> {
+            resultSet = preparedStatement.executeQuery();
             List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
             }
             return result;
+        };
+        return executeQuery(executable, sql, parameters);
+    }
+
+    private  <T> T executeQuery(Executable<T> executable, String sql, Object... parameters) {
+        ResultSet resultSet = null;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            setParameters(preparedStatement, parameters);
+            log.debug("query : {}", sql);
+
+            return executable.execute(resultSet, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (resultSet != null) {
+                    resultSet.close();
                 }
             } catch (SQLException ignored) {
             }
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> result = query(sql, rowMapper, parameters);
-        if (result.size() != 1) {
-            throw new RuntimeException("결과가 1개가 아닙니다.");
+    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
         }
-
-        return result.get(0);
     }
 }
