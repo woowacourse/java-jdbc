@@ -1,23 +1,18 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    public static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> ROW_MAPPER = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,31 +36,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, rowMapper());
+        return jdbcTemplate.queryForList(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
-    }
-
-    private Function<ResultSet, User> rowMapper() {
-        return rs -> {
-            try {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
