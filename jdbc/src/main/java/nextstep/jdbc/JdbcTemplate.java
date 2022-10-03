@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class JdbcTemplate {
 
-    private static final int PARAMETER_START_INDEX = 1;
+    private static final int SQL_PARAMETER_START_INDEX = 1;
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -48,47 +48,54 @@ public class JdbcTemplate {
         throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-            return rowMapper.mapRow(resultSet, 1);
+            log.debug("query : {}", sql);
+            return mapOneResult(preparedStatement.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
     public <T, K> T queryForObject(final String sql, final List<K> parameters,
-                                final RowMapper<T> rowMapper) throws DataAccessException {
+                                   final RowMapper<T> rowMapper) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
             setParameters(preparedStatement, parameters);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-            return rowMapper.mapRow(resultSet, 1);
+            return mapOneResult(preparedStatement.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private <T> void setParameters(PreparedStatement preparedStatement, List<T> parameters)
+    private <T> void setParameters(final PreparedStatement preparedStatement,
+                                   final List<T> parameters)
         throws SQLException {
-        int index = PARAMETER_START_INDEX;
+        int index = SQL_PARAMETER_START_INDEX;
         for (T parameter : parameters) {
             preparedStatement.setObject(index, parameter);
             index++;
         }
     }
 
+    private <T> T mapOneResult(final ResultSet resultSet, final RowMapper<T> rowMapper)
+        throws SQLException {
+        resultSet.next();
+        return rowMapper.mapRow(resultSet, 1);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper)
         throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
             return collect(preparedStatement.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> collect(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> collect(final ResultSet resultSet, final RowMapper<T> rowMapper)
+        throws SQLException {
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet, 1));
