@@ -16,6 +16,8 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int INITIAL_PARAM_INDEX = 1;
+    private static final int SINGLE_RESULT_INDEX = 0;
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -65,5 +67,19 @@ public class JdbcTemplate {
         }
         resultSet.close();
         return result;
+    }
+
+    public <T> T findSingleResult(final String sql, RowMapper<T> rowMapper, Object... params) {
+        final List<T> results = find(sql, rowMapper, params);
+        validateSingleResult(results);
+        return results.get(SINGLE_RESULT_INDEX);
+    }
+
+    private <T> void validateSingleResult(final List<T> results) {
+        final int size = results.size();
+        if (size != SINGLE_RESULT_SIZE) {
+            log.warn("결과 값이 한 개가 아닙니다. 결과 값 = {}", size);
+            throw new RuntimeException();
+        }
     }
 }
