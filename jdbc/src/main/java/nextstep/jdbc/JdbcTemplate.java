@@ -30,14 +30,14 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
             setParameters(args, pstmt);
-            return getResult(pstmt, new ResultSetExtractor<>(rowMapper));
+            return getResult(pstmt, rowMapper);
         });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
             setParameters(args, pstmt);
-            List<T> result = getResult(pstmt, new ResultSetExtractor<>(rowMapper));
+            List<T> result = getResult(pstmt, rowMapper);
             checkResultSizeIsOne(result);
             return result.iterator().next();
         });
@@ -53,19 +53,19 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> List<T> getResult(final PreparedStatement preparedStatement,
+                                  final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return ResultSetExtractor.extractData(resultSet, rowMapper);
+        }
+    }
+
     private <T> void checkResultSizeIsOne(final List<T> result) {
         if (result.isEmpty()) {
             throw new DataAccessException("결과가 없습니다.");
         }
         if (result.size() > 1) {
             throw new DataAccessException("결과가 2개 이상입니다.");
-        }
-    }
-
-    private <T> List<T> getResult(final PreparedStatement preparedStatement,
-                                  final ResultSetExtractor<T> resultSetExtractor) throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-            return resultSetExtractor.extractData(resultSet);
         }
     }
 
