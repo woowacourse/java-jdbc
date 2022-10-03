@@ -13,17 +13,14 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
-        this.jdbcTemplate = jdbcTemplate;
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -35,7 +32,6 @@ public class UserDao {
         String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
-
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
