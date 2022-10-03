@@ -24,24 +24,16 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, @NonNull final RowMapper<T> rowMapper, final Object... params) {
         ResultSet resultSet = null;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);) {
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             prepareStatementSetParamters(pstmt, params);
 
             resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
-            if (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
+            return parseResultSet(rowMapper, resultSet, result);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            closeResultSet(resultSet);
         }
     }
 
@@ -66,6 +58,24 @@ public class JdbcTemplate {
             pstmt.setObject(i, params[i - 1]);
         }
         return pstmt;
+    }
+
+    private <T> List<T> parseResultSet(final RowMapper<T> rowMapper, final ResultSet resultSet, final List<T> result)
+            throws SQLException {
+        if (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
+    }
+
+    private void closeResultSet(final ResultSet resultSet) {
+        try {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+        } catch (SQLException ignored) {
+            throw new RuntimeException("result set close 에러");
+        }
     }
 
     private <T> T singleResult(final List<T> values) {
