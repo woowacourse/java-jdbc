@@ -34,101 +34,31 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Consumer<PreparedStatement> consumer = pstmt -> {
-            try {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        jdbcTemplate.execute(sql, consumer);
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        Consumer<PreparedStatement> consumer = pstmt -> {
-            try {
-                pstmt.setObject(1, user.getAccount());
-                pstmt.setObject(2, user.getPassword());
-                pstmt.setObject(3, user.getEmail());
-                pstmt.setObject(4, user.getId());
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        jdbcTemplate.execute(sql, consumer);
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-
-        Consumer<PreparedStatement> consumer = pstmt -> { };
-
-        Function<ResultSet, User> rowMapper = rs -> {
-            try {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        return jdbcTemplate.queryForList(sql, consumer, rowMapper);
+        return jdbcTemplate.queryForList(sql, rowMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        Consumer<PreparedStatement> consumer = pstmt -> {
-            try {
-                pstmt.setObject(1, id);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        Function<ResultSet, User> function = rs -> {
-            try {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        return jdbcTemplate.queryForObject(sql, consumer, function);
+        return jdbcTemplate.queryForObject(sql, rowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
+    }
 
-        Consumer<PreparedStatement> consumer = pstmt -> {
-            try {
-                pstmt.setObject(1, account);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException();
-            }
-        };
-
-        Function<ResultSet, User> rowMapper = rs -> {
+    private Function<ResultSet, User> rowMapper() {
+        return rs -> {
             try {
                 return new User(
                         rs.getLong(1),
@@ -140,7 +70,5 @@ public class UserDao {
                 throw new RuntimeException();
             }
         };
-
-        return jdbcTemplate.queryForObject(sql, consumer, rowMapper);
     }
 }
