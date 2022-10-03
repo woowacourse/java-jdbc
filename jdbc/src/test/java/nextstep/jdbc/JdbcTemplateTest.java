@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<Crew> CREW_ROW_MAPPER = (rs) -> new Crew(
+    private static final RowMapper<Crew> CREW_ROW_MAPPER = rs -> new Crew(
             rs.getLong("id"),
             rs.getString("nickname"),
             rs.getString("name"),
