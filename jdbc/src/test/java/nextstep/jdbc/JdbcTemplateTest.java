@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final String TRUNCATE_USER_TABLE = "TRUNCATE TABLE users";
+    private static final String TRUNCATE_USER_TABLE = "TRUNCATE TABLE users RESTART IDENTITY";
 
     private JdbcTemplate jdbcTemplate;
 
