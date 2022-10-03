@@ -10,4 +10,4 @@
   - [x] JdbcTemplate이 Dao에서 실행할 sql 을 전달받아 실행시켜준다.
   - [x] update
   - [x] queryForObject
-  - [ ] query 
+  - [x] query 
