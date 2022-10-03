@@ -19,7 +19,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql) {
+    public int update(final String sql) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -29,7 +29,7 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final List<Object> values) {
+    public int update(final String sql, final List<Object> parameters) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);

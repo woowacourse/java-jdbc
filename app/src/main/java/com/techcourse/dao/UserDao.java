@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +32,20 @@ public class UserDao {
 
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        try {
+            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        } catch (DataAccessException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ?";
-
-        jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        try {
+            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        } catch (DataAccessException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     public List<User> findAll() {
