@@ -15,6 +15,7 @@ public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
+    // schema를 기준으로 데이터베이스를 셋팅해준다.
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;

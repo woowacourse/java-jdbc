@@ -14,7 +14,7 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance()); // database schema 셋팅
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -24,8 +24,8 @@ class UserDaoTest {
     @Test
     void findAll() {
         final var users = userDao.findAll();
-
-        assertThat(users).isNotEmpty();
+        assertThat(users).map(User::getAccount)
+                .containsExactly("gugu");
     }
 
     @Test
