@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,71 +15,35 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
-
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String account = user.getAccount();
+        final String password = user.getPassword();
+        final String email = user.getEmail();
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-        }
+        jdbcTemplate.update(sql, account, password, email);
     }
 
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final String account = user.getAccount();
+        final String password = user.getPassword();
+        final String email = user.getEmail();
+        final Long id = user.getId();
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
-
-            statement.executeUpdate();
-        } catch (final SQLException e) {
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.update(sql, account, password, email, id);
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        try (final Connection connection = dataSource.getConnection();
+        try (final Connection connection = jdbcTemplate.getDataSource().getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             final List<User> users = new ArrayList<>();
             final ResultSet resultSet = statement.executeQuery();
@@ -106,7 +69,7 @@ public class UserDao {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = dataSource.getConnection();
+            conn = jdbcTemplate.getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
@@ -151,7 +114,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        try (final Connection connection = dataSource.getConnection();
+        try (final Connection connection = jdbcTemplate.getDataSource().getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, account);
             final ResultSet resultSet = statement.executeQuery();
