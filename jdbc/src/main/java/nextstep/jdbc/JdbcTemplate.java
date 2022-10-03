@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
-            throw new RuntimeException();
+            throw new IncorrectResultSizeDataAccessException();
         });
     }
 
