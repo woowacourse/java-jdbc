@@ -18,12 +18,11 @@ public class ListExecution<T> extends AbstractExecution<List<T>> {
 
     @Override
     public List<T> execute(PreparedStatement statement) throws SQLException {
-        try (ResultSet resultSet = statement.executeQuery()) {
-            return withdrawResult(resultSet);
-        }
+        ResultSet resultSet = statement.executeQuery();
+        return mapRows(resultSet);
     }
 
-    private List<T> withdrawResult(ResultSet resultSet) throws SQLException {
+    private List<T> mapRows(ResultSet resultSet) throws SQLException {
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.rowMap(resultSet, resultSet.getRow()));
