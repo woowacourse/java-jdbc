@@ -39,11 +39,11 @@ public class JdbcTemplate {
     }
 
     private void verifyResultSizeIsOne(final ResultSet rs) throws SQLException {
-        if (!rs.next()) {
-            throw new EmptyResultDataAccessException();
-        }
         rs.last();
         final int resultSize = rs.getRow();
+        if (resultSize == 0) {
+            throw new EmptyResultDataAccessException();
+        }
         if (resultSize > 1) {
             throw new IncorrectResultSizeDataAccessException(resultSize);
         }
