@@ -8,9 +8,9 @@
 ### 체크리스트
 - [ ] UserDaoTest 통과
   - 테스트 목록
-    - findAll()
-    - findById()
-    - findByAccount()
-    - insert()
-    - update()
+    - [ ] findAll()
+    - [x] findById()
+    - [ ] findByAccount()
+    - [x] insert()
+    - [x] update()
 - [ ] UserDAo가 아닌 JdbcTemplate 클래스에서 JDBC 관련 처리 
