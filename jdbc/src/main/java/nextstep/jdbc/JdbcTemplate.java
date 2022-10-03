@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.util.Assert;
 
 public class JdbcTemplate {
@@ -26,7 +27,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, args, rowMapper).get(0);
+        final List<T> result = executeQuery(sql, args, rowMapper);
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, result.size());
+        }
+        return result.iterator().next();
     }
 
     public void update(final String sql, final Object... args) {
