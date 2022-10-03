@@ -52,6 +52,26 @@
 
 <br>
 
+### 1차 피드백
+
+- [x] RowMapper 인터페이스에 rowNum이 없어서 불편하지 않은가요?
+    - 2007년 스프링 프로젝트
+      이슈로 [비슷한 논의](https://github.com/spring-projects/spring-framework/issues/7796#issuecomment-453314824)가 있었음.
+    - 유겐 휠러의 답변에 모두 수긍되나, 현재 필요하지 않으므로 필요할 때까지 구현하지 않기로 함
+    - 라이브러리는 사용자의 확장성을 고려해 `too much`가 `too little` 보다 낫다는 관점도 있지만 현재 미션에서 집중할 부분이 아니라고 판단
+- [ ] 복수의 행을 질의할 때에 RowMapper로 단일 행이 아닌 모든 행에 대한 처리를 직접 구현해야 하는 부분
+    - API 사용 방법이 획일화 되어 러닝 커브가 낮아진다는 장점이 있으나 사용 편의성이 저해됨
+    - single과 list를 구분할지 고민중
+- [ ] insert와 update요청이 모두 JdbcTemplate#insert 에 의존하는 문제
+    - 개선 예정
+    - command와 query를 나누어 구현해보는 방향으로 진행 예정
+- [ ] JdbcTemplateTest 관련
+    - 리뷰어 아서 제공 실제
+      구현된 [테스트 코드 링크](https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/test/java/org/springframework/jdbc/core/JdbcTemplateTests.java)
+    - 참고하여 테스트 추가 예정
+
+<br>
+
 ### 힌트
 
 - 리팩터링은 UserDaoTest를 활용해 진행한다.
