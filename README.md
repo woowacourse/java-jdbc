@@ -13,6 +13,6 @@
 - [x] try-with-resources 를 사용하도록 수정
 - [x] JdbcTemplate 중복 코드 없애기
 - [x] JdbcTemplate 예외 상황에 대한 테스트 추가
-- [ ] Dao 테스트 격리 고민해보기
+- [x] Dao 테스트 격리 고민해보기
 
 </details>
