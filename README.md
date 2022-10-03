@@ -29,4 +29,4 @@
 ## 피드백
 
 - [x] LinkedList를 ArrayList로 수정
-- [ ] queryForObject말고 다른 메서드들도 테스트 추가
+- [x] queryForObject말고 다른 메서드들도 테스트 추가
