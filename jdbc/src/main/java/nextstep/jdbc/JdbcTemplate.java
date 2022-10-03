@@ -21,34 +21,33 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(args, preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Query 에러가 발생했습니다.");
-        }
+        execute(sql, pstmt -> {
+            setParameters(args, pstmt);
+            return pstmt.executeUpdate();
+        });
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(args, preparedStatement);
-            return getResult(preparedStatement, new ResultSetExtractor<>(rowMapper));
-        } catch (SQLException e) {
-            throw new DataAccessException("Query 에러가 발생했습니다.");
-        }
+        return execute(sql, pstmt -> {
+            setParameters(args, pstmt);
+            return getResult(pstmt, new ResultSetExtractor<>(rowMapper));
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(args, preparedStatement);
-            List<T> result = getResult(preparedStatement, new ResultSetExtractor<>(rowMapper));
+        return execute(sql, pstmt -> {
+            setParameters(args, pstmt);
+            List<T> result = getResult(pstmt, new ResultSetExtractor<>(rowMapper));
             checkResultSizeIsOne(result);
             return result.iterator().next();
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStater<T> strategy) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            return strategy.doStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("Query 에러가 발생했습니다.");
         }
