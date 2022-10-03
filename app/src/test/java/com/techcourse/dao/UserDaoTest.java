@@ -2,12 +2,16 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.*;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+
+import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
@@ -16,8 +20,13 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
+            @Override
+            public DataSource getDataSource() {
+                return DataSourceConfig.getInstance();
+            }
+        };
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
