@@ -107,38 +107,7 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try (Connection connection = dataSource.getConnection()) {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return jdbcTemplate.query(sql, userRowMapper, account);
     }
 
     private RowMapper<User> userRowMapper = rs -> new User(
