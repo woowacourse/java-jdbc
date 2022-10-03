@@ -1,5 +1,8 @@
 package nextstep.jdbc;
 
+import static java.sql.ResultSet.CONCUR_READ_ONLY;
+import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,18 +29,28 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final SqlExecutor<T> executor = pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
+                verifyResultSizeIsOne(rs);
+                return rowMapper.mapRow(rs);
             }
-            return null;
         };
         return execute(sql, executor, parameters);
     }
 
+    private void verifyResultSizeIsOne(final ResultSet rs) throws SQLException {
+        if (!rs.next()) {
+            throw new EmptyResultDataAccessException();
+        }
+        rs.last();
+        final int resultSize = rs.getRow();
+        if (resultSize > 1) {
+            throw new IncorrectResultSizeDataAccessException(resultSize);
+        }
+        rs.first();
+    }
+
     private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             final PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
