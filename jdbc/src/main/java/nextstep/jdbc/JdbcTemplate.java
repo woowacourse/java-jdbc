@@ -72,7 +72,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T nullableSingleResult(List<T> results) {
+    private <T> T nullableSingleResult(final List<T> results) {
         final int expectedSize = 1;
         if (results == null || results.isEmpty()) {
             throw new EmptyResultDataAccessException(expectedSize);
