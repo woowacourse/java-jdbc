@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.lang.Nullable;
 
 public class JdbcTemplate {
 
@@ -35,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, @Nullable final Object... args) {
+    public void update(final String sql, final Object... args) {
         try(
                 final var conn = dataSource.getConnection();
                 final var pstmt = conn.prepareStatement(sql)
@@ -49,12 +48,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
         final List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
         ResultSet rs = null;
 
         try(
