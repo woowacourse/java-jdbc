@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,24 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(resultSize);
         }
         rs.first();
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final SqlExecutor<List<T>> executor = pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return collectByRowMapper(rowMapper, rs);
+            }
+        };
+        return execute(sql, executor, parameters);
+    }
+
+    private <T> List<T> collectByRowMapper(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            final T t = rowMapper.mapRow(rs);
+            result.add(t);
+        }
+        return result;
     }
 
     private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {

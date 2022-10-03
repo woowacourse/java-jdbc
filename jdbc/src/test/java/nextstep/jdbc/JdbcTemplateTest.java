@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.support.DataSourceConfig;
 import nextstep.jdbc.support.DatabasePopulatorUtils;
@@ -77,6 +78,46 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, User.ROW_MAPPER, userId))
                     .isInstanceOf(EmptyResultDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1 but 0");
+        }
+    }
+
+    @Nested
+    @DisplayName("query 메서드는")
+    class Query {
+
+        @Test
+        @DisplayName("일치하는 레코드를 List로 반환한다.")
+        void success() {
+            // given
+            final String insertSql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+            final String email = "admin@levellog.app";
+
+            jdbcTemplate.update(insertSql, "rick", "rick123", email);
+            jdbcTemplate.update(insertSql, "roma", "roma123", email);
+
+            final String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
+
+            // when
+            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER, email);
+
+            // then
+            assertThat(actual).hasSize(2)
+                    .extracting(User::getAccount)
+                    .containsExactly("rick", "roma");
+        }
+
+        @Test
+        @DisplayName("일치하는 레코드가 존재하지 않으면 빈 리스트를 반환한다.")
+        void success_recordNotExist_emptyList() {
+            // given
+            final String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
+            final String email = "admin@levellog.app";
+
+            // when
+            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER, email);
+
+            // then
+            assertThat(actual).isEmpty();
         }
     }
 }
