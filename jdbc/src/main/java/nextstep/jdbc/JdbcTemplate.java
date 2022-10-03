@@ -50,7 +50,6 @@ public class JdbcTemplate {
             return executor.apply(pstmt);
 
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -60,7 +59,6 @@ public class JdbcTemplate {
             return convertRows(rs, rowMapper);
 
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
