@@ -17,16 +17,14 @@ public class UserDao {
             rs.getString(3),
             rs.getString(4));
 
-    private final DataSource dataSource;
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
