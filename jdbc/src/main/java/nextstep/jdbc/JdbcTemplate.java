@@ -25,7 +25,7 @@ public class JdbcTemplate {
         return dataSource.getConnection();
     }
 
-    public int insert(final String sql, final Object... params) {
+    public int command(final String sql, final Object... params) {
         try (
                 final var connection = getConnection();
                 final var pstmt = connection.prepareStatement(sql);
@@ -40,7 +40,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T select(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
+    public <T> T query(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
         try (
                 final var connection = getConnection();
                 final var pstmt = connection.prepareStatement(sql);

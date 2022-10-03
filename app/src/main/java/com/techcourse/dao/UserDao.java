@@ -49,34 +49,34 @@ public class UserDao {
     }
 
     public int insert(final User user) {
-        return jdbcTemplate.insert(
+        return jdbcTemplate.command(
                 "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail()
         );
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.select(
+        return jdbcTemplate.query(
                 "select id, account, password, email from users",
                 usersMapper());
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.select(
+        return jdbcTemplate.query(
                 "select id, account, password, email from users where id = ?",
                 userMapper(),
                 id);
     }
 
     public User findByAccount(final String account) {
-        return jdbcTemplate.select(
+        return jdbcTemplate.query(
                 "select id, account, password, email from users where account = ?",
                 userMapper(),
                 account);
     }
 
     public int update(final User user) {
-        return jdbcTemplate.insert(
+        return jdbcTemplate.command(
                 "update users set password = ? where id = ?",
                 user.getPassword(), user.getId());
     }
