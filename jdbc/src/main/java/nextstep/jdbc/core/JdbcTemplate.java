@@ -29,8 +29,9 @@ public class JdbcTemplate {
         return execute(sql, stmt -> {
             final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
             setParameters(preparedStatement, params);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            return resultSetExtractor.extract(resultSet);
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSetExtractor.extract(resultSet);
+            }
         });
     }
 
@@ -38,12 +39,13 @@ public class JdbcTemplate {
         return execute(sql, stmt -> {
             final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
             setParameters(preparedStatement, params);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(resultSetExtractor.extract(resultSet));
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(resultSetExtractor.extract(resultSet));
+                }
+                return results;
             }
-            return results;
         });
     }
 

@@ -75,6 +75,7 @@ class JdbcTemplateTest {
                 () -> assertThat(actual).usingRecursiveComparison()
                         .isEqualTo(new TestUser(1L, "corinne")),
                 () -> verify(preparedStatement).setLong(1, 1L),
+                () -> verify(resultSet).close(),
                 () -> verify(preparedStatement).close(),
                 () -> verify(connection).close()
         );
@@ -94,6 +95,7 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(actual).isEmpty(),
                 () -> verify(preparedStatement).setString(1, "corinne"),
+                () -> verify(resultSet).close(),
                 () -> verify(preparedStatement).close(),
                 () -> verify(connection).close()
         );
