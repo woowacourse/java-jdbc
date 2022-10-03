@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
+    private static final int SINGLE_COUNT = 1;
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -88,7 +89,7 @@ public class JdbcTemplate {
     }
 
     private <T> void validateResultSize(final List<T> result) {
-        if (result.size() != 1) {
+        if (result.size() != SINGLE_COUNT) {
             throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
         }
     }
