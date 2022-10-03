@@ -1,0 +1,2 @@
+TRUNCATE TABLE users;
+TRUNCATE TABLE user_history;

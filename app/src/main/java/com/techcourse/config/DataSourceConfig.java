@@ -1,8 +1,7 @@
 package com.techcourse.config;
 
-import org.h2.jdbcx.JdbcDataSource;
-
 import java.util.Objects;
+import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
@@ -17,11 +16,12 @@ public class DataSourceConfig {
 
     private static JdbcDataSource createJdbcDataSource() {
         final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL");
         jdbcDataSource.setUser("");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
 
-    private DataSourceConfig() {}
+    private DataSourceConfig() {
+    }
 }
