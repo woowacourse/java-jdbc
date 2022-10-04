@@ -28,6 +28,7 @@ public class JdbcTemplate {
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -36,14 +37,14 @@ public class JdbcTemplate {
              PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameter(statement, parameters);
-            return queryForObject(statement, rowMapper);
+            return executeQueryForObject(statement, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T queryForObject(final PreparedStatement statement, final RowMapper<T> rowMapper) {
+    private <T> T executeQueryForObject(final PreparedStatement statement, final RowMapper<T> rowMapper) {
         try (ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -60,14 +61,14 @@ public class JdbcTemplate {
              PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameter(statement, parameters);
-            return query(statement, rowMapper);
+            return executeQuery(statement, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> query(final PreparedStatement statement, final RowMapper<T> rowMapper) {
+    private <T> List<T> executeQuery(final PreparedStatement statement, final RowMapper<T> rowMapper) {
         try (ResultSet resultSet = statement.executeQuery()) {
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
