@@ -11,15 +11,7 @@ import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 public class ResultSetExtractor {
 
     public static <T> T extract(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        int resultSetColumnCount = getResultSetColumnCount(rs);
-
-        if (resultSetColumnCount == 0) {
-            throw new EmptyResultDataAccessException("데이터가 존재하지 않습니다.");
-        }
-        if (resultSetColumnCount > 1) {
-            System.out.println(resultSetColumnCount);
-            throw new IncorrectResultSizeDataAccessException("데이터의 크기가 적절하지 않습니다.");
-        }
+        checkResultSet(rs);
         return rowMapper.mapRow(rs);
     }
 
@@ -32,10 +24,16 @@ public class ResultSetExtractor {
         return result;
     }
 
-    private static int getResultSetColumnCount(ResultSet rs) throws SQLException {
+    private static void checkResultSet(ResultSet rs) throws SQLException {
         rs.last();
-        int row = rs.getRow();
+        int resultSetRowCount = rs.getRow();
+
+        if (resultSetRowCount == 0) {
+            throw new EmptyResultDataAccessException("데이터가 존재하지 않습니다.");
+        }
+        if (resultSetRowCount > 1) {
+            throw new IncorrectResultSizeDataAccessException("데이터의 크기가 적절하지 않습니다.");
+        }
         rs.first();
-        return row;
     }
 }
