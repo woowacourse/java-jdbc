@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.execution.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcConnector {
 
@@ -19,11 +20,11 @@ public class JdbcConnector {
     }
 
     public <T> T execute(Execution<T> execution) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(execution.getSql())) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(execution.getSql())) {
             return execution.execute(statement);
         } catch (SQLException e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
     }
