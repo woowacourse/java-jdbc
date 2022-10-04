@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import nextstep.jdbc.core.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -16,8 +18,8 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        final var user = new User(1L, "gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -30,9 +32,11 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final User user = userDao.findByAccount("gugu");
+        final var foundUser = userDao.findById(user.getId());
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(foundUser).usingRecursiveComparison()
+                .isEqualTo(user);
     }
 
     @Test
@@ -57,13 +61,20 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findByAccount("gugu");
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findByAccount("gugu");
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @AfterEach
+    void setDown() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final String sql = "delete from users";
+        jdbcTemplate.update(sql);
     }
 }
