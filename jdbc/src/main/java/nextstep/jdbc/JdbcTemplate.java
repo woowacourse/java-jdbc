@@ -27,35 +27,11 @@ public class JdbcTemplate {
     }
 
     public int command(final String sql, final Object... params) {
-        try (
-                final var connection = getConnection();
-                final var pstmt = connection.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            log.debug("params : {}", params);
-            setParams(pstmt, List.of(params));
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql, null, ((rowMapper, pstmt) -> pstmt.executeUpdate()), params);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (
-                final var connection = getConnection();
-                final var pstmt = connection.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            log.debug("params : {}", params);
-            setParams(pstmt, List.of(params));
-
-            return mapRows(rowMapper, pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql, rowMapper, (this::mapRows), params);
     }
 
     public <T> T queryForOne(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -68,6 +44,22 @@ public class JdbcTemplate {
         return results.get(FIRST_ELEMENT);
     }
 
+    private <T, R> R execute(final String sql, final RowMapper<T> rowMapper,
+                             final ThrowingBiFunction<T, R> template, final Object... params) {
+        try (
+                final var connection = getConnection();
+                final var pstmt = connection.prepareStatement(sql);
+        ) {
+            log.debug("query : {}", sql);
+            log.debug("params : {}", params);
+            setParams(pstmt, List.of(params));
+
+            return template.apply(rowMapper, pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
     private void setParams(final PreparedStatement pstmt, final List<Object> params) throws SQLException {
         if (Objects.isNull(params)) {
