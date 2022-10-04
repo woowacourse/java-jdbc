@@ -1,23 +1,59 @@
-package nextstep.jdbc;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+> [돌아가기](../README.md)
 
+```java
+public class UserDao {
+    
+    // ...
+    
+    private static final ThrowingFunction<ResultSet, User, SQLException> USER_ROW_MAPPER =
+            (ResultSet rs) -> new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
+
+    private final JdbcTemplate jdbcTemplate;
+
+    // ...
+    
+    public void insert(final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void update(final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public List<User> findAll() {
+        final var sql = "select id, account, password, email from users";
+
+        return jdbcTemplate.queryAll(sql, USER_ROW_MAPPER);
+    }
+
+    public User findById(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, id);
+    }
+
+    public User findByAccount(final String account) {
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, account);
+    }
+}
+
+```
+
+```java
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    // ...
 
     public void execute(final String sql, final Object... params) {
         log.debug("query : {}", sql);
@@ -91,3 +127,4 @@ public class JdbcTemplate {
         }
     }
 }
+```
