@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.resultset.ExecuteStrategy;
 import nextstep.jdbc.resultset.PreparedStatementCreator;
 import nextstep.jdbc.resultset.RowMapper;
 import org.slf4j.Logger;
@@ -70,14 +71,9 @@ public class JdbcTemplate {
 
             return strategy.execute(preparedStatement);
         } catch (SQLException e) {
-            log.error("Not Connect : {}", e.getMessage());
-            throw new DataAccessException(e);
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to Access DataBase", e);
         }
-    }
-
-    @FunctionalInterface
-    interface ExecuteStrategy<T> {
-        T execute(final PreparedStatement pstmt) throws SQLException;
     }
 
     private PreparedStatementCreator preparedStatementCreator(final Object... args) {
