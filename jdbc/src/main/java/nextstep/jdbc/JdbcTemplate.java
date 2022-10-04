@@ -26,12 +26,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, pstmt -> {
-            pstmt.executeQuery();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return DataAccessUtils.getResults(rowMapper, rs);
-            }
-        }, args);
+        return executeQuery(sql, pstmt -> query(pstmt, rowMapper), args);
+    }
+
+    private static <T> List<T> query(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return DataAccessUtils.getResults(rowMapper, rs);
+        }
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor, Object... args) {
