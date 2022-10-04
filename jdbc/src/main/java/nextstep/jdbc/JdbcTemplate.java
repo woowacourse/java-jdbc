@@ -24,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setValues(preparedStatement, args);
@@ -44,10 +44,10 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             final ResultSet resultSet = preparedStatement.executeQuery()
+        ) {
             setValues(preparedStatement, args);
-
-            final ResultSet resultSet = preparedStatement.executeQuery();
             final RowMapperResultSetExtractor<T> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
             return resultSetExtractor.extractData(resultSet);
         } catch (SQLException e) {
