@@ -1,16 +1,17 @@
 package com.techcourse.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
+
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JspView;
 import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Controller
 public class LoginController {
@@ -18,7 +19,7 @@ public class LoginController {
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
-    public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
+    public ModelAndView view(final HttpServletRequest request) {
         return UserSession.getUserFrom(request.getSession())
                 .map(user -> {
                     log.info("logged in {}", user.getAccount());
@@ -28,7 +29,7 @@ public class LoginController {
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ModelAndView login(final HttpServletRequest request, final HttpServletResponse response) {
+    public ModelAndView login(final HttpServletRequest request) {
         if (UserSession.isLoggedIn(request.getSession())) {
             return redirect("/index.jsp");
         }
@@ -39,6 +40,13 @@ public class LoginController {
                     return login(request, user);
                 })
                 .orElse(redirect("/401.jsp"));
+    }
+
+    @RequestMapping(value = "/logout", method = RequestMethod.GET)
+    public String logout(final HttpServletRequest req) {
+        final var session = req.getSession();
+        session.removeAttribute(UserSession.SESSION_KEY);
+        return "redirect:/";
     }
 
     private ModelAndView login(final HttpServletRequest request, final User user) {
@@ -52,6 +60,6 @@ public class LoginController {
     }
 
     private ModelAndView redirect(final String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
+        return new ModelAndView(new JspView("redirect:" + path));
     }
 }
