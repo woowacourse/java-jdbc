@@ -1,7 +1,7 @@
 # 리뷰어 피드백 정리
 
 ## Level 1 - JDBC 라이브러리 구현
-- [ ] SpringFramework 의존성 제거
+- [x] SpringFramework 의존성 제거
   - 사용 위치 
     - JdbcTemplate, EmptyResultDataAccessException
     - JdbcTemplate, IncorrectResultSizeDataAccessException

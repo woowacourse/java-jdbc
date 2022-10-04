@@ -6,10 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -69,10 +69,10 @@ public class JdbcTemplate {
 
     private <T> T getSingleResult(List<T> result) {
         if (result.size() == 0) {
-            throw new EmptyResultDataAccessException("쿼리 실행 결과가 존재하지 않습니다.", 1);
+            throw new EmptyResultDataAccessException("쿼리 실행 결과가 존재하지 않습니다.");
         }
         if (result.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException("쿼리 실행 결과의 개수가 초과되었습니다.", 1);
+            throw new IncorrectResultSizeDataAccessException("쿼리 실행 결과의 개수가 초과되었습니다.");
         }
         return result.get(0);
     }
