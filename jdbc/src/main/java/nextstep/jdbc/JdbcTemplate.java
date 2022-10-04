@@ -51,9 +51,9 @@ public class JdbcTemplate {
         log.debug("execute SQL query [{}]", sql);
 
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+             final PreparedStatement statement = connection.prepareStatement(sql);
+             final ResultSet resultSet = statement.executeQuery()) {
             setValues(statement, args);
-            final ResultSet resultSet = statement.executeQuery();
             return extractData(resultSet, rowMapper);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
