@@ -23,7 +23,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql,
                                 final RowMapper<T> rowMapper,
                                 final Object... args) {
-        return connect(sql, pstmt -> {
+        return execute(sql, pstmt -> {
             try (final var resultSet = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 for (int i = 0; resultSet.next(); i++) {
@@ -40,7 +40,7 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(final String sql,
                                     final RowMapper<T> rowMapper,
                                     final Object... args) {
-        return connect(sql, pstmt -> {
+        return execute(sql, pstmt -> {
             try (final var resultSet = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 for (int i = 0; resultSet.next(); i++) {
@@ -56,10 +56,10 @@ public class JdbcTemplate {
 
     public int update(final String sql,
                       final Object... args) {
-        return connect(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    private <T> T connect(final String sql,
+    private <T> T execute(final String sql,
                           final ExecuteStrategy<T> strategy,
                           final Object... args) {
         PreparedStatementCreator statementCreator = preparedStatementCreator(args);
