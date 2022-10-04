@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +21,9 @@ public class UserDao {
             rs.getString(3),
             rs.getString(4));
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
         this.jdbcTemplate = jdbcTemplate;
     }
 
