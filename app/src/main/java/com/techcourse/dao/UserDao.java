@@ -3,7 +3,8 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import nextstep.jdbc.RowMapper;
+
 
 public class UserDao {
 
