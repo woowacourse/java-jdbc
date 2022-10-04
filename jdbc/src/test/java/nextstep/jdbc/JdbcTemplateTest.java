@@ -64,6 +64,6 @@ class JdbcTemplateTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.update("truncate table member", null);
+        jdbcTemplate.update("drop table member if exsists", null);
     }
 }

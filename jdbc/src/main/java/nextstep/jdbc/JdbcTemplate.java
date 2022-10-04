@@ -2,15 +2,12 @@ package nextstep.jdbc;
 
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.execution.ListExecution;
-import nextstep.jdbc.execution.ObjectExecution;
+import nextstep.jdbc.execution.QueryExecution;
 import nextstep.jdbc.execution.UpdateExecution;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_RESULT = 1;
 
     private final JdbcConnector connector;
 
@@ -23,10 +20,14 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return connector.execute(new ListExecution<>(sql, rowMapper));
+        return connector.execute(new QueryExecution<>(sql, null, rowMapper));
     }
 
     public <T> T queryForObject(String sql, Object[] arguments, RowMapper<T> rowMapper) {
-        return connector.execute(new ObjectExecution<>(sql, arguments, rowMapper));
+        List<T> results = connector.execute(new QueryExecution<>(sql, arguments, rowMapper));
+        if (results.size() != 1) {
+            throw new IllegalArgumentException("The result of query isn't single. count : " + results.size());
+        }
+        return results.get(SINGLE_RESULT - 1);
     }
 }
