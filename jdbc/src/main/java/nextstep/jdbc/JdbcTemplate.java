@@ -3,7 +3,6 @@ package nextstep.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -34,7 +33,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, statement -> {
             setParams(statement, args);
-            return executeQuery(statement, rowMapper);
+            return executeQuery(statement, new ResultSetExtractor<>(rowMapper));
         });
     }
 
@@ -68,13 +67,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
-        try (final var resultSet = preparedStatement.executeQuery()) {
-            List<T> entities = new ArrayList<>();
-            while (resultSet.next()) {
-                entities.add(rowMapper.mapRow(resultSet));
-            }
-            return entities;
+    private <T> List<T> executeQuery(PreparedStatement statement,
+                                     ResultSetExtractor<T> resultSetExtractor) throws SQLException {
+        try (final var resultSet = statement.executeQuery()) {
+            return resultSetExtractor.extractData(resultSet);
         }
     }
 }
