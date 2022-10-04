@@ -45,11 +45,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            if (parameter instanceof String) {
-                statement.setString(1, (String) parameter);
-            } else if (parameter instanceof Long) {
-                statement.setLong(1, (Long) parameter);
-            }
+            statement.setObject(1, parameter);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 log.debug("query : {}", sql);
@@ -70,12 +66,7 @@ public class JdbcTemplate {
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             for (int i = 0; i < parameters.length; i++) {
-                final var parameter = parameters[i];
-                if (parameter instanceof String) {
-                    statement.setString(i + 1, (String) parameter);
-                } else if (parameter instanceof Long) {
-                    statement.setLong(i + 1, (Long) parameter);
-                }
+                statement.setObject(i + 1, parameters[i]);
             }
             log.debug("query : {}", sql);
 
