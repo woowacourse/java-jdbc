@@ -57,7 +57,9 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(dataSource).getConnection(),
                 () -> verify(conn).prepareStatement(sql),
-                () -> verify(pstmt, times(2)).setObject(anyInt(), any())
+                () -> verify(pstmt, times(2)).setObject(anyInt(), any()),
+                () -> verify(conn).close(),
+                () -> verify(pstmt).close()
         );
     }
 
@@ -77,7 +79,10 @@ class JdbcTemplateTest {
                 () -> verify(dataSource).getConnection(),
                 () -> verify(conn).prepareStatement(sql),
                 () -> verify(pstmt, times(0)).setObject(anyInt(), any()),
-                () -> verify(rs).next()
+                () -> verify(rs).next(),
+                () -> verify(conn).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(rs).close()
         );
     }
 
@@ -100,7 +105,10 @@ class JdbcTemplateTest {
                 () -> verify(conn).prepareStatement(sql),
                 () -> verify(pstmt, times(0)).setObject(anyInt(), any()),
                 () -> verify(rs, times(2)).next(),
-                () -> verify(rs).getRow()
+                () -> verify(rs).getRow(),
+                () -> verify(conn).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(rs).close()
         );
     }
 
@@ -121,7 +129,10 @@ class JdbcTemplateTest {
                 () -> verify(dataSource).getConnection(),
                 () -> verify(conn).prepareStatement(sql),
                 () -> verify(pstmt, times(0)).setObject(anyInt(), any()),
-                () -> verify(rs).next()
+                () -> verify(rs).next(),
+                () -> verify(conn).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(rs).close()
         );
     }
 
@@ -145,7 +156,10 @@ class JdbcTemplateTest {
                 () -> verify(dataSource).getConnection(),
                 () -> verify(conn).prepareStatement(sql),
                 () -> verify(pstmt, times(0)).setObject(anyInt(), any()),
-                () -> verify(rs, times(3)).next()
+                () -> verify(rs, times(3)).next(),
+                () -> verify(conn).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(rs).close()
         );
     }
 }
