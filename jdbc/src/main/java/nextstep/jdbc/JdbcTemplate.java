@@ -55,8 +55,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T, K> T queryForObject(final String sql, final List<K> parameters,
-                                   final RowMapper<T> rowMapper) throws DataAccessException {
+    public <T, S> S queryForObject(final String sql, final List<T> parameters,
+                                   final RowMapper<S> rowMapper) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
