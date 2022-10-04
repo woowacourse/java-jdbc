@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
+    private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
