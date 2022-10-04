@@ -11,21 +11,16 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
-    private final JdbcTemplate jdbcTemplate;
     private final UserDao userDao;
 
     public UserDaoTest() {
         final var dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDao(new JdbcTemplate(dataSource));
     }
 
     @BeforeEach
     void setup() {
-        jdbcTemplate.update("truncate table users");
-        jdbcTemplate.update("alter table users alter column id restart with 1");
-
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
