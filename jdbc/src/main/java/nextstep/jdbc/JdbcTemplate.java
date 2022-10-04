@@ -22,12 +22,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
+    public void update(String sql, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
-            setPreparedStatement(pstmt, args);
+
+            pss.setValue(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -35,12 +35,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setPreparedStatement(pstmt, args);
+            pss.setValue(pstmt);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -58,8 +58,8 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            ResultSet rs = pstmt.executeQuery();
 
+            ResultSet rs = pstmt.executeQuery();
             return assembleResult(rs, rowMapper);
 
         } catch (SQLException e) {
@@ -76,23 +76,5 @@ public class JdbcTemplate {
             rowNum++;
         }
         return result;
-    }
-
-    private void setPreparedStatement(PreparedStatement pstmt, Object... args) throws SQLException {
-
-        int index = 0;
-        for (Object arg : args) {
-            index++;
-            switch (arg.getClass().getName()) {
-                case "String":
-                    pstmt.setString(index, (String)arg);
-                    break;
-                case "Long":
-                    pstmt.setLong(index, (Long)arg);
-                    break;
-                default:
-                    pstmt.setObject(index, arg);
-            }
-        }
     }
 }
