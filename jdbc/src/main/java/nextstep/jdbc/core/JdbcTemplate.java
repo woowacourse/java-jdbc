@@ -14,8 +14,7 @@ import nextstep.jdbc.support.ResultSetExtractor;
 
 public class JdbcTemplate {
 
-    private static final int OBJECT_RESULT_SIZE = 1;
-    private static final int FIRST_INDEX = 0;
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -36,19 +35,21 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             return null;
         }
-        if (results.size() > OBJECT_RESULT_SIZE) {
+        if (results.size() > SINGLE_RESULT_SIZE) {
             throw new DataAccessException("데이터가 1개 이상입니다.");
         }
 
-        return results.get(FIRST_INDEX);
+        return results.iterator()
+                .next();
     }
 
     public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor,
                                     final Object... params) {
         final PreparedStatementSetter preparedStatementSetter
                 = preparedStatement -> setParameters(preparedStatement, params);
-        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = pstmt -> {
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
+
+        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
                     results.add(resultSetExtractor.extract(resultSet));
