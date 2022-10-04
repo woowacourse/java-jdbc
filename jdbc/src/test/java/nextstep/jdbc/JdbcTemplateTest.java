@@ -25,7 +25,6 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any(String.class))).thenReturn(pstmt);
     }
