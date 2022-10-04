@@ -22,13 +22,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        final var parameterSource = new ParameterSource();
-        for (Object arg : args) {
-            parameterSource.addParam(arg);
-        }
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParams(preparedStatement, parameterSource);
+            setParams(preparedStatement, args);
             return executeQuery(preparedStatement, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -45,13 +41,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        final var parameterSource = new ParameterSource();
-        for (Object arg : args) {
-            parameterSource.addParam(arg);
-        }
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParams(preparedStatement, parameterSource);
+            setParams(preparedStatement, args);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -59,9 +51,9 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(PreparedStatement preparedStatement, ParameterSource parameterSource) throws SQLException {
-        for (var index = 0; index < parameterSource.getParamCount(); index++) {
-            preparedStatement.setObject(index + 1, parameterSource.getParam(index));
+    private void setParams(PreparedStatement preparedStatement, Object... args) throws SQLException {
+        for (var index = 0; index < args.length; index++) {
+            preparedStatement.setObject(index + 1, args[index]);
         }
     }
 
