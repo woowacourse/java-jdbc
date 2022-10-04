@@ -21,15 +21,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final ObjectMapper<T> objectMapper) {
-
-        List<T> results = new ArrayList<>();
-
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
             log.debug("query : {}", sql);
 
+            List<T> results = new ArrayList<>();
             if (resultSet.next()) {
                 T t = objectMapper.map(resultSet);
                 results.add(t);
@@ -37,7 +35,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -53,11 +51,11 @@ public class JdbcTemplate {
                 if (resultSet.next()) {
                     return objectMapper.map(resultSet);
                 }
-                return null;
+                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -68,13 +66,13 @@ public class JdbcTemplate {
             for (int i = 0; i < parameters.length; i++) {
                 statement.setObject(i + 1, parameters[i]);
             }
-            log.debug("query : {}", sql);
 
             statement.executeUpdate();
+            log.debug("query : {}", sql);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
