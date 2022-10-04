@@ -32,6 +32,7 @@ public class BeanPropertyRowMapper<T> implements RowMapper<T> {
     private T instantiate() {
         try {
             Constructor<T> primaryConstructor = getPrimaryConstructor();
+            primaryConstructor.setAccessible(true);
             return primaryConstructor.newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -40,7 +41,7 @@ public class BeanPropertyRowMapper<T> implements RowMapper<T> {
 
     private Constructor<T> getPrimaryConstructor() {
         try {
-            return type.getConstructor();
+            return type.getDeclaredConstructor();
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("BeanPropertyRowMapper needs a primary constructor!", e);
         }
