@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T queryForObject(PreparedStatement statement, RowMapper<T> rowMapper) {
+    private <T> T queryForObject(final PreparedStatement statement, final RowMapper<T> rowMapper) {
         try (ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -67,7 +67,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> query(PreparedStatement statement, RowMapper<T> rowMapper) {
+    private <T> List<T> query(final PreparedStatement statement, final RowMapper<T> rowMapper) {
         try (ResultSet resultSet = statement.executeQuery()) {
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
@@ -80,7 +80,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameter(PreparedStatement statement, Parameters parameters) throws SQLException {
+    private void setParameter(final PreparedStatement statement, final Parameters parameters) throws SQLException {
         int index = 1;
         for (Object parameter : parameters.getParameters()) {
             statement.setObject(index++, parameter);

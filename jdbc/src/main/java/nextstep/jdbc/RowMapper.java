@@ -8,5 +8,5 @@ import org.springframework.lang.Nullable;
 public interface RowMapper<T> {
 
     @Nullable
-    T mapRow(ResultSet rs) throws SQLException;
+    T mapRow(final ResultSet rs) throws SQLException;
 }
