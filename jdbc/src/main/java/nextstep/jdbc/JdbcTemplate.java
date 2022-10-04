@@ -39,10 +39,7 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> entities = query(sql, rowMapper, args);
-        if (entities.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(entities.get(0));
+        return DataAccessUtils.optionalSingleResult(entities);
     }
 
     public int update(String sql, Object... args) {
