@@ -30,8 +30,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, rowMapper, args);
-        if (result.size() > 1) {
-            throw new DataAccessException("하나 이상의 데이터가 존재합니다.");
+        if (result.size() != 1) {
+            throw new DataAccessException("하나의 데이터만 존재해야 합니다.");
         }
 
         return result.iterator().next();
