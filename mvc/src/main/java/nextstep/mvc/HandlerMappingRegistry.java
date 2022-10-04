@@ -8,17 +8,21 @@ import java.util.Optional;
 
 public class HandlerMappingRegistry {
 
-    private final List<HandlerMapping> handlerMappings = new ArrayList<>();
+    private final List<HandlerMapping> handlerMappings;
+
+    public HandlerMappingRegistry() {
+        this.handlerMappings = new ArrayList<>();
+    }
 
     public void addHandlerMapping(final HandlerMapping handlerMapping) {
         handlerMapping.initialize();
         handlerMappings.add(handlerMapping);
     }
 
-    public Optional<Object> getHandler(final HttpServletRequest request) {
+    public Optional<Object> getHandler(HttpServletRequest request) {
         return handlerMappings.stream()
-                .map(hm -> hm.getHandler(request))
+                .map(handlerMapping -> handlerMapping.getHandler(request))
                 .filter(Objects::nonNull)
-                .findFirst();
+                .findAny();
     }
 }
