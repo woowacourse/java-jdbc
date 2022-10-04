@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.init;
+package nextstep.jdbc;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,18 +31,15 @@ public class DatabasePopulatorUtils {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {
-            }
+            } catch (SQLException ignored) {}
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {
-            }
+            } catch (SQLException ignored) {}
         }
     }
 
-    private DatabasePopulatorUtils() {
-    }
+    private DatabasePopulatorUtils() {}
 }
