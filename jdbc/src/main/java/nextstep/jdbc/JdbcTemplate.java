@@ -41,14 +41,14 @@ public class JdbcTemplate {
         ) {
             setParams(preparedStatement, args);
             final List<T> result = executeQuery(preparedStatement, rowMapper);
-            validateResultSize(result);
+            validateSingleResultSize(result);
             return result.get(0);
         } catch (SQLException e) {
             throw new DataAccessException("DB 작업 처리 도중 에러가 발생했습니다.");
         }
     }
 
-    private <T> void validateResultSize(List<T> result) {
+    private <T> void validateSingleResultSize(List<T> result) {
         if(result.size() != 1){
             throw new DataAccessException("조회 결과가 1개가 아닙니다.");
         }
