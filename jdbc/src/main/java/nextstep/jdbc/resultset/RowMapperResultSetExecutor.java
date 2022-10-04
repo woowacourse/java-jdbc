@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nextstep.jdbc.exception.DataAccessException;
 
 public class RowMapperResultSetExecutor<T> implements ResultSetExecutor<List<T>> {
 
@@ -15,7 +14,7 @@ public class RowMapperResultSetExecutor<T> implements ResultSetExecutor<List<T>>
     }
 
     @Override
-    public List<T> extractData(final ResultSet resultSet) throws SQLException, DataAccessException {
+    public List<T> extractData(final ResultSet resultSet) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
