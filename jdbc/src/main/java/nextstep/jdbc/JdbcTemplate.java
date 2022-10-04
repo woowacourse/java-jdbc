@@ -62,17 +62,16 @@ public class JdbcTemplate {
     }
 
     private void setArguments(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        final List<Object> arguments = List.of(args);
         int index = 1;
-        for (final Object argument : arguments) {
-            pstmt.setObject(index++, argument);
+        for (final Object arg : args) {
+            pstmt.setObject(index++, arg);
         }
     }
 
     private <T> List<T> convertObjects(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
-            results.add(rowMapper.convertObject(resultSet));
+            results.add(rowMapper.mapRow(resultSet));
         }
         return results;
     }
