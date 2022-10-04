@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,10 @@ public class UserDao {
         this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
+
+    private final ObjectMapper<User> userMapper =
+            (final ResultSet resultSet) -> new User(resultSet.getLong(1), resultSet.getString(2),
+                    resultSet.getString(3), resultSet.getString(4));
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -70,40 +75,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return findBy(sql, id);
+        return jdbcTemplate.query(sql, id, userMapper);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return findBy(sql, account);
-    }
-
-    private User findBy(final String sql, final Object parameter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            if (parameter instanceof String) {
-                statement.setString(1, (String) parameter);
-            } else if (parameter instanceof Long) {
-                statement.setLong(1, (Long) parameter);
-            }
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                log.debug("query : {}", sql);
-
-                if (resultSet.next()) {
-                    return new User(
-                            resultSet.getLong(1),
-                            resultSet.getString(2),
-                            resultSet.getString(3),
-                            resultSet.getString(4));
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, account, userMapper);
     }
 }
