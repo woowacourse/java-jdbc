@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -42,7 +43,7 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -56,7 +57,7 @@ public class JdbcTemplate {
             return getSingleResult(result);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 

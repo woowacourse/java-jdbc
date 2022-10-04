@@ -7,4 +7,4 @@
     - JdbcTemplate, IncorrectResultSizeDataAccessException
     - JdbcTemplate, RowMapper
 - [ ] RowMapperResultSetExtractor 클래스 분리 이유
-- [ ] JdbcTemplate, DataAccessException 활용
+- [x] JdbcTemplate, DataAccessException 활용
