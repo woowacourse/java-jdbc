@@ -8,9 +8,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.utils.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.support.DataAccessUtils;
 
 public class JdbcTemplate {
 
@@ -44,7 +44,9 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameter(pstmt, parameters);
-            return validateNotNull(extractInstance(rse, pstmt));
+            final List<T> results = extractInstance(rse, pstmt);
+            validateNotNull(results);
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -82,11 +84,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> validateNotNull(List<T> result) {
+    private <T> void validateNotNull(List<T> result) {
         if (result.isEmpty()) {
             throw new DataAccessException("No Such Result");
         }
-        return result;
     }
 
     private void setParameter(PreparedStatement pstmt, Object... conditions) throws SQLException {
