@@ -20,6 +20,11 @@ public class User {
         this.email = email;
     }
 
+    public User() {
+        this.account = null;
+        this.email = null;
+    }
+
     public boolean checkPassword(String password) {
         return this.password.equals(password);
     }
