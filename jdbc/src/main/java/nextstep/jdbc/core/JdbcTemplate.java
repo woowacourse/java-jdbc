@@ -1,13 +1,15 @@
 package nextstep.jdbc.core;
 
-import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.support.ResultSetExtractor;
-import nextstep.jdbc.support.StatementCallback;
-
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.support.PreparedStatementCallback;
+import nextstep.jdbc.support.ResultSetExtractor;
 
 public class JdbcTemplate {
 
@@ -18,28 +20,26 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        return execute(sql, stmt -> {
-            final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
-            setParameters(preparedStatement, params);
-            return preparedStatement.executeUpdate();
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, params);
+            return pstmt.executeUpdate();
         });
     }
 
     public <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... params) {
-        return execute(sql, stmt -> {
-            final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
-            setParameters(preparedStatement, params);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, params);
+            try (final ResultSet resultSet = pstmt.executeQuery()) {
                 return resultSetExtractor.extract(resultSet);
             }
         });
     }
 
-    public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... params) {
-        return execute(sql, stmt -> {
-            final PreparedStatement preparedStatement = convertToPreparedStatement(stmt);
-            setParameters(preparedStatement, params);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+    public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor,
+                                    final Object... params) {
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, params);
+            try (final ResultSet resultSet = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
                     results.add(resultSetExtractor.extract(resultSet));
@@ -49,23 +49,16 @@ public class JdbcTemplate {
         });
     }
 
-    private PreparedStatement convertToPreparedStatement(final Statement statement) {
-        if (!(statement instanceof PreparedStatement)) {
-            throw new DataAccessException("PreparedStatement가 아닙니다.");
-        }
-        return (PreparedStatement) statement;
-    }
-
     private void setParameters(final PreparedStatement preparedStatement, final Object... params) {
         for (int i = 0; i < params.length; i++) {
             ParameterInjector.inject(preparedStatement, i + 1, params[i]);
         }
     }
 
-    private <T> T execute(final String sql, final StatementCallback<T> statementCallback) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
         try (final Connection connection = getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return statementCallback.doInStatement(preparedStatement);
+            return preparedStatementCallback.doInStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근에 실패하였습니다.", e);
         }
