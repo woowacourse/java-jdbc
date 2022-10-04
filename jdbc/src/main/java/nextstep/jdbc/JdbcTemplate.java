@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.resultset.PreparedStatementCreator;
 import nextstep.jdbc.resultset.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,13 +62,12 @@ public class JdbcTemplate {
     private <T> T connect(final String sql,
                           final ExecuteStrategy<T> strategy,
                           final Object... args) {
+        PreparedStatementCreator statementCreator = preparedStatementCreator(args);
+
         try (
             final var connection = dataSource.getConnection();
-            final var preparedStatement = connection.prepareStatement(sql)) {
+            final var preparedStatement = statementCreator.create(connection, sql)) {
 
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
             return strategy.execute(preparedStatement);
         } catch (SQLException e) {
             log.error("Not Connect : {}", e.getMessage());
@@ -75,7 +75,18 @@ public class JdbcTemplate {
         }
     }
 
+    @FunctionalInterface
     interface ExecuteStrategy<T> {
         T execute(final PreparedStatement pstmt) throws SQLException;
+    }
+
+    private PreparedStatementCreator preparedStatementCreator(final Object... args) {
+        return (connection, sql) -> {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            return pstmt;
+        };
     }
 }
