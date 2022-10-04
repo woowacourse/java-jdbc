@@ -9,8 +9,6 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
-import nextstep.jdbc.JdbcTemplate;
-
 class UserDaoTest {
 
     private UserDao userDao;
@@ -19,10 +17,9 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userDao = new UserDao(jdbcTemplate);
+        userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.save(user);
     }
 
     @Test
@@ -49,9 +46,9 @@ class UserDaoTest {
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
+        final var account = "save-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.save(user);
 
         final var actual = userDao.findById(2L);
 
