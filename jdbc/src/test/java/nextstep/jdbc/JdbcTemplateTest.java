@@ -45,7 +45,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("sun");
 
         // when
-        final TestUser actual = jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
+        final TestUser actual = jdbcTemplate.queryForObject(sql, rs ->
                 new TestUser(rs.getLong("id"), rs.getString("account")), 1L);
 
         // then
@@ -69,7 +69,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("sun", "sun");
 
         // when, then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs ->
                 new TestUser(rs.getLong("id"), rs.getString("account")), List.of(1L, 2L)))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("하나 이상의 데이터가 존재합니다.");
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("sun", "sun");
 
         // when
-        final List<TestUser> actual = jdbcTemplate.query(sql, (rs, rowNum) ->
+        final List<TestUser> actual = jdbcTemplate.query(sql, rs ->
                 new TestUser(rs.getLong("id"), rs.getString("account")), List.of(1L, 2L));
 
         // then
