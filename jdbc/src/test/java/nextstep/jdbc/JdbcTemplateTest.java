@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -23,6 +24,7 @@ class JdbcTemplateTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
+   private static final RowMapper<Object> ROW_MAPPER = (rs) -> new Object();
 
     @BeforeEach
     void setUp() {
@@ -39,14 +41,13 @@ class JdbcTemplateTest {
             final var connection = mock(Connection.class);
             final var preparedStatement = mock(PreparedStatement.class);
             final var resultSet = mock(ResultSet.class);
-            final RowMapper<Object> rowMapper = (rs) -> new Object();
 
             when(dataSource.getConnection()).thenReturn(connection);
             when(connection.prepareStatement(any())).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
-            List<Object> result = jdbcTemplate.query("select * from table_name", rowMapper);
+            List<Object> result = jdbcTemplate.query("select * from table_name", ROW_MAPPER);
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
@@ -60,14 +61,13 @@ class JdbcTemplateTest {
             final var connection = mock(Connection.class);
             final var preparedStatement = mock(PreparedStatement.class);
             final var resultSet = mock(ResultSet.class);
-            final RowMapper<Object> rowMapper = (rs) -> new Object();
 
             when(dataSource.getConnection()).thenReturn(connection);
             when(connection.prepareStatement(any())).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-            List<Object> result = jdbcTemplate.query("select * from table_name", rowMapper);
+            List<Object> result = jdbcTemplate.query("select * from table_name", ROW_MAPPER);
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
@@ -81,7 +81,6 @@ class JdbcTemplateTest {
             final var connection = mock(Connection.class);
             final var preparedStatement = mock(PreparedStatement.class);
             final var resultSet = mock(ResultSet.class);
-            final RowMapper<Object> rowMapper = (rs) -> new Object();
 
             when(dataSource.getConnection()).thenReturn(connection);
             when(connection.prepareStatement(any())).thenReturn(preparedStatement);
@@ -89,7 +88,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(true).thenReturn(false);
 
             String sql = "select * from table_name where id=? and name=?";
-            List<Object> result = jdbcTemplate.query(sql, rowMapper, 1, "name");
+            List<Object> result = jdbcTemplate.query(sql, ROW_MAPPER, 1, "name");
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
@@ -104,18 +103,17 @@ class JdbcTemplateTest {
     class QueryForObjectTest {
 
         @Test
-        void 조회_대상인_로우가_없을_때_빈_Optional_반환() throws Exception {
+        void 조회된_로우가_없을_때_빈_Optional_반환() throws Exception {
             final var connection = mock(Connection.class);
             final var preparedStatement = mock(PreparedStatement.class);
             final var resultSet = mock(ResultSet.class);
-            final RowMapper<Object> rowMapper = (rs) -> new Object();
 
             when(dataSource.getConnection()).thenReturn(connection);
             when(connection.prepareStatement(any())).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
-            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=1", rowMapper);
+            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=1", ROW_MAPPER);
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
@@ -125,24 +123,38 @@ class JdbcTemplateTest {
         }
 
         @Test
-        void 조회_대상인_로우가_1개_존재하면_해당_데이터가_담긴_Optional_반환() throws Exception {
+        void 조회된_로우가_1개_존재하면_해당_데이터가_담긴_Optional_반환() throws Exception {
             final var connection = mock(Connection.class);
             final var preparedStatement = mock(PreparedStatement.class);
             final var resultSet = mock(ResultSet.class);
-            final RowMapper<Object> rowMapper = (rs) -> new Object();
 
             when(dataSource.getConnection()).thenReturn(connection);
             when(connection.prepareStatement(any())).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true).thenReturn(false);
 
-            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=?", rowMapper, 1);
+            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1);
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
             verify(preparedStatement, times(1)).executeQuery();
             verify(resultSet, times(2)).next();
             assertThat(result).isPresent();
+        }
+
+        @Test
+        void 복수의_로우가_조회된_경우_예외가_발생한다() throws Exception {
+            final var connection = mock(Connection.class);
+            final var preparedStatement = mock(PreparedStatement.class);
+            final var resultSet = mock(ResultSet.class);
+
+            when(dataSource.getConnection()).thenReturn(connection);
+            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1))
+                    .isInstanceOf(DataAccessException.class);
         }
     }
 
@@ -177,7 +189,7 @@ class JdbcTemplateTest {
             when(preparedStatement.executeUpdate()).thenReturn(1);
 
             String sql = "insert into users (name) values (?)";
-            int result = jdbcTemplate.update(sql,"name");
+            int result = jdbcTemplate.update(sql, "name");
 
             verify(dataSource, times(1)).getConnection();
             verify(connection, times(1)).prepareStatement(any());
