@@ -13,7 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.EmptyResultException;
+import nextstep.jdbc.exception.IncorrectDataSizeException;
 import nextstep.jdbc.resultset.RowMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -120,8 +121,7 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, args))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("A result is empty.");
+                .isInstanceOf(EmptyResultException.class);
     }
 
     @DisplayName("단일결과 select query 수행 시 결과가 1개 초과면 예외를 던진다.")
@@ -137,7 +137,6 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, args))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("A result is over one.");
+                .isInstanceOf(IncorrectDataSizeException.class);
     }
 }

@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.EmptyResultException;
+import nextstep.jdbc.exception.IncorrectDataSizeException;
 import nextstep.jdbc.resultset.ResultSetExecutor;
 import nextstep.jdbc.resultset.RowMapper;
 import nextstep.jdbc.resultset.RowMapperResultSetExecutor;
@@ -80,10 +82,10 @@ public class JdbcTemplate {
 
     private <T> void validateResultSize(final List<T> result) {
         if (result.isEmpty()) {
-            throw new DataAccessException("A result is empty.");
+            throw new EmptyResultException(RESULT_SIZE_OF_ONE);
         }
         if (result.size() > RESULT_SIZE_OF_ONE) {
-            throw new DataAccessException("A result is over one.");
+            throw new IncorrectDataSizeException(RESULT_SIZE_OF_ONE, result.size());
         }
     }
 }
