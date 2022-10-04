@@ -39,7 +39,7 @@ class BeanPropertyRowMapperTest {
             this(null, null);
         }
 
-        public Data(Long id, String name) {
+        public Data(final Long id, final String name) {
             this.id = id;
             this.name = name;
         }
