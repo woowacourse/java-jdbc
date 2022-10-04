@@ -21,7 +21,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        final var parameterSource = new ParameterSource();
+        for (Object arg : args) {
+            parameterSource.addParam(arg);
+        }
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParams(preparedStatement, parameterSource);
@@ -32,15 +36,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
-        List<T> entities = query(sql, parameterSource, rowMapper);
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> entities = query(sql, rowMapper, args);
         if (entities.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(entities.get(0));
     }
 
-    public void update(String sql, ParameterSource parameterSource) {
+    public void update(String sql, Object... args) {
+        final var parameterSource = new ParameterSource();
+        for (Object arg : args) {
+            parameterSource.addParam(arg);
+        }
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParams(preparedStatement, parameterSource);
