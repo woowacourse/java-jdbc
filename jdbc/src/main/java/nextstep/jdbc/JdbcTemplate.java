@@ -60,10 +60,6 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(query(sql, new RowMapperResultSetExtractor<>(rowMapper), objects));
     }
 
-    public <T> T queryForObject(final String sql, final Class<T> cls, Object... objects) throws DataAccessException {
-        return queryForObject(sql, new SingleColumnRowMapper<>(cls), objects);
-    }
-
     public int update(final String sql, final Object... objects) throws DataAccessException {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql, objects);
         try (Connection connection = dataSource.getConnection();
