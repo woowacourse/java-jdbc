@@ -14,15 +14,15 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(
+    private final RowMapper<User> ROW_MAPPER = (rs) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email")
     );
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -36,7 +36,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.query("select * from users", ROW_MAPPER);
+        return jdbcTemplate.query("select id, account, password, email from users", ROW_MAPPER);
     }
 
     public User findById(final Long id) {
