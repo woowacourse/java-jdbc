@@ -63,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <R> R execute(final String sql, final PreparedStatementCallback<PreparedStatement, R> action) {
+    private <R> R execute(final String sql, final PreparedStatementCallback<R> action) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return action.doInStatement(preparedStatement);
