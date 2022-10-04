@@ -28,6 +28,15 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> result = query(sql, rowMapper, args);
+        if (result.size() > 1) {
+            throw new DataAccessException("하나 이상의 데이터가 존재합니다.");
+        }
+
+        return result.iterator().next();
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, preparedStatement -> {
             setParameters(preparedStatement, args);

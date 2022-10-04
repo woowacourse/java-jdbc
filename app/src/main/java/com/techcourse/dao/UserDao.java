@@ -5,18 +5,17 @@ import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.support.DataAccessUtils;
 import java.util.List;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email")
-            );
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,15 +40,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final List<User> users = jdbcTemplate.query(sql, ROW_MAPPER, id);
-
-        return DataAccessUtils.singleResult(users);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final List<User> users = jdbcTemplate.query(sql, ROW_MAPPER, account);
-
-        return DataAccessUtils.singleResult(users);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
