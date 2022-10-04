@@ -17,11 +17,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        User user = userDao.findById(id);
-        if (user == null) {
-            throw new UserNotFoundException();
-        }
-        return user;
+        return userDao.findById(id)
+                .orElseThrow(UserNotFoundException::new);
     }
 
     public void insert(final User user) {
@@ -36,10 +33,7 @@ public class UserService {
     }
 
     public User findByAccount(final String account) {
-        User user = userDao.findByAccount(account);
-        if (user == null) {
-            throw new UserNotFoundException();
-        }
-        return user;
+        return userDao.findByAccount(account)
+                .orElseThrow(UserNotFoundException::new);
     }
 }

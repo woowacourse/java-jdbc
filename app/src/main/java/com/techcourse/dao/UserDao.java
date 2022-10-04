@@ -2,10 +2,12 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.resultset.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 public class UserDao {
 
@@ -42,15 +44,23 @@ public class UserDao {
         return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        try {
+            return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, id));
+        } catch (final EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        try {
+            return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, account));
+        } catch (final EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 }
