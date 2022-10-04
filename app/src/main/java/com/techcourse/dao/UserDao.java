@@ -55,11 +55,4 @@ public class UserDao {
         final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account);
         return Optional.ofNullable(user);
     }
-
-    public void cleanUp() {
-        final String deleteSql = "delete from users";
-        jdbcTemplate.update(deleteSql);
-        final String alterSql = "alter table users alter column id restart with 1";
-        jdbcTemplate.update(alterSql);
-    }
 }
