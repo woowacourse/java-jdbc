@@ -23,7 +23,7 @@ public class UserDao {
         parameterSource.addParam(user.getPassword());
         parameterSource.addParam(user.getEmail());
 
-        jdbcTemplate.executeUpdate(sql, parameterSource);
+        jdbcTemplate.update(sql, parameterSource);
     }
 
     public void update(final User user) {
@@ -34,14 +34,14 @@ public class UserDao {
         parameterSource.addParam(user.getEmail());
         parameterSource.addParam(user.getId());
 
-        jdbcTemplate.executeUpdate(sql, parameterSource);
+        jdbcTemplate.update(sql, parameterSource);
     }
 
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
         final var parameterSource = new ParameterSource();
 
-        return jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
+        return jdbcTemplate.query(sql, parameterSource, rowMapper);
     }
 
     public Optional<User> findById(final Long id) {
@@ -49,7 +49,7 @@ public class UserDao {
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(id);
 
-        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
+        return jdbcTemplate.queryForObject(sql, parameterSource, rowMapper);
     }
 
     public Optional<User> findByAccount(final String account) {
@@ -57,7 +57,7 @@ public class UserDao {
         final var parameterSource = new ParameterSource();
         parameterSource.addParam(account);
 
-        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
+        return jdbcTemplate.queryForObject(sql, parameterSource, rowMapper);
     }
 
     private final RowMapper<User> rowMapper = (resultSet) ->

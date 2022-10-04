@@ -21,26 +21,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> executeQuery(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParams(preparedStatement, parameterSource);
-            return query(preparedStatement, rowMapper);
+            return executeQuery(preparedStatement, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> executeQueryForObject(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
-        List<T> entities = executeQuery(sql, parameterSource, rowMapper);
+    public <T> Optional<T> queryForObject(String sql, ParameterSource parameterSource, RowMapper<T> rowMapper) {
+        List<T> entities = query(sql, parameterSource, rowMapper);
         if (entities.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(entities.get(0));
     }
 
-    public void executeUpdate(String sql, ParameterSource parameterSource) {
+    public void update(String sql, ParameterSource parameterSource) {
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParams(preparedStatement, parameterSource);
@@ -66,7 +66,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> query(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
         try (final var resultSet = preparedStatement.executeQuery()) {
             List<T> entities = new ArrayList<>();
             while (resultSet.next()) {
