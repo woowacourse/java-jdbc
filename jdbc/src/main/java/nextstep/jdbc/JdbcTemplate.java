@@ -32,11 +32,10 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
-            rs = pstmt.executeQuery();
+            ResultSet rs = extractResultSet(pstmt);
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs, rs.getRow());
@@ -45,21 +44,13 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            rs = pstmt.executeQuery();
+            ResultSet rs = extractResultSet(pstmt);
 
             List<T> results = new ArrayList<>();
             while (rs.next()) {
@@ -69,13 +60,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        }
+    }
+
+    private ResultSet extractResultSet(final PreparedStatement pstmt) {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return rs;
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
