@@ -25,7 +25,7 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return executeQuery(sql, pstmt -> executeAndReturnResults(pstmt, rowMapper), args);
     }
 
@@ -36,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor, Object... args) {
+    private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             StatementUtils.setArguments(pstmt, args);
