@@ -18,7 +18,7 @@ public class UserService {
 
     public User findById(final long id) {
         return userDao.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("id = {} 에 해당하는 유저가 존재하지 않습니다."));
+                .orElseThrow(() -> new NoSuchElementException(String.format("id = %d 에 해당하는 유저가 존재하지 않습니다.", id)));
     }
 
     public void insert(final User user) {
