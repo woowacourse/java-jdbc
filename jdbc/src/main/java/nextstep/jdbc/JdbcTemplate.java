@@ -73,13 +73,11 @@ public class JdbcTemplate {
     private PreparedStatement createPreparedStatement(final Connection conn, final String sql,
                                                       @Nullable final Object[] args) throws SQLException {
         final PreparedStatement pstmt = conn.prepareStatement(sql);
-        int statementNum = 1;
         if (args == null) {
             return pstmt;
         }
-        for (Object obj : args) {
-            pstmt.setObject(statementNum, obj);
-            statementNum += 1;
+        for (int i = 1; i <= args.length; i++) {
+            pstmt.setObject(i, args[i - 1]);
         }
         return pstmt;
     }
