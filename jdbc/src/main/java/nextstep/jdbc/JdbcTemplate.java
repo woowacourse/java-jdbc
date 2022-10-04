@@ -23,7 +23,6 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = null;
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
@@ -31,13 +30,10 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             setArguments(pstmt, args);
 
-            resultSet = pstmt.executeQuery();
-            return convertObjects(resultSet, rowMapper);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            closeResultSet(resultSet);
         }
     }
 
@@ -68,6 +64,15 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> List<T> executeQuery(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            return convertObjects(resultSet, rowMapper);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private <T> List<T> convertObjects(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
@@ -84,16 +89,5 @@ public class JdbcTemplate {
             throw new DataAccessException(String.format("조회 결과가 1개 이상입니다. [%s]", sql));
         }
         return result.get(0);
-    }
-
-    private void closeResultSet(final ResultSet resultSet) {
-        try {
-            if (resultSet != null && !resultSet.isClosed()) {
-                resultSet.close();
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException();
-        }
     }
 }
