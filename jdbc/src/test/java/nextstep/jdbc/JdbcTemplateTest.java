@@ -50,7 +50,6 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).setObject(anyInt(), any()),
                 () -> verify(resultSet).next()
         );
-
     }
 
     @Test
