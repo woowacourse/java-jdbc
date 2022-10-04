@@ -2,11 +2,9 @@ package com.techcourse.dao;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
-
 import com.techcourse.domain.User;
 
+import nextstep.jdbc.ArgumentPreparedStatementSetter;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 

@@ -20,15 +20,19 @@ public abstract class JdbcTemplate {
     protected abstract DataSource getDataSource();
 
     public void update(final String sql, Object... args) {
+        ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+
         execute(sql, preparedStatement -> {
-            setStatement(preparedStatement, args);
+            statementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         });
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
+        ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+
         return execute(sql, preparedStatement -> {
-            setStatement(preparedStatement, args);
+            statementSetter.setValues(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
             return ResultSetExtractor.extract(rowMapper, rs);
         });
@@ -39,12 +43,6 @@ public abstract class JdbcTemplate {
             ResultSet rs = preparedStatement.executeQuery();
             return ResultSetExtractor.extractList(rowMapper, rs);
         });
-    }
-
-    private void setStatement(final PreparedStatement statement, final Object[] data) throws SQLException {
-        for (int i = 0; i < data.length; i++) {
-            statement.setObject(i + 1, data[i]);
-        }
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
