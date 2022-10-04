@@ -34,9 +34,7 @@ class JdbcTemplateTest {
         @DisplayName("데이터가 정상적으로 조회 된 경우 이를 반환한다.")
         void queryForObject() {
             Object result = jdbcTemplate.queryForObject(
-                "select column_test from jdbc_tests where column_test=?",
-                new Object[] {"a"},
-                rowMapper);
+                "select column_test from jdbc_tests where column_test=?", rowMapper, "a");
 
             assertAll(
                 () -> assertThat(result).isInstanceOf(String.class),
@@ -49,9 +47,7 @@ class JdbcTemplateTest {
         void noData() {
             assertThatThrownBy(
                 () -> jdbcTemplate.queryForObject(
-                    "select column_test from jdbc_tests where column_test=?",
-                    new Object[] {"c"},
-                    rowMapper))
+                    "select column_test from jdbc_tests where column_test=?", rowMapper, "c"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("쿼리 결과가 존재하지 않습니다.");
         }
@@ -61,9 +57,7 @@ class JdbcTemplateTest {
         void moreThanTwo() {
             assertThatThrownBy(
                 () -> jdbcTemplate.queryForObject(
-                    "select column_test from jdbc_tests",
-                    new Object[] {},
-                    rowMapper))
+                    "select column_test from jdbc_tests", rowMapper))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("쿼리 결과가 2개 이상입니다.");
         }
@@ -77,10 +71,7 @@ class JdbcTemplateTest {
         @Test
         @DisplayName("데이터가 정상적으로 조회 된 경우 이를 반환한다.")
         void query() {
-            List<Object> result = jdbcTemplate.query(
-                "select column_test from jdbc_tests",
-                new Object[] {},
-                rowMapper);
+            List<Object> result = jdbcTemplate.query("select column_test from jdbc_tests", rowMapper);
 
             assertAll(
                 () -> assertThat(result).hasSize(2),
@@ -93,9 +84,7 @@ class JdbcTemplateTest {
         @DisplayName("데이터가 존재하지 않는 경우 null이 아닌 빈 배열을 반환한다.")
         void noData() {
             List<Object> result = jdbcTemplate.query(
-                "select column_test from jdbc_tests where column_test=?",
-                new Object[] {"c"},
-                rowMapper);
+                "select column_test from jdbc_tests where column_test=?", rowMapper, "c");
 
             assertAll(
                 () -> assertThat(result).isNotNull(),
@@ -115,9 +104,7 @@ class JdbcTemplateTest {
             jdbcTemplate.update("insert into jdbc_tests values ('d')", new Object[] {});
 
             Object result = jdbcTemplate.queryForObject(
-                "select column_test from jdbc_tests where column_test=?",
-                new Object[] {"d"},
-                rowMapper);
+                "select column_test from jdbc_tests where column_test=?", rowMapper, "d");
 
             assertAll(
                 () -> assertThat(result).isInstanceOf(String.class),
@@ -131,10 +118,8 @@ class JdbcTemplateTest {
             jdbcTemplate.update("delete from jdbc_tests where column_test='c'", new Object[] {});
 
             assertThatThrownBy(
-                () -> jdbcTemplate.queryForObject(
-                    "select column_test from jdbc_tests where column_test=?",
-                    new Object[] {"c"},
-                    rowMapper))
+                () -> jdbcTemplate.queryForObject("select column_test from jdbc_tests where column_test=?", rowMapper,
+                    "c"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("쿼리 결과가 존재하지 않습니다.");
         }
