@@ -32,13 +32,13 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -77,28 +77,6 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return findBy(sql, account);
-    }
-
-    private void updateQuery(final String sql, final Object... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            for (int i = 0; i < objects.length; i++) {
-                final var parameter = objects[i];
-                if (parameter instanceof String) {
-                    statement.setString(i + 1, (String) parameter);
-                } else if (parameter instanceof Long) {
-                    statement.setLong(i + 1, (Long) parameter);
-                }
-            }
-            log.debug("query : {}", sql);
-
-            statement.executeUpdate();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
     }
 
     private User findBy(final String sql, final Object parameter) {
