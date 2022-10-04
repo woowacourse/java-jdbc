@@ -41,12 +41,10 @@ class JdbcTemplateTest {
         // given
         final String sql = "select id, account from user where id = ?";
         when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getLong("id")).thenReturn(1L);
-        when(resultSet.getString("account")).thenReturn("sun");
 
         // when
         final TestUser actual = jdbcTemplate.queryForObject(sql, rs ->
-                new TestUser(rs.getLong("id"), rs.getString("account")), 1L);
+                new TestUser(1L, "sun"), 1L);
 
         // then
         assertAll(
@@ -65,8 +63,6 @@ class JdbcTemplateTest {
         // given
         final String sql = "select id, account from user where account = ?";
         when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getLong("id")).thenReturn(1L, 2L);
-        when(resultSet.getString("account")).thenReturn("sun", "sun");
 
         // when, then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs ->
