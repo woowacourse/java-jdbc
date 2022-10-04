@@ -34,33 +34,37 @@ public class JdbcTemplate {
         }
     }
 
-    public List<List<Object>> executeQuery(String sql, List<Object> params) throws SQLException {
+    public List<List<Object>> executeQuery(String sql, List<Object> params) {
         try (Connection conn = dataSource.getConnection()) {
              PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             validateParams(pstmt, params);
 
-            if (sql.toLowerCase().startsWith("select")) {
-                List<List<Object>> res = new ArrayList<>();
-                ResultSet resultSet = pstmt.executeQuery();
-                while (resultSet.next()) {
-                    res.add(new ArrayList<>());
-                    int columnSize = resultSet.getMetaData().getColumnCount();
-                    for (int i = 0; i < columnSize; i++) {
-                        res.get(res.size() - 1).add(resultSet.getObject(i + 1));
-                    }
-                }
-                return res;
-            }
-            pstmt.executeUpdate();
-            return null;
+            return generateResultList(sql, pstmt);
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    private List<List<Object>> generateResultList(String sql, PreparedStatement pstmt) throws SQLException {
+        if (sql.toLowerCase().startsWith("select")) {
+            List<List<Object>> res = new ArrayList<>();
+            ResultSet resultSet = pstmt.executeQuery();
+            addObjectToResultList(res, resultSet);
+            return res;
+        }
+        pstmt.executeUpdate();
+        return null;
+    }
+
+    private void addObjectToResultList(List<List<Object>> res, ResultSet resultSet) throws SQLException {
+        while (resultSet.next()) {
+            res.add(new ArrayList<>());
+            int columnSize = resultSet.getMetaData().getColumnCount();
+            for (int i = 0; i < columnSize; i++) {
+                res.get(res.size() - 1).add(resultSet.getObject(i + 1));
+            }
+        }
     }
 }
