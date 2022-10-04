@@ -35,11 +35,12 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> T query(final String sql, final Object parameter, final ObjectMapper<T> objectMapper) {
+        validateSql(sql, parameter);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
@@ -55,11 +56,12 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public void update(final String sql, final Object... parameters) {
+        validateSql(sql, parameters);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
@@ -72,7 +74,14 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void validateSql(final String sql, final Object... parameters) {
+        int required = sql.length() - sql.replaceAll("\\?", "").length();
+        if (required != parameters.length) {
+            throw new DataAccessException("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
         }
     }
 }
