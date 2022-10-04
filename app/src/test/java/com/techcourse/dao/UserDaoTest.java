@@ -1,12 +1,15 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import nextstep.jdbc.IncorrectResultSizeDataAccessException;
+import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -16,7 +19,8 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -33,6 +37,12 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findById_Exception() {
+        assertThatThrownBy(() -> userDao.findById(Long.MAX_VALUE))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
