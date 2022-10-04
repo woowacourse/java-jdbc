@@ -1,22 +1,24 @@
 package nextstep.jdbc.core;
 
-import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.support.ResultSetExtractor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.support.ResultSetExtractor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
@@ -51,9 +53,9 @@ class JdbcTemplateTest {
         // then
         assertAll(
                 () -> assertThat(actual).isOne(),
-                () -> verify(this.preparedStatement).setInt(1, 1),
-                () -> verify(this.preparedStatement).setInt(2, 2),
-                () -> verify(this.preparedStatement).setInt(3, 3),
+                () -> verify(this.preparedStatement).setObject(1, 1),
+                () -> verify(this.preparedStatement).setObject(2, 2),
+                () -> verify(this.preparedStatement).setObject(3, 3),
                 () -> verify(this.preparedStatement).close(),
                 () -> verify(this.connection).close()
         );
@@ -74,7 +76,7 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(actual).usingRecursiveComparison()
                         .isEqualTo(new TestUser(1L, "corinne")),
-                () -> verify(preparedStatement).setLong(1, 1L),
+                () -> verify(preparedStatement).setObject(1, 1L),
                 () -> verify(resultSet).close(),
                 () -> verify(preparedStatement).close(),
                 () -> verify(connection).close()
@@ -94,7 +96,7 @@ class JdbcTemplateTest {
         // then
         assertAll(
                 () -> assertThat(actual).isEmpty(),
-                () -> verify(preparedStatement).setString(1, "corinne"),
+                () -> verify(preparedStatement).setObject(1, "corinne"),
                 () -> verify(resultSet).close(),
                 () -> verify(preparedStatement).close(),
                 () -> verify(connection).close()

@@ -51,7 +51,11 @@ public class JdbcTemplate {
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... params) {
         for (int i = 0; i < params.length; i++) {
-            ParameterInjector.inject(preparedStatement, i + 1, params[i]);
+            try {
+                preparedStatement.setObject(i + 1, params[i]);
+            } catch (SQLException e) {
+                throw new DataAccessException("파라미터 세팅에 실패하였습니다.");
+            }
         }
     }
 
