@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.support.PreparedStatementExecutor;
+import nextstep.jdbc.support.PreparedStatementSetter;
 import nextstep.jdbc.support.ResultSetExtractor;
 
 public class JdbcTemplate {
@@ -23,10 +24,10 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, params);
-            return pstmt.executeUpdate();
-        });
+        final PreparedStatementSetter preparedStatementSetter
+                = preparedStatement -> setParameters(preparedStatement, params);
+
+        return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(final String sql, final ResultSetExtractor<T> resultSetExtractor,
@@ -38,13 +39,15 @@ public class JdbcTemplate {
         if (results.size() > OBJECT_RESULT_SIZE) {
             throw new DataAccessException("데이터가 1개 이상입니다.");
         }
+
         return results.get(FIRST_INDEX);
     }
 
     public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor,
                                     final Object... params) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, params);
+        final PreparedStatementSetter preparedStatementSetter
+                = preparedStatement -> setParameters(preparedStatement, params);
+        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = pstmt -> {
             try (final ResultSet resultSet = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -52,7 +55,9 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        });
+        };
+
+        return execute(sql, preparedStatementSetter, preparedStatementExecutor);
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... params) {
@@ -65,9 +70,11 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor) {
+    private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
+                          final PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (final Connection connection = getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.set(preparedStatement);
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근에 실패하였습니다.", e);
