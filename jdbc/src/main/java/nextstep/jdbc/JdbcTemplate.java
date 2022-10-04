@@ -37,13 +37,6 @@ public class JdbcTemplate {
         return getSingleResult(results);
     }
 
-    private <T> T getSingleResult(final List<T> results) {
-        if (results.size() != SINGLE_RESULT_SIZE) {
-            throw new DataAccessException("조회한 결과의 크기가 1이 아닙니다.");
-        }
-        return results.get(0);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -55,6 +48,13 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T getSingleResult(final List<T> results) {
+        if (results.size() != SINGLE_RESULT_SIZE) {
+            throw new DataAccessException("조회한 결과의 크기가 1이 아닙니다.");
+        }
+        return results.get(0);
     }
 
     private <T> List<T> getResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
