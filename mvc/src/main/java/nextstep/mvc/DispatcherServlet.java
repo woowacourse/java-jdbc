@@ -1,12 +1,13 @@
 package nextstep.mvc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.ModelAndView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -15,6 +16,7 @@ public class DispatcherServlet extends HttpServlet {
 
     private final HandlerMappingRegistry handlerMappingRegistry;
     private final HandlerAdapterRegistry handlerAdapterRegistry;
+
     private HandlerExecutor handlerExecutor;
 
     public DispatcherServlet() {
@@ -36,25 +38,26 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException {
+    protected void service(final HttpServletRequest request, final HttpServletResponse response)
+            throws ServletException {
         log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
 
         try {
             final var handler = handlerMappingRegistry.getHandler(request);
-            if (!handler.isPresent()) {
+            if (handler.isEmpty()) {
                 response.setStatus(404);
                 return;
             }
 
             final var modelAndView = handlerExecutor.handle(request, response, handler.get());
             render(modelAndView, request, response);
-        } catch (Throwable e) {
-            log.error("Exception : {}", e.getMessage(), e);
+        } catch (final Throwable e) {
             throw new ServletException(e.getMessage());
         }
     }
 
-    private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    private void render(final ModelAndView modelAndView, final HttpServletRequest request,
+                        final HttpServletResponse response) throws Exception {
         final var view = modelAndView.getView();
         view.render(modelAndView.getModel(), request, response);
     }
