@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.support.PreparedStatementCallback;
+import nextstep.jdbc.support.PreparedStatementExecutor;
 import nextstep.jdbc.support.ResultSetExtractor;
 
 public class JdbcTemplate {
@@ -65,10 +65,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (final Connection connection = getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return preparedStatementCallback.doInStatement(preparedStatement);
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근에 실패하였습니다.", e);
         }
