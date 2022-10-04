@@ -27,10 +27,7 @@ public class JdbcTemplate {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-
+            bindParameters(pstmt, parameters);
             ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
@@ -42,8 +39,8 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(rs, rowNum));
             }
 
+            rs.close();
             return result;
-
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -51,34 +48,17 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
+        List<T> result = query(sql, rowMapper, parameters);
 
-            ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (!rs.next()) {
-                throw new RuntimeException("쿼리 결과가 존재하지 않습니다.");
-            }
-
-            T result = rowMapper.mapRow(rs, 1);
-
-            if (rs.next()) {
-                throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
-            }
-
-            return result;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        if (result.isEmpty()) {
+            throw new RuntimeException("쿼리 결과가 존재하지 않습니다.");
         }
+
+        if (result.size() > 1) {
+            throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
+        }
+
+        return result.get(0);
     }
 
     public void update(String sql, Object... parameters) {
@@ -86,16 +66,19 @@ public class JdbcTemplate {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-
+            bindParameters(pstmt, parameters);
             pstmt.executeUpdate();
 
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void bindParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
         }
     }
 }
