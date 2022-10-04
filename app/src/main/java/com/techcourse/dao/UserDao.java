@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.techcourse.domain.User;
 
-import nextstep.jdbc.ArgumentPreparedStatementSetter;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
@@ -31,6 +30,7 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account =?, password = ?, email = ? ";
+
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
