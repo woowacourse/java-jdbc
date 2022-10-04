@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.dao;
 
 public class DataAccessException extends RuntimeException {
 
