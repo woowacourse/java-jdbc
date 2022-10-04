@@ -30,29 +30,34 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.select(sql, USER_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        User user = jdbcTemplate.select(sql, USER_MAPPER, id);
-        if (user == null) {
+        final List<User> users = jdbcTemplate.select(sql, USER_MAPPER, id);
+        if (users.isEmpty()) {
             throw new IllegalArgumentException("user not found");
         }
-        return user;
+        return users.get(0);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        final List<User> users = jdbcTemplate.select(sql, USER_MAPPER, account);
+        if (users.isEmpty()) {
+            throw new IllegalArgumentException("user not found");
+        }
+        return users.get(0);
     }
 }
