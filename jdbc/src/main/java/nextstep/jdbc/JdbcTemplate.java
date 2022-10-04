@@ -30,7 +30,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -44,16 +44,16 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         final List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         ResultSet rs = null;
 
         try(
@@ -68,7 +68,7 @@ public class JdbcTemplate {
             return extractData(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
         }
@@ -84,17 +84,17 @@ public class JdbcTemplate {
         return results;
     }
 
-    private void setPstmt(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setPstmt(final PreparedStatement pstmt, final Object... args) throws SQLException {
         if (hasArgs(args)) {
             setValues(pstmt, args);
         }
     }
 
-    private boolean hasArgs(final Object[] args) {
+    private boolean hasArgs(final Object... args) {
         return args != null;
     }
 
-    private void setValues(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setValues(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             final var arg = args[i];
             pstmt.setObject(i + 1, arg);
