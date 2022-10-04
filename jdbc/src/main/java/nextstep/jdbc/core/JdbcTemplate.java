@@ -13,6 +13,9 @@ import nextstep.jdbc.support.ResultSetExtractor;
 
 public class JdbcTemplate {
 
+    private static final int OBJECT_RESULT_SIZE = 1;
+    private static final int FIRST_INDEX = 0;
+
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -26,13 +29,16 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... params) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, params);
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
-                return resultSetExtractor.extract(resultSet);
-            }
-        });
+    public <T> T queryForObject(final String sql, final ResultSetExtractor<T> resultSetExtractor,
+                                final Object... params) {
+        final List<T> results = queryForList(sql, resultSetExtractor, params);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > OBJECT_RESULT_SIZE) {
+            throw new DataAccessException("데이터가 1개 이상입니다.");
+        }
+        return results.get(FIRST_INDEX);
     }
 
     public <T> List<T> queryForList(final String sql, final ResultSetExtractor<T> resultSetExtractor,

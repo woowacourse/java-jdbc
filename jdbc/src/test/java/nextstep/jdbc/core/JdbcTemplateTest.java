@@ -62,15 +62,16 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void query로_값을_불러올_수_있다() throws SQLException {
+    void queryForObject로_값을_불러올_수_있다() throws SQLException {
         // given
         final String sql = "select id, account from test where id=?";
 
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("account")).thenReturn("corinne");
 
         // when
-        final TestUser actual = jdbcTemplate.query(sql, getResultSetExecutor(), 1L);
+        final TestUser actual = jdbcTemplate.queryForObject(sql, getResultSetExecutor(), 1L);
 
         // then
         assertAll(
@@ -84,18 +85,49 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObject_수행시_레코드가_없으면_null을_반환한다() throws SQLException {
+        // given
+        final String sql = "select id, account from test";
+
+        when(resultSet.next()).thenReturn(false);
+
+        // when
+        final TestUser testUser = jdbcTemplate.queryForObject(sql, getResultSetExecutor());
+
+        // then
+        assertThat(testUser).isNull();
+    }
+
+    @Test
+    void queryForObject_수행_시_레코드가_2개_이상이면_예외를_반환한다() throws SQLException {
+        // given
+        final String sql = "select id, account from test";
+
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getString("account")).thenReturn("corinne");
+
+        // when, then
+        final ResultSetExtractor<TestUser> resultSetExecutor = getResultSetExecutor();
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetExecutor))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
     void queryList로_값을_불러올_수_있다() throws SQLException {
         // given
         final String sql = "select id, account from test where account=?";
 
-        when(resultSet.next()).thenReturn(false);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getString("account")).thenReturn("corinne");
 
         // when
         final List<TestUser> actual = jdbcTemplate.queryForList(sql, getResultSetExecutor(), "corinne");
 
         // then
         assertAll(
-                () -> assertThat(actual).isEmpty(),
+                () -> assertThat(actual).hasSize(1),
                 () -> verify(preparedStatement).setObject(1, "corinne"),
                 () -> verify(resultSet).close(),
                 () -> verify(preparedStatement).close(),
@@ -107,12 +139,14 @@ class JdbcTemplateTest {
     void 커넥션_점유_실패시_예외가_발생한다() throws SQLException {
         // given
         final String sql = "select id, account from test where account=?";
+
         when(dataSource.getConnection())
                 .thenThrow(new DataAccessException());
         final ResultSetExtractor<TestUser> resultSetExecutor = getResultSetExecutor();
+
         // when, then
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, resultSetExecutor, "corinne"))
+                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetExecutor, "corinne"))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(preparedStatement, never()).setString(1, "corinne"),
                 () -> verify(preparedStatement, never()).close(),

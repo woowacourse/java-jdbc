@@ -1,12 +1,11 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.util.List;
 import nextstep.jdbc.core.JdbcTemplate;
 import nextstep.jdbc.support.ResultSetExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class UserDao {
 
@@ -14,14 +13,11 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final ResultSetExtractor<User> userResultSetExtractor = resultSet -> {
-        if (resultSet.next()) {
-            final long id = resultSet.getLong("id");
-            final String account = resultSet.getString("account");
-            final String password = resultSet.getString("password");
-            final String email = resultSet.getString("email");
-            return new User(id, account, password, email);
-        }
-        return null;
+        final long id = resultSet.getLong("id");
+        final String account = resultSet.getString("account");
+        final String password = resultSet.getString("password");
+        final String email = resultSet.getString("email");
+        return new User(id, account, password, email);
     };
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -45,11 +41,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, userResultSetExtractor, id);
+        return jdbcTemplate.queryForObject(sql, userResultSetExtractor, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, userResultSetExtractor, account);
+        return jdbcTemplate.queryForObject(sql, userResultSetExtractor, account);
     }
 }
