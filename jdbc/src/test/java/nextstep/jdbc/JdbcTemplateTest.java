@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -15,6 +16,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
@@ -64,34 +66,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("queryForObject 메서드는 SQL 문으로 조회된 단일 객체를 반환한다.")
-    void queryForObject() throws SQLException {
-        // given
-        final ResultSet resultSet = mock(ResultSet.class);
-        final String sql = "select id, account, password, email from users where account = ?";
-        final RowMapper<String> rowMapper = (rs, rowNum) -> rs.getString("account");
-
-        given(statement.executeQuery()).willReturn(resultSet);
-        given(resultSet.next())
-                .willReturn(true)
-                .willReturn(false);
-        given(resultSet.getString("account"))
-                .willReturn("pepper");
-
-        // when
-        final String actual = jdbcTemplate.queryForObject(sql, rowMapper, "pepper");
-
-        // then
-        assertAll(
-                () -> assertThat(actual).isEqualTo("pepper"),
-                () -> verify(statement).setObject(1, "pepper"),
-                () -> verify(statement).executeQuery(),
-                () -> verify(connection).close(),
-                () -> verify(statement).close()
-        );
-    }
-
-    @Test
     @DisplayName("update 메서드는 SQL 문을 실행한다.")
     void update() {
         // given
@@ -107,5 +81,60 @@ class JdbcTemplateTest {
                 () -> verify(connection).close(),
                 () -> verify(statement).close()
         );
+    }
+
+    @Nested
+    @DisplayName("queryForObject 메서드는")
+    class QueryForObject {
+
+        @Test
+        @DisplayName("SQL 문으로 조회된 단일 객체를 반환한다.")
+        void success() throws SQLException {
+            // given
+            final ResultSet resultSet = mock(ResultSet.class);
+            final String sql = "select id, account, password, email from users where account = ?";
+            final RowMapper<String> rowMapper = (rs, rowNum) -> rs.getString("account");
+
+            given(statement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next())
+                    .willReturn(true)
+                    .willReturn(false);
+            given(resultSet.getString("account"))
+                    .willReturn("pepper");
+
+            // when
+            final String actual = jdbcTemplate.queryForObject(sql, rowMapper, "pepper");
+
+            // then
+            assertAll(
+                    () -> assertThat(actual).isEqualTo("pepper"),
+                    () -> verify(statement).setObject(1, "pepper"),
+                    () -> verify(statement).executeQuery(),
+                    () -> verify(connection).close(),
+                    () -> verify(statement).close()
+            );
+        }
+
+        @Test
+        @DisplayName("2개 이상의 데이터가 조회된 경우 에러를 던진다.")
+        void moreThanOneResult_ExceptionThrown() throws SQLException {
+            // given
+            final ResultSet resultSet = mock(ResultSet.class);
+            final String sql = "select id, account, password, email from users where account = ?";
+            final RowMapper<String> rowMapper = (rs, rowNum) -> rs.getString("account");
+
+            given(statement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next())
+                    .willReturn(true)
+                    .willReturn(true)
+                    .willReturn(false);
+            given(resultSet.getString("account"))
+                    .willReturn("pepper")
+                    .willReturn("gugu");
+
+            // when & then
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "pepper"))
+                    .isInstanceOf(DataAccessException.class);
+        }
     }
 }
