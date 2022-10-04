@@ -1,19 +1,17 @@
 package nextstep.jdbc;
 
-import java.util.Objects;
-
 import org.h2.jdbcx.JdbcDataSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
-public class DataSourceConfigForTest {
+public class TestDataSourceConfig {
     private static javax.sql.DataSource INSTANCE;
 
-    private DataSourceConfigForTest() {
+    private TestDataSourceConfig() {
     }
 
     public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
+        if (INSTANCE == null) {
             INSTANCE = createJdbcDataSource();
         }
         return INSTANCE;

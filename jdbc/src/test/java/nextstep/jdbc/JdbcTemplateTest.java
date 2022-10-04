@@ -18,12 +18,12 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate = new JdbcTemplate(DataSourceConfigForTest.getInstance());
+        jdbcTemplate = new JdbcTemplate(TestDataSourceConfig.getInstance());
     }
 
     @AfterEach
     void setDown() {
-        DataSourceConfigForTest.truncate();
+        TestDataSourceConfig.truncate();
     }
 
     @Nested
