@@ -8,14 +8,14 @@ import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static RowMapper<User> userMapper() {
-        return resultSet -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        );
-    }
+    private static final RowMapper<User> USER_ROW_MAPPER =
+            resultSet -> new User(
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email")
+            );
+
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -37,14 +37,14 @@ public class UserDao {
     public List<User> findAll() {
         return jdbcTemplate.queryForList(
                 "select id, account, password, email from users",
-                userMapper()
+                USER_ROW_MAPPER
         );
     }
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForOne(
                 "select id, account, password, email from users where id = ?",
-                userMapper(),
+                USER_ROW_MAPPER,
                 id
         );
     }
@@ -52,7 +52,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         return jdbcTemplate.queryForOne(
                 "select id, account, password, email from users where account = ?",
-                userMapper(),
+                USER_ROW_MAPPER,
                 account
         );
     }
