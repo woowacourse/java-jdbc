@@ -17,49 +17,28 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
-            statement.executeUpdate();
-
-            log.debug("query : {}", sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -91,34 +70,46 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
+        return findBy(sql, id);
+    }
+
+    public User findByAccount(final String account) {
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return findBy(sql, account);
+    }
+
+    private void updateQuery(final String sql, final Object... objects) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, id);
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                log.debug("query : {}", sql);
-
-                if (resultSet.next()) {
-                    return new User(
-                            resultSet.getLong(1),
-                            resultSet.getString(2),
-                            resultSet.getString(3),
-                            resultSet.getString(4));
+            for (int i = 0; i < objects.length; i++) {
+                final var parameter = objects[i];
+                if (parameter instanceof String) {
+                    statement.setString(i + 1, (String) parameter);
+                } else if (parameter instanceof Long) {
+                    statement.setLong(i + 1, (Long) parameter);
                 }
-                return null;
             }
+            log.debug("query : {}", sql);
+
+            statement.executeUpdate();
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-
+    private User findBy(final String sql, final Object parameter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, account);
+
+            if (parameter instanceof String) {
+                statement.setString(1, (String) parameter);
+            } else if (parameter instanceof Long) {
+                statement.setLong(1, (Long) parameter);
+            }
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 log.debug("query : {}", sql);
