@@ -15,30 +15,26 @@ public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
-    public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+    public static void init(final DataSource dataSource) {
+        executeSQL(dataSource, "schema.sql");
+    }
+
+    public static void clear(final DataSource dataSource) {
+        executeSQL(dataSource, "clear.sql");
+    }
+
+    private static void executeSQL(final DataSource dataSource, final String fileName) {
+        try (
+            final Connection connection = dataSource.getConnection();
+            final Statement statement = connection.createStatement()
+        ) {
+            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
             final var file = new File(url.getFile());
             final var sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
+
             statement.execute(sql);
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
