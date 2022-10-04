@@ -33,19 +33,21 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            setParams(preparedStatement, params);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, 0);
-            }
-            return null;
+        try {
+            List<T> result = query(sql, rowMapper, params);
+            return extractObject(result);
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T extractObject(List<T> result) throws SQLException {
+        if (result.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException();
+        }
+        return result.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {

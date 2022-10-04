@@ -48,4 +48,11 @@ public class UserDao {
         String sql = "select * from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
+
+    public void deleteAll() {
+        String truncateSql = "truncate table users";
+        jdbcTemplate.execute(truncateSql);
+        String autoIncrementResetSql = "alter table users alter column id restart with 1";
+        jdbcTemplate.execute(autoIncrementResetSql);
+    }
 }
