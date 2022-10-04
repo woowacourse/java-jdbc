@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -114,9 +114,9 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, resultSetExecutor, "corinne"))
                         .isInstanceOf(DataAccessException.class),
-                () -> verify(preparedStatement, times(0)).setString(1, "corinne"),
-                () -> verify(preparedStatement, times(0)).close(),
-                () -> verify(connection, times(0)).close()
+                () -> verify(preparedStatement, never()).setString(1, "corinne"),
+                () -> verify(preparedStatement, never()).close(),
+                () -> verify(connection, never()).close()
         );
     }
 
