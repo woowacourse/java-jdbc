@@ -72,7 +72,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단일 결과 쿼리문 수행 중 조획 결과가 없으면 Exception을 발생시킨다.")
+    @DisplayName("단일 결과 쿼리문 수행 중 조회 결과가 없으면 Exception을 발생시킨다.")
     void queryForObject_noResult() throws SQLException {
         final String testSql = "";
         when(dataSource.getConnection()).thenReturn(connection);
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단일 결과 쿼리문 수행 중 조획 결과가 1개 이상일 경우 Eception을 발생시킨다.")
+    @DisplayName("단일 결과 쿼리문 수행 중 조획 결과가 1개 이상일 경우 Exception을 발생시킨다.")
     void queryForObject_moreThanOne() throws SQLException {
         final String testSql = "";
         when(dataSource.getConnection()).thenReturn(connection);
