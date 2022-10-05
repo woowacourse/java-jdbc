@@ -26,16 +26,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return usePreparedStatement(sql, pstmt -> {
-            List<T> results = new ArrayList<>();
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                T result = rowMapper.run(rs);
-                results.add(result);
-            }
+        return usePreparedStatement(sql, pstmt -> mapToList(rowMapper, pstmt), args);
+    }
 
-            return results;
-        }, args);
+    private <T> List<T> mapToList(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
+        List<T> results = new ArrayList<>();
+        ResultSet rs = pstmt.executeQuery();
+        if (rs.next()) {
+            T result = rowMapper.run(rs);
+            results.add(result);
+        }
+
+        return results;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
