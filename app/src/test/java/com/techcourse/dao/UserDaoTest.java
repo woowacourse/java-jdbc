@@ -7,25 +7,30 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    final DataSource dataSource = DataSourceConfig.getInstance();
+    final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setup() {
-        final DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        initUsersTable(dataSource);
-        userDao = new UserDao(new JdbcTemplate(dataSource));
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
-    private void initUsersTable(final DataSource dataSource) {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+    @AfterEach
+    void tearDown() {
+        initUsersTable(jdbcTemplate);
+    }
+
+    private void initUsersTable(final JdbcTemplate jdbcTemplate) {
         jdbcTemplate.update(connection -> connection.prepareStatement("truncate table users"));
         jdbcTemplate.update(connection ->
                 connection.prepareStatement("alter table users alter column id restart with 1"));
