@@ -25,6 +25,7 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
         while (rs.next()) {
             results.add(this.rowMapper.mapRow(rs));
         }
+        rs.close();
         return results;
     }
 
