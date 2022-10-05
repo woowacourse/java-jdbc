@@ -10,7 +10,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> userRowMapper = (resultSet, rowNum) -> new User(
+    private static final RowMapper<User> userRowMapper = (resultSet, rowNum) -> new User(
             resultSet.getLong(1),
             resultSet.getString(2),
             resultSet.getString(3),
