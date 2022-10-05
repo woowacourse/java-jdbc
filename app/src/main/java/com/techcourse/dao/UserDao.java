@@ -14,10 +14,10 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4)
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
     );
 
     public UserDao(final DataSource dataSource) {
