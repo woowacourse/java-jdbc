@@ -3,7 +3,7 @@ package nextstep.support;
 import java.util.Objects;
 import org.h2.jdbcx.JdbcDataSource;
 
-public class DataSourceConfig {
+public class DataSourceConfigForTest {
 
     private static javax.sql.DataSource INSTANCE;
 
@@ -22,5 +22,5 @@ public class DataSourceConfig {
         return jdbcDataSource;
     }
 
-    private DataSourceConfig() {}
+    private DataSourceConfigForTest() {}
 }

@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
-import nextstep.support.DataSourceConfig;
+import nextstep.support.DataSourceConfigForTest;
 import nextstep.support.TestUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void beforeEach() {
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate = new JdbcTemplate(DataSourceConfigForTest.getInstance());
 
         String dropSql = "drop table if exists test_users;";
         jdbcTemplate.update(dropSql);
