@@ -53,9 +53,9 @@ class JdbcTemplateTest {
         String sql = "select * from users where id = ?";
         Long id = 1L;
 
-        Optional<Object> actual = jdbcTemplate.queryForObject(sql, new FakeRowMapper(), id);
+        Object actual = jdbcTemplate.queryForObject(sql, new FakeRowMapper(), id);
 
-        assertThat(actual.get()).isNotNull();
+        assertThat(actual).isNotNull();
     }
 
     @DisplayName("queryForObject 메서드로 존재하지 않는 데이터를 조회하면 예외를 발생한다.")
