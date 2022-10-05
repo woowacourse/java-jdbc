@@ -6,8 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
