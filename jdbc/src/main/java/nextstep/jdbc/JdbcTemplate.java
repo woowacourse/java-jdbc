@@ -24,7 +24,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setArgumentPreparedStatement(preparedStatement, args);
+            PreparedStatementSetter.setValues(preparedStatement, args);
             final ResultSet resultSet = preparedStatement.executeQuery();
             final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
 
@@ -44,19 +44,12 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setArgumentPreparedStatement(preparedStatement, args);
+            PreparedStatementSetter.setValues(preparedStatement, args);
 
             return preparedStatement.executeUpdate();
         } catch(SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setArgumentPreparedStatement(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            final int parameterIndex = i + 1;
-            preparedStatement.setObject(parameterIndex, args[i]);
         }
     }
 }
