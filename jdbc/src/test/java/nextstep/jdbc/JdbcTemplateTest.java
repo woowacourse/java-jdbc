@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.resultset.RowMapper;
@@ -27,9 +29,14 @@ class JdbcTemplateTest {
         // given
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getString("account")).thenReturn("rookie");
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "SELECT * from users where id = 1";
@@ -49,9 +56,14 @@ class JdbcTemplateTest {
         // given
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getString("account")).thenReturn("rookie");
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         String sql = "SELECT * from users";
@@ -74,14 +86,16 @@ class JdbcTemplateTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        String sql = "UPDATE users set password = ?";
+        String sql = "INSERT INTO users VALUES(?, ?, ?)";
 
         // when
-        jdbcTemplate.update(sql, mock(RowMapper.class), "newPassword");
+        int actual = jdbcTemplate.update(sql, 1, 2, 3);
 
         // then
+        assertThat(actual).isEqualTo(1);
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(anyString());
         verify(connection).close();
