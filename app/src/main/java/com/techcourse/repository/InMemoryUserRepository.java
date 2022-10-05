@@ -1,8 +1,6 @@
 package com.techcourse.repository;
 
 import com.techcourse.domain.User;
-
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,5 +22,6 @@ public class InMemoryUserRepository {
         return Optional.ofNullable(database.get(account));
     }
 
-    private InMemoryUserRepository() {}
+    private InMemoryUserRepository() {
+    }
 }
