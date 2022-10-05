@@ -45,7 +45,7 @@ public class UserDao {
     }
 
     private RowMapper<User> rowMapper() {
-        return (rs, rowNum) -> new User(
+        return (rs) -> new User(
                 rs.getLong("id"),
                 rs.getString("account"),
                 rs.getString("password"),

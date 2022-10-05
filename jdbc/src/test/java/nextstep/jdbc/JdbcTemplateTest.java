@@ -24,7 +24,7 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
 
     private static RowMapper<User> rowMapper() {
-        return (rs, rowNum) -> new User(
+        return (rs) -> new User(
                 rs.getLong("id"),
                 rs.getString("account")
         );

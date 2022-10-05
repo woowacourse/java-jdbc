@@ -43,7 +43,7 @@ public class JdbcTemplate {
             setParameters(pstmt, params);
             final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return Optional.of(rowMapper.rowMap(rs, rs.getRow()));
+                return Optional.of(rowMapper.rowMap(rs));
             }
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage());
@@ -61,7 +61,7 @@ public class JdbcTemplate {
             final List<T> result = new ArrayList<>();
             final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                result.add(rowMapper.rowMap(rs, rs.getRow()));
+                result.add(rowMapper.rowMap(rs));
             }
             return result;
         } catch (final SQLException e) {
