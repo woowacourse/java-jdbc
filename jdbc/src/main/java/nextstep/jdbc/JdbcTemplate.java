@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -22,48 +21,33 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
+        execute(sql, pstmt -> {
             setParameters(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        }
+            return pstmt.executeUpdate();
+        });
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
+        return execute(sql, pstmt -> {
             setParameters(pstmt, params);
             final ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return Optional.of(rowMapper.rowMap(rs));
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        }
-        return Optional.empty();
+            return ResultSetExtractor.extractForObject(rowMapper, rs);
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
+        return execute(sql, pstmt -> {
             setParameters(pstmt, params);
-            final List<T> result = new ArrayList<>();
             final ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                result.add(rowMapper.rowMap(rs));
-            }
-            return result;
+            return ResultSetExtractor.extract(rowMapper, rs);
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            return preparedStatementExecutor.execute(pstmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage());
         }
