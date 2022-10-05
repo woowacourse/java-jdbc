@@ -7,24 +7,24 @@ public class User {
     private String password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public User(final long id, final String account, final String password, final String email) {
         this.id = id;
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public User(String account, String password, String email) {
+    public User(final String account, final String password, final String email) {
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public boolean checkPassword(String password) {
+    public boolean checkPassword(final String password) {
         return this.password.equals(password);
     }
 
-    public void changePassword(String password) {
+    public void changePassword(final String password) {
         this.password = password;
     }
 

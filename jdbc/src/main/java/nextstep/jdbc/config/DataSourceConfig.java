@@ -1,4 +1,4 @@
-package com.techcourse.config;
+package nextstep.jdbc.config;
 
 import java.util.Objects;
 import org.h2.jdbcx.JdbcDataSource;
