@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.SQLAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
@@ -40,7 +41,7 @@ public class JdbcTemplate {
             return strategy.execute(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException();
+            throw new SQLAccessException();
         }
     }
 
@@ -55,9 +56,9 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(resultSet, i));
             }
             return result.get(0);
-        } catch (SQLException e) {
+        } catch (SQLException | IndexOutOfBoundsException e) {
             e.printStackTrace();
-            throw new RuntimeException();
+            throw new SQLAccessException();
         }
     }
 
@@ -73,7 +74,7 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException();
+            throw new SQLAccessException();
         }
     }
 
