@@ -34,7 +34,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, ExecuteStrategy<T> strategy, Object... args) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
             return strategy.execute(pstmt);
         } catch (SQLException e) {
@@ -44,7 +45,8 @@ public class JdbcTemplate {
     }
 
     private <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
 
             ResultSet resultSet = pstmt.executeQuery();
@@ -60,7 +62,8 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> queryList(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
