@@ -23,7 +23,7 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
     public List<T> extractData(ResultSet rs) throws SQLException {
         List<T> results = createBucket();
         while (rs.next()) {
-            results.add(this.rowMapper.mapRow(rs, rs.getRow()));
+            results.add(this.rowMapper.mapRow(rs));
         }
         return results;
     }
