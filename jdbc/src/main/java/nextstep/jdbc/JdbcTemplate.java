@@ -1,12 +1,8 @@
 package nextstep.jdbc;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -39,7 +35,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, parameters);
@@ -53,15 +49,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", sql);
 
-            return execute(pstmt, rowMapper)
-                    .get(0);
+            return getSingleRow(execute(pstmt, rowMapper));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -78,5 +73,20 @@ public class JdbcTemplate {
         ResultSetExtractor<List<T>> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
 
         return resultSetExtractor.extractData(pstmt.executeQuery());
+    }
+
+    private <T> T getSingleRow(List<T> results) {
+        validateExecuteResultSize(results);
+
+        return results.get(0);
+    }
+
+    private <T> void validateExecuteResultSize(List<T> results) {
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터가 없습니다.");
+        }
+        if (results.size() >= 2) {
+            throw new DataAccessException("데이터가 한개가 아닙니다. 데이터 수 : " + results.size());
+        }
     }
 }
