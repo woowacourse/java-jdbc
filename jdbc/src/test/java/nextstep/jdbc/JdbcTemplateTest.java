@@ -36,40 +36,46 @@ class JdbcTemplateTest {
 
     @DisplayName("PreparedStatementSetter를 통해 데이터를 update할 수 있다.")
     @Test
-    void update_usingPreparedStatementSetter() {
+    void update_usingPreparedStatementSetter() throws SQLException {
         //given
         final PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setString(1, "account");
             statement.setString(2, "password");
             statement.setString(3, "email");
         };
+        when(statement.executeUpdate()).thenReturn(1);
 
         //when
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, preparedStatementSetter);
+        final int effectedRowCount = jdbcTemplate.update(sql, preparedStatementSetter);
 
         //then
         assertAll(
                 () -> verify(statement).setString(1, "account"),
                 () -> verify(statement).setString(2, "password"),
                 () -> verify(statement).setString(3, "email"),
-                () -> verify(statement).executeUpdate()
+                () -> verify(statement).executeUpdate(),
+                () -> assertThat(effectedRowCount).isEqualTo(1)
         );
     }
 
     @DisplayName("argument를 전달해 데이터를 update할 수 있다.")
     @Test
-    void update_passingArguments() {
-        //given, when
+    void update_passingArguments() throws SQLException {
+        //given
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, "account", "password", "email");
+        when(statement.executeUpdate()).thenReturn(1);
+
+        //when
+        final int effectedRowCount = jdbcTemplate.update(sql, "account", "password", "email");
 
         //then
         assertAll(
                 () -> verify(statement).setObject(1, "account"),
                 () -> verify(statement).setObject(2, "password"),
                 () -> verify(statement).setObject(3, "email"),
-                () -> verify(statement).executeUpdate()
+                () -> verify(statement).executeUpdate(),
+                () -> assertThat(effectedRowCount).isEqualTo(1)
         );
     }
 
