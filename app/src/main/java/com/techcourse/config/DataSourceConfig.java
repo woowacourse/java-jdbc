@@ -1,9 +1,7 @@
 package com.techcourse.config;
 
-import org.h2.jdbcx.JdbcDataSource;
-
 import java.util.Objects;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
@@ -24,5 +22,6 @@ public class DataSourceConfig {
         return jdbcDataSource;
     }
 
-    private DataSourceConfig() {}
+    private DataSourceConfig() {
+    }
 }

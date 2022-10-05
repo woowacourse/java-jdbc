@@ -15,7 +15,7 @@ public class UserDao {
 
     private JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> autoRowMapper = (resultSet) -> new User(
+    private final RowMapper<User> autoRowMapper = resultSet -> new User(
             resultSet.getInt("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
