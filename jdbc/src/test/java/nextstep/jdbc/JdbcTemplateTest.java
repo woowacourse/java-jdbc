@@ -40,7 +40,7 @@ class JdbcTemplateTest {
         verify(mockedPreparedStatement).close();
     }
 
-    @DisplayName("레코드 하나를 조회할 수 있어야 한다.")
+    @DisplayName("레코드 여러개를 조회할 수 있어야 한다.")
     @Test
     void queryForList() throws SQLException {
         final ResultSet mockedResultSet = mock(ResultSet.class);
@@ -52,7 +52,7 @@ class JdbcTemplateTest {
         verify(mockedPreparedStatement).close();
     }
 
-    @DisplayName("레코드 하나를 조회할 수 있어야 한다.")
+    @DisplayName("레코드 하나를 추가할 수 있어야 한다.")
     @Test
     void update() throws SQLException {
         final ResultSet mockedResultSet = mock(ResultSet.class);
