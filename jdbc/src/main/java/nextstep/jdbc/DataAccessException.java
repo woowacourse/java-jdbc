@@ -3,9 +3,10 @@ package nextstep.jdbc;
 public class DataAccessException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
+    private static final String DEFAULT_ERROR_MESSAGE = "Query 실행도중 오류가 발생했습니다.";
 
     public DataAccessException() {
-        super();
+        super(DEFAULT_ERROR_MESSAGE);
     }
 
     public DataAccessException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
