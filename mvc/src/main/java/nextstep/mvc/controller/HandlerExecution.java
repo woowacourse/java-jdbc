@@ -1,17 +1,13 @@
-package nextstep.mvc.controller.tobe;
+package nextstep.mvc.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.mvc.view.ModelAndView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import nextstep.mvc.exception.ReflectionException;
+import nextstep.mvc.view.ModelAndView;
 
 public class HandlerExecution {
-
-    private static final Logger log = LoggerFactory.getLogger(HandlerExecution.class);
 
     private final Object declaredObject;
     private final Method method;
@@ -24,9 +20,14 @@ public class HandlerExecution {
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response) {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            log.error("{} method invoke fail. error message : {}", method, e.getMessage());
-            throw new RuntimeException(e);
+        } catch (final InvocationTargetException | IllegalAccessException e) {
+            throw new ReflectionException("Failed to invoke the underlying method.", e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Instance : " + declaredObject.getClass() +
+                ", Method : " + method.getName();
     }
 }

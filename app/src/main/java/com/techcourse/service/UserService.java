@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.exception.UserNotFoundException;
 
 public class UserService {
 
@@ -16,7 +17,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(UserNotFoundException::new);
     }
 
     public void insert(final User user) {
@@ -28,5 +30,10 @@ public class UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+    }
+
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account)
+                .orElseThrow(UserNotFoundException::new);
     }
 }
