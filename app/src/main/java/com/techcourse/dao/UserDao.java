@@ -1,10 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
@@ -13,17 +11,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final RowMapper<User> USER_ROW_MAPPER = rs -> {
-        try {
-            return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
-    };
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4)
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
