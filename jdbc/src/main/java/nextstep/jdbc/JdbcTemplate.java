@@ -55,6 +55,7 @@ public class JdbcTemplate {
 
             return function.apply(preparedStatement);
         } catch (final SQLException e) {
+            log.error("error: {}", e);
             throw new DataAccessException(e.getMessage(), e);
             // TODO: 더 추상화된 예외 메시지를 사용해야함
         }
