@@ -7,15 +7,15 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
 
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.ObjectMapper;
 
 public class JdbcUserDao implements UserDao {
 
-    private static final RowMapper<User> USER_MAPPER = (ResultSet rs, int rowNum) ->
+    private static final ObjectMapper<User> USER_MAPPER = (ResultSet rs, int rowNum) ->
         new User(
             rs.getLong("id"),
             rs.getString("account"),
@@ -51,18 +51,19 @@ public class JdbcUserDao implements UserDao {
     @Override
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final List<User> users = jdbcTemplate.select(sql, USER_MAPPER, id);
-        if (users.isEmpty()) {
-            throw new IllegalArgumentException("user not found");
-        }
-        return users.get(0);
+        final List<User> foundUser = jdbcTemplate.select(sql, USER_MAPPER, id);
+        return findOneOrThrow(foundUser);
     }
 
     @Override
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final List<User> users = jdbcTemplate.select(sql, USER_MAPPER, account);
-        if (users.isEmpty()) {
+        final List<User> foundUser = jdbcTemplate.select(sql, USER_MAPPER, account);
+        return findOneOrThrow(foundUser);
+    }
+
+    private User findOneOrThrow(List<User> users) {
+        if (users == null || users.isEmpty()) {
             throw new IllegalArgumentException("user not found");
         }
         return users.get(0);
