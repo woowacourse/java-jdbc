@@ -22,126 +22,58 @@ public class JdbcTemplate {
 		this.dataSource = dataSource;
 	}
 
-	public SqlBuilder createQuery(final String sql) {
-		Connection conn = null;
-		PreparedStatement pstmt = null;
-		try {
-			conn = dataSource.getConnection();
-			pstmt = conn.prepareStatement(sql);
+	public void update(final String sql, final StatementCallback callback) {
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			callback.prepare(pstmt);
+			pstmt.executeUpdate();
 		} catch (SQLException e) {
 			log.error(e.getMessage(), e);
-			close(null, conn, pstmt);
 			throw new DataAccessException(e);
 		}
-		return new SqlBuilder(conn, pstmt);
 	}
 
-	public static class SqlBuilder {
-
-		private final Connection conn;
-		private final PreparedStatement pstmt;
-		private ResultSet rs;
-
-		public SqlBuilder(final Connection conn, final PreparedStatement pstmt) {
-			this.conn = conn;
-			this.pstmt = pstmt;
+	public <T> T queryForObject(final String sql, final StatementCallback callback, final RowMapper<T> rowMapper) {
+		T result;
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			callback.prepare(pstmt);
+			result = extractResult(rowMapper, pstmt);
+		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
+			throw new DataAccessException(e);
 		}
-
-		public SqlBuilder setString(final int parameterIndex, final String parameter) {
-			try {
-				pstmt.setString(parameterIndex, parameter);
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				close(rs, conn, pstmt);
-				throw new DataAccessException(e);
-			}
-			return this;
-		}
-
-		public SqlBuilder setLong(final int parameterIndex, final Long parameter) {
-			try {
-				pstmt.setLong(parameterIndex, parameter);
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				close(rs, conn, pstmt);
-				throw new DataAccessException(e);
-			}
-			return this;
-		}
-
-		public void executeUpdate() {
-			try {
-				pstmt.executeUpdate();
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				throw new DataAccessException(e);
-			} finally {
-				close(rs, conn, pstmt);
-			}
-		}
-
-		public SqlBuilder executeQuery() {
-			try {
-				this.rs = pstmt.executeQuery();
-				return this;
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				close(rs, conn, pstmt);
-				throw new DataAccessException(e);
-			}
-		}
-
-		public <T> List<T> getResultList(final RowMapper<T> rowMapper) {
-			try {
-				List<T> results = new ArrayList<>();
-				while (rs.next()) {
-					results.add(rowMapper.mapRow(rs));
-				}
-				return results;
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				throw new DataAccessException(e);
-			} finally {
-				close(rs, conn, pstmt);
-			}
-		}
-
-		public <T> T getResult(final RowMapper<T> rowMapper) {
-			try {
-				if (rs.next()) {
-					return rowMapper.mapRow(rs);
-				}
-				return null;
-			} catch (SQLException e) {
-				log.error(e.getMessage(), e);
-				throw new DataAccessException(e);
-			} finally {
-				close(rs, conn, pstmt);
-			}
-		}
+		return result;
 	}
 
-	private static void close(final ResultSet rs, final Connection conn, final PreparedStatement pstmt) {
-		try {
-			if (rs != null) {
-				rs.close();
+	private <T> T extractResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+		try (ResultSet rs = pstmt.executeQuery()) {
+			if (rs.next()) {
+				return rowMapper.mapRow(rs);
 			}
-		} catch (SQLException e) {
-			log.debug("Could not close ResultSet", e);
 		}
-		try {
-			if (pstmt != null) {
-				pstmt.close();
-			}
+		return null;
+	}
+
+	public <T> List<T> queryForList(final String sql, final StatementCallback callback, final RowMapper<T> rowMapper) {
+		List<T> results = new ArrayList<>();
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			callback.prepare(pstmt);
+			extractResultList(rowMapper, results, pstmt);
 		} catch (SQLException e) {
-			log.debug("Could not close PreparedStatement", e);
+			log.error(e.getMessage(), e);
+			throw new DataAccessException(e);
 		}
-		try {
-			if (conn != null) {
-				conn.close();
+		return results;
+	}
+
+	private <T> void extractResultList(RowMapper<T> rowMapper, List<T> results, PreparedStatement pstmt)
+		throws SQLException {
+		try (ResultSet rs = pstmt.executeQuery()) {
+			while (rs.next()) {
+				results.add(rowMapper.mapRow(rs));
 			}
-		} catch (SQLException e) {
-			log.debug("Could not close Connection", e);
 		}
 	}
 }
