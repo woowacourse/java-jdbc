@@ -11,7 +11,8 @@ public class ResultSetExtractor {
     public static <T> Optional<T> extractForObject(final RowMapper<T> rowMapper, final ResultSet rs)
             throws SQLException {
         if (rs.next()) {
-            return Optional.ofNullable(rowMapper.mapRow(rs));
+            final T mappingData = rowMapper.mapRow(rs);
+            return Optional.of(mappingData);
         }
         return Optional.empty();
     }
@@ -19,7 +20,8 @@ public class ResultSetExtractor {
     public static <T> List<T> extract(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         final List<T> result = new ArrayList<>();
         while (rs.next()) {
-            result.add(rowMapper.mapRow(rs));
+            final T mappingData = rowMapper.mapRow(rs);
+            result.add(mappingData);
         }
         return result;
     }
