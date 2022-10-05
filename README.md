@@ -14,3 +14,11 @@
 - id로 유저 조회
 - 유저 정보 수정
 - account로 유저 조회
+
+## 리팩토링
+JdbcTemplate의 메서드에 공통된 로직을 분리한다.
+- 공통된 로직: try-with-resources
+
+- `JdbcResourceHandler`: Connection과 Statement를 관리하고 `JdbcStrategy`를 실행한 값을 리턴한다.
+- `JdbcStrategy`: Statement에서 값을 반환한다. 이 때 생성되는 ResultSet 자원을 관리한다.
+- 
