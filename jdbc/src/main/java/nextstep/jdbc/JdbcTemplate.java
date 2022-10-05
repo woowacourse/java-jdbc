@@ -25,6 +25,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     public <T> List<T> query(final String sql, @NonNull final RowMapper<T> rowMapper, final Object... params) {
         ResultSet resultSet = null;
         try (Connection connection = dataSource.getConnection();
