@@ -12,6 +12,7 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'ch.qos.logback:logback-classic:1.2.10'
+    implementation 'com.h2database:h2:2.1.214'
 
     implementation 'org.reflections:reflections:0.10.2'
 
