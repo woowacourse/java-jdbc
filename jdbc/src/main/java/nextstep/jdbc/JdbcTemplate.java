@@ -48,7 +48,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
+    private <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
                                                final PreparedStatement preparedStatement) {
         try (
                 ResultSet resultSet = preparedStatement.executeQuery()
@@ -77,7 +77,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> ArrayList<T> executeGetListQuery(final RowMapper<T> rowMapper,
+    private <T> ArrayList<T> executeGetListQuery(final RowMapper<T> rowMapper,
                                                         final PreparedStatement preparedStatement) {
         try (
                 ResultSet resultSet = preparedStatement.executeQuery()
