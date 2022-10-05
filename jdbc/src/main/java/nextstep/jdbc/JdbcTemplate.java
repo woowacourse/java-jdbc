@@ -23,12 +23,14 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        ResultSet rs = null;
+
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             bindParameters(pstmt, parameters);
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
 
@@ -39,11 +41,12 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(rs, rowNum));
             }
 
-            rs.close();
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            closeResultSet(rs);
         }
     }
 
@@ -79,6 +82,16 @@ public class JdbcTemplate {
     private void bindParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
+        }
+    }
+
+    private void closeResultSet(ResultSet rs) {
+        try {
+            if (rs == null) {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
