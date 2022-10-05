@@ -25,8 +25,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... objects) {
         executePreparedStatement(sql, pstmt -> {
             setParams(pstmt, objects);
-            pstmt.executeUpdate();
-            return null;
+            return pstmt.executeUpdate();
         });
     }
 
