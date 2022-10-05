@@ -25,7 +25,7 @@ public class JdbcConnector {
             return execution.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }

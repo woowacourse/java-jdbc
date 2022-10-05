@@ -26,7 +26,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, Object[] arguments, RowMapper<T> rowMapper) {
         List<T> results = connector.execute(new QueryExecution<>(sql, arguments, rowMapper));
         if (results.size() != 1) {
-            throw new IllegalArgumentException("The result of query isn't single. count : " + results.size());
+            throw new DataAccessException("The result of query isn't single. count : " + results.size());
         }
         return results.get(SINGLE_RESULT - 1);
     }
