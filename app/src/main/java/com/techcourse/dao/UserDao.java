@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
@@ -30,27 +29,13 @@ public class UserDao {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.update(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            return pstmt;
-        });
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public int update(final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         log.debug("query : {}", sql);
-
-        return jdbcTemplate.update(connection -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            return pstmt;
-        });
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
