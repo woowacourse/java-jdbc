@@ -66,7 +66,7 @@ public class JdbcTemplate {
     private <T> List<T> convertRows(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (rs.next()) {
-            final T result = rowMapper.mapTow(rs);
+            final T result = rowMapper.mapRow(rs);
             results.add(result);
         }
         return results;
