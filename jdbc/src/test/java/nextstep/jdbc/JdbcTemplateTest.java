@@ -37,13 +37,18 @@ class JdbcTemplateTest {
     @DisplayName("PreparedStatementSetter를 통해 데이터를 update할 수 있다.")
     @Test
     void update_usingPreparedStatementSetter() {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        //given
         final PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setString(1, "account");
             statement.setString(2, "password");
             statement.setString(3, "email");
         };
+
+        //when
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, preparedStatementSetter);
+
+        //then
         assertAll(
                 () -> verify(statement).setString(1, "account"),
                 () -> verify(statement).setString(2, "password"),
@@ -55,8 +60,11 @@ class JdbcTemplateTest {
     @DisplayName("argument를 전달해 데이터를 update할 수 있다.")
     @Test
     void update_passingArguments() {
+        //given, when
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, "account", "password", "email");
+
+        //then
         assertAll(
                 () -> verify(statement).setObject(1, "account"),
                 () -> verify(statement).setObject(2, "password"),
@@ -68,6 +76,7 @@ class JdbcTemplateTest {
     @DisplayName("RowMapper를 통해 데이터를 객체 List로 조회할 수 있다.")
     @Test
     void query_RowMapper() throws SQLException {
+        //given
         final ResultSet resultSet = mock(ResultSet.class);
 
         when(statement.executeQuery()).thenReturn(resultSet);
@@ -85,6 +94,7 @@ class JdbcTemplateTest {
                 .thenReturn("forky@email.com")
                 .thenReturn("boki@email.com");
 
+        //when
         final String sql = "select id, account, password, email from users";
         final List<String> result = jdbcTemplate.query(sql, rs -> {
             final String account = rs.getString("account");
@@ -93,6 +103,7 @@ class JdbcTemplateTest {
             return String.join("/", account, password, email);
         });
 
+        //then
         assertThat(result).containsExactly(
                 "forky/password12/forky@email.com", "boki/password34/boki@email.com");
     }
@@ -100,6 +111,7 @@ class JdbcTemplateTest {
     @DisplayName("RowMapper를 통해 데이터를 객체로 조회할 수 있다.")
     @Test
     void queryForObject_RowMapper() throws SQLException {
+        //given
         final ResultSet resultSet = mock(ResultSet.class);
 
         when(statement.executeQuery()).thenReturn(resultSet);
@@ -108,6 +120,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("password")).thenReturn("password12");
         when(resultSet.getString("email")).thenReturn("forky@email.com");
 
+        //when
         final String sql = "select id, account, password, email from users where id = ?";
         final String result = jdbcTemplate.queryForObject(sql, rs -> {
             final String account = rs.getString("account");
@@ -116,6 +129,7 @@ class JdbcTemplateTest {
             return String.join("/", account, password, email);
         }, 1L);
 
+        //then
         assertThat(result).isEqualTo("forky/password12/forky@email.com");
     }
 }
