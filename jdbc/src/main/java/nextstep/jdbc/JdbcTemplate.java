@@ -28,7 +28,9 @@ public class JdbcTemplate {
                        final ResultSetWrapper<T> resultSetWrapper,
                        final Object... sqlArguments) {
         final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
-        assert results != null;
+        if (results == null) {
+            return null;
+        }
         return results.get(0);
     }
 
@@ -73,6 +75,10 @@ public class JdbcTemplate {
 
     private String generateSql(final String sqlFormat, final Object[] sqlArguments) {
         String sql = sqlFormat;
+        if (sqlArguments == null) {
+            return sql;
+        }
+
         for (Object sqlArgument : sqlArguments) {
             final String expectedData = SqlArgumentConverter.convertObjectToString(sqlArgument);
             sql = sql.replaceFirst(SQL_FORMAT_ARGUMENT, expectedData);
