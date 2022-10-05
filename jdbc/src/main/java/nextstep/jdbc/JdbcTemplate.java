@@ -31,24 +31,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        return DataAccessUtils.nullableSingleResult(results);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
             return getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(args, preparedStatement);
-            List<T> results = getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
-            return DataAccessUtils.nullableSingleResult(results);
         } catch (SQLException e) {
             throw new DataAccessException();
         }
