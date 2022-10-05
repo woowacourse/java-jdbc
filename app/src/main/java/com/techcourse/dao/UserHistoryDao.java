@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
@@ -42,7 +41,7 @@ public class UserHistoryDao {
             pstmt.setObject(5, userHistory.getCreatedAt());
             pstmt.setString(6, userHistory.getCreateBy());
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -50,13 +49,15 @@ public class UserHistoryDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
         }
     }
 }

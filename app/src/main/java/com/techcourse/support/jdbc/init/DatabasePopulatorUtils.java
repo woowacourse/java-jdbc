@@ -1,15 +1,14 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasePopulatorUtils {
 
@@ -25,22 +24,25 @@ public class DatabasePopulatorUtils {
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
+        } catch (final NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e);
         } finally {
             try {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (final SQLException ignored) {
+            }
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private DatabasePopulatorUtils() {
+    }
 }

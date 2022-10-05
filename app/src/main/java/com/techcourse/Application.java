@@ -1,12 +1,11 @@
 package com.techcourse;
 
+import java.io.File;
+import java.util.stream.Stream;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.stream.Stream;
 
 public class Application {
 
@@ -14,7 +13,7 @@ public class Application {
 
     private static final int DEFAULT_PORT = 8080;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception {
         final int port = defaultPortIfNull(args);
 
         final var tomcat = new Tomcat();
@@ -34,7 +33,7 @@ public class Application {
         return connector;
     }
 
-    private static int defaultPortIfNull(String[] args) {
+    private static int defaultPortIfNull(final String[] args) {
         return Stream.of(args)
                 .findFirst()
                 .map(Integer::parseInt)
