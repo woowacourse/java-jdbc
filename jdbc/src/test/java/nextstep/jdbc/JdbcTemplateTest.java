@@ -69,7 +69,7 @@ class JdbcTemplateTest {
         when(resultSet.getRow()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
 
-        final Object result = jdbcTemplate.queryForObject(sql, ((rs1, rowNum) -> null), 1004, "대충 더미파라미터");
+        final Object result = jdbcTemplate.queryForObject(sql, ((rs, rowNum) -> null), 1004, "대충 더미파라미터");
 
         assertAll(
                 () -> assertThat(result).isNull(),
