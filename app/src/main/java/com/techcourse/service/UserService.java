@@ -19,8 +19,8 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public void insert(final User user) {
-        userDao.insert(user);
+    public void save(final User user) {
+        userDao.save(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {

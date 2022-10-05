@@ -1,26 +1,27 @@
 package nextstep.mvc.view;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.web.support.MediaType;
 
-import java.io.IOException;
-import java.util.Map;
-
 public class JsonView implements View {
 
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    public void render(final Map<String, ?> model, final HttpServletRequest request,
+        final HttpServletResponse response) throws Exception {
         if (model == null || model.isEmpty()) {
             return;
         }
 
         response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
 
-        final Object renderObject = toJsonObject(model);
-        render(renderObject, response.getOutputStream());
+        render(toJsonObject(model), response.getOutputStream());
     }
 
     private void render(final Object renderObject, final ServletOutputStream outputStream) throws IOException {
@@ -31,9 +32,9 @@ public class JsonView implements View {
     private Object toJsonObject(final Map<String, ?> model) {
         if (model.size() == 1) {
             return model.values()
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
+                .stream()
+                .findFirst()
+                .orElseThrow(IllegalArgumentException::new);
         }
         return model;
     }

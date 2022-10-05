@@ -1,13 +1,14 @@
 package nextstep.mvc.controller.tobe;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import nextstep.mvc.view.ModelAndView;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import nextstep.mvc.view.ModelAndView;
 
 public class HandlerExecution {
 
@@ -23,7 +24,7 @@ public class HandlerExecution {
 
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response) {
         try {
-            return (ModelAndView) method.invoke(declaredObject, request, response);
+            return (ModelAndView)method.invoke(declaredObject, request, response);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             log.error("{} method invoke fail. error message : {}", method, e.getMessage());
             throw new RuntimeException(e);

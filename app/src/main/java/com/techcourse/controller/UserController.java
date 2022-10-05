@@ -1,6 +1,10 @@
 package com.techcourse.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.techcourse.repository.InMemoryUserRepository;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nextstep.mvc.view.JsonView;
@@ -8,8 +12,6 @@ import nextstep.mvc.view.ModelAndView;
 import nextstep.web.annotation.Controller;
 import nextstep.web.annotation.RequestMapping;
 import nextstep.web.support.RequestMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Controller
 public class UserController {
@@ -23,9 +25,9 @@ public class UserController {
 
         final var modelAndView = new ModelAndView(new JsonView());
         final var user = InMemoryUserRepository.findByAccount(account)
-                .orElseThrow();
+            .orElseThrow();
 
-        modelAndView.addObject("user", user);
+        modelAndView.addAttribute("user", user);
         return modelAndView;
     }
 }

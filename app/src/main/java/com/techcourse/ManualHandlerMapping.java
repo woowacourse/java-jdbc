@@ -1,15 +1,17 @@
 package com.techcourse;
 
-import com.techcourse.controller.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.techcourse.controller.LogoutController;
+
 import jakarta.servlet.http.HttpServletRequest;
 import nextstep.mvc.HandlerMapping;
 import nextstep.mvc.controller.asis.Controller;
 import nextstep.mvc.controller.asis.ForwardController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ManualHandlerMapping implements HandlerMapping {
 
@@ -24,7 +26,7 @@ public class ManualHandlerMapping implements HandlerMapping {
 
         log.info("Initialized Handler Mapping!");
         controllers.keySet()
-                .forEach(path -> log.info("Path : {}, Controller : {}", path, controllers.get(path).getClass()));
+            .forEach(path -> log.info("Path : {}, Controller : {}", path, controllers.get(path).getClass()));
     }
 
     @Override

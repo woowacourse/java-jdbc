@@ -1,12 +1,13 @@
 package nextstep.mvc.view;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.Map;
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Objects;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class JspView implements View {
 
@@ -21,19 +22,24 @@ public class JspView implements View {
     }
 
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    public void render(final Map<String, ?> model, final HttpServletRequest request,
+        final HttpServletResponse response) throws Exception {
         log.debug("ViewName : {}", viewName);
         if (viewName.startsWith(REDIRECT_PREFIX)) {
             response.sendRedirect(viewName.substring(REDIRECT_PREFIX.length()));
             return;
         }
 
+        setAttributes(model, request);
+
+        final var requestDispatcher = request.getRequestDispatcher(viewName);
+        requestDispatcher.forward(request, response);
+    }
+
+    private void setAttributes(final Map<String, ?> model, final HttpServletRequest request) {
         model.keySet().forEach(key -> {
             log.debug("attribute name : {}, value : {}", key, model.get(key));
             request.setAttribute(key, model.get(key));
         });
-
-        final var requestDispatcher = request.getRequestDispatcher(viewName);
-        requestDispatcher.forward(request, response);
     }
 }
