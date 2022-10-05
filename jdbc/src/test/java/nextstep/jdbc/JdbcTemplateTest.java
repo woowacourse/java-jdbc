@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -45,10 +46,13 @@ class JdbcTemplateTest {
         jdbcTemplate.queryForObject(sql, mock(RowMapper.class));
 
         // then
-        verify(dataSource).getConnection();
-        verify(connection).prepareStatement(anyString());
-        verify(connection).close();
-        verify(statement).close();
+        assertAll(
+            () -> verify(dataSource).getConnection(),
+            () -> verify(connection).prepareStatement(anyString()),
+            () -> verify(connection).close(),
+            () -> verify(statement).close(),
+            () -> verify(resultSet).close()
+        );
     }
 
     @Test
@@ -72,10 +76,13 @@ class JdbcTemplateTest {
         jdbcTemplate.queryForList(sql, mock(RowMapper.class));
 
         // then
-        verify(dataSource).getConnection();
-        verify(connection).prepareStatement(anyString());
-        verify(connection).close();
-        verify(statement).close();
+        assertAll(
+            () -> verify(dataSource).getConnection(),
+            () -> verify(connection).prepareStatement(anyString()),
+            () -> verify(connection).close(),
+            () -> verify(statement).close(),
+            () -> verify(resultSet).close()
+        );
     }
 
     @Test
@@ -95,10 +102,12 @@ class JdbcTemplateTest {
         int actual = jdbcTemplate.update(sql, 1, 2, 3);
 
         // then
-        assertThat(actual).isEqualTo(1);
-        verify(dataSource).getConnection();
-        verify(connection).prepareStatement(anyString());
-        verify(connection).close();
-        verify(statement).close();
+        assertAll(
+            () -> assertThat(actual).isEqualTo(1),
+            () -> verify(dataSource).getConnection(),
+            () -> verify(connection).prepareStatement(anyString()),
+            () -> verify(connection).close(),
+            () -> verify(statement).close()
+        );
     }
 }
