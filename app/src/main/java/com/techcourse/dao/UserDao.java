@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
@@ -26,14 +25,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.insert(connection -> {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            return preparedStatement;
-        });
+        jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
@@ -42,15 +34,7 @@ public class UserDao {
                 + "password = ?, "
                 + "email = ? "
                 + "where id = ?";
-
-        jdbcTemplate.update(connection -> {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setLong(4, user.getId());
-            return preparedStatement;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

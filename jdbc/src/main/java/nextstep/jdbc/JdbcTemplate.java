@@ -25,21 +25,22 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> query(final String sql, final Object[] params, final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             final ResultSet resultSet = getResultSet(preparedStatement, params)) {
-            return makeQueryResult(rowMapper, resultSet);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> makeQueryResult(rowMapper, preparedStatement, params)
+        );
     }
 
-    private <T> List<T> makeQueryResult(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        final List<T> result = new ArrayList<>();
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+    private <T> List<T> makeQueryResult(final RowMapper<T> rowMapper,
+                                        final PreparedStatement preparedStatement,
+                                        final Object[] params) throws SQLException {
+        try (final ResultSet resultSet = getResultSet(preparedStatement, params)) {
+            final List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+            }
+            return result;
         }
-        return result;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -59,31 +60,46 @@ public class JdbcTemplate {
 
     private ResultSet getResultSet(final PreparedStatement prepareStatement, final Object[] params)
             throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            prepareStatement.setObject(i + 1, params[i]);
-        }
+        setPreparedStatementParams(prepareStatement, params);
 
         return prepareStatement.executeQuery();
     }
 
-    public Long insert(final PreparedStatementCreator preparedStatementCreator) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
-            preparedStatement.executeUpdate();
-            final ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                return generatedKeys.getLong(1);
-            }
-            return null;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+    private void setPreparedStatementParams(final PreparedStatement preparedStatement, final Object[] params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            preparedStatement.setObject(i + 1, params[i]);
         }
     }
 
-    public int update(final PreparedStatementCreator preparedStatementCreator) {
+    public Long insert(final String sql, Object... params) {
+        return execute(connection -> {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            setPreparedStatementParams(preparedStatement, params);
+            return preparedStatement;
+        }, new SimpleInsertCallback());
+    }
+
+    public Long insert(final PreparedStatementCreator preparedStatementCreator) {
+        return execute(preparedStatementCreator, new SimpleInsertCallback());
+    }
+
+    public Integer update(final PreparedStatementCreator preparedStatementCreator) {
+        return execute(preparedStatementCreator, new SimpleUpdateCallback());
+    }
+
+    public Integer update(final String sql, Object... params) {
+        return execute(connection -> {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            setPreparedStatementParams(preparedStatement, params);
+            return preparedStatement;
+        }, new SimpleUpdateCallback());
+    }
+
+    private <T> T execute(final PreparedStatementCreator preparedStatementCreator,
+                          final PreparedStatementCallback<T> preparedStatementCallback) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
-            return preparedStatement.executeUpdate();
+            return preparedStatementCallback.extract(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
