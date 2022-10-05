@@ -20,12 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T query(final String sql, final PreparedStatementSetter pss, final ResultSetExtractor<T> rse) {
+    private <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallback<T> sc) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            pss.setValues(ps);
-            ResultSet rs = ps.executeQuery();
-            return rse.extractData(rs);
+             PreparedStatement ps = psc.createPreparedStatement(conn)) {
+            return sc.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -33,16 +31,20 @@ public class JdbcTemplate {
     }
 
     private <T> T query(final String sql, final ResultSetExtractor<T> rse) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            log.debug("query : {}", sql);
+        return execute(new SimplePreparedStatementCreator(sql), ps -> {
+            try (ResultSet rs = ps.executeQuery()) {
+                return rse.extractData(rs);
+            }
+        });
+    }
 
-            return rse.extractData(rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private <T> T query(final String sql, final PreparedStatementSetter pss, final ResultSetExtractor<T> rse) {
+        return execute(new SimplePreparedStatementCreator(sql), ps -> {
+            pss.setValues(ps);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rse.extractData(rs);
+            }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
@@ -55,34 +57,14 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setPreparedStatement(ps, args);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private void update(final String sql, final PreparedStatementSetter pss) {
+        execute(new SimplePreparedStatementCreator(sql), ps -> {
+            pss.setValues(ps);
+            return ps.executeUpdate();
+        });
     }
 
-    private void setPreparedStatement(final PreparedStatement ps, final Object[] args) throws SQLException {
-        int argIdx = 0;
-        for (Object arg : args) {
-            argIdx++;
-            if (arg instanceof String) {
-                ps.setString(argIdx, (String) arg);
-                continue;
-            }
-            if (arg instanceof Long) {
-                ps.setLong(argIdx, (Long) arg);
-                continue;
-            }
-            if (arg instanceof Integer) {
-                ps.setLong(argIdx, (Integer) arg);
-            }
-        }
+    public void update(final String sql, final Object... args) {
+        update(sql, new ArgPreparedStatementSetter(args));
     }
 }
