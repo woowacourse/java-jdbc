@@ -1,10 +1,9 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -26,12 +25,8 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
-            int rowNum = 0;
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum++));
-            }
-            return results;
+            RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+            return rowMapperResultSetExtractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -46,10 +41,9 @@ public class JdbcTemplate {
 
             setPreparedStatement(pstmt, args);
             rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, 0);
-            }
-            return null;
+
+            RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+            return rowMapperResultSetExtractor.extractData(rs).get(0);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

@@ -2,8 +2,8 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.core.JdbcTemplate;
+import nextstep.jdbc.core.RowMapper;
 
 public class UserDao {
 
