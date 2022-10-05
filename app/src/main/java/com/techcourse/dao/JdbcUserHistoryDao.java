@@ -31,35 +31,35 @@ public class JdbcUserHistoryDao implements UserHistoryDao {
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+        Connection connection = null;
+        PreparedStatement statement = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
-            pstmt.setLong(1, userHistory.getUserId());
-            pstmt.setString(2, userHistory.getAccount());
-            pstmt.setString(3, userHistory.getPassword());
-            pstmt.setString(4, userHistory.getEmail());
-            pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
-            pstmt.executeUpdate();
+            statement.setLong(1, userHistory.getUserId());
+            statement.setString(2, userHistory.getAccount());
+            statement.setString(3, userHistory.getPassword());
+            statement.setString(4, userHistory.getEmail());
+            statement.setObject(5, userHistory.getCreatedAt());
+            statement.setString(6, userHistory.getCreateBy());
+            statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
+                if (statement != null) {
+                    statement.close();
                 }
             } catch (SQLException ignored) {
             }
 
             try {
-                if (conn != null) {
-                    conn.close();
+                if (connection != null) {
+                    connection.close();
                 }
             } catch (SQLException ignored) {
             }
