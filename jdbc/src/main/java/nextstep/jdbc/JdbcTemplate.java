@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,19 +22,22 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(final String sql,
+                      final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> T queryForObject(final String sql,
                                 final RowMapper<T> rowMapper,
                                 final Object... args) {
         return execute(sql, pstmt -> {
             try (final var resultSet = pstmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                for (int i = 0; resultSet.next(); i++) {
-                    result.add(rowMapper.mapRow(resultSet, i));
-                }
+                List<T> result = mapToObjects(rowMapper, resultSet);
 
                 return result.get(0);
-            } catch (NullPointerException e) {
-                return null;
+            } catch (SQLException | IndexOutOfBoundsException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
             }
         }, args);
     }
@@ -43,21 +47,23 @@ public class JdbcTemplate {
                                     final Object... args) {
         return execute(sql, pstmt -> {
             try (final var resultSet = pstmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                for (int i = 0; resultSet.next(); i++) {
-                    result.add(rowMapper.mapRow(resultSet, i));
-                }
+                List<T> result = mapToObjects(rowMapper, resultSet);
 
                 return result;
-            } catch (NullPointerException e) {
-                return new ArrayList<>();
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
             }
         }, args);
     }
 
-    public int update(final String sql,
-                      final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+    private <T> List<T> mapToObjects(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        for (int i = 0; resultSet.next(); i++) {
+            result.add(rowMapper.mapRow(resultSet, i));
+        }
+
+        return result;
     }
 
     private <T> T execute(final String sql,
