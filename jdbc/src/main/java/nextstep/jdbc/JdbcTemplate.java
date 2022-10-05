@@ -7,6 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.DataEmptyException;
+import nextstep.jdbc.exception.DataSizeExcessException;
+import nextstep.jdbc.exception.ResultSetCloseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -31,7 +35,7 @@ public class JdbcTemplate {
             List<T> result = new ArrayList<>();
             return parseResultSet(rowMapper, resultSet, result);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             closeResultSet(resultSet);
         }
@@ -48,7 +52,7 @@ public class JdbcTemplate {
             prepareStatementSetParamters(pstmt, params);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -74,16 +78,16 @@ public class JdbcTemplate {
                 resultSet.close();
             }
         } catch (SQLException ignored) {
-            throw new RuntimeException("result set close 에러");
+            throw new ResultSetCloseException("result set close 에러");
         }
     }
 
     private <T> T singleResult(final List<T> values) {
         if (values.isEmpty()) {
-            throw new RuntimeException("쿼리 결과가 비어있습니다.");
+            throw new DataEmptyException("쿼리 결과가 비어있습니다.");
         }
         if (values.size() > 1) {
-            throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
+            throw new DataSizeExcessException("쿼리 결과가 2개 이상입니다.");
         }
         return values.get(0);
     }
