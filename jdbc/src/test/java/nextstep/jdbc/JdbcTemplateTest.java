@@ -67,13 +67,18 @@ class JdbcTemplateTest {
 
     @Test
     void query() {
-        TestUser user = new TestUser("parang", "pass", "parang@email.com");
         String insertSql = "insert into test_users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(insertSql, user.getAccount(), user.getPassword(), user.getEmail());
+        TestUser user1 = new TestUser("parang1", "pass", "parang@email.com");
+        TestUser user2 = new TestUser("parang2", "pass", "parang@email.com");
+
+        jdbcTemplate.update(insertSql, user1.getAccount(), user1.getPassword(), user1.getEmail());
+        jdbcTemplate.update(insertSql, user2.getAccount(), user2.getPassword(), user2.getEmail());
 
         String findSql = "select id, account, password, email from test_users";
         List<TestUser> findUsers = jdbcTemplate.query(findSql, TEST_USER_ROW_MAPPER);
 
-        assertThat(findUsers).hasSize(1);
+        assertThat(findUsers).hasSize(2);
+        assertThat(findUsers).extracting("account")
+                .contains("parang1", "parang2");
     }
 }
