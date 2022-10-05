@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nextstep.jdbc.DataAccessException;
+import nextstep.dao.exception.DataAccessException;
 
 public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T>> {
 

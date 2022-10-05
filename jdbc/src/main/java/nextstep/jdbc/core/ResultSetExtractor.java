@@ -2,7 +2,7 @@ package nextstep.jdbc.core;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nextstep.jdbc.DataAccessException;
+import nextstep.dao.exception.DataAccessException;
 
 @FunctionalInterface
 public interface ResultSetExtractor<T> {
