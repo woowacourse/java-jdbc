@@ -35,6 +35,7 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet, 1);
             }
+            resultSet.close();
             return null;
         });
     }
@@ -48,6 +49,7 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet, rowNum++));
             }
+            resultSet.close();
             return result;
         });
     }
