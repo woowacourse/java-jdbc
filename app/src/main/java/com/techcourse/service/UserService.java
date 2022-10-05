@@ -16,8 +16,7 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id)
-                .orElseThrow();
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {

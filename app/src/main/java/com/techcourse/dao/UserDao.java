@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
@@ -41,21 +40,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select * from users";
         log.debug("query : {}", sql);
-
         return jdbcTemplate.query(sql, autoRowMapper);
     }
 
-    public Optional<User> findById(final Long id) {
+    public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug("query : {}", sql);
-
         return jdbcTemplate.queryForObject(sql, autoRowMapper, id);
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.debug("query : {}", sql);
-
         return jdbcTemplate.queryForObject(sql, autoRowMapper, account);
     }
 }
