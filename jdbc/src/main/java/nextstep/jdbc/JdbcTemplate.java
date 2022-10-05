@@ -27,7 +27,7 @@ public class JdbcTemplate {
             setParameters(args, preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
+            throw new DataAccessException();
         }
     }
 
@@ -38,7 +38,7 @@ public class JdbcTemplate {
             setParameters(args, preparedStatement);
             return getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
         } catch (SQLException e) {
-            throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
+            throw new DataAccessException();
         }
     }
 
@@ -50,7 +50,7 @@ public class JdbcTemplate {
             List<T> results = getResult(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
             return DataAccessUtils.nullableSingleResult(results);
         } catch (SQLException e) {
-            throw new DataAccessException("Query 실행도중 오류가 발생했습니다.");
+            throw new DataAccessException();
         }
     }
 
