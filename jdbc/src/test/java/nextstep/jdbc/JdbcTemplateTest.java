@@ -71,7 +71,8 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, true, false);
 
-        final List<Object> result = jdbcTemplate.query(sql, ((rs, rowNum) -> null), 1004, "대충 더미파라미터");
+        final String resultRow = "결과";
+        final List<Object> result = jdbcTemplate.query(sql, ((rs, rowNum) -> resultRow), 1004, "대충 더미파라미터");
 
         assertAll(
                 () -> assertThat(result.size()).isEqualTo(3),
@@ -86,10 +87,11 @@ class JdbcTemplateTest {
         when(resultSet.getRow()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
 
-        final Object result = jdbcTemplate.queryForObject(sql, ((rs, rowNum) -> null), 1004, "대충 더미파라미터");
+        final String resultRow = "결과";
+        final Object result = jdbcTemplate.queryForObject(sql, ((rs, rowNum) -> resultRow), 1004, "대충 더미파라미터");
 
         assertAll(
-                () -> assertThat(result).isNull(),
+                () -> assertThat(result).isEqualTo(resultRow),
                 () -> verify(preparedStatement, times(2)).setObject(anyInt(), any())
         );
     }
@@ -101,7 +103,8 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> null))
+        final String resultRow = "결과";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> resultRow))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -112,7 +115,8 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> null))
+        final String resultRow = "결과";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> resultRow))
                 .isInstanceOf(DataAccessException.class);
     }
 
