@@ -24,7 +24,7 @@ public class JdbcTemplate {
     public int update(final String sql, final Object... args) {
         return usePreparedStatement(sql, pstmt -> {
             try {
-                return pstmt.executeUpdate(sql);
+                return pstmt.executeUpdate();
             } catch (SQLException e) {
                 throw new DataAccessException(e.getMessage(), e);
                 // TODO: 더 추상화된 예외 메시지를 사용해야함
