@@ -35,11 +35,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.getGeneratedKeys()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getLong(1)).thenReturn(1L);
+        when(resultSet.getLong(1)).thenReturn(999L);
 
         final Long createdId = jdbcTemplate.insert(conn -> conn.prepareStatement(sql));
 
-        assertThat(createdId).isEqualTo(createdId);
+        assertThat(createdId).isEqualTo(999L);
     }
 
     @Test
@@ -49,12 +49,12 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
+        when(resultSet.next()).thenReturn(true, true, true, false);
 
         final List<Object> result = jdbcTemplate.query(sql, ((rs, rowNum) -> null), 1004, "대충 더미파라미터");
 
         assertAll(
-                () -> assertThat(result).isEmpty(),
+                () -> assertThat(result.size()).isEqualTo(3),
                 () -> verify(preparedStatement, times(2)).setObject(anyInt(), any())
         );
     }
@@ -67,8 +67,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.getRow()).thenReturn(1);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.isAfterLast()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
 
         final Object result = jdbcTemplate.queryForObject(sql, ((rs1, rowNum) -> null), 1004, "대충 더미파라미터");
 
@@ -100,8 +99,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.isAfterLast()).thenReturn(false);
+        when(resultSet.next()).thenReturn(true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> null))
                 .isInstanceOf(DataAccessException.class);
