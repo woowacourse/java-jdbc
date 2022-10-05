@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class DataAccessUtilsTest {
 
-    @DisplayName("결과값이 비어있을 경우 예외가 발생한다.")
+    @DisplayName("결과값이 존재하는 경우 해당 값이 반환된다.")
     @Test
     void nullableSingleResult() {
         List<Object> results = new ArrayList<>();
