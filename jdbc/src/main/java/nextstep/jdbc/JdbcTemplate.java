@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int FIRST_RESULT_INDEX = 0;
 
     private final DataSource dataSource;
 
@@ -51,20 +52,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return usePreparedStatement(sql, pstmt -> {
-            try {
-                T result = null;
-                ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) {
-                    result = rowMapper.run(rs);
-                }
-
-                return result;
-            } catch (SQLException e) {
-                throw new DataAccessException(e.getMessage(), e);
-                // TODO: 더 추상화된 예외 메시지를 사용해야함
-            }
-        }, args);
+        List<T> results = query(sql, rowMapper, args);
+        return results.get(FIRST_RESULT_INDEX);
     }
 
     public <T> T usePreparedStatement(final String sql, final Function<PreparedStatement, T> function,
