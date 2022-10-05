@@ -56,7 +56,7 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
-            return null;
+            throw new RuntimeException("결과가 존재하지 않습니다.");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
