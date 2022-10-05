@@ -53,7 +53,7 @@ class JdbcTemplateTest {
     @Test
     void update문을_실행한다() throws SQLException {
         // given
-        final var sql = "update users set account = ? ,password = ? ,email = ? where id = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         // when
         jdbcTemplate.execute(sql, "account", "password", "email", 1);
