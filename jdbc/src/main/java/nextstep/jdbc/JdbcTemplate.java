@@ -78,7 +78,7 @@ public class JdbcTemplate {
 
     private <T> void validateSingleSize(final List<T> result) {
         if (result.size() != SINGLE_COUNT) {
-            throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
+            throw new DataAccessException("조회 결과 값이 0개 또는 여러개가 존재합니다.");
         }
     }
 }
