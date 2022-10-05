@@ -21,6 +21,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return query(sql, params, rowMapper);
+    }
+
+    private <T> List<T> query(final String sql, final Object[] params, final RowMapper<T> rowMapper) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
              final ResultSet resultSet = getResultSet(preparedStatement, params)) {
@@ -39,28 +43,17 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             final ResultSet resultSet = getResultSet(preparedStatement, params)) {
-            checkEmptyResult(resultSet);
-            final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
-            checkMultiResult(resultSet);
-            return result;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        final List<T> result = query(sql, params, rowMapper);
+        validateSingleResultSize(result);
+        return result.get(0);
     }
 
-    private void checkEmptyResult(final ResultSet resultSet) throws SQLException {
-        if (!resultSet.next()) {
-            throw new DataAccessException("결과가 없습니다!");
+    private <T> void validateSingleResultSize(final List<T> result) {
+        if (result.size() == 0) {
+            throw new DataAccessException("쿼리 결과가 없음!");
         }
-    }
-
-    private void checkMultiResult(final ResultSet resultSet) throws SQLException {
-        resultSet.next();
-        if (!resultSet.isAfterLast()) {
-            throw new DataAccessException("쿼리 결과가 한 개가 아닙니다.");
+        if (result.size() > 1) {
+            throw new DataAccessException("쿼리 결과가 넘 많음!");
         }
     }
 
