@@ -20,25 +20,31 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        Parameters parameters = setInsertParameter(user);
+        jdbcTemplate.update(sql, parameters);
+    }
 
+    private Parameters setInsertParameter(User user) {
         Parameters parameters = new Parameters();
         parameters.addParam(user.getAccount());
         parameters.addParam(user.getPassword());
         parameters.addParam(user.getEmail());
-
-        jdbcTemplate.update(sql, parameters);
+        return parameters;
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        Parameters parameters = setUpdateParameter(user);
+        jdbcTemplate.update(sql, parameters);
+    }
 
+    private Parameters setUpdateParameter(User user) {
         Parameters parameters = new Parameters();
         parameters.addParam(user.getAccount());
         parameters.addParam(user.getPassword());
         parameters.addParam(user.getEmail());
         parameters.addParam(user.getId());
-
-        jdbcTemplate.update(sql, parameters);
+        return parameters;
     }
 
     public List<User> findAll() {
