@@ -7,7 +7,6 @@ import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.resultset.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.ResultSetExtractor;
 
 public class UserDao {
 
