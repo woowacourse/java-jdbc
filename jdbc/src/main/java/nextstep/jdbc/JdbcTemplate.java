@@ -41,7 +41,7 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T executePreparedStatement(final String sql, QueryExecutor<T> executor) {
+    private <T> T executePreparedStatement(final String sql, final QueryExecutor<T> executor) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
