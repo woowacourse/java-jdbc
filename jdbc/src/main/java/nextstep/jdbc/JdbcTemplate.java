@@ -20,57 +20,48 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql,
-                             final RowMapper<T> rowMapper,
-                             final Object... args) {
+    private <T> T execute(final String sql, final JdbcCallback<T> jdbcCallback) {
         try (final Connection conn = getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)
         ) {
+            return jdbcCallback.call(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException("커넥션을 가져올 수 없습니다.");
+        }
+    }
+
+    public <T> List<T> query(final String sql,
+                             final RowMapper<T> rowMapper,
+                             final Object... args) {
+        return execute(sql, preparedStatement -> {
             setParams(preparedStatement, args);
             return executeQuery(preparedStatement, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException("DB 작업 처리 도중 에러가 발생했습니다.");
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql,
                                 final RowMapper<T> rowMapper,
                                 final Object... args) {
-        try (final Connection conn = getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql)
-        ) {
+        return execute(sql, preparedStatement -> {
             setParams(preparedStatement, args);
             final List<T> result = executeQuery(preparedStatement, rowMapper);
             validateSingleResultSize(result);
             return result.get(0);
-        } catch (SQLException e) {
-            throw new DataAccessException("DB 작업 처리 도중 에러가 발생했습니다.");
-        }
+        });
     }
 
     private <T> void validateSingleResultSize(List<T> result) {
-        if(result.size() != 1){
+        if (result.size() != 1) {
             throw new DataAccessException("조회 결과가 1개가 아닙니다.");
         }
     }
 
-    public int executeUpdate(final String sql,
-                             final Object... args) {
-        try(final Connection conn = getConnection();
-            final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+    public void executeUpdate(final String sql,
+                              final Object... args) {
+        execute(sql, preparedStatement -> {
             setParams(preparedStatement, args);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException();
-        }
-    }
-
-    private void setParams(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        int parameterIndex = 1;
-        for (Object arg : args) {
-            preparedStatement.setObject(parameterIndex++, arg);
-        }
+            return update(preparedStatement);
+        });
     }
 
     private <T> List<T> executeQuery(final PreparedStatement preparedStatement,
@@ -82,6 +73,25 @@ public class JdbcTemplate {
                 mappedRowResult.add(rowMapper.mapRow(resultSet, rowNum++));
             }
             return mappedRowResult;
+        }
+    }
+
+    private int update(PreparedStatement preparedStatement) {
+        try {
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("쿼리를 실행하지 못했습니다.");
+        }
+    }
+
+    private void setParams(PreparedStatement preparedStatement, Object[] args) {
+        int parameterIndex = 1;
+        for (Object arg : args) {
+            try {
+                preparedStatement.setObject(parameterIndex++, arg);
+            } catch (SQLException e) {
+                throw new DataAccessException("잘못된 파라미터입니다.");
+            }
         }
     }
 
