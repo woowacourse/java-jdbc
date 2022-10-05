@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -15,36 +16,35 @@ import org.slf4j.LoggerFactory;
 public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final String DEFAULT_SCHEMA_NAME = "schema.sql";
+
+    private DatabasePopulatorUtils() {
+    }
 
     public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
-            statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        execute(dataSource, DEFAULT_SCHEMA_NAME);
+    }
 
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
+    public static void execute(final DataSource dataSource, final String fileName) {
+        final String sql = readStringByFileName(fileName);
+        try (
+            final Connection connection = dataSource.getConnection();
+            final Statement statement = connection.createStatement()
+        ) {
+            statement.execute(sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 
-    private DatabasePopulatorUtils() {
+    private static String readStringByFileName(final String fileName) {
+        final var url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
+        try {
+            final var file = new File(Objects.requireNonNull(url).getFile());
+            return Files.readString(file.toPath());
+        } catch (NullPointerException | IOException e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(fileName + " not found");
+        }
     }
 }
