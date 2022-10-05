@@ -48,16 +48,19 @@ public class JdbcTemplate {
                                       final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-
+            mapParametersToPreparedStatement(preparedStatement, args);
             return function.apply(preparedStatement);
         } catch (final SQLException e) {
             log.error("error: {}", e);
             throw new DataAccessException(e.getMessage(), e);
             // TODO: 더 추상화된 예외 메시지를 사용해야함
+        }
+    }
+
+    private void mapParametersToPreparedStatement(final PreparedStatement preparedStatement, final Object[] args)
+            throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 }
