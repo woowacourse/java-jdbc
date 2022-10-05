@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -32,25 +31,18 @@ public class JdbcTemplate {
             setPreparedStatement(ps, parameters);
             ResultSet resultSet = ps.executeQuery();
 
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, 1);
-            }
-            resultSet.close();
-            return null;
+            List<T> extracted = RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
+            return extracted.stream()
+                    .findFirst()
+                    .orElseThrow(DataAccessException::new);
         });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        List<T> result = new ArrayList<>();
         return execute(sql, ps -> {
             ResultSet resultSet = ps.executeQuery();
 
-            int rowNum = 0;
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            resultSet.close();
-            return result;
+            return RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
         });
     }
 
