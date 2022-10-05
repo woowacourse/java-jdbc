@@ -21,14 +21,14 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... parameters) {
         return execute(sql, ps -> {
-            setPreparedStatement(ps, parameters);
+            getPreparedStatementSetter(parameters).setValues(ps);
             return ps.executeUpdate();
         });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return execute(sql, ps -> {
-            setPreparedStatement(ps, parameters);
+            getPreparedStatementSetter(parameters).setValues(ps);
             ResultSet resultSet = ps.executeQuery();
 
             List<T> extracted = RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
@@ -56,9 +56,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(PreparedStatement ps, Object... parameters) throws SQLException {
-        for (int i = 1; i <= parameters.length; i++) {
-            ps.setObject(i, parameters[i - 1]);
-        }
+    private PreparedStatementSetter getPreparedStatementSetter(Object... parameters) {
+        return preparedStatement -> {
+            for (int i = 1; i <= parameters.length; i++) {
+                preparedStatement.setObject(i, parameters[i - 1]);
+            }
+        };
     }
 }
