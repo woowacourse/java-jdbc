@@ -21,15 +21,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            PreparedStatementSetter.setValues(preparedStatement, args);
-            return new QueryExecutor<>(rowMapper).execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        final Executor<List<T>> queryExecutor = new QueryExecutor<>(rowMapper);
+        return executeQuery(sql, queryExecutor, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
@@ -38,12 +31,17 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, @Nullable Object... args) {
+        final Executor<Integer> queryExecutor = new UpdateExecutor();
+        return executeQuery(sql, queryExecutor, args);
+    }
+
+    private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             PreparedStatementSetter.setValues(preparedStatement, args);
-            return new UpdateExecutor().execute(preparedStatement);
-        } catch(SQLException e) {
+            return queryExecutor.execute(preparedStatement);
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -53,7 +51,7 @@ public class JdbcTemplate {
         T execute(PreparedStatement preparedStatement) throws SQLException;
     }
 
-    class QueryExecutor<T> implements Executor<List<T>> {
+    static class QueryExecutor<T> implements Executor<List<T>> {
 
         private RowMapper<T> rowMapper;
 
@@ -69,7 +67,7 @@ public class JdbcTemplate {
         }
     }
 
-    class UpdateExecutor implements Executor<Integer> {
+    static class UpdateExecutor implements Executor<Integer> {
 
         @Override
         public Integer execute(final PreparedStatement preparedStatement) throws SQLException {
