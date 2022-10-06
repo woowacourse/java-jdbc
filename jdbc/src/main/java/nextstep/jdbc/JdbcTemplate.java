@@ -21,8 +21,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
-        final Executor<List<T>> queryExecutor = new QueryExecutor<>(rowMapper);
-        return executeQuery(sql, queryExecutor, args);
+        final Executor<List<T>> executor = preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+            return rowMapperResultSetExtractor.extractData(resultSet);
+        };
+
+        return executeQuery(sql, executor, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
@@ -31,8 +36,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, @Nullable Object... args) {
-        final Executor<Integer> queryExecutor = new UpdateExecutor();
-        return executeQuery(sql, queryExecutor, args);
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
     private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
@@ -44,34 +48,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    interface Executor<T> {
-        T execute(PreparedStatement preparedStatement) throws SQLException;
-    }
-
-    static class QueryExecutor<T> implements Executor<List<T>> {
-
-        private RowMapper<T> rowMapper;
-
-        public QueryExecutor(final RowMapper<T> rowMapper) {
-            this.rowMapper = rowMapper;
-        }
-
-        @Override
-        public List<T> execute(final PreparedStatement preparedStatement) throws SQLException {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
-            return rowMapperResultSetExtractor.extractData(resultSet);
-        }
-    }
-
-    static class UpdateExecutor implements Executor<Integer> {
-
-        @Override
-        public Integer execute(final PreparedStatement preparedStatement) throws SQLException {
-            return preparedStatement.executeUpdate();
         }
     }
 }
