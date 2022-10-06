@@ -71,7 +71,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
