@@ -14,14 +14,15 @@ import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
-    private static RowMapper<String> testRowMapper = resultSet -> "entity";
+    private static final RowMapper<String> testRowMapper = resultSet -> "entity";
 
-    private DataSource dataSource = Mockito.mock(DataSource.class);
-    private Connection connection = Mockito.mock(Connection.class);
-    private PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
-    private ResultSet resultSet = Mockito.mock(ResultSet.class);
+    private final DataSource dataSource = Mockito.mock(DataSource.class);
+    private final Connection connection = Mockito.mock(Connection.class);
+    private final PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+    private final ResultSet resultSet = Mockito.mock(ResultSet.class);
 
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
+
     @BeforeEach
     private void setUp() throws SQLException {
         Mockito.when(dataSource.getConnection())

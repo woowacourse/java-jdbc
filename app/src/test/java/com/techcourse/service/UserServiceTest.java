@@ -23,7 +23,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDao(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -32,7 +32,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
@@ -47,7 +47,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new MockUserHistoryDao();
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
