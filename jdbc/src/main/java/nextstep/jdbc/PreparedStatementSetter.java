@@ -5,12 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.stream.IntStream;
 
-public class PreparedStatementCreator {
+public class PreparedStatementSetter {
 
     private final String sql;
     private final Object[] objects;
 
-    public PreparedStatementCreator(final String sql, final Object[] objects) {
+    public PreparedStatementSetter(final String sql, final Object[] objects) {
         this.sql = sql;
         if (objects == null) {
             this.objects = new Object[]{};

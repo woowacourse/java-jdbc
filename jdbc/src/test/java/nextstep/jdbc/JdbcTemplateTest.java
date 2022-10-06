@@ -36,7 +36,7 @@ class JdbcTemplateTest {
 
     @Test
     void closeWhenQuery() throws SQLException {
-        jdbcTemplate.query("SELECT name FROM MEMBER", String.class);
+        jdbcTemplate.query("SELECT name FROM MEMBER", (rs, rownum) -> 1);
 
         verify(preparedStatement).executeQuery();
         verify(connection).close();
