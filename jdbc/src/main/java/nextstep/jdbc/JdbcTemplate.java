@@ -2,14 +2,13 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.RowMapperResultSetExtractor;
 
 public class JdbcTemplate {
 
@@ -26,11 +25,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, statement -> execute(statement, rowMapper), parameters);
+        return execute(sql, statement -> executeQuery(statement, rowMapper), parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, statement -> getSingleRow(execute(statement, rowMapper)), parameters);
+        return execute(sql, statement -> getSingleRow(executeQuery(statement, rowMapper)), parameters);
     }
 
     private <T> T execute(final String sql, final Executor<T> executor, final Object[] parameters) {
@@ -53,10 +52,16 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> execute(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
-        final ResultSetExtractor<List<T>> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+    private <T> List<T> executeQuery(final PreparedStatement statement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        final List<T> results = new ArrayList<>();
 
-        return resultSetExtractor.extractData(statement.executeQuery());
+        final ResultSet rs = statement.executeQuery();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+
+        return results;
     }
 
     private <T> T getSingleRow(final List<T> results) {

@@ -8,11 +8,10 @@ import nextstep.jdbc.config.DataSourceConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.RowMapper;
 
 class JdbcTemplateTest {
 
-    private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
+    private final RowMapper<User> userRowMapper = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
