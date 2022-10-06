@@ -32,7 +32,7 @@ public class JdbcTemplate {
     private <T> List<T> mapToList(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
         List<T> results = new ArrayList<>();
         ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
+        while (rs.next()) {
             T result = rowMapper.run(rs);
             results.add(result);
         }
