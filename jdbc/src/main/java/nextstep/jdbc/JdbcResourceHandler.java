@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -17,11 +18,26 @@ public class JdbcResourceHandler {
         this.dataSource = dataSource;
     }
 
-    public Object handle(String sql, JdbcStrategy jdbcStrategy, Object... objects) {
+    public Object executeQuery(String sql, JdbcStrategy jdbcStrategy, Object... objects) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects)){
             log.info("query : {}", sql);
-            return jdbcStrategy.apply(preparedStatement);
+            preparedStatement.executeQuery();
+            ResultSet resultSet = preparedStatement.executeQuery();
+            Object result = jdbcStrategy.apply(resultSet);
+            resultSet.close();
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public void execute(String sql, Object... objects) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects)){
+            log.info("query : {}", sql);
+            preparedStatement.execute();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage());

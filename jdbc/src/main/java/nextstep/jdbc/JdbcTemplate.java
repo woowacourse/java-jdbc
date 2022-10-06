@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,16 +15,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        Object result = jdbcResourceHandler.handle(
-                sql, (preparedStatement -> extractResult(preparedStatement, rowMapper))
+        Object result = jdbcResourceHandler.executeQuery(
+                sql, (resultSet -> extractResult(resultSet, rowMapper))
         );
 
         return (List<T>) result;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Object result = jdbcResourceHandler.handle(
-                sql, preparedStatement -> extractResult(preparedStatement, rowMapper), parameters
+        Object result = jdbcResourceHandler.executeQuery(
+                sql, resultSet -> extractResult(resultSet, rowMapper), parameters
         );
 
         List<T> result1 = (List<T>) result;
@@ -34,23 +33,21 @@ public class JdbcTemplate {
                 .orElseThrow(() -> new DataAccessException("not found object of query: " + sql));
     }
 
-    private <T> List<T> extractResult(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
+    private <T> List<T> extractResult(ResultSet resultSet, RowMapper<T> rowMapper)
             throws SQLException {
         List<T> objects = new ArrayList<>();
-        ResultSet resultSet = preparedStatement.executeQuery();
         while (resultSet.next()) {
             T object = rowMapper.mapRow(resultSet);
             objects.add(object);
         }
-        resultSet.close();
         return objects;
     }
 
     public void updateQuery(String sql) {
-        jdbcResourceHandler.handle(sql, (PreparedStatement::execute));
+        jdbcResourceHandler.execute(sql);
     }
 
     public void updateQuery(String sql, Object... parameters) {
-        jdbcResourceHandler.handle(sql, PreparedStatement::execute, parameters);
+        jdbcResourceHandler.execute(sql, parameters);
     }
 }
