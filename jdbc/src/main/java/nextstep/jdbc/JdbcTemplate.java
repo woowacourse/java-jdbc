@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(String sql, Object... parameters) {
+    public void update(String sql, Object... parameters) {
         StatementCallback<Void> statementCallback = preparedStatement -> {
             preparedStatement.executeUpdate();
             return null;
