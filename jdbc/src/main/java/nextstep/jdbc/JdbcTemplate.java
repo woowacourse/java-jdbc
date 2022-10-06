@@ -24,13 +24,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private <T> T execute(final String sql, final PreparedStatementGenerator generator,
+                          final PreparedStatementExecuteStrategy<T> strategy, final Object... parameters) {
+        validateSql(sql);
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = generator.generate(connection)) {
+
+            setParameters(statement, parameters);
+            log.debug("query : {}", sql);
+            return strategy.execute(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     private void validateSql(final String sql) {
         if (sql == null || sql.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL은 null이거나 빈 값일 수 없습니다.");
         }
     }
 
-    private void setParameters(final PreparedStatement statement, final Object[] parameters)
+    private void setParameters(final PreparedStatement statement, final Object... parameters)
             throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             statement.setObject(i + 1, parameters[i]);
@@ -38,53 +53,38 @@ public class JdbcTemplate {
     }
 
     public Long insert(final String sql, final Object... parameters) {
-        validateSql(sql);
+        return execute(sql,
+                connection -> connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS),
+                preparedStatement -> {
+                    preparedStatement.executeUpdate();
+                    return getGeneratedKey(preparedStatement);
+                },
+                parameters);
+    }
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
-            statement.executeUpdate();
-
-            final ResultSet generatedKeys = statement.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                return generatedKeys.getLong(1);
-            }
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    private Long getGeneratedKey(PreparedStatement preparedStatement) throws SQLException {
+        final ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+        if (generatedKeys.next()) {
+            return generatedKeys.getLong(1);
         }
+        return null;
     }
 
     public int update(final String sql, final Object... parameters) {
-        validateSql(sql);
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return execute(sql,
+                connection -> connection.prepareStatement(sql),
+                PreparedStatement::executeUpdate,
+                parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        validateSql(sql);
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
-            final ResultSet resultSet = statement.executeQuery();
-
-            return mapResultSet(rowMapper, resultSet);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return execute(sql,
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> {
+                    final ResultSet resultSet = preparedStatement.executeQuery();
+                    return mapResultSet(rowMapper, resultSet);
+                },
+                parameters);
     }
 
     private <T> List<T> mapResultSet(final RowMapper<T> rowMapper, final ResultSet resultSet)
