@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
@@ -38,8 +39,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementData(pstmt, args);
             ResultSet resultSet = pstmt.executeQuery();
-            RowMapperResultSetExtractor rowMapperResultSetExtractor = new RowMapperResultSetExtractor(rowMapper);
-            List<T> result = rowMapperResultSetExtractor.extractData(resultSet);
+            List<T> result = extractData(rowMapper, resultSet);
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -52,8 +52,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementData(pstmt, args);
             ResultSet resultSet = pstmt.executeQuery();
-            RowMapperResultSetExtractor rowMapperResultSetExtractor = new RowMapperResultSetExtractor(rowMapper);
-            List<T> result = rowMapperResultSetExtractor.extractData(resultSet);
+            List<T> result = extractData(rowMapper, resultSet);
             return getSingleResult(result);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -66,6 +65,17 @@ public class JdbcTemplate {
         for (Object obj : args) {
             pstmt.setObject(index++, obj);
         }
+    }
+
+    private <T> List<T> extractData(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+
+        int rowNum = 0;
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet, rowNum++));
+        }
+
+        return result;
     }
 
     private <T> T getSingleResult(List<T> result) {
