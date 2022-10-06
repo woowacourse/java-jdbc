@@ -19,22 +19,19 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
+    public <T> T findOrThrow(final String sql, final ResultSetCallback<T> resultSetCallback, final Object... args) {
+        return executeOrThrow(sql, statement -> {
+            try (final ResultSet rs = statement.executeQuery()) {
+                return resultSetCallback.execute(rs);
+            }
+        }, args);
+    }
+
     public <T> T executeOrThrow(final String sql, final PreparedStatementCallback<T> statementCallback,
                                 final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement statement = STATEMENT_SETTER.set(conn.prepareStatement(sql), args)) {
             return statementCallback.execute(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> T findOrThrow(final String sql, final ResultSetCallback<T> resultSetCallback, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement statement = STATEMENT_SETTER.set(conn.prepareStatement(sql), args);
-             final ResultSet rs = statement.executeQuery()) {
-            return resultSetCallback.execute(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
