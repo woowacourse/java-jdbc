@@ -20,7 +20,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "schema.sql");
     }
 
     @Test
