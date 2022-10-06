@@ -8,7 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.RowMapper;
 
 class RowMapperTest {
 
@@ -18,7 +17,7 @@ class RowMapperTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.getLong(0)).thenReturn(1L);
 
-        final RowMapper<Object> rowMapper = (rs, rowNum) -> {
+        RowMapper<Object> rowMapper = (rs, rowNum) -> {
             rs.getLong(rowNum);
             return rs;
         };

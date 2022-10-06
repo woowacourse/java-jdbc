@@ -14,7 +14,7 @@ class PreparedStatementSetterTest {
     @Test
     void updatePreparedStatementByPreparedStatementSetter() throws SQLException {
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        final PreparedStatementSetter preparedStatementSetter = ps -> ps.setObject(1, 2);
+        PreparedStatementSetter preparedStatementSetter = ps -> ps.setObject(1, 2);
         preparedStatementSetter.setValues(preparedStatement);
 
         verify(preparedStatement).setObject(1, 2);
