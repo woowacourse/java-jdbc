@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -24,7 +23,7 @@ public class JdbcTemplate {
             }
             return result;
         };
-        return jdbcExecutor.findOrThrow(sql, resultSetCallback, args);
+        return jdbcExecutor.find(sql, resultSetCallback, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -32,10 +31,10 @@ public class JdbcTemplate {
             rs.next();
             return rowMapper.mapRow(rs);
         };
-        return jdbcExecutor.findOrThrow(sql, resultSetCallback, args);
+        return jdbcExecutor.find(sql, resultSetCallback, args);
     }
 
     public Integer executeUpdate(final String sql, final Object... args) {
-        return jdbcExecutor.executeOrThrow(sql, PreparedStatement::executeUpdate, args);
+        return jdbcExecutor.update(sql, args);
     }
 }
