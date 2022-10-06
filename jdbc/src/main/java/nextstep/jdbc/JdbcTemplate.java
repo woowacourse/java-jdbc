@@ -22,57 +22,41 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, parameters);
-
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, statement -> statement.executeUpdate(), parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, parameters);
-
-            log.debug("query : {}", sql);
-
-            return execute(pstmt, rowMapper);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, statement -> execute(statement, rowMapper), parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(sql, statement -> getSingleRow(execute(statement, rowMapper)), parameters);
+    }
+
+    private <T> T execute(final String sql, final Executor<T> executor, final Object[] parameters) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, parameters);
+             final PreparedStatement statement = conn.prepareStatement(sql)) {
+            setParameters(statement, parameters);
 
             log.debug("query : {}", sql);
 
-            return getSingleRow(execute(pstmt, rowMapper));
+            return executor.execute(statement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+    private void setParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
+            statement.setObject(i + 1, parameters[i]);
         }
     }
 
-    private <T> List<T> execute(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> execute(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
         final ResultSetExtractor<List<T>> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
 
-        return resultSetExtractor.extractData(pstmt.executeQuery());
+        return resultSetExtractor.extractData(statement.executeQuery());
     }
 
     private <T> T getSingleRow(final List<T> results) {
