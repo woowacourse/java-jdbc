@@ -48,8 +48,9 @@ public class JdbcTemplate {
     }
 
     private static void setObjects(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int index = 0; index < args.length; index++) {
-            pstmt.setObject(index + 1, args[index]);
+        int index = 1;
+        for (Object arg : args) {
+            pstmt.setObject(index++, arg);
         }
     }
 
