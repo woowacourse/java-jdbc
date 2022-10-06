@@ -32,7 +32,7 @@ public class JdbcTemplate {
             return statementCallback.doInStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
