@@ -19,9 +19,11 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T executeOrThrow(final String sql, final PreparedStatementCallback<T> preparedStatementCallback, final Object... args) {
-        try {
-            return preparedStatementCallback.execute(getStatement(sql, args));
+    public <T> T executeOrThrow(final String sql, final PreparedStatementCallback<T> statementCallback,
+                                final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement statement = STATEMENT_SETTER.set(conn.prepareStatement(sql), args)) {
+            return statementCallback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -29,18 +31,10 @@ public class JdbcExecutor {
     }
 
     public <T> T findOrThrow(final String sql, final ResultSetCallback<T> resultSetCallback, final Object... args) {
-        try (final ResultSet rs = getStatement(sql, args).executeQuery()) {
-            return resultSetCallback.execute(rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private PreparedStatement getStatement(final String sql, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement stmt = STATEMENT_SETTER.set(conn.prepareStatement(sql), args)) {
-            return stmt;
+             final PreparedStatement statement = STATEMENT_SETTER.set(conn.prepareStatement(sql), args);
+             final ResultSet rs = statement.executeQuery()) {
+            return resultSetCallback.execute(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
