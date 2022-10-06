@@ -26,20 +26,19 @@ public class JdbcTemplate {
                        final ResultSetWrapper<T> resultSetWrapper,
                        final Object... sqlArguments) {
         final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
-        assert results != null;
+        if (results == null) {
+            return null;
+        }
         return results.get(0);
     }
 
     public <T> List<T> queryForList(final String sqlFormat,
                                     final ResultSetWrapper<T> resultSetWrapper,
                                     final Object... sqlArguments) {
-        final String sql = generateSql(sqlFormat, sqlArguments);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
 
-            log.debug("query : {}", sql);
-            List<T> results = new ArrayList<>();
+        final Callback<List<T>> callback = preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            final List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
                 results.add(resultSetWrapper.execute(resultSet));
@@ -49,26 +48,35 @@ public class JdbcTemplate {
                 return null;
             }
             return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+        return execute(sqlFormat, callback, sqlArguments);
     }
 
     public void update(final String sqlFormat, final Object... sqlArguments) {
+        final Callback<Integer> callback = PreparedStatement::executeUpdate;
+        execute(sqlFormat, callback, sqlArguments);
+    }
+
+    private <T> T execute(final String sqlFormat, Callback<T> callback, final Object... sqlArguments) {
         String sql = generateSql(sqlFormat, sqlArguments);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            preparedStatement.executeUpdate();
+            return callback.call(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        } catch (Exception e) {
+            throw new IllegalCallerException(e);
         }
     }
 
     private String generateSql(final String sqlFormat, final Object[] sqlArguments) {
         String sql = sqlFormat;
+        if (sqlArguments == null) {
+            return sql;
+        }
+
         for (Object sqlArgument : sqlArguments) {
             final String expectedData = SqlArgumentConverter.convertObjectToString(sqlArgument);
             sql = sql.replaceFirst(SQL_FORMAT_ARGUMENT, expectedData);
