@@ -13,6 +13,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -70,6 +71,26 @@ class JdbcTemplateTest {
                 () -> assertThat(members.get(0).getName()).isEqualTo("m1"),
                 () -> assertThat(members.get(1).getName()).isEqualTo("m2")
         );
+    }
+
+    @Test
+    @DisplayName("Connection이 성공적으로 종료되는지 테스트한다.")
+    void connection() throws SQLException {
+        final String sql = "select * from member";
+        Mockito.when(connection.prepareStatement(sql)).thenReturn(statement);
+        Mockito.when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
+        Mockito.when(resultSet.getString(1))
+                .thenReturn("m1")
+                .thenReturn("m2");
+
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        List<Member> members = jdbcTemplate.query(sql,
+                (rSet, rowNum) -> new Member(rSet.getString(1)));
+
+        Mockito.verify(connection).close();
     }
 
     static class Member {
