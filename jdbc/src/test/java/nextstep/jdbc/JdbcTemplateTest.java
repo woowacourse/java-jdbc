@@ -24,7 +24,7 @@ class JdbcTemplateTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
-   private static final RowMapper<Object> ROW_MAPPER = (rs) -> new Object();
+    private static final RowMapper<Object> ROW_MAPPER = (rs) -> new Object();
 
     @BeforeEach
     void setUp() {
