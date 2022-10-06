@@ -17,31 +17,33 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, PreparedStatementSetter pss) {
-        execute(sql, pss, PreparedStatement::executeUpdate);
+    public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, pss, rowMapper);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        PreparedStatementSetter pss = ps -> {};
-        return execute(sql, pss, preparedStatement -> getResult(preparedStatement, rowMapper));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, preparedStatement -> getResult(preparedStatement, rowMapper), args);
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        return execute(sql, pss, preparedStatement -> getResult(preparedStatement, rowMapper));
-    }
-
-    private <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> psc) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            pss.setValues(preparedStatement);
-            return psc.doInPreparedStatement(preparedStatement);
+            setParameters(args, preparedStatement);
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException();
+        }
+    }
+
+    private void setParameters(Object[] args, PreparedStatement preparedStatement) throws SQLException {
+        int index = 1;
+        for (Object arg : args) {
+            preparedStatement.setObject(index++, arg);
         }
     }
 
