@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
+    public static final int SINGLE_RESULT = 1;
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -30,24 +30,28 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> result = query(sql, rowMapper, parameters);
-        if (result.size() != 1) {
-            throw new DataAccessException("결과는 " + result.size() + "가 아닌 1개여야합니다.");
+        if (result.size() != SINGLE_RESULT) {
+            throw new DataAccessException("결과는 " + result.size() + "가 아닌 " + SINGLE_RESULT + "개여야합니다.");
         }
 
-        return result.get(0);
+        return result.iterator().next();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         StatementCallback<List<T>> statementCallback = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (resultSet.next()) {
-                    result.add(rowMapper.mapRow(resultSet));
-                }
-                return result;
+                return mapRow(rowMapper, resultSet);
             }
         };
         return executeQuery(statementCallback, sql, parameters);
+    }
+
+    private <T> List<T> mapRow(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 
     private <T> T executeQuery(StatementCallback<T> statementCallback, String sql, Object... parameters) {
