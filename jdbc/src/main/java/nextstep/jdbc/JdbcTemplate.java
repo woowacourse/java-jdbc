@@ -23,22 +23,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws SQLException {
         ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
         return extractData(rowMapper, resultSet);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args)
+            throws SQLException {
         ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
         List<T> results = extractData(rowMapper, resultSet);
         return getSingleResult(results);
     }
 
-    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementData(pstmt, args);
@@ -49,14 +50,14 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatementData(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void setPreparedStatementData(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         int index = 1;
         for (Object obj : args) {
             pstmt.setObject(index++, obj);
         }
     }
 
-    private <T> List<T> extractData(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
         List<T> result = new ArrayList<>();
 
         int rowNum = 0;
@@ -67,7 +68,7 @@ public class JdbcTemplate {
         return result;
     }
 
-    private <T> T getSingleResult(List<T> result) {
+    private <T> T getSingleResult(final List<T> result) {
         if (result.size() == 0) {
             throw new EmptyResultDataAccessException("쿼리 실행 결과가 존재하지 않습니다.");
         }
