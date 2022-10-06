@@ -3,7 +3,7 @@ package nextstep.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class SimpleUpdateCallback implements PreparedStatementCallback<Integer> {
+public class SimpleUpdateExecuteStrategy implements PreparedStatementExecuteStrategy<Integer> {
 
     @Override
     public Integer extract(final PreparedStatement preparedStatement) throws SQLException {

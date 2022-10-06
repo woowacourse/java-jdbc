@@ -76,15 +76,15 @@ public class JdbcTemplate {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             setPreparedStatementParams(preparedStatement, params);
             return preparedStatement;
-        }, new SimpleInsertCallback());
+        }, new SimpleInsertExecuteStrategy());
     }
 
     public Long insert(final PreparedStatementCreator preparedStatementCreator) {
-        return execute(preparedStatementCreator, new SimpleInsertCallback());
+        return execute(preparedStatementCreator, new SimpleInsertExecuteStrategy());
     }
 
     public Integer update(final PreparedStatementCreator preparedStatementCreator) {
-        return execute(preparedStatementCreator, new SimpleUpdateCallback());
+        return execute(preparedStatementCreator, new SimpleUpdateExecuteStrategy());
     }
 
     public Integer update(final String sql, Object... params) {
@@ -92,14 +92,14 @@ public class JdbcTemplate {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             setPreparedStatementParams(preparedStatement, params);
             return preparedStatement;
-        }, new SimpleUpdateCallback());
+        }, new SimpleUpdateExecuteStrategy());
     }
 
     private <T> T execute(final PreparedStatementCreator preparedStatementCreator,
-                          final PreparedStatementCallback<T> preparedStatementCallback) {
+                          final PreparedStatementExecuteStrategy<T> preparedStatementExecuteStrategy) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
-            return preparedStatementCallback.extract(preparedStatement);
+            return preparedStatementExecuteStrategy.extract(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }

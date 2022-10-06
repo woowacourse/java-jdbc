@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SimpleInsertCallback implements PreparedStatementCallback<Long> {
+public class SimpleInsertExecuteStrategy implements PreparedStatementExecuteStrategy<Long> {
 
     @Override
     public Long extract(final PreparedStatement preparedStatement) throws SQLException {
