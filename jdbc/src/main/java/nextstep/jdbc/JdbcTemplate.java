@@ -4,10 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.core.PreparedStatementCallback;
 import nextstep.jdbc.core.RowMapper;
+import nextstep.jdbc.core.RowMapperResultSetExtractor;
+import nextstep.jdbc.support.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,60 +23,45 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(query)) {
-            log.debug("query : {}", query);
+    public void update(String sql, final Object... args) {
+        execute(sql, pstmt -> {
             setArguments(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+            return pstmt.executeUpdate();
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
-            }
-            return null;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        return DataAccessUtils.uniqueResult(query(sql, new RowMapperResultSetExtractor<>(rowMapper, 1), args));
     }
 
-    private void setArguments(PreparedStatement pstmt, Object... args) throws SQLException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+    private void setArguments(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
+            log.debug("index:{}, args:{}", i + 1, args[i]);
             pstmt.setObject(i + 1, args[i]);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> List<T> query(String sql, RowMapperResultSetExtractor<T> rowMapper, Object... args) {
+        return execute(sql, pstmt -> {
+            setArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
+            return rowMapper.extractData(rs);
+        });
+    }
 
+    private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ptsmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            return extractData(rs, rowMapper);
 
+            return callback.doInPreparedStatement(ptsmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
-    }
-
-    private <T> List<T> extractData(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs, rs.getRow()));
-        }
-        return results;
     }
 }

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +17,16 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        truncateUserTable(new JdbcTemplate(dataSource));
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    private void truncateUserTable(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.update("truncate table users");
+        jdbcTemplate.update("alter table users alter column id restart with 1");
     }
 
     @Test

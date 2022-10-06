@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -18,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    public static final RowMapper<DummyUser> DUMMY_USER_ROW_MAPPER = (rs, row) -> new DummyUser(
+    public static final RowMapper<DummyUser> DUMMY_USER_ROW_MAPPER = (rs) -> new DummyUser(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
@@ -40,13 +41,13 @@ class JdbcTemplateTest {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    @DisplayName("sql문의 인자의 개수와 jdbcTemplate의 인자의 개수가 같아야 한다.")
+    @DisplayName("update가 성공한다.")
     @Test
     void update() throws SQLException {
         final var sql = "update users set account = ? where id = ?";
         when(conn.prepareStatement(sql)).thenReturn(pstmt);
 
-        assertDoesNotThrow(() -> jdbcTemplate.update(sql, 1));
+        assertDoesNotThrow(() -> jdbcTemplate.update(sql, 1, 2));
     }
 
     @DisplayName("반환할 객체가 없으면 null을 반환한다.")
@@ -61,16 +62,30 @@ class JdbcTemplateTest {
         assertThat(dummyUser).isNull();
     }
 
-    @DisplayName("객체를 반환한다.")
+    @DisplayName("1개의 객체를 반환한다.")
     @Test
     void queryForObject() throws SQLException {
         final var sql = "select * from users where id = ?";
         when(conn.prepareStatement(sql)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
         DummyUser dummyUser = jdbcTemplate.queryForObject(sql, DUMMY_USER_ROW_MAPPER, 1);
 
         assertThat(dummyUser).isNotNull();
+    }
+
+    @DisplayName("2개이상의 객체를 반환하면 예외가 발생한다.")
+    @Test
+    void queryForObjectFailure() throws SQLException {
+        final var sql = "select * from users where id = ?";
+        when(conn.prepareStatement(sql)).thenReturn(pstmt);
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, true)
+                .thenReturn(true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, DUMMY_USER_ROW_MAPPER))
+                .isExactlyInstanceOf(DataAccessException.class)
+                .hasMessage("결과 값이 한 개 보다 많습니다.");
     }
 
     @DisplayName("반환할 객체가 없으면 빈 리스트를 반환한다.")
@@ -83,5 +98,19 @@ class JdbcTemplateTest {
         List<DummyUser> dummyUsers = jdbcTemplate.query(sql, DUMMY_USER_ROW_MAPPER);
 
         assertThat(dummyUsers).isEmpty();
+    }
+
+    @DisplayName("2개 이상의 객체를 반환할 수 있다.")
+    @Test
+    void query() throws SQLException {
+        final var sql = "select * from users";
+        when(conn.prepareStatement(sql)).thenReturn(pstmt);
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, true)
+                .thenReturn(true, false);
+
+        List<DummyUser> dummyUsers = jdbcTemplate.query(sql, DUMMY_USER_ROW_MAPPER);
+
+        assertThat(dummyUsers).hasSize(3);
     }
 }
