@@ -43,11 +43,11 @@ public class JdbcTemplate {
         List<T> result = query(sql, rowMapper, parameters);
 
         if (result.isEmpty()) {
-            throw new RuntimeException("쿼리 결과가 존재하지 않습니다.");
+            throw new DataAccessException("쿼리 결과가 존재하지 않습니다.");
         }
 
         if (result.size() > 1) {
-            throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
+            throw new DataAccessException("쿼리 결과가 2개 이상입니다.");
         }
 
         return result.get(0);
@@ -72,7 +72,7 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
