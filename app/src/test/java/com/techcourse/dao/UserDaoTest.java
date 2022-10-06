@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.DatabasePopulatorUtils;
+import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     private User gugu;
     private User josh;
@@ -22,6 +24,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userDao = new UserDao(DataSourceConfig.getInstance());
         gugu = new User("gugu", "password", "hkkang@woowahan.com");
         josh = new User("josh", "password", "whgusrms96@gmail.com");
@@ -32,7 +35,8 @@ class UserDaoTest {
 
     @AfterEach
     void refresh() {
-        userDao.deleteAll();
+        final String sql = "DELETE FROM users";
+        jdbcTemplate.deleteAll(sql);
     }
 
     @Test

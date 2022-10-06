@@ -55,9 +55,4 @@ public class UserDao {
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         return (User)jdbcTemplate.find(User.class, sql, account);
     }
-
-    public void deleteAll() {
-        final String sql = "DELETE FROM users";
-        jdbcTemplate.deleteAll(sql);
-    }
 }
