@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,42 +30,33 @@ public class JdbcTemplate {
                 throw new DataAccessException("SQL의 파라미터 클래스 타입이 맞지 않습니다.");
             }
         }
-        for (int i = 0; i < totalParamCount; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
-        }
     }
 
-    public List<List<Object>> executeQuery(String sql, Object... params) {
+    public <T> List<T> executeQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
         try (Connection conn = dataSource.getConnection()) {
              PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             validateParams(pstmt, params);
 
-            return generateResultList(sql, pstmt);
-        } catch (SQLException | DataAccessException e) {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+
+            return generateResultList(sql, pstmt, jdbcMapper);
+        } catch (SQLException | DataAccessException | InvocationTargetException | NoSuchMethodException |
+                 InstantiationException | IllegalAccessException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private List<List<Object>> generateResultList(String sql, PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> generateResultList(String sql, PreparedStatement pstmt, JdbcMapper<T> jdbcMapper)
+            throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         if (sql.toLowerCase().startsWith("select")) {
-            List<List<Object>> res = new ArrayList<>();
             ResultSet resultSet = pstmt.executeQuery();
-            addObjectToResultList(res, resultSet);
-            return res;
+            return jdbcMapper.mapRow(resultSet);
         }
         pstmt.executeUpdate();
         return null;
-    }
-
-    private void addObjectToResultList(List<List<Object>> res, ResultSet resultSet) throws SQLException {
-        while (resultSet.next()) {
-            res.add(new ArrayList<>());
-            int columnSize = resultSet.getMetaData().getColumnCount();
-            for (int i = 0; i < columnSize; i++) {
-                res.get(res.size() - 1).add(resultSet.getObject(i + 1));
-            }
-        }
     }
 }
