@@ -21,7 +21,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        execute(sql, pstmt -> setParameters(pstmt, args).executeUpdate());
+        execute(sql, pstmt -> {
+            setParameters(pstmt, args);
+            return pstmt.executeUpdate();
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
