@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
@@ -15,10 +14,6 @@ public class UserDao {
                     rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
