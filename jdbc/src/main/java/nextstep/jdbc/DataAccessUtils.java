@@ -5,6 +5,9 @@ import java.util.Optional;
 
 public class DataAccessUtils<T> {
 
+    private DataAccessUtils() {
+    }
+
     public static <T> Optional<T> optionalSingleResult(Collection<T> results) {
         if (results.isEmpty()) {
             return Optional.empty();
