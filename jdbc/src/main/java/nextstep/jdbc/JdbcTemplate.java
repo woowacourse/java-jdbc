@@ -23,31 +23,20 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        ResultSet rs = null;
+        Executor<List<T>> executor = (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                int rowNum = 1;
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            bindParameters(pstmt, parameters);
-            rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs, rowNum));
+                }
 
-            log.debug("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-            int rowNum = 1;
-
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs, rowNum));
+                return result;
             }
+        };
 
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResultSet(rs);
-        }
+        return executeQuery(executor, sql, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -65,14 +54,22 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
+        Executor executor = (pstmt) -> {
+            pstmt.executeUpdate();
+            return null;
+        };
+
+        executeQuery(executor, sql, parameters);
+    }
+
+    private <T> T executeQuery(Executor<T> executor, String sql, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            bindParameters(pstmt, parameters);
-            pstmt.executeUpdate();
-
             log.debug("query : {}", sql);
+            bindParameters(pstmt, parameters);
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -85,13 +82,4 @@ public class JdbcTemplate {
         }
     }
 
-    private void closeResultSet(ResultSet rs) {
-        try {
-            if (rs == null) {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
