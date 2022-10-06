@@ -7,40 +7,29 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+    private static final String DEFAULT_FILE_NAME = "schema.sql";
+
+    private DatabasePopulatorUtils() {
+    }
 
     public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            var sql = readFileToString(DEFAULT_FILE_NAME);
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
+        } catch (SQLException | IOException e) {
             log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private static String readFileToString(final String fileName) throws IOException {
+        var url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
+        var file = new File(url.getFile());
+        return Files.readString(file.toPath());
+    }
 }
