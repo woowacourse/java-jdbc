@@ -1,7 +1,6 @@
 package com.techcourse;
 
 import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRegistration;
 import jakarta.servlet.ServletRegistration.Dynamic;
 import nextstep.mvc.DispatcherServlet;
 import nextstep.mvc.controller.asis.ControllerHandlerAdapter;
