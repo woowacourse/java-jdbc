@@ -24,15 +24,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(final String sql, final PreparedStatementGenerator generator,
-                          final PreparedStatementExecuteStrategy<T> strategy, final Object... parameters) {
-        validateSql(sql);
-
+    private <T> T execute(final PreparedStatementGenerator generator,
+                          final PreparedStatementExecuteStrategy<T> strategy) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = generator.generate(connection)) {
-
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
             return strategy.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -53,13 +48,15 @@ public class JdbcTemplate {
     }
 
     public Long insert(final String sql, final Object... parameters) {
-        return execute(sql,
+        validateSql(sql);
+        return execute(
                 connection -> connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS),
                 preparedStatement -> {
+                    setParameters(preparedStatement, parameters);
+                    log.debug("query : {}", sql);
                     preparedStatement.executeUpdate();
                     return getGeneratedKey(preparedStatement);
-                },
-                parameters);
+                });
     }
 
     private Long getGeneratedKey(PreparedStatement preparedStatement) throws SQLException {
@@ -71,20 +68,26 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        return execute(sql,
+        validateSql(sql);
+        return execute(
                 connection -> connection.prepareStatement(sql),
-                PreparedStatement::executeUpdate,
-                parameters);
+                preparedStatement -> {
+                    setParameters(preparedStatement, parameters);
+                    log.debug("query : {}", sql);
+                    return preparedStatement.executeUpdate();
+                });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql,
+        validateSql(sql);
+        return execute(
                 connection -> connection.prepareStatement(sql),
                 preparedStatement -> {
+                    setParameters(preparedStatement, parameters);
+                    log.debug("query : {}", sql);
                     final ResultSet resultSet = preparedStatement.executeQuery();
                     return mapResultSet(rowMapper, resultSet);
-                },
-                parameters);
+                });
     }
 
     private <T> List<T> mapResultSet(final RowMapper<T> rowMapper, final ResultSet resultSet)
