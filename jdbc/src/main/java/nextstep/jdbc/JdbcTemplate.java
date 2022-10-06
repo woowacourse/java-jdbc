@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.CollectionUtils;
 
 public class JdbcTemplate {
