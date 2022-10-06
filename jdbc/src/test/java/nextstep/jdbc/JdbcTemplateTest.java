@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.sql.ResultSet;
 import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -11,6 +12,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
+
+    private static final ObjectMapper<TestUser> OBJECT_MAPPER = (ResultSet rs) ->
+            new TestUser(rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email"));
 
     private JdbcTemplate jdbcTemplate;
 
@@ -47,9 +54,10 @@ class JdbcTemplateTest {
         Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where id = ?";
-        Object result = jdbcTemplate.find(TestUser.class, sql, id);
 
-        assertThat((TestUser) result).isEqualTo(user);
+        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, id);
+
+        assertThat(result).isEqualTo(user);
     }
 
     @DisplayName("데이터를 조회하는 finds 쿼리를 완성시켜 실행시킨다.")
@@ -60,7 +68,7 @@ class JdbcTemplateTest {
         jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where account = ?";
-        List<Object> results = jdbcTemplate.finds(TestUser.class, sql, user.getAccount());
+        List<TestUser> results = jdbcTemplate.finds(OBJECT_MAPPER, sql, user.getAccount());
 
         assertAll(
                 () -> assertThat(results.size()).isEqualTo(1),
@@ -78,8 +86,9 @@ class JdbcTemplateTest {
         sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), id);
         sql = "select id, account, password, email from users where id = ?";
-        Object result = jdbcTemplate.find(TestUser.class, sql, id);
+        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, id);
 
-        assertThat((TestUser)result).isEqualTo(user);
+        assertThat(result).isEqualTo(user);
     }
+
 }
