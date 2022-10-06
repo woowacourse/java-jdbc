@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,19 +31,14 @@ public class JdbcTemplate {
         return execute(sql, ps -> {
             getPreparedStatementSetter(parameters).setValues(ps);
             ResultSet resultSet = ps.executeQuery();
-
-            List<T> extracted = RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
-            return extracted.stream()
-                    .findFirst()
-                    .orElseThrow(DataAccessException::new);
+            return RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
         });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return execute(sql, ps -> {
             ResultSet resultSet = ps.executeQuery();
-
-            return RowMapperResultSetExtractor.extractData(resultSet, rowMapper);
+            return RowMapperResultSetExtractor.extractDataList(resultSet, rowMapper);
         });
     }
 
@@ -52,7 +48,7 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("쿼리를 실행하는 데에 문제가 발생했습니다.");
         }
     }
 
