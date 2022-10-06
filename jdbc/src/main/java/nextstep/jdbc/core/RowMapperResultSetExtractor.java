@@ -29,7 +29,7 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
         return results;
     }
 
-    private ArrayList<T> createBucket() {
+    private List<T> createBucket() {
         if (this.rowsExpected > 0) {
             return new ArrayList<>(this.rowsExpected);
         }
