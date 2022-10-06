@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,16 +74,18 @@ class JdbcTemplateTest {
         assertThat(dummyUser).isNotNull();
     }
 
-    @DisplayName("1개이상의 객체를 반환하면 null을 반환한다.")
+    @DisplayName("2개이상의 객체를 반환하면 예외가 발생한다.")
     @Test
     void queryForObjectFailure() throws SQLException {
         final var sql = "select * from users where id = ?";
         when(conn.prepareStatement(sql)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.getRow()).thenReturn(2);
-        DummyUser dummyUser = jdbcTemplate.queryForObject(sql, DUMMY_USER_ROW_MAPPER);
+        when(rs.next()).thenReturn(true, true)
+                .thenReturn(true, false);
 
-        assertThat(dummyUser).isNull();
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, DUMMY_USER_ROW_MAPPER))
+                .isExactlyInstanceOf(DataAccessException.class)
+                .hasMessage("결과 값이 한 개 보다 많습니다.");
     }
 
     @DisplayName("반환할 객체가 없으면 빈 리스트를 반환한다.")
