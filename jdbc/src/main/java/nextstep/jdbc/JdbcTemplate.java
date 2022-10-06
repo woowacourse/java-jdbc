@@ -63,7 +63,6 @@ public class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-
     private void setParameters(final PreparedStatement preparedStatement, final Object... args)
             throws SQLException {
 
