@@ -60,10 +60,10 @@ public class JdbcTemplate {
                                 final PreparedStatementSetter preparedStatementSetter) {
         final List<T> results = query(sql, rowMapper, preparedStatementSetter);
         if (results.isEmpty()) {
-            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
+            throw new DataAccessException("queryForObject는 결괏값이 1개여야 합니다.");
         }
         if (results.size() > 1) {
-            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
+            throw new DataAccessException("queryForObject는 결괏값이 1개여야 합니다.");
         }
         return results.iterator()
                 .next();
