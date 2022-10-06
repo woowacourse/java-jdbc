@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.exception.DataTypeNotSupportedException;
 
 public class ResultDataExtractor {
 
@@ -58,32 +57,19 @@ public class ResultDataExtractor {
     private static <T> List<Object> extractData(ResultSet resultSet, Constructor<T> constructor) {
         List<Object> parameters = new ArrayList<>();
 
-        final Class<?>[] parameterTypes = constructor.getParameterTypes();
-        int index = 1;
+        final int numOfParameterTypes = constructor.getParameterTypes().length;
 
-        for (Class<?> parameterType : parameterTypes) {
-            parameters.add(bindData(resultSet, parameterType, index++));
+        for (int i = 1; i <= numOfParameterTypes; i++) {
+            parameters.add(bindData(resultSet, i));
         }
-
         return parameters;
     }
 
-    private static Object bindData(ResultSet resultSet, Class<?> parameterType, int index) {
+    private static Object bindData(ResultSet resultSet, int index) {
         try {
-            if (parameterType == String.class) {
-                return resultSet.getString(index);
-            }
-
-            if (parameterType == Long.class || parameterType == long.class) {
-                return resultSet.getLong(index);
-            }
-
-            if (parameterType == Integer.class) {
-                return resultSet.getInt(index);
-            }
+            return resultSet.getObject(index);
         } catch (SQLException exception){
             throw new DataAccessException();
         }
-        throw new DataTypeNotSupportedException();
     }
 }
