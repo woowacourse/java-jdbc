@@ -39,11 +39,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id)
+                .orElseThrow(() -> new RuntimeException("[ERROR] User 가 존재하지 않습니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account)
+                .orElseThrow(() -> new RuntimeException("[ERROR] User 가 존재하지 않습니다."));
     }
 }
