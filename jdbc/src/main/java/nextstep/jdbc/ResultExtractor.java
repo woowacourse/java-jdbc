@@ -27,10 +27,13 @@ public class ResultExtractor {
                 results.add(InstanceCreator.createInstance(t, resultSet));
             }
             return results;
-        } catch (SQLException | ClassNotFoundException | NoSuchMethodException | InstantiationException |
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
                  IllegalAccessException | InvocationTargetException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
