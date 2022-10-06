@@ -25,26 +25,18 @@ public class UserDao {
 
     public void insert(final User user) throws SQLException {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        List<Object> params = new ArrayList<>();
-        params.add(user.getAccount());
-        params.add(user.getPassword());
-        params.add(user.getEmail());
-        this.jdbcTemplate.executeQuery(sql, params);
+        this.jdbcTemplate.executeQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) throws SQLException {
         String sql = "update users set password = ? where account = ?";
-        List<Object> params = new ArrayList<>();
-        params.add(user.getPassword());
-        params.add(user.getAccount());
-        this.jdbcTemplate.executeQuery(sql, params);
+        this.jdbcTemplate.executeQuery(sql, user.getPassword(), user.getAccount());
 
     }
 
     public List<User> findAll() throws SQLException {
         String sql = "select id, account, password, email from users";
-        List<Object> params = new ArrayList<>();
-        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql, params);
+        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql);
         List<User> users = new ArrayList<>();
         for (List<Object> each : results) {
             users.add(new User((Long) each.get(0), (String) each.get(1), (String) each.get(2), (String) each.get(3)));
@@ -54,9 +46,7 @@ public class UserDao {
 
     public User findById(final Long id) throws SQLException {
         String sql = "select id, account, password, email from users where id = ?";
-        List<Object> params = new ArrayList<>();
-        params.add(id);
-        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql, params);
+        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql, id);
         return new User(
                 (Long) results.get(0).get(0),
                 (String) results.get(0).get(1),
@@ -67,9 +57,7 @@ public class UserDao {
 
     public User findByAccount(final String account) throws SQLException {
         String sql = "select id, account, password, email from users where account = ?";
-        List<Object> params = new ArrayList<>();
-        params.add(account);
-        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql, params);
+        List<List<Object>> results = this.jdbcTemplate.executeQuery(sql, account);
         return new User(
                 (Long) results.get(0).get(0),
                 (String) results.get(0).get(1),

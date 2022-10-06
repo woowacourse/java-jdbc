@@ -18,23 +18,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private void validateParams(PreparedStatement preparedStatement, List<Object> params) throws SQLException {
+    private void validateParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
         ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
         int totalParamCount = parameterMetaData.getParameterCount();
-        if (totalParamCount != params.size()) {
+        if (totalParamCount != params.length) {
             throw new DataAccessException("SQL의 파라미터 갯수가 맞지 않습니다.");
         }
         for (int i = 0; i < totalParamCount; i++) {
-            if (!parameterMetaData.getParameterClassName(i + 1).equals(params.get(i).getClass().getCanonicalName())) {
+            if (!parameterMetaData.getParameterClassName(i + 1).equals(params[i].getClass().getCanonicalName())) {
                 throw new DataAccessException("SQL의 파라미터 클래스 타입이 맞지 않습니다.");
             }
         }
         for (int i = 0; i < totalParamCount; i++) {
-            preparedStatement.setObject(i + 1, params.get(i));
+            preparedStatement.setObject(i + 1, params[i]);
         }
     }
 
-    public List<List<Object>> executeQuery(String sql, List<Object> params) {
+    public List<List<Object>> executeQuery(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection()) {
              PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
