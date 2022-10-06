@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -82,11 +83,7 @@ public class TransactionalProcessor {
         if (types.length != arguments.length) {
             return false;
         }
-        for (int index = 0; index < arguments.length; index++) {
-            if (!types[index].isAssignableFrom(arguments[index].getClass())) {
-                return false;
-            }
-        }
-        return true;
+        return IntStream.range(0, arguments.length)
+                .allMatch(index -> types[index].isAssignableFrom(arguments[index].getClass()));
     }
 }
