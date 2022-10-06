@@ -23,18 +23,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return executeQueryTemplate(sql, pstmt -> {
             setArguments(pstmt, args);
-
             return executeQuery(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -43,14 +35,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        return executeQueryTemplate(sql, pstmt -> {
+            setArguments(pstmt, args);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    private <T> T executeQueryTemplate(final String sql, final QueryExecutor<T> queryExecutor) {
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            setArguments(pstmt, args);
-
-            return pstmt.executeUpdate();
+            return queryExecutor.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
