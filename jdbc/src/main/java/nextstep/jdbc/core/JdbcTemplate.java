@@ -7,7 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.ConnectionOccupationException;
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.MultipleRowException;
+import nextstep.jdbc.exception.ParameterSettingException;
 import nextstep.jdbc.support.PreparedStatementExecutor;
 import nextstep.jdbc.support.PreparedStatementSetter;
 import nextstep.jdbc.support.ResultSetExtractor;
@@ -36,7 +39,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > SINGLE_RESULT_SIZE) {
-            throw new DataAccessException("데이터가 1개 이상입니다.");
+            throw new MultipleRowException();
         }
 
         return results.iterator()
@@ -66,7 +69,7 @@ public class JdbcTemplate {
             try {
                 preparedStatement.setObject(i + 1, params[i]);
             } catch (SQLException e) {
-                throw new DataAccessException("파라미터 세팅에 실패하였습니다.");
+                throw new ParameterSettingException();
             }
         }
     }
@@ -86,7 +89,7 @@ public class JdbcTemplate {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw new DataAccessException("Connection 점유에 실패하였습니다.", e);
+            throw new ConnectionOccupationException();
         }
     }
 }
