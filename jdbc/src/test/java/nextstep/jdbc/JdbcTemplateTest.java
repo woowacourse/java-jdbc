@@ -91,6 +91,8 @@ class JdbcTemplateTest {
                 (rSet, rowNum) -> new Member(rSet.getString(1)));
 
         Mockito.verify(connection).close();
+        Mockito.verify(resultSet).close();
+        Mockito.verify(statement).close();
     }
 
     static class Member {

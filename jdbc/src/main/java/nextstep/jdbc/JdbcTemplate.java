@@ -33,31 +33,31 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... params) {
         return doExecute(sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-
-            return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
+            return processMapping(preparedStatement, rowMapper, this::mappingRowToObject);
         });
+    }
+
+    private <T> T mappingRowToObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        resultSet.next();
+        return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params) {
-
         return doExecute(sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final List<T> objects = new ArrayList<>();
-            mappingRowToObjects(rowMapper, resultSet, objects);
-
-            return objects;
+            return processMapping(preparedStatement, rowMapper, this::mappingRowToObjects);
         });
     }
 
-    private <T> void mappingRowToObjects(RowMapper<T> rowMapper, ResultSet resultSet, List<T> objects)
+    private <T> List<T> mappingRowToObjects(ResultSet resultSet, RowMapper<T> rowMapper)
             throws SQLException {
+        final List<T> objects = new ArrayList<>();
         int rowNum = 1;
         while (resultSet.next()) {
             objects.add(rowMapper.mapRow(resultSet, rowNum++));
         }
+
+        return objects;
     }
 
     private void setParamsToStatement(PreparedStatement preparedStatement, Object... params) throws SQLException {
@@ -70,6 +70,14 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T, R> R processMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper, RowMapperCallback<T, R> callback) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return callback.doInRowMapper(resultSet, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
