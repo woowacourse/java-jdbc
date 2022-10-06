@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ class JdbcTemplateTest {
         Mockito.when(preparedStatement.executeQuery())
                 .thenReturn(resultSet);
         Mockito.when(resultSet.next())
+                .thenReturn(true)
                 .thenReturn(false);
     }
 
@@ -49,14 +51,13 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         // when
-        Object target = jdbcTemplate.queryForObject("sql", testRowMapper, "name");
+        Optional<String> target = jdbcTemplate.queryForObject("sql", testRowMapper, "name");
 
         // then
         Mockito.verify(dataSource).getConnection();
         Mockito.verify(connection).prepareStatement("sql");
         Mockito.verify(preparedStatement).setObject(1, "name");
-        Mockito.verify(resultSet).next();
-        assertThat(target).isEqualTo("entity");
+        assertThat(target.get()).isEqualTo("entity");
     }
 
     @Test
@@ -67,7 +68,6 @@ class JdbcTemplateTest {
         // then
         Mockito.verify(dataSource).getConnection();
         Mockito.verify(connection).prepareStatement("sql");
-        Mockito.verify(resultSet).next();
-        assertThat(result).hasSize(0);
+        assertThat(result).hasSize(1);
     }
 }
