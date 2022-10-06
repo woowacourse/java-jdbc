@@ -14,7 +14,6 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -32,7 +31,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, statement -> {
-            preparedStatementSetter.setParams(statement, args);
+            PreparedStatementSetter.setParams(statement, args);
             return executeQuery(statement, new ResultSetExtractor<>(rowMapper));
         });
     }
@@ -44,7 +43,7 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         return execute(sql, statement -> {
-            preparedStatementSetter.setParams(statement, args);
+            PreparedStatementSetter.setParams(statement, args);
             return statement.executeUpdate();
         });
     }
