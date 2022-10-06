@@ -135,12 +135,7 @@ public class JdbcTemplate {
     private void setSqlParameters(PreparedStatement pstmt, Object... args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
-            Class<?> aClass = arg.getClass();
-            if (String.class.equals(aClass)) {
-                pstmt.setString(index++, (String) arg);
-            } else if (Long.class.equals(aClass) || Long.TYPE.equals(aClass)) {
-                pstmt.setLong(index++, (long) arg);
-            }
+            pstmt.setObject(index++, arg);
         }
     }
 
