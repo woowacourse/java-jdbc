@@ -24,29 +24,21 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return query(sql, preparedStatement -> preparedStatement.executeUpdate(), args);
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setPreparedStatementData(pstmt, args);
-            ResultSet resultSet = pstmt.executeQuery();
-            List<T> result = extractData(rowMapper, resultSet);
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
+        return extractData(rowMapper, resultSet);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
-        ResultSet resultSet = query(sql, preparedStatement -> preparedStatement.executeQuery(), args);
+        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
         List<T> results = extractData(rowMapper, resultSet);
         return getSingleResult(results);
     }
 
-    private <T> T query(String sql, PreparedStatementExecutor<T> executor, Object... args) {
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementData(pstmt, args);
