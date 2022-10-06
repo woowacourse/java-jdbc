@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T>> {
+public class RowMapperResultSetExtractor<T> {
 
     private final RowMapper<T> rowMapper;
     private final int rowsExpected;
@@ -19,7 +19,6 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
         this.rowsExpected = rowsExpected;
     }
 
-    @Override
     public List<T> extractData(ResultSet rs) throws SQLException {
         List<T> results = createBucket();
         while (rs.next()) {
