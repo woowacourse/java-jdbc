@@ -1,7 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.IllegalDataSizeException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,13 +31,25 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final String sql = "select id, account, password, email from users where account = ?";
+        when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(false);
 
-        assertDoesNotThrow(() -> jdbcTemplate.query(sql, getMockRowMapper(), "dwoo"));
+        when(resultSet.getString("username"))
+                .thenReturn("dwoo");
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        final String sql = "select username from users where id = ?";
+
+        final List<String> result = jdbcTemplate.query(sql, getMockRowMapper(), 1L);
+        assertThat(result).hasSize(1)
+                .containsExactly("dwoo");
+
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
+        verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("인자없이 query 메소드를 호출하여 예외없이 조회 결과를 반환한다.")
@@ -51,26 +64,94 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final String sql = "select id, account, password, email from users";
+        when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
 
-        assertDoesNotThrow(() -> jdbcTemplate.query(sql, getMockRowMapper()));
+        when(resultSet.getString("username"))
+                .thenReturn("dwoo")
+                .thenReturn("jung");
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        final String sql = "select username from users";
+
+        final List<String> result = jdbcTemplate.query(sql, getMockRowMapper());
+        assertThat(result).hasSize(2)
+                .containsExactly("dwoo", "jung");
+
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
+        verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("queryForObject 메소드를 호출하여 한 건의 조회를 반환할 수 있다.")
     @Test
-    void queryForObject() {
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        when(jdbcTemplate.queryForObject(any(), any(), any())).thenReturn(List.of("result"));
+    void queryForObject() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
 
-        final String sql = "select result from table where account = ?";
-        final Object result = jdbcTemplate.queryForObject(sql, getMockRowMapper(), "dwoo");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        assertThat(result.toString()).isEqualTo("[result]");
-        verify(jdbcTemplate).queryForObject(any(), any(), any());
+        when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(false);
+
+        when(resultSet.getString("username"))
+                .thenReturn("dwoo");
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        final String sql = "select username from users where id = ?";
+        final String result = jdbcTemplate.queryForObject(sql, getMockRowMapper(), 1L);
+
+        assertThat(result).isEqualTo("dwoo");
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @DisplayName("queryForObject 메소드를 호출하여 조회한 결과가 한 건 이상인 경우 예외가 발생한다.")
+    @Test
+    void queryForObjectWithMultipleData() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+
+        when(resultSet.next())
+                .thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
+
+        when(resultSet.getString("username"))
+                .thenReturn("dwoo")
+                .thenReturn("jung");
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        final String sql = "select username from users where id = ?";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getMockRowMapper(), 1L))
+                .isInstanceOf(IllegalDataSizeException.class);
+
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("updat 메소드를 호출하여 데이터를 저장할 수 있고, 저장된 row 수를 반환한다.")
@@ -85,7 +166,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = "insert into users (username, password, email) values (?, ?, ?)";
         final int updatedRowCount = jdbcTemplate.update(sql, "dwoo", "password", "email@email.com");
 
         assertThat(updatedRowCount).isEqualTo(1);
@@ -111,7 +192,7 @@ class JdbcTemplateTest {
         verify(preparedStatement).executeUpdate();
     }
 
-    private static RowMapper<Object> getMockRowMapper() {
-        return (resultSet) -> any();
+    private static RowMapper<String> getMockRowMapper() {
+        return (resultSet) -> resultSet.getString("username");
     }
 }

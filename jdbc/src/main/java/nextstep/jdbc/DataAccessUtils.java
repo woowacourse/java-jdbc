@@ -7,6 +7,9 @@ public class DataAccessUtils {
 
     private static final int ONE_DATA_SIZE = 1;
 
+    private DataAccessUtils() {
+    }
+
     public static <T> T nullableSingleResult(Collection<T> results) {
         if (results.isEmpty()) {
             return null;

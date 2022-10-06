@@ -21,18 +21,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setArgumentPreparedStatement(preparedStatement, args);
+        final Executor<List<T>> executor = preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
-
             return rowMapperResultSetExtractor.extractData(resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+
+        return executeQuery(sql, executor, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable Object... args) {
@@ -41,22 +36,18 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, @Nullable Object... args) {
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setArgumentPreparedStatement(preparedStatement, args);
-
-            return preparedStatement.executeUpdate();
-        } catch(SQLException e) {
+            PreparedStatementSetter.setValues(preparedStatement, args);
+            return queryExecutor.execute(preparedStatement);
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setArgumentPreparedStatement(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            final int parameterIndex = i + 1;
-            preparedStatement.setObject(parameterIndex, args[i]);
         }
     }
 }

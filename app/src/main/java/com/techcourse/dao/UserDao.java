@@ -34,13 +34,13 @@ public class UserDao {
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         final User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-        return Optional.of(user);
+        return Optional.ofNullable(user);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         final User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
-        return Optional.of(user);
+        return Optional.ofNullable(user);
     }
 
     private static RowMapper<User> createUserRowMapper() {

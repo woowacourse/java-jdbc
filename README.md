@@ -26,3 +26,11 @@
     - [x] INSERT 문의 경우 데이터를 새롭게 생성해 저장한다.
     - [x] UPDATE 문의 경우 데이터를 변경한다.
     - [x] PreparedStatement 의 executeUpdate() 메소드를 통해 변경된 데이터의 row 수를 반환한다.
+
+## 2단계 구현 내용 정리
+
+- [x] Statement Setting 책임 분리
+  - [x] 가변인자를 사용하도록 구현
+- [x] JdbcTemplateTest 개선
+  - [x] ResultSet도 함께 mocking 하여 구체적인 결과도 함께 테스트하도록 수정
+- [x] RowMapper 에서 제네릭을 활용
