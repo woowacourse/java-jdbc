@@ -34,21 +34,13 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final Executor<T> executor, final Object[] parameters) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement statement = conn.prepareStatement(sql)) {
-            setParameters(statement, parameters);
-
+             final PreparedStatement statement = PreparedStatementFactory.create(conn, sql, parameters)) {
             log.debug("query : {}", sql);
 
             return executor.execute(statement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            statement.setObject(i + 1, parameters[i]);
         }
     }
 
