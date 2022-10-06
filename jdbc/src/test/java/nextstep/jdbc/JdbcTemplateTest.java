@@ -46,6 +46,8 @@ class JdbcTemplateTest {
 
         verify(conn).prepareStatement(sql);
         verify(pstmt).executeUpdate();
+        verify(pstmt).close();
+        verify(conn).close();
     }
 
     @Test
@@ -61,6 +63,9 @@ class JdbcTemplateTest {
         verify(conn).prepareStatement(sql);
         verify(pstmt).executeQuery();
         assertThat(actualObject).isEqualTo(expectedObject);
+        verify(resultSet).close();
+        verify(pstmt).close();
+        verify(conn).close();
     }
 
     @Test
@@ -74,6 +79,9 @@ class JdbcTemplateTest {
         final List<Data> actualObjects = jdbcTemplate.query(sql, rowMapper);
 
         verify(conn).prepareStatement(sql);
+        verify(resultSet).close();
+        verify(pstmt).close();
+        verify(conn).close();
         assertThat(actualObjects).isEqualTo(expectedObjects);
     }
 
