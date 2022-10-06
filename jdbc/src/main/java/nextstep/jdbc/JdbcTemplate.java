@@ -36,15 +36,11 @@ public class JdbcTemplate {
 
     private <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
                                         final PreparedStatement preparedStatement) {
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            throw new RuntimeException("결과가 존재하지 않습니다.");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        List<T> queryResults = executeGetListQuery(rowMapper, preparedStatement);
+        if (queryResults.size() != 1) {
+            throw new DataAccessException("결과가 1개가 아닙니다.");
         }
+        return queryResults.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
