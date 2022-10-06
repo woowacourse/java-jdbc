@@ -3,21 +3,27 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 
 import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("TRUNCATE TABLE users");
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
