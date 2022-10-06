@@ -20,12 +20,12 @@ public class JdbcTemplate {
         return connector.execute(sql, new UpdateExecutor(), parameters);
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         log.debug("query : {}", sql);
         return forObject(connector.execute(sql, new FindExecutor<>(rowMapper), parameters));
     }
 
-    public <T> List<T> queryForList(final String sql, RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         log.debug("query : {}", sql);
         return connector.execute(sql,new FindExecutor<>(rowMapper), parameters);
     }
