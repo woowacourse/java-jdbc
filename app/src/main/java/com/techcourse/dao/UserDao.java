@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.techcourse.support.UserRowMapper;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -47,5 +48,10 @@ public class UserDao {
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ? LIMIT 1";
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+    }
+
+    public void update(final Connection connection, final User user) {
+        String sql = "UPDATE users SET password = ? WHERE id = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
     }
 }
