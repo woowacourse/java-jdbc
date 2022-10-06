@@ -19,7 +19,35 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private void validateParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
+    public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = injectParams(conn.prepareStatement(sql), params);
+             ResultSet resultSet = pstmt.executeQuery()) {
+
+            log.debug("query : {}", sql);
+            return jdbcMapper.mapRow(resultSet);
+
+        } catch (SQLException | DataAccessException | InvocationTargetException | NoSuchMethodException |
+                 InstantiationException | IllegalAccessException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void nonSelectQuery(String sql, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = injectParams(conn.prepareStatement(sql), params)) {
+
+            log.debug("query : {}", sql);
+            pstmt.executeUpdate();
+
+        } catch (SQLException | DataAccessException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PreparedStatement injectParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
         ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
         int totalParamCount = parameterMetaData.getParameterCount();
         if (totalParamCount != params.length) {
@@ -30,33 +58,9 @@ public class JdbcTemplate {
                 throw new DataAccessException("SQL의 파라미터 클래스 타입이 맞지 않습니다.");
             }
         }
-    }
-
-    public <T> List<T> executeQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection()) {
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-            log.debug("query : {}", sql);
-            validateParams(pstmt, params);
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-
-            return generateResultList(sql, pstmt, jdbcMapper);
-        } catch (SQLException | DataAccessException | InvocationTargetException | NoSuchMethodException |
-                 InstantiationException | IllegalAccessException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        for (int i = 0; i < totalParamCount; i++) {
+            preparedStatement.setObject(i + 1, params[i]);
         }
-    }
-
-    private <T> List<T> generateResultList(String sql, PreparedStatement pstmt, JdbcMapper<T> jdbcMapper)
-            throws SQLException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        if (sql.toLowerCase().startsWith("select")) {
-            ResultSet resultSet = pstmt.executeQuery();
-            return jdbcMapper.mapRow(resultSet);
-        }
-        pstmt.executeUpdate();
-        return null;
+        return preparedStatement;
     }
 }

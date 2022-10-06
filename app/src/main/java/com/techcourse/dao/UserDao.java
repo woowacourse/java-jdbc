@@ -27,34 +27,34 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) throws SQLException {
+    public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        this.jdbcTemplate.executeQuery(sql, userMapper, user.getAccount(), user.getPassword(), user.getEmail());
+        this.jdbcTemplate.nonSelectQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) throws SQLException {
+    public void update(final User user) {
         String sql = "update users set password = ? where account = ?";
-        this.jdbcTemplate.executeQuery(sql, userMapper, user.getPassword(), user.getAccount());
+        this.jdbcTemplate.nonSelectQuery(sql, user.getPassword(), user.getAccount());
 
     }
 
-    public List<User> findAll() throws SQLException {
+    public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return this.jdbcTemplate.executeQuery(sql, userMapper);
+        return this.jdbcTemplate.selectQuery(sql, userMapper);
     }
 
-    public User findById(final Long id) throws SQLException {
+    public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        List<User> users = this.jdbcTemplate.executeQuery(sql, userMapper, id);
+        List<User> users = this.jdbcTemplate.selectQuery(sql, userMapper, id);
         if (users.isEmpty()) {
             return null;
         }
         return users.get(0);
     }
 
-    public User findByAccount(final String account) throws SQLException {
+    public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        List<User> users = this.jdbcTemplate.executeQuery(sql, userMapper, account);
+        List<User> users = this.jdbcTemplate.selectQuery(sql, userMapper, account);
         if (users.isEmpty()) {
             return null;
         }
