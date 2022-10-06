@@ -16,9 +16,9 @@
 - checked vs unchecked exception
 
 ### 제공해야 하는 라이브러리 기능
-  - [ ] Connection 생성
-  - [ ] Statement 준비 및 실행
-  - [ ] ResultSet 생성
-  - [ ] 예외 처리
-  - [ ] 트랜잭션 관리
-  - [ ] Connection, Statement, ResultSet 객체 close
+  - [X] Connection 생성
+  - [X] Statement 준비 및 실행
+  - [X] ResultSet 생성
+  - [X] 예외 처리
+  - [X] Connection, Statement, ResultSet 객체 close
+  - [ ] 트랜잭션 관리 (3단계)
