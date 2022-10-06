@@ -23,8 +23,9 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, @Nullable final Object... args) {
-        try (final Connection conn = dataSource.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             setArguments(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -36,23 +37,26 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         Assert.notNull(sql, "SQL must not be null");
 
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             ResultSet rs = pstmt.executeQuery();
-
             return DataAccessUtils.listResult(rowMapper, rs);
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             setArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             return DataAccessUtils.objectResult(rowMapper, rs);
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
