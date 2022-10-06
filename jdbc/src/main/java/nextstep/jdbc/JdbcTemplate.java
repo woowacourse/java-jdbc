@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 
 public class JdbcTemplate {
@@ -24,14 +23,15 @@ public class JdbcTemplate {
         return (List<T>) result;
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         Object result = jdbcResourceHandler.handle(
                 sql, preparedStatement -> extractResult(preparedStatement, rowMapper), parameters
         );
 
         List<T> result1 = (List<T>) result;
         return result1.stream()
-                .findAny();
+                .findAny()
+                .orElseThrow(() -> new DataAccessException("not found object of query: " + sql));
     }
 
     private <T> List<T> extractResult(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
