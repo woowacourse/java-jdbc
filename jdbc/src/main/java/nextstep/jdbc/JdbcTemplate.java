@@ -14,6 +14,11 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final PreparedStatementSetter preparedStatementSetter = (pstmt, args) -> {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    };
 
     private final DataSource dataSource;
 
@@ -23,14 +28,14 @@ public class JdbcTemplate {
 
     public void executeUpdate(String sql, Object... args) {
         execute(sql, pstmt -> {
-            setObject(pstmt, args);
+            preparedStatementSetter.setValues(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
-            setObject(pstmt, args);
+            preparedStatementSetter.setValues(pstmt, args);
             ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -39,7 +44,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return execute(sql, pstmt -> {
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
@@ -59,12 +64,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setObject(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
