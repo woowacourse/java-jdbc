@@ -37,7 +37,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(statement);
 
-        jdbcTemplate.update("sql", new Parameters());
+        jdbcTemplate.update("sql");
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(any());
@@ -54,7 +54,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
 
-        Object result = jdbcTemplate.queryForObject("sql", new Parameters(), ROW_MAPPER);
+        Object result = jdbcTemplate.queryForObject("sql", ROW_MAPPER);
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(any());
@@ -74,7 +74,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject("sql", new Parameters(), ROW_MAPPER))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("sql", ROW_MAPPER))
                 .isExactlyInstanceOf(IllegalStateException.class);
     }
 
@@ -89,7 +89,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
 
-        List<Object> result = jdbcTemplate.query("sql", new Parameters(), ROW_MAPPER);
+        List<Object> result = jdbcTemplate.query("sql", ROW_MAPPER);
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(any());
@@ -109,7 +109,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<Object> result = jdbcTemplate.query("sql", new Parameters(), ROW_MAPPER);
+        List<Object> result = jdbcTemplate.query("sql", ROW_MAPPER);
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(any());

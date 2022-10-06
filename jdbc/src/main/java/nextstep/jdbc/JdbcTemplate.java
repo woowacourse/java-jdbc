@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Parameters parameters) {
+    public void update(final String sql, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -32,7 +32,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final Parameters parameters, final RowMapper<T> rowMapper) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -56,7 +56,7 @@ public class JdbcTemplate {
         throw new IllegalStateException();
     }
 
-    public <T> List<T> query(final String sql, final Parameters parameters, final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -81,9 +81,9 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameter(final PreparedStatement statement, final Parameters parameters) throws SQLException {
+    private void setParameter(final PreparedStatement statement, final Object... parameters) throws SQLException {
         int index = 1;
-        for (Object parameter : parameters.getParameters()) {
+        for (Object parameter : parameters) {
             statement.setObject(index++, parameter);
         }
     }
