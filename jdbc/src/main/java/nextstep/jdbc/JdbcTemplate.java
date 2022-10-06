@@ -50,20 +50,6 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> ArrayList<T> executeGetListQuery(final RowMapper<T> rowMapper,
-                                                 final PreparedStatement preparedStatement) {
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            ArrayList<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
     private  <T> T connect(final String sql, final Executor<T> executor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -79,5 +65,23 @@ public class JdbcTemplate {
         for (int idx = 0; idx < args.length; idx++) {
             preparedStatement.setObject(idx + 1, args[idx]);
         }
+    }
+
+    private <T> List<T> executeGetListQuery(final RowMapper<T> rowMapper,
+                                                 final PreparedStatement preparedStatement) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getQueryResults(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> List<T> getQueryResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 }
