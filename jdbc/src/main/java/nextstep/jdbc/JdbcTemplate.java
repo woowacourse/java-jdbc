@@ -25,10 +25,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             PreparedStatementSetter.setValues(preparedStatement, args);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
-
-            return rowMapperResultSetExtractor.extractData(resultSet);
+            return new QueryExecutor<>(rowMapper).execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -45,11 +42,38 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             PreparedStatementSetter.setValues(preparedStatement, args);
-
-            return preparedStatement.executeUpdate();
+            return new UpdateExecutor().execute(preparedStatement);
         } catch(SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    interface Executor<T> {
+        T execute(PreparedStatement preparedStatement) throws SQLException;
+    }
+
+    class QueryExecutor<T> implements Executor<List<T>> {
+
+        private RowMapper<T> rowMapper;
+
+        public QueryExecutor(final RowMapper<T> rowMapper) {
+            this.rowMapper = rowMapper;
+        }
+
+        @Override
+        public List<T> execute(final PreparedStatement preparedStatement) throws SQLException {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            final RowMapperResultSetExtractor<T> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+            return rowMapperResultSetExtractor.extractData(resultSet);
+        }
+    }
+
+    class UpdateExecutor implements Executor<Integer> {
+
+        @Override
+        public Integer execute(final PreparedStatement preparedStatement) throws SQLException {
+            return preparedStatement.executeUpdate();
         }
     }
 }
