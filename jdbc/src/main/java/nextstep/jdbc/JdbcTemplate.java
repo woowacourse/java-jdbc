@@ -29,9 +29,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            final ResultSet resultSet = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
+            final ResultSet resultSet = setParamsAndExecuteQuery(pstmt, args);
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
@@ -39,11 +38,9 @@ public class JdbcTemplate {
         });
     }
 
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            final ResultSet resultSet = pstmt.executeQuery();
+            final ResultSet resultSet = setParamsAndExecuteQuery(pstmt, args);
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
@@ -61,13 +58,18 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement setParameters(final PreparedStatement preparedStatement, final Object... args)
+    private ResultSet setParamsAndExecuteQuery(PreparedStatement pstmt, Object[] args) throws SQLException {
+        setParameters(pstmt, args);
+        return pstmt.executeQuery();
+    }
+
+
+    private void setParameters(final PreparedStatement preparedStatement, final Object... args)
             throws SQLException {
 
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
-        return preparedStatement;
     }
 
 }
