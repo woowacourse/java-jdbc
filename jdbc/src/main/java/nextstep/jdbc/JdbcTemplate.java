@@ -31,7 +31,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, rowMapper, args);
-        return extractOne(sql, result);
+        return extractOne(result);
     }
 
     public int update(final String sql, final Object... args) {
@@ -78,12 +78,12 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T extractOne(final String sql, final List<T> result) {
+    private <T> T extractOne(final List<T> result) {
         if (result.isEmpty()) {
-            throw new DataAccessException(String.format("조회 결과가 없습니다. [%s]", sql));
+            throw new DataAccessException("조회 결과가 없습니다.");
         }
         if (result.size() > 1) {
-            throw new DataAccessException(String.format("조회 결과가 1개 이상입니다. [%s]", sql));
+            throw new DataAccessException("조회 결과가 1개 이상입니다.");
         }
         return result.get(0);
     }
