@@ -59,7 +59,7 @@ class UserDaoTest {
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
+        final var account = "gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
