@@ -25,10 +25,16 @@ public class JdbcTemplate {
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             setParameters(pstmt, args);
-            final ResultSet resultSet = pstmt.executeQuery();
-
-            return ResultDataExtractor.extractData(resultSet, clazz);
+            return executeQuery(clazz, pstmt);
         } catch (Exception exception) {
+            throw new DataAccessException();
+        }
+    }
+
+    private <T> List<T> executeQuery(Class<T> clazz, PreparedStatement pstmt) {
+        try (final ResultSet resultSet = pstmt.executeQuery()){
+            return ResultDataExtractor.extractData(resultSet, clazz);
+        }catch (SQLException exception){
             throw new DataAccessException();
         }
     }
@@ -38,10 +44,16 @@ public class JdbcTemplate {
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             setParameters(pstmt, args);
-            final ResultSet resultSet = pstmt.executeQuery();
-
-            return ResultDataExtractor.extractSingleData(resultSet, clazz);
+            return executeQueryForObject(clazz, pstmt);
         } catch (Exception exception) {
+            throw new DataAccessException();
+        }
+    }
+
+    private <T> T executeQueryForObject(Class<T> clazz, PreparedStatement pstmt) {
+        try (final ResultSet resultSet = pstmt.executeQuery()){
+            return ResultDataExtractor.extractSingleData(resultSet, clazz);
+        }catch (SQLException exception){
             throw new DataAccessException();
         }
     }
