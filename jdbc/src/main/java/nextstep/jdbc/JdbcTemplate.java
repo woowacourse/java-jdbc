@@ -1,9 +1,16 @@
 package nextstep.jdbc;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.SQLAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import org.springframework.jdbc.core.RowMapper;
 
 public class JdbcTemplate {
 
@@ -13,5 +20,67 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, args);
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+        return queryList(sql, rowMapper);
+    }
+
+    private <T> T execute(String sql, ExecuteStrategy<T> strategy, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            putArguments(pstmt, args);
+            return strategy.execute(pstmt);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLAccessException();
+        }
+    }
+
+    private <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            putArguments(pstmt, args);
+
+            ResultSet resultSet = pstmt.executeQuery();
+            List<T> result = new ArrayList<>();
+            for (int i = 0; resultSet.next(); i++) {
+                result.add(rowMapper.mapRow(resultSet, i));
+            }
+            return result.get(0);
+        } catch (SQLException | IndexOutOfBoundsException e) {
+            e.printStackTrace();
+            throw new SQLAccessException();
+        }
+    }
+
+    private <T> List<T> queryList(String sql, RowMapper<T> rowMapper) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            ResultSet resultSet = pstmt.executeQuery();
+            List<T> result = new ArrayList<>();
+            for (int i = 0; resultSet.next(); i++) {
+                result.add(rowMapper.mapRow(resultSet, i));
+            }
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLAccessException();
+        }
+    }
+
+    private void putArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
     }
 }
