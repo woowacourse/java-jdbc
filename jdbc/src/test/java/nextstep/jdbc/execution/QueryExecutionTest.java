@@ -29,12 +29,11 @@ class QueryExecutionTest {
         // given
         Execution<List<Member>> execution = new QueryExecution<>(
                 "select * from member where name = ?",
-                new Object[]{"hi"},
                 (resultSet, rowNum) -> new Member(
                         resultSet.getLong("id"),
                         resultSet.getString("name"),
                         resultSet.getInt("age")
-                )
+                ), new Object[]{"hi"}
         );
 
         Connection connection = DataSourceUtils.getConnection(dataSource);

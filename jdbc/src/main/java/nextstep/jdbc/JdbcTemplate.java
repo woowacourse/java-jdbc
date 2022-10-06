@@ -20,11 +20,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return connector.execute(new QueryExecution<>(sql, null, rowMapper));
+        return connector.execute(new QueryExecution<>(sql, rowMapper));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        List<T> results = connector.execute(new QueryExecution<>(sql, arguments, rowMapper));
+        List<T> results = connector.execute(new QueryExecution<>(sql, rowMapper, arguments));
         if (results.size() != 1) {
             throw new DataAccessException("The result of query isn't single. count : " + results.size());
         }

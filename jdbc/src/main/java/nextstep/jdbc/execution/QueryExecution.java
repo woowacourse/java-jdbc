@@ -11,13 +11,13 @@ import nextstep.jdbc.execution.support.ArgumentsSetter;
 public class QueryExecution<T> implements Execution<List<T>> {
 
     private final String sql;
-    private final Object[] arguments;
     private final RowMapper<T> rowMapper;
+    private final Object[] arguments;
 
-    public QueryExecution(String sql, Object[] arguments, RowMapper<T> rowMapper) {
+    public QueryExecution(String sql, RowMapper<T> rowMapper, Object... arguments) {
         this.sql = sql;
-        this.arguments = arguments;
         this.rowMapper = rowMapper;
+        this.arguments = arguments;
     }
 
     @Override
