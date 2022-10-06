@@ -36,6 +36,6 @@ public class JdbcTemplate {
     }
 
     public Integer executeUpdate(final String sql, final Object... args) {
-        return jdbcExecutor.updateOrThrow(sql, PreparedStatement::executeUpdate, args);
+        return jdbcExecutor.executeOrThrow(sql, PreparedStatement::executeUpdate, args);
     }
 }

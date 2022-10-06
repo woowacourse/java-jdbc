@@ -19,7 +19,7 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T updateOrThrow(final String sql, final PreparedStatementCallback<T> preparedStatementCallback, final Object... args) {
+    public <T> T executeOrThrow(final String sql, final PreparedStatementCallback<T> preparedStatementCallback, final Object... args) {
         try {
             return preparedStatementCallback.execute(getStatement(sql, args));
         } catch (SQLException e) {
