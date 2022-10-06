@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
-import java.sql.DataTruncation;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
