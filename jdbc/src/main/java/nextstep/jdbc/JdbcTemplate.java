@@ -15,7 +15,7 @@ public class JdbcTemplate {
         this.connector = new JdbcConnector(dataSource);
     }
 
-    public void update(String sql, Object[] arguments) {
+    public void update(String sql, Object... arguments) {
         connector.execute(new UpdateExecution(sql, arguments));
     }
 
@@ -23,7 +23,7 @@ public class JdbcTemplate {
         return connector.execute(new QueryExecution<>(sql, null, rowMapper));
     }
 
-    public <T> T queryForObject(String sql, Object[] arguments, RowMapper<T> rowMapper) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
         List<T> results = connector.execute(new QueryExecution<>(sql, arguments, rowMapper));
         if (results.size() != 1) {
             throw new DataAccessException("The result of query isn't single. count : " + results.size());

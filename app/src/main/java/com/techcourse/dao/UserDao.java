@@ -5,8 +5,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -29,12 +27,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=? ";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
 
@@ -45,11 +43,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{id}, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{account}, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
