@@ -3,8 +3,16 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
+
+    private static final RowMapper<User> rowMapper = (resultSet -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        ));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -24,17 +32,17 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, new UserRowMapper());
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id).get();
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account).get();
     }
 
     public void deleteAll() {
