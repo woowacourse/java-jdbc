@@ -19,9 +19,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final PreparedStatementSetter pss) {
+    public int update(final String sql, final Object... args) {
         return execute(sql, ps -> {
-            pss.setValues(ps);
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
             return ps.executeUpdate();
         });
     }
