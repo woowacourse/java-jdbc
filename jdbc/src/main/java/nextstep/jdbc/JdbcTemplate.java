@@ -21,11 +21,11 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... parameters) {
-        Executable<Void> executable = preparedStatement -> {
+        StatementCallback<Void> statementCallback = preparedStatement -> {
             preparedStatement.executeUpdate();
             return null;
         };
-        executeQuery(executable, sql, parameters);
+        executeQuery(statementCallback, sql, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -38,8 +38,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Executable<List<T>> executable = preparedStatement -> {
-            try(ResultSet resultSet = preparedStatement.executeQuery()){
+        StatementCallback<List<T>> statementCallback = preparedStatement -> {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 while (resultSet.next()) {
                     result.add(rowMapper.mapRow(resultSet));
@@ -47,19 +47,19 @@ public class JdbcTemplate {
                 return result;
             }
         };
-        return executeQuery(executable, sql, parameters);
+        return executeQuery(statementCallback, sql, parameters);
     }
 
-    private  <T> T executeQuery(Executable<T> executable, String sql, Object... parameters) {
+    private <T> T executeQuery(StatementCallback<T> statementCallback, String sql, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             setParameters(preparedStatement, parameters);
             log.debug("query : {}", sql);
 
-            return executable.execute(preparedStatement);
+            return statementCallback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
