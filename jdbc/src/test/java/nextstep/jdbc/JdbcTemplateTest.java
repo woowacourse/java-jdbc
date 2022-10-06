@@ -25,6 +25,9 @@ class JdbcTemplateTest {
 
     private static final User 카더가든 = new User(1L, "차정원");
     private static final User 비비 = new User(2L, "김형서");
+    private static final String FIND_ALL_QUERY = "SELECT * FROM users";
+    private static final String FIND_BY_ID_QUERY = "SELECT * FROM users WHERE id = ?";
+    private static final String INSERT_QUERY = "INSERT INTO users (name) VALUES(?)";
 
     private JdbcTemplate jdbcTemplate;
     private DataSource dataSource;
@@ -47,8 +50,6 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.getMetaData()).willReturn(resultSetMetaData);
 
-        // 쿼리 결과 데이터가 두 개라고 가정한다
-        given(resultSet.next()).willReturn(true, true, false);
         final var fields = User.class.getDeclaredFields();
         given(resultSetMetaData.getColumnCount()).willReturn(fields.length);
         final var fieldTypeNames = Arrays.stream(fields).peek(it -> it.setAccessible(true))
@@ -57,19 +58,18 @@ class JdbcTemplateTest {
         final var firstValue = fieldTypeNames.get(0);
         final var secondValues = fieldTypeNames.subList(1, fields.length);
         secondValues.addAll(fieldTypeNames);
-        secondValues.addAll(fieldTypeNames);
         given(resultSetMetaData.getColumnClassName(anyInt())).willReturn(firstValue,
                 secondValues.toArray(String[]::new));
-        given(resultSet.getObject(anyInt(), any(Class.class))).willReturn(1L, "차정원", 2L, "김형서");
     }
 
     @Test
-    void 한_개의_엔티티를_반환한다() {
+    void 쿼리를_실행시켜_한_개의_엔티티를_반환한다() throws SQLException {
         // given
-        final var sql = "SELECT * FROM users WHERE id = ?";
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getObject(anyInt(), any(Class.class))).willReturn(1L, "차정원");
 
         // when
-        final var user = jdbcTemplate.queryForObject(sql, User.class, 1L);
+        final var user = jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, User.class, 1L);
 
         // then
         assertThat(user).usingRecursiveComparison()
@@ -77,12 +77,35 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 두_개_이상의_엔티티를_반환한다() throws SQLException {
+    void 쿼리를_실행시켜_한_개의_데이터를_찾아오는데_결과가_없는_경우_예외가_발생한다() throws SQLException {
         // given
-        final var sql = "Select * FROM users";
+        given(resultSet.next()).willReturn(false);
+
+        // when, then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, User.class))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("일치하는 데이터가 없습니다.");
+    }
+
+    @Test
+    void 쿼리를_실행시켜_한_개의_데이터를_찾아오는데_결과가_두_개_이상일_경우_예외가_발생한다() throws SQLException {
+        // given
+        given(resultSet.next()).willReturn(true, true, false);
+
+        // when, then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, User.class))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("조회 데이터 갯수가 2 입니다.");
+    }
+
+    @Test
+    void 쿼리를_실행시켜_두_개_이상의_엔티티를_반환한다() throws SQLException {
+        // given
+        given(resultSet.next()).willReturn(true, true, false);
+        given(resultSet.getObject(anyInt(), any(Class.class))).willReturn(1L, "차정원", 2L, "김형서");
 
         // when
-        final var result = jdbcTemplate.query(sql, User.class);
+        final var result = jdbcTemplate.query(FIND_ALL_QUERY, User.class);
 
         // then
         assertThat(result).usingRecursiveFieldByFieldElementComparator()
@@ -90,38 +113,25 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void DB_값을_수정한다() throws SQLException {
+    void 쿼리를_실행시켜_데이터를_수정한다() throws SQLException {
         // given
-        final var sql = "UPDATE users SET name = ? WHERE = ?";
         given(preparedStatement.executeUpdate()).willReturn(1);
 
         // when
-        jdbcTemplate.execute(sql, "안영윤", 1L);
+        jdbcTemplate.execute(INSERT_QUERY, "안영윤");
 
         // then
         assertAll(
-                () -> verify(connection).prepareStatement("UPDATE users SET name = '안영윤' WHERE = 1"),
+                () -> verify(connection).prepareStatement(INSERT_QUERY),
                 () -> verify(preparedStatement).executeUpdate()
         );
     }
 
-    @Test
-    void 수정에_실패할_경우_예외_발생() throws SQLException {
-        // given
-        final var sql = "UPDATE users SET name = ? WHERE = ?";
-        given(preparedStatement.executeUpdate()).willReturn(0);
-
-        // when, then
-        assertThatThrownBy(() -> jdbcTemplate.execute(sql, "안영윤", 1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("적용되지 않았습니다");
-    }
-
-    public static class User {
+    private static class User {
         private Long id;
         private String name;
 
-        public User(final Long id, final String name) {
+        private User(final Long id, final String name) {
             this.id = id;
             this.name = name;
         }
