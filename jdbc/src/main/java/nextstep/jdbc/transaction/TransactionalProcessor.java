@@ -74,7 +74,7 @@ public class TransactionalProcessor {
                 .filter(constructor -> isAssignable(constructor, arguments))
                 .findAny()
                 .map(Constructor::getParameterTypes)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("fails to find appropriate constructor"));
         return enhancer.create(parameters, arguments);
     }
 
