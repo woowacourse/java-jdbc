@@ -3,12 +3,18 @@ package nextstep.jdbc.core;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +24,79 @@ class JdbcTemplateTest {
             resultSet.getLong("id"),
             resultSet.getString("account")
     );
+
+    @DisplayName("queryForObject 메서드 실행 시 자원이 정상적으로 해제되는지 확인한다.")
+    @Test
+    void queryForObject_메서드_실행_시_자원이_정상적으로_해제되는지_확인한다() throws SQLException {
+        // given
+        var dataSource = mock(DataSource.class);
+        var jdbcTemplate = new JdbcTemplate(dataSource);
+
+        var connection = mock(Connection.class);
+        var preparedStatement = mock(PreparedStatement.class);
+        var resultSet = mock(ResultSet.class);
+
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(any())).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+
+        var id = 1L;
+        var account = "mat";
+
+        given(resultSet.getLong("id")).willReturn(id);
+        given(resultSet.getString("account")).willReturn(account);
+        given(resultSet.next()).willReturn( true, false);
+
+        // when
+        jdbcTemplate.queryForObject(
+                "SELECT id FROM dummy WHERE id = ? AND account = ?", DUMMY_ROW_MAPPER, id, account);
+
+        // then
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @DisplayName("update 메서드 실행 시 자원이 정상적으로 해제되는지 확인한다.")
+    @Test
+    void update_메서드_실행_시_자원이_정상적으로_해제되는지_확인한다() throws SQLException {
+        // given
+        var dataSource = mock(DataSource.class);
+        var jdbcTemplate = new JdbcTemplate(dataSource);
+
+        var connection = mock(Connection.class);
+        var preparedStatement = mock(PreparedStatement.class);
+
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(any())).willReturn(preparedStatement);
+
+        // when
+        jdbcTemplate.update("UPDATE dummy SET account = ? WHERE id = ?", "pat", 1L);
+
+        // then
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @DisplayName("execute 메서드 실행 시 자원이 정상적으로 해제되는지 확인한다.")
+    @Test
+    void execute_메서드_실행_시_자원이_정상적으로_해제되는지_확인한다() throws SQLException {
+        // given
+        var dataSource = mock(DataSource.class);
+        var jdbcTemplate = new JdbcTemplate(dataSource);
+
+        var connection = mock(Connection.class);
+        var preparedStatement = mock(PreparedStatement.class);
+
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(any())).willReturn(preparedStatement);
+
+        // when
+        jdbcTemplate.execute("DELETE FROM dummy");
+
+        // then
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
 
     @DisplayName("sql문과 RowMapper 구현체를 전달하면 List가 반환된다.")
     @Test
@@ -50,7 +129,7 @@ class JdbcTemplateTest {
         var actual = jdbcTemplate.queryForObject(sql, DUMMY_ROW_MAPPER, 1L);
 
         // then
-        Assertions.assertAll(() -> {
+        assertAll(() -> {
             assertThat(actual.getId()).isEqualTo(1L);
             assertThat(actual.getAccount()).isEqualTo("릭");
         });
