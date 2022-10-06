@@ -8,9 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.util.CollectionUtils;
 
 public class JdbcTemplate {
 
@@ -64,11 +61,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (CollectionUtils.isEmpty(results)) {
-            throw new EmptyResultDataAccessException(1);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }
         if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }
         return results.iterator()
                 .next();
