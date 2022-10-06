@@ -49,9 +49,4 @@ public class UserDao {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ? LIMIT 1";
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
-
-    public void update(final Connection connection, final User user) {
-        String sql = "UPDATE users SET password = ? WHERE id = ?";
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
-    }
 }

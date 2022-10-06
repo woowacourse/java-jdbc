@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.ImpossibleSQLExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -33,7 +34,7 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         log.debug("query : {}", sql);
-        return execute(sql,new FindExecutor<>(rowMapper), parameters);
+        return execute(sql, new FindExecutor<>(rowMapper), parameters);
     }
 
     private <T> T forObject(final List<T> results) {
@@ -42,8 +43,9 @@ public class JdbcTemplate {
 
 
     private <T> T execute(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try {
+            Connection connection = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
             PreparedStatementStarter preparedStatementStarter = new SimplePreparedStatementStarter(preparedStatement);
             preparedStatementStarter.setParameters(parameters);
 
@@ -51,21 +53,5 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new ImpossibleSQLExecutionException();
         }
-    }
-
-    private <T> T execute(final Connection connection, final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            PreparedStatementStarter preparedStatementStarter = new SimplePreparedStatementStarter(preparedStatement);
-            preparedStatementStarter.setParameters(parameters);
-
-            return queryExecutor.executePreparedStatement(preparedStatementStarter);
-        } catch (SQLException e) {
-            throw new ImpossibleSQLExecutionException();
-        }
-    }
-
-    public Integer update(final Connection connection, final String sql, final Object... parameters) {
-        log.debug("query : {}", sql);
-        return execute(connection, sql, new UpdateExecutor(), parameters);
     }
 }
