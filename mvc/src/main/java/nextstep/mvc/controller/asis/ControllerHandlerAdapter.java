@@ -15,7 +15,7 @@ public class ControllerHandlerAdapter implements HandlerAdapter {
 
     @Override
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
-        final var forwardView = ((Controller) handler).execute(request, response);
+        final String forwardView = ((Controller) handler).execute(request, response);
         return new ModelAndView(new JspView(forwardView));
     }
 }

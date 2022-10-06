@@ -21,14 +21,14 @@ public class ControllerScanner {
     }
 
     public Map<Class<?>, Object> getControllers() {
-        final var preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
+        final Set<Class<?>> preInitiatedControllers = reflections.getTypesAnnotatedWith(Controller.class);
         return instantiateControllers(preInitiatedControllers);
     }
 
     Map<Class<?>, Object> instantiateControllers(final Set<Class<?>> preInitiatedControllers) {
-        final var controllers = new HashMap<Class<?>, Object>();
+        final HashMap<Class<?>, Object> controllers = new HashMap<>();
         try {
-            for (final var clazz : preInitiatedControllers) {
+            for (final Class<?> clazz : preInitiatedControllers) {
                 controllers.put(clazz, clazz.getDeclaredConstructor().newInstance());
             }
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {

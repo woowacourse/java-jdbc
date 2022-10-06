@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +20,9 @@ public class DatabasePopulatorUtils {
         Connection connection = null;
         Statement statement = null;
         try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+            final File file = new File(url.getFile());
+            final String sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);

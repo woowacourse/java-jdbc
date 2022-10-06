@@ -4,7 +4,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Optional;
 import nextstep.mvc.view.ModelAndView;
+import nextstep.mvc.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +42,13 @@ public class DispatcherServlet extends HttpServlet {
         log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
 
         try {
-            final var handler = handlerMappingRegistry.getHandler(request);
+            final Optional<Object> handler = handlerMappingRegistry.getHandler(request);
             if (!handler.isPresent()) {
                 response.setStatus(404);
                 return;
             }
 
-            final var modelAndView = handlerExecutor.handle(request, response, handler.get());
+            final ModelAndView modelAndView = handlerExecutor.handle(request, response, handler.get());
             render(modelAndView, request, response);
         } catch (Throwable e) {
             log.error("Exception : {}", e.getMessage(), e);
@@ -55,7 +57,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        final var view = modelAndView.getView();
+        final View view = modelAndView.getView();
         view.render(modelAndView.getModel(), request, response);
     }
 }

@@ -25,7 +25,7 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;

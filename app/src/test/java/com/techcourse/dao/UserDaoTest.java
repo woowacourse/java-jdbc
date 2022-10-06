@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import java.util.List;
 import nextstep.jdbc.DatabasePopulatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,7 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
+        final List<User> users = userDao.findAll();
 
         assertAll(
                 () -> assertThat(users.size()).isEqualTo(2),
@@ -47,39 +48,39 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(gugu.getId());
+        final User user = userDao.findById(gugu.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final String account = "gugu";
+        final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        final String account = "insert-gugu";
+        final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(user.getId());
+        final User actual = userDao.findById(user.getId());
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(gugu.getId());
+        final String newPassword = "password99";
+        final User user = userDao.findById(gugu.getId());
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(gugu.getId());
+        final User actual = userDao.findById(gugu.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
