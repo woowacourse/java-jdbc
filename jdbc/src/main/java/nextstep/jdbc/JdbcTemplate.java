@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
+import java.sql.DataTruncation;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,8 +39,16 @@ public class JdbcTemplate {
     }
 
     private <T> T mappingRowToObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
-        resultSet.next();
-        return rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
+        if (!resultSet.next()) {
+            throw new DataAccessException("매칭되는 결과값이 없습니다.");
+        }
+
+        final T mappingObject = rowMapper.mapRow(resultSet, ONE_OBJECT_ROW_NUM);
+        if (resultSet.next()) {
+            throw new DataAccessException("행이 여러개가 있습니다.");
+        }
+
+        return mappingObject;
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params) {
