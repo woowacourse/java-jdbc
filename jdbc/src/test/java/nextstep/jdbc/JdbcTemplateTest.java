@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 
-class   JdbcTemplateTest {
+class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
 
