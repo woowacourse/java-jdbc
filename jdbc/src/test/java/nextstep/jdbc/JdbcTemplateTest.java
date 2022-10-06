@@ -15,7 +15,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 class JdbcTemplateTest {
 
@@ -40,7 +39,11 @@ class JdbcTemplateTest {
     @DisplayName("connection, preparedStatement를 사용하고 close한다.")
     @Test
     void checkResourceClosed() throws SQLException {
-        jdbcTemplate.update("UPDATE users SET password = ? WHERE account = ?", "1234", "gugu");
+        jdbcTemplate.update("UPDATE users SET password = ? WHERE account = ?",
+                ps -> {
+                    ps.setObject(1, "1234");
+                    ps.setObject(2, "gugu");
+                });
 
         verify(connection).close();
         verify(preparedStatement).close();
@@ -52,7 +55,11 @@ class JdbcTemplateTest {
         given(preparedStatement.executeUpdate()).willReturn(1);
 
         int result = jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
-                "gugu", "1234", "gugu@email.com");
+                ps -> {
+                    ps.setObject(1, "gugu");
+                    ps.setObject(2, "1234");
+                    ps.setObject(3, "gugu@email.com");
+                });
 
         verify(preparedStatement).executeUpdate();
         assertThat(result).isOne();
@@ -64,7 +71,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
 
         jdbcTemplate.query("SELECT id, account, password, email FROM users WHERE id = ?",
-                (rs, rowNum) -> any(), 1L);
+                (rs, rowNum) -> any(), ps -> ps.setObject(1, 1L));
 
         verify(preparedStatement).executeQuery();
     }
@@ -76,7 +83,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() ->
                 jdbcTemplate.queryForObject("SELECT id, account, password, email FROM users WHERE id = ?",
-                        (rs, rowNum) -> any(), 1L))
-                .isInstanceOf(EmptyResultDataAccessException.class);
+                        (rs, rowNum) -> any(), ps -> ps.setObject(1, 1L)))
+                .isInstanceOf(DataAccessException.class);
     }
 }

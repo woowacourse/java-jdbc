@@ -19,28 +19,25 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, Object... args) {
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setValues(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("Execute Query Failed: " + e);
             throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }
     }
-    private void setValues(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
-        for (int idx = 0; idx < args.length; idx++) {
-            preparedStatement.setObject(idx + 1, args[idx]);
-        }
-    }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter preparedStatementSetter
+    ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setValues(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             return getResultSetData(preparedStatement, rowMapper);
         } catch (SQLException e) {
             log.error("Execute Query Failed: " + e);
@@ -59,8 +56,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter) {
+        final List<T> results = query(sql, rowMapper, preparedStatementSetter);
         if (results.isEmpty()) {
             throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }

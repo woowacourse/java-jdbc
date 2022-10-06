@@ -19,40 +19,45 @@ public class UserDao {
 
     public void save(final User user) {
         final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, ps -> {
+            ps.setObject(1, user.getAccount());
+            ps.setObject(2, user.getPassword());
+            ps.setObject(3, user.getEmail());
+        });
 
         log.debug("query : {}", sql);
     }
 
     public void update(final User user) {
         final var sql = "UPDATE users SET password = ? WHERE account = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getAccount());
+        jdbcTemplate.update(sql, ps -> {
+            ps.setObject(1, user.getPassword());
+            ps.setObject(2, user.getAccount());
+        });
 
         log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                        new User(
-                                rs.getLong("id"),
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email")
-                        )
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new User(rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")),
+                ps -> {}
         );
     }
 
     public User findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
-                        new User(
-                                rs.getLong("id"),
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email")
-                        ),
-                id);
+                new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                ), ps -> ps.setObject(1, id));
     }
 
     public User findByAccount(final String account) {
@@ -64,6 +69,6 @@ public class UserDao {
                                 rs.getString("account"),
                                 rs.getString("password"),
                                 rs.getString("email")
-                        ), account);
+                        ), ps -> ps.setObject(1, account));
     }
 }
