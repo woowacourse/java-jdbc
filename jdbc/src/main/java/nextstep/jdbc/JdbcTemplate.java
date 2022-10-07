@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.MultipleResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,7 @@ public class JdbcTemplate {
             return Optional.empty();
         }
         if (result.size() > SINGLE_COUNT) {
-            throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
+            throw new MultipleResultException();
         }
         return Optional.ofNullable(result.get(0));
     }
