@@ -125,37 +125,51 @@ class JdbcTemplateTest {
 
         @Test
         @DisplayName("일치하는 레코드를 List로 반환한다.")
-        void success() {
+        void success() throws SQLException {
             // given
-            final String insertSql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-            final String email = "admin@levellog.app";
+            final String sql = "SELECT id, account, password, email FROM users";
+            final String rickAccount = "rick";
+            final String romaAccount = "roma";
 
-            jdbcTemplate.update(insertSql, "rick", "rick123", email);
-            jdbcTemplate.update(insertSql, "roma", "roma123", email);
-
-            final String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
+            given(dataSource.getConnection()).willReturn(connection);
+            given(connection.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)).willReturn(
+                    preparedStatement);
+            given(preparedStatement.executeQuery()).willReturn(resultSet);
+            given(resultSet.getString("account")).willReturn(rickAccount, romaAccount);
+            given(resultSet.next()).willReturn(true, true, false);
 
             // when
-            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER, email);
+            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER);
 
             // then
             assertThat(actual).hasSize(2)
                     .extracting(User::getAccount)
-                    .containsExactly("rick", "roma");
+                    .containsExactly(rickAccount, romaAccount);
+            verify(resultSet, times(2)).getLong(anyString());
+            verify(resultSet, times(6)).getString(anyString());
+            verify(resultSet, times(3)).next();
         }
 
         @Test
         @DisplayName("일치하는 레코드가 존재하지 않으면 빈 리스트를 반환한다.")
-        void success_recordNotExist_emptyList() {
+        void success_recordNotExist_emptyList() throws SQLException {
             // given
-            final String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
-            final String email = "admin@levellog.app";
+            final String sql = "SELECT id, account, password, email FROM users";
+
+            given(dataSource.getConnection()).willReturn(connection);
+            given(connection.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)).willReturn(
+                    preparedStatement);
+            given(preparedStatement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next()).willReturn(false);
 
             // when
-            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER, email);
+            final List<User> actual = jdbcTemplate.query(sql, User.ROW_MAPPER);
 
             // then
             assertThat(actual).isEmpty();
+            verify(resultSet, never()).getLong(anyString());
+            verify(resultSet, never()).getString(anyString());
+            verify(resultSet, times(1)).next();
         }
     }
 }
