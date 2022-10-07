@@ -107,8 +107,7 @@ class JdbcTemplateTest {
                 () -> verify(resultSet).getLong(anyString()),
                 () -> verify(resultSet, times(3)).getString(anyString()),
                 () -> verify(statement).close(),
-                () -> verify(connection).close(),
-                () -> verify(resultSet).close()
+                () -> verify(connection).close()
         );
     }
 
