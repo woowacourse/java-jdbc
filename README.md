@@ -17,9 +17,9 @@
 
 ## 🚀 2단계 - 리팩터링
 
-- [ ] Connection 생성
-- [ ] Statement 준비 및 실행
-- [ ] ResultSet 생성
-- [ ] 예외 처리
+- [x] Connection 생성
+- [x] Statement 준비 및 실행
+- [x] ResultSet 생성
+- [x] 예외 처리
 - [ ] 트랜잭션 관리
-- [ ] Connection, Statement, ResultSet 객체 close
+- [x] Connection, Statement, ResultSet 객체 close
