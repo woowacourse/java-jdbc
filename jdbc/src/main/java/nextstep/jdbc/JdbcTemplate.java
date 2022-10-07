@@ -56,6 +56,13 @@ public class JdbcTemplate {
         });
     }
 
+    public void execute(final String sql) {
+        execute(sql, preparedStatement -> {
+            log.debug("query : {}", sql);
+            return preparedStatement.execute();
+        });
+    }
+
     private void setParameters(final PreparedStatement preparedStatement, final Object... args) {
         for (int i = 0; i < args.length; i++) {
             try {

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -68,8 +68,7 @@ class JdbcTemplateTest {
         // when, then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs ->
                 new TestUser(rs.getLong("id"), rs.getString("account")), List.of(1L, 2L)))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("하나의 데이터만 존재해야 합니다.");
+                .isInstanceOf(IncorrectResultSizeException.class);
     }
 
     @DisplayName("JdbcTemplate를 이용해 DB로부터 객체를 조회한다.")
