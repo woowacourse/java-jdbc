@@ -1,32 +1,45 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
 
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
+        var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        final String sqlTruncate = "truncate table users";
+        jdbcTemplate.update(sqlTruncate);
+        final String sqlAlter = "alter table users alter column id restart with 1";
+        jdbcTemplate.update(sqlAlter);
     }
 
     @Test
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(1);
     }
 
     @Test
@@ -44,6 +57,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
+    @Order(1)
     @Test
     void insert() {
         final var account = "insert-gugu";
