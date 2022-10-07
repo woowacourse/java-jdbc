@@ -86,7 +86,7 @@ class JdbcTemplateTest {
         final User user = jdbcTemplate.queryForObject(sql, rowMapper);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
-        verify(resultSet).next();
+        verify(resultSet, times(2)).next();
         verify(preparedStatement).executeQuery();
         verify(connection).close();
         verify(preparedStatement).close();
