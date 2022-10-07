@@ -74,6 +74,11 @@ public class JdbcTemplate {
         }
     }
 
+    public boolean execute(final String sql) {
+        return execute(sql, preparedStatement -> {
+        }, PreparedStatement::execute);
+    }
+
     private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
                           final PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (final Connection connection = getConnection();
