@@ -115,7 +115,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.getRow()).thenReturn(2);
+        when(resultSet.next()).thenReturn(true, true, false);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 

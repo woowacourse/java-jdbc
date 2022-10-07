@@ -62,14 +62,17 @@ public class JdbcTemplate {
 
     private <T> ResultSetMapper<T> resultSetMapperQueryForObject(final RowMapper<T> rowMapper) {
         return (rs) -> {
-            final int rowCount = rs.getRow();
-            if (rowCount > 1) {
+            final List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (rs.next()) {
+                rowNum += 1;
+                final T row = rowMapper.mapToRow(rs, rowNum);
+                results.add(row);
+            }
+            if (results.size() > 1) {
                 throw new DataAccessException("1개보다 많은 값이 존재합니다.");
             }
-            if (rs.next()) {
-                return rowMapper.mapToRow(rs, 1);
-            }
-            return null;
+            return results.get(0);
         };
     }
 
