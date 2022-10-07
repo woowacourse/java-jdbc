@@ -3,8 +3,6 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +28,7 @@ class JdbcTemplateTest {
     void insert() {
         // given
         final var insertQuery = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss = pstmt -> setPreparedStatement(pstmt, "gugu", "password", "hkkang@woowahan.com");
-        jdbcTemplate.update(insertQuery, pss);
+        jdbcTemplate.update(insertQuery, "gugu", "password", "hkkang@woowahan.com");
 
         // when, then
         final var selectQuery = "select id, account, password, email from users";
@@ -46,14 +43,11 @@ class JdbcTemplateTest {
     void update() {
         // given
         final var insertQuery = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss = pstmt -> setPreparedStatement(pstmt, "gugu", "password", "hkkang@woowahan.com");
-        jdbcTemplate.update(insertQuery, pss);
+        jdbcTemplate.update(insertQuery, "gugu", "password", "hkkang@woowahan.com");
 
         // when
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        final PreparedStatementSetter pss2 = pstmt -> setPreparedStatement(pstmt, "gugu", "new password", "new email@woowahan.com", 1);
-        jdbcTemplate.update(sql, pss2);
+        jdbcTemplate.update(sql, "gugu", "new password", "new email@woowahan.com", 1);
 
         // then
         final var selectQuery = "select id, account, password, email from users";
@@ -69,13 +63,11 @@ class JdbcTemplateTest {
     void queryForObject() {
         // given
         final var insertQuery = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss = pstmt -> setPreparedStatement(pstmt, "gugu", "password", "hkkang@woowahan.com");
-        jdbcTemplate.update(insertQuery, pss);
+        jdbcTemplate.update(insertQuery, "gugu", "password", "hkkang@woowahan.com");
 
         // when, then
         final var sql = "select id, account, password, email from users where account = ?";
-        final PreparedStatementSetter pss2 = pstmt -> setPreparedStatement(pstmt, "gugu");
-        TestUser user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss2);
+        TestUser user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, "gugu");
 
         assertAll(() -> assertThat(user.getAccount()).isEqualTo("gugu"),
             () -> assertThat(user.checkPassword("password")).isTrue(),
@@ -86,12 +78,10 @@ class JdbcTemplateTest {
     void query() {
         // given
         final var insertQuery1 = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss = pstmt -> setPreparedStatement(pstmt, "gugu", "password", "hkkang@woowahan.com");
-        jdbcTemplate.update(insertQuery1, pss);
+        jdbcTemplate.update(insertQuery1, "gugu", "password", "hkkang@woowahan.com");
 
         final var insertQuery2 = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss2 = pstmt -> setPreparedStatement(pstmt, "neo", "password", "neo@woowahan.com");
-        jdbcTemplate.update(insertQuery2, pss2);
+        jdbcTemplate.update(insertQuery2, "neo", "password", "neo@woowahan.com");
 
         // when, then
         final var sql = "select id, account, password, email from users";
@@ -103,23 +93,5 @@ class JdbcTemplateTest {
             () -> assertThat(users.get(1).checkPassword("password")).isTrue(),
             () -> assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com"),
             () -> assertThat(users.get(1).getEmail()).isEqualTo("neo@woowahan.com"));
-    }
-
-    private void setPreparedStatement(PreparedStatement pstmt, Object... args) throws SQLException {
-
-        int index = 0;
-        for (Object arg : args) {
-            index++;
-            switch (arg.getClass().getName()) {
-                case "String":
-                    pstmt.setString(index, (String)arg);
-                    break;
-                case "Long":
-                    pstmt.setLong(index, (Long)arg);
-                    break;
-                default:
-                    pstmt.setObject(index, arg);
-            }
-        }
     }
 }
