@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import nextstep.jdbc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
@@ -30,8 +31,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, rowMapper, args);
-        if (result.size() != 1) {
-            throw new DataAccessException("하나의 데이터만 존재해야 합니다.");
+        if (result.isEmpty()) {
+            throw new EmptyResultException();
+        }
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeException();
         }
 
         return result.iterator().next();
@@ -58,7 +62,7 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i + 1, args[i]);
             } catch (final SQLException e) {
                 log.error(e.getMessage(), e);
-                throw new DataAccessException("파라미터 바인딩에 실패했습니다.");
+                throw new ParameterBindingException();
             }
         }
     }
@@ -78,7 +82,7 @@ public class JdbcTemplate {
             return preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException("정상적인 쿼리가 아닙니다.");
+            throw new InvalidStatementException();
         }
     }
 }
