@@ -68,7 +68,7 @@ public class JdbcTemplate {
         try (resultSet) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
+                result.add(rowMapper.mapRow(resultSet));
             }
             return result;
         } catch (SQLException e) {
