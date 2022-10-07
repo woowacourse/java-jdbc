@@ -19,10 +19,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
             preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -31,12 +32,22 @@ public class JdbcTemplate {
         }
     }
 
+    private PreparedStatementSetter setPreparedStatement(final Object[] args) {
+        final PreparedStatementSetter preparedStatementSetter = ps -> {
+            for (int idx = 0; idx < args.length; idx++) {
+                ps.setObject(idx + 1, args[idx]);
+            }
+        };
+        return preparedStatementSetter;
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
-                             final PreparedStatementSetter preparedStatementSetter
+                             final Object... args
     ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
             preparedStatementSetter.setValues(preparedStatement);
             return getResultSetData(preparedStatement, rowMapper);
         } catch (SQLException e) {
@@ -57,8 +68,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
-                                final PreparedStatementSetter preparedStatementSetter) {
-        final List<T> results = query(sql, rowMapper, preparedStatementSetter);
+                                final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new DataAccessException("queryForObject는 결괏값이 1개여야 합니다.");
         }
