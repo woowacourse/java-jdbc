@@ -16,8 +16,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... objects) {
-        return execute(sql, ps -> {
+    public void update(final String sql, final Object... objects) {
+        execute(sql, ps -> {
             bindPrepareStatement(ps, objects);
             return ps.executeUpdate();
         });
