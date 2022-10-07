@@ -6,6 +6,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,10 +43,10 @@ class UserDaoTest {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
 
         // when
-        User user = userDao.findById(1L);
+        Optional<User> user = userDao.findById(1L);
 
         // then
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user).isNotEmpty();
     }
 
     @Test
@@ -55,10 +56,10 @@ class UserDaoTest {
         userDao.insert(new User(account, "password", "hkkang@woowahan.com"));
 
         // when
-        User user = userDao.findByAccount(account);
+        Optional<User> user = userDao.findByAccount(account);
 
         // then
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user).isNotEmpty();
     }
 
     @Test
@@ -71,8 +72,8 @@ class UserDaoTest {
         userDao.insert(user);
 
         // then
-        User actual = userDao.findById(1L);
-        assertThat(actual.getAccount()).isEqualTo(account);
+        Optional<User> actual = userDao.findById(1L);
+        assertThat(actual).isNotEmpty();
     }
 
     @Test
@@ -81,14 +82,19 @@ class UserDaoTest {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
 
         String newPassword = "password99";
-        User user = userDao.findById(1L);
+        User user = getUser(1L);
         user.changePassword(newPassword);
 
         // when
         userDao.update(user);
 
         // then
-        User actual = userDao.findById(1L);
+        User actual = getUser(1L);
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    private User getUser(final Long id) {
+        return userDao.findById(id)
+                .get();
     }
 }

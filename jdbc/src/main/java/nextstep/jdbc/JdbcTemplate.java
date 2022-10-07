@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +38,21 @@ public class JdbcTemplate {
         return execute(sql, rowMapper, params);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("query : {}", sql);
 
         List<T> result = execute(sql, rowMapper, params);
-        validateSingleSize(result);
-        return result.get(0);
+        return getSingleSize(result);
+    }
+
+    private <T> Optional<T> getSingleSize(final List<T> result) {
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        if (result.size() > SINGLE_COUNT) {
+            throw new DataAccessException("조회 결과 값이 여러개 존재합니다.");
+        }
+        return Optional.ofNullable(result.get(0));
     }
 
     private <T> List<T> execute(final String sql, final RowMapper<T> rowMapper, final Object[] params) {
@@ -73,12 +83,6 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             return new ArrayList<>();
-        }
-    }
-
-    private <T> void validateSingleSize(final List<T> result) {
-        if (result.size() != SINGLE_COUNT) {
-            throw new DataAccessException("조회 결과 값이 0개 또는 여러개가 존재합니다.");
         }
     }
 }
