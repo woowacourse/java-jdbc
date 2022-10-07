@@ -1,33 +1,25 @@
-package com.techcourse.domain;
+package nextstep.jdbc;
 
 import java.util.Objects;
 
-public class User {
+public class TestUser {
 
     private Long id;
     private final String account;
     private String password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public TestUser(long id, String account, String password, String email) {
         this.id = id;
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public User(String account, String password, String email) {
+    public TestUser(String account, String password, String email) {
         this.account = account;
         this.password = password;
         this.email = email;
-    }
-
-    public boolean checkPassword(String password) {
-        return this.password.equals(password);
-    }
-
-    public void changePassword(String password) {
-        this.password = password;
     }
 
     public String getAccount() {
@@ -64,17 +56,13 @@ public class User {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        User user = (User) o;
-        return Objects.equals(account, user.account) && Objects.equals(password, user.password)
-                && Objects.equals(email, user.email);
+        TestUser testUser = (TestUser) o;
+        return Objects.equals(account, testUser.account) && Objects.equals(password, testUser.password)
+                && Objects.equals(email, testUser.email);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(account, password, email);
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }

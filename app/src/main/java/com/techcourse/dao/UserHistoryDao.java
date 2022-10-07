@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
@@ -25,7 +24,7 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         Connection conn = null;
         PreparedStatement pstmt = null;

@@ -1,15 +1,14 @@
 package com.techcourse;
 
-import com.techcourse.controller.*;
+import com.techcourse.controller.LogoutController;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 import nextstep.mvc.HandlerMapping;
 import nextstep.mvc.controller.asis.Controller;
 import nextstep.mvc.controller.asis.ForwardController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ManualHandlerMapping implements HandlerMapping {
 
@@ -29,7 +28,7 @@ public class ManualHandlerMapping implements HandlerMapping {
 
     @Override
     public Controller getHandler(final HttpServletRequest request) {
-        final var requestURI = request.getRequestURI();
+        final String requestURI = request.getRequestURI();
         log.debug("Request Mapping Uri : {}", requestURI);
         return controllers.get(requestURI);
     }

@@ -13,7 +13,7 @@ public class HandlerExecutor {
     }
 
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
-        final var handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handler);
+        final HandlerAdapter handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handler);
         return handlerAdapter.handle(request, response, handler);
     }
 }
