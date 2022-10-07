@@ -22,52 +22,47 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
-            final List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                rowNum += 1;
-                final T row = rowMapper.mapToRow(rs, rowNum);
-                results.add(row);
+        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = (preparedStatement) -> {
+            try (final ResultSet rs = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                while (rs.next()) {
+                    rowNum += 1;
+                    final T row = rowMapper.mapToRow(rs, rowNum);
+                    results.add(row);
+                }
+                log.debug("query : {}", sql);
+                return results;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
-            log.debug("query : {}", sql);
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+        return execute(sql, args, preparedStatementExecutor);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
-            final int rowCount = rs.getRow();
-            if (rowCount > 1) {
-                throw new DataAccessException("1개보다 많은 값이 존재합니다.");
+        final PreparedStatementExecutor<T> preparedStatementExecutor = (preparedStatement) -> {
+            try (final ResultSet rs = preparedStatement.executeQuery()) {
+                final int rowCount = rs.getRow();
+                if (rowCount > 1) {
+                    throw new DataAccessException("1개보다 많은 값이 존재합니다.");
+                }
+                if (rs.next()) {
+                    log.debug("query : {}", sql);
+                    return rowMapper.mapToRow(rs, 1);
+                }
+                return null;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
-            if (rs.next()) {
-                log.debug("query : {}", sql);
-                return rowMapper.mapToRow(rs, 1);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+        return execute(sql, args, preparedStatementExecutor);
     }
 
     public int update(final String sql, @Nullable final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
-            log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     private PreparedStatement createPreparedStatement(final Connection conn, final String sql,
@@ -80,5 +75,17 @@ public class JdbcTemplate {
             pstmt.setObject(i, args[i - 1]);
         }
         return pstmt;
+    }
+
+    private <T> T execute(final String sql, @Nullable final Object[] args,
+                          final PreparedStatementExecutor<T> preparedStatementExecutor) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
+            log.debug("query : {}", sql);
+            return preparedStatementExecutor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
