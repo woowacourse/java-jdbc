@@ -120,7 +120,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, account, password, email);
     }
 
-    class User {
+    static class User {
 
         private Long id;
         private final String account;
