@@ -23,57 +23,59 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
-        final ResultSetMapper<List<T>> resultSetMapper = resultSetMapperQuery(rowMapper);
+        final ResultSetMapper<List<T>> resultSetMapper = (rs) -> resultSetMapperQuery(rs, rowMapper);
         final PreparedStatementExecutor<List<T>> preparedStatementExecutor = (preparedStatement) ->
                 mapToResult(preparedStatement.executeQuery(), resultSetMapper);
-        return execute(sql, preparedStatementExecutor, prepareStatementSetter(args));
+        final PrepareStatementSetter prepareStatementSetter = (preparedStatement) -> prepareStatementSetter(
+                preparedStatement, args);
+        return execute(sql, preparedStatementExecutor, prepareStatementSetter);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
+        final ResultSetMapper<T> resultSetMapper = (rs) -> resultSetMapperQueryForObject(rs, rowMapper);
         final PreparedStatementExecutor<T> preparedStatementExecutor = (preparedStatement) ->
-                mapToResult(preparedStatement.executeQuery(), resultSetMapperQueryForObject(rowMapper));
-        return execute(sql, preparedStatementExecutor, prepareStatementSetter(args));
+                mapToResult(preparedStatement.executeQuery(), resultSetMapper);
+        final PrepareStatementSetter prepareStatementSetter = (preparedStatement) -> prepareStatementSetter(
+                preparedStatement, args);
+        return execute(sql, preparedStatementExecutor, prepareStatementSetter);
     }
 
     public int update(final String sql, @Nullable final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, prepareStatementSetter(args));
+        final PrepareStatementSetter prepareStatementSetter = (preparedStatement) -> prepareStatementSetter(
+                preparedStatement, args);
+        return execute(sql, PreparedStatement::executeUpdate, prepareStatementSetter);
     }
 
-    private PrepareStatementSetter prepareStatementSetter(final Object[] args) {
-        return (preparedStatement) -> {
-            for (int i = 1; i <= Objects.requireNonNull(args).length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
-            }
-        };
+    private void prepareStatementSetter(final PreparedStatement preparedStatement, final Object[] args)
+            throws SQLException {
+        for (int i = 1; i <= Objects.requireNonNull(args).length; i++) {
+            preparedStatement.setObject(i, args[i - 1]);
+        }
     }
 
-    private <T> ResultSetMapper<List<T>> resultSetMapperQuery(final RowMapper<T> rowMapper) {
-        return (rs) -> {
-            final List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                rowNum += 1;
-                final T row = rowMapper.mapToRow(rs, rowNum);
-                results.add(row);
-            }
-            return results;
-        };
+    private <T> List<T> resultSetMapperQuery(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            rowNum += 1;
+            final T row = rowMapper.mapToRow(rs, rowNum);
+            results.add(row);
+        }
+        return results;
     }
 
-    private <T> ResultSetMapper<T> resultSetMapperQueryForObject(final RowMapper<T> rowMapper) {
-        return (rs) -> {
-            final List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                rowNum += 1;
-                final T row = rowMapper.mapToRow(rs, rowNum);
-                results.add(row);
-            }
-            if (results.size() > 1) {
-                throw new DataAccessException("1개보다 많은 값이 존재합니다.");
-            }
-            return results.get(0);
-        };
+    private <T> T resultSetMapperQueryForObject(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            rowNum += 1;
+            final T row = rowMapper.mapToRow(rs, rowNum);
+            results.add(row);
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("1개보다 많은 값이 존재합니다.");
+        }
+        return results.get(0);
     }
 
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor,
