@@ -6,6 +6,9 @@ import java.sql.SQLException;
 
 public class PreparedStatementFactory {
 
+    private PreparedStatementFactory() {
+    }
+
     public static PreparedStatement create(final Connection conn, final String sql, final Object[] parameters)
             throws SQLException {
         final PreparedStatement statement = conn.prepareStatement(sql);
