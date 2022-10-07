@@ -6,9 +6,9 @@ import java.sql.SQLException;
 import java.util.List;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
