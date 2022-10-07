@@ -15,6 +15,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int FIRST_INDEX = 0;
+    private static final int PARAMETER_INDEX_INCREMENT = 1;
 
     private final DataSource dataSource;
 
@@ -60,8 +61,8 @@ public class JdbcTemplate {
     private PreparedStatement createPreparedStatement(final Connection connection, final String sql,
                                                       final Object... args) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
+        for (int i = FIRST_INDEX; i < args.length; i++) {
+            preparedStatement.setObject(i + PARAMETER_INDEX_INCREMENT, args[i]);
         }
         return preparedStatement;
     }
