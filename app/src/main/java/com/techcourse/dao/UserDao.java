@@ -6,14 +6,14 @@ import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
 public class UserDao {
-    private final JdbcTemplate jdbcTemplate;
-    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) ->
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs) ->
             new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
             );
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

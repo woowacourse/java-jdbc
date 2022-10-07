@@ -45,21 +45,6 @@ public class JdbcTemplate {
         }));
     }
 
-    private void setParameters(PreparedStatement preparedStatement, Object[] values) throws SQLException {
-        for (int i = 0; i < values.length; i++) {
-            preparedStatement.setObject(i + 1, values[i]);
-        }
-    }
-
-    private <T> List<T> getResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        int rowNum = 0;
-        List<T> result = new ArrayList<>();
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet, rowNum++));
-        }
-        return result;
-    }
-
     private <T> T execute(String sql, Executable<T> executable) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -70,6 +55,20 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private <T> List<T> getResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
+    }
+
+    private void setParameters(PreparedStatement preparedStatement, Object[] values) throws SQLException {
+        for (int i = 0; i < values.length; i++) {
+            preparedStatement.setObject(i + 1, values[i]);
         }
     }
 }
