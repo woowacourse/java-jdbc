@@ -9,12 +9,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -23,13 +18,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(args, preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -38,11 +27,14 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, preparedStatement -> getResult(preparedStatement, rowMapper), args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
             setParameters(args, preparedStatement);
-            return getResult(preparedStatement, rowMapper);
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException();
         }
@@ -55,8 +47,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getResult(PreparedStatement preparedStatement,
-                                  RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> getResult(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
             List<T> result = new ArrayList<>();
             int rowNum = 0;
