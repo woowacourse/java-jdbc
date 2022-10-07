@@ -64,6 +64,8 @@ class JdbcTemplateTest {
 
             // then
             verify(preparedStatement, times(3)).setObject(anyInt(), anyString());
+            verify(preparedStatement, times(1)).close();
+            verify(connection, times(1)).close();
         }
     }
 

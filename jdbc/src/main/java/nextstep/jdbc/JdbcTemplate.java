@@ -64,17 +64,22 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
+             final PreparedStatement pstmt = prepareStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
 
             return executor.execute(pstmt);
         } catch (final SQLException e) {
             throw new JdbcConnectionException("Fail to get JDBC Connection", e);
         }
+    }
+
+    private PreparedStatement prepareStatement(final Connection conn, final String sql, final Object... parameters)
+            throws SQLException {
+        final PreparedStatement pstmt = conn.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
+        }
+        return pstmt;
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> executor, final Object... parameters) {
