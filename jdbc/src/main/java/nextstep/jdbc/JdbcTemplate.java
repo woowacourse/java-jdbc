@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String DATA_EMPTY_ERROR_MESSAGE = "데이터가 없습니다.";
+    private static final String DATA_NOT_SINGLE_ERROR_MESSAGE = "데이터가 한개가 아닙니다. 데이터 수 : %d";
 
     private final DataSource dataSource;
 
@@ -64,11 +66,14 @@ public class JdbcTemplate {
     }
 
     private <T> void validateExecuteResultSize(final List<T> results) {
-        if (results.isEmpty()) {
-            throw new DataAccessException("데이터가 없습니다.");
+        if (results == null || results.isEmpty()) {
+            log.error(DATA_EMPTY_ERROR_MESSAGE);
+            throw new DataAccessException(DATA_EMPTY_ERROR_MESSAGE);
         }
         if (results.size() >= 2) {
-            throw new DataAccessException("데이터가 한개가 아닙니다. 데이터 수 : " + results.size());
+            final String message = String.format(DATA_NOT_SINGLE_ERROR_MESSAGE, results.size());
+            log.error(message);
+            throw new DataAccessException(message);
         }
     }
 }
