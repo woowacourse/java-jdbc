@@ -14,6 +14,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String QUERY_FORMAT = "query : {}";
 
     private final DataSource dataSource;
 
@@ -23,7 +24,7 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, preparedStatement -> {
-            log.debug("query : {}", sql);
+            log.debug(QUERY_FORMAT, sql);
             setParameters(preparedStatement, args);
             return update(preparedStatement);
         });
@@ -45,7 +46,7 @@ public class JdbcTemplate {
         return execute(sql, preparedStatement -> {
             setParameters(preparedStatement, args);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                log.debug("query : {}", sql);
+                log.debug(QUERY_FORMAT, sql);
 
                 final List<T> values = new ArrayList<>();
                 while (resultSet.next()) {
@@ -58,7 +59,7 @@ public class JdbcTemplate {
 
     public void execute(final String sql) {
         execute(sql, preparedStatement -> {
-            log.debug("query : {}", sql);
+            log.debug(QUERY_FORMAT, sql);
             return preparedStatement.execute();
         });
     }
