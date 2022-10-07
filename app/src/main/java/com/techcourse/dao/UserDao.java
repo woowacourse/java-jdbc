@@ -50,7 +50,6 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 

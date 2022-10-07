@@ -50,11 +50,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
 
-            ResultSet resultSet = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
-            for (int i = 0; resultSet.next(); i++) {
-                result.add(rowMapper.mapRow(resultSet, i));
-            }
+            List<T> result = extractResult(rowMapper, pstmt);
             return result.get(0);
         } catch (SQLException | IndexOutOfBoundsException e) {
             e.printStackTrace();
@@ -66,16 +62,20 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            ResultSet resultSet = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
-            for (int i = 0; resultSet.next(); i++) {
-                result.add(rowMapper.mapRow(resultSet, i));
-            }
-            return result;
+            return extractResult(rowMapper, pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new SQLAccessException();
         }
+    }
+
+    private <T> List<T> extractResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        ResultSet resultSet = pstmt.executeQuery();
+        List<T> result = new ArrayList<>();
+        for (int i = 0; resultSet.next(); i++) {
+            result.add(rowMapper.mapRow(resultSet, i));
+        }
+        return result;
     }
 
     private void putArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
