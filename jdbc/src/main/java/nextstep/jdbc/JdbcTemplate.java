@@ -25,43 +25,30 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        execute(sql, preparedStatement -> {
             setParams(preparedStatement, params);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        log.debug("query : {}", sql);
-        return execute(sql, rowMapper, params);
+            return preparedStatement.executeUpdate();
+        });
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        log.debug("query : {}", sql);
-
-        List<T> result = execute(sql, rowMapper, params);
+        List<T> result = query(sql, rowMapper, params);
         return getSingleSize(result);
     }
 
-    private <T> Optional<T> getSingleSize(final List<T> result) {
-        if (result.isEmpty()) {
-            return Optional.empty();
-        }
-        if (result.size() > SINGLE_COUNT) {
-            throw new MultipleResultException();
-        }
-        return Optional.ofNullable(result.get(0));
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, preparedStatement -> {
+            setParams(preparedStatement, params);
+            return toList(preparedStatement, rowMapper);
+        });
     }
 
-    private <T> List<T> execute(final String sql, final RowMapper<T> rowMapper, final Object[] params) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
+        log.debug("query : {}", sql);
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParams(preparedStatement, params);
-            return toList(preparedStatement.executeQuery(), rowMapper);
+            return preparedStatementCallback.doProcess(preparedStatement);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -76,8 +63,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> toList(final ResultSet resultSet, final RowMapper<T> rowMapper) {
-        try (resultSet) {
+    private <T> List<T> toList(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
@@ -86,5 +73,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             return new ArrayList<>();
         }
+    }
+
+    private <T> Optional<T> getSingleSize(final List<T> result) {
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        if (result.size() > SINGLE_COUNT) {
+            throw new MultipleResultException();
+        }
+        return Optional.ofNullable(result.get(0));
     }
 }
