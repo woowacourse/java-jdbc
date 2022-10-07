@@ -4,6 +4,7 @@ import static java.sql.ResultSet.CONCUR_READ_ONLY;
 import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
@@ -38,6 +39,32 @@ class JdbcTemplateTest {
         this.preparedStatement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Nested
+    @DisplayName("update 메서드는")
+    class Update {
+
+        @Test
+        @DisplayName("CUD 쿼리를 실행한다.")
+        void success() throws SQLException {
+            // given
+            final String sql = "INSERT INTO users(account, password, email) VALUES(?, ?, ?)";
+            final String account = "rick";
+            final String password = "1q2w3e4r";
+            final String email = "rick@levellog.app";
+
+            given(dataSource.getConnection()).willReturn(connection);
+            given(connection.prepareStatement(sql, TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)).willReturn(
+                    preparedStatement);
+            given(preparedStatement.executeUpdate()).willReturn(1);
+
+            // when
+            jdbcTemplate.update(sql, account, password, email);
+
+            // then
+            verify(preparedStatement, times(3)).setObject(anyInt(), anyString());
+        }
     }
 
     @Nested
