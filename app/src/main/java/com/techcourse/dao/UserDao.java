@@ -13,7 +13,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> rowMapper = rs -> new User(
+    private static final RowMapper<User> ROW_MAPPER = rs -> new User(
             rs.getLong(1),
             rs.getString(2),
             rs.getString(3),
@@ -38,18 +38,18 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         log.info("sql : {}", sql);
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         log.info("sql : {}", sql);
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         log.info("sql : {}", sql);
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
