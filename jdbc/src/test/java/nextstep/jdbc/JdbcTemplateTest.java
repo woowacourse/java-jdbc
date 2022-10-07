@@ -47,6 +47,7 @@ class JdbcTemplateTest {
 
         // when
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        
         jdbcTemplate.update(sql, "gugu", "new password", "new email@woowahan.com", 1);
 
         // then
