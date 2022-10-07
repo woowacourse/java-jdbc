@@ -18,3 +18,12 @@
 - [x] update 메서드에서 update 수를 반환하도록 수정
 
 </details>
+
+<details>
+<summary>2단계 - 리팩터링</summary>
+
+구현 기능 목록
+
+- [x] 템플릿 콜백 패턴을 이용해 중복 삭제
+
+</details>
