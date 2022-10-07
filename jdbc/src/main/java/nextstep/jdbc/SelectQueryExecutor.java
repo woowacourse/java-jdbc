@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface QueryExecutor<T> {
+public interface SelectQueryExecutor<T> {
 
     T executeQuery(ResultSet resultSet) throws SQLException;
 }

@@ -32,7 +32,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final QueryExecutor<T> executor = resultSet -> {
+        final SelectQueryExecutor<T> executor = resultSet -> {
             verifyResultSizeIsOne(resultSet);
             return rowMapper.mapRow(resultSet);
         };
@@ -52,7 +52,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final QueryExecutor<List<T>> executor = resultSet -> collectByRowMapper(rowMapper, resultSet);
+        final SelectQueryExecutor<List<T>> executor = resultSet -> collectByRowMapper(rowMapper, resultSet);
         return executeQuery(sql, executor, parameters);
     }
 
@@ -85,7 +85,7 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    private <T> T executeQuery(final String sql, final QueryExecutor<T> executor, final Object... parameters) {
+    private <T> T executeQuery(final String sql, final SelectQueryExecutor<T> executor, final Object... parameters) {
         final SqlExecutor<T> sqlExecutor = pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 return executor.executeQuery(rs);
