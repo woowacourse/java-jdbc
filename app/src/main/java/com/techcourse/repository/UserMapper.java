@@ -20,21 +20,18 @@ public class UserMapper implements JdbcMapper<User> {
 
     private static final Logger log = LoggerFactory.getLogger(UserMapper.class);
 
+    private static final List<String> fieldNames = Arrays.stream(User.class.getDeclaredFields())
+            .map(Field::getName)
+            .filter(each -> !each.equals("id"))
+            .collect(Collectors.toUnmodifiableList());
+
     @Override
     public List<User> mapRow(ResultSet resultSet) {
         try {
-            List<String> fieldNames = Arrays.stream(User.class.getDeclaredFields())
-                    .map(Field::getName)
-                    .filter(each -> !each.equals("id"))
-                    .collect(Collectors.toUnmodifiableList());
             Constructor<User> constructor = User.class.getConstructor(String.class, String.class, String.class);
             List<User> users = new ArrayList<>();
             while (resultSet.next()) {
-                List<Object> result = new ArrayList<>();
-                for (String name : fieldNames) {
-                    result.add(resultSet.getObject(name));
-                }
-                users.add(constructor.newInstance(result.toArray()));
+                mapOneRow(resultSet, constructor, users);
             }
             return users;
         }
@@ -43,5 +40,14 @@ public class UserMapper implements JdbcMapper<User> {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
         }
+    }
+
+    private void mapOneRow(ResultSet resultSet, Constructor<User> constructor, List<User> users)
+            throws SQLException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        List<Object> result = new ArrayList<>();
+        for (String name : fieldNames) {
+            result.add(resultSet.getObject(name));
+        }
+        users.add(constructor.newInstance(result.toArray()));
     }
 }
