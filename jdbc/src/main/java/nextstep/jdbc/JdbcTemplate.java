@@ -50,7 +50,8 @@ public class JdbcTemplate {
 
         final ResultSet rs = statement.executeQuery();
         while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
+            final T row = rowMapper.mapRow(rs);
+            results.add(row);
         }
 
         return results;
