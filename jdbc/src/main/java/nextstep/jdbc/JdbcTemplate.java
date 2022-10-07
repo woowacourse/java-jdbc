@@ -54,7 +54,7 @@ public class JdbcTemplate {
             return executable.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("sql을 실행할 수 없습니다.");
         }
     }
 
