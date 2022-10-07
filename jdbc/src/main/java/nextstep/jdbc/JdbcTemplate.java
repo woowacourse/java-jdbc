@@ -20,11 +20,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, newArgPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
+        return query(sql, newArgPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> result = executeQuery(sql, newArgPreparedStatementSetter(args),
+        final List<T> result = query(sql, newArgPreparedStatementSetter(args),
                 new RowMapperResultSetExtractor<>(rowMapper));
         if (result.size() > 1) {
             throw new DataAccessException("Incorrect result size: expected 1, actual " + result.size());
@@ -32,45 +32,45 @@ public class JdbcTemplate {
         return result.iterator().next();
     }
 
-    public void update(final String sql, final Object... args) {
-        update(sql, newArgPreparedStatementSetter(args));
+    public int update(final String sql, final Object... args) {
+        return update(sql, newArgPreparedStatementSetter(args));
     }
 
     private PreparedStatementSetter newArgPreparedStatementSetter(final Object[] args) {
         return new ArgumentPreparedStatementSetter(args);
     }
 
-    private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        validateIsNull(sql, "SQL must not be null");
+    private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         log.debug("execute SQL update [{}]", sql);
+
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
+    }
+
+    private <T> T query(final String sql, final PreparedStatementSetter preparedStatementSetter,
+                        final ResultSetExtractor<T> resultSetExtractor) {
+        log.debug("execute SQL query [{}]", sql);
+
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSetExtractor.extractData(resultSet);
+            }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
+        if (sql == null) {
+            throw new IllegalArgumentException("SQL must not be null");
+        }
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(statement);
-            statement.executeUpdate();
+            return action.doInPreparedStatement(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T executeQuery(final String sql, final PreparedStatementSetter preparedStatementSetter,
-                               final ResultSetExtractor<T> resultSetExtractor) {
-        validateIsNull(sql, "SQL must not be null");
-        log.debug("execute SQL query [{}]", sql);
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
-             final ResultSet resultSet = statement.executeQuery()) {
-            preparedStatementSetter.setValues(statement);
-            return resultSetExtractor.extractData(resultSet);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void validateIsNull(final Object object, final String message) {
-        if (object == null) {
-            throw new IllegalArgumentException(message);
         }
     }
 }
