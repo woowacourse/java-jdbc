@@ -15,13 +15,13 @@ public class JdbcConnector implements Connector {
     }
 
     @Override
-    public <T> T execute(String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
+    public <T> T execute(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.length; i++) {
-                preparedStatement.setObject(i+1, parameters[i]);
-            }
-            return queryExecutor.executePreparedStatement(preparedStatement);
+            PreparedStatementStarter preparedStatementStarter = new SimplePreparedStatementStarter(preparedStatement);
+            preparedStatementStarter.setParameters(parameters);
+
+            return queryExecutor.executePreparedStatement(preparedStatementStarter);
         } catch (SQLException e) {
             throw new ImpossibleSQLExecutionException();
         }
