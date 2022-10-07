@@ -28,7 +28,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = executeQuery(sql, args, rowMapper);
         if (result.size() > 1) {
-            throw new DataAccessException("Incorrect result size: expected " + 1 + ", actual " + result.size());
+            throw new DataAccessException("Incorrect result size: expected 1, actual " + result.size());
         }
         return result.iterator().next();
     }
