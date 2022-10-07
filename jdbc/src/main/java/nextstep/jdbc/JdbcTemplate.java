@@ -22,42 +22,34 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
-        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = (preparedStatement) -> {
-            try (final ResultSet rs = preparedStatement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    rowNum += 1;
-                    final T row = rowMapper.mapToRow(rs, rowNum);
-                    results.add(row);
-                }
-                log.debug("query : {}", sql);
-                return results;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+        final ResultSetMapper<List<T>> resultSetMapper = (rs) -> {
+            final List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (rs.next()) {
+                rowNum += 1;
+                final T row = rowMapper.mapToRow(rs, rowNum);
+                results.add(row);
             }
+            return results;
         };
+        final PreparedStatementExecutor<List<T>> preparedStatementExecutor = (preparedStatement) ->
+                mapToResult(preparedStatement.executeQuery(), resultSetMapper);
         return execute(sql, args, preparedStatementExecutor);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
-        final PreparedStatementExecutor<T> preparedStatementExecutor = (preparedStatement) -> {
-            try (final ResultSet rs = preparedStatement.executeQuery()) {
-                final int rowCount = rs.getRow();
-                if (rowCount > 1) {
-                    throw new DataAccessException("1개보다 많은 값이 존재합니다.");
-                }
-                if (rs.next()) {
-                    log.debug("query : {}", sql);
-                    return rowMapper.mapToRow(rs, 1);
-                }
-                return null;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+        final ResultSetMapper<T> resultSetMapper = (rs) -> {
+            final int rowCount = rs.getRow();
+            if (rowCount > 1) {
+                throw new DataAccessException("1개보다 많은 값이 존재합니다.");
             }
+            if (rs.next()) {
+                return rowMapper.mapToRow(rs, 1);
+            }
+            return null;
         };
+        final PreparedStatementExecutor<T> preparedStatementExecutor = (preparedStatement) ->
+                mapToResult(preparedStatement.executeQuery(), resultSetMapper);
         return execute(sql, args, preparedStatementExecutor);
     }
 
@@ -83,6 +75,15 @@ public class JdbcTemplate {
              PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
             return preparedStatementExecutor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T mapToResult(final ResultSet resultSet, final ResultSetMapper<T> resultSetMapper) {
+        try (resultSet) {
+            return resultSetMapper.mapToResult(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

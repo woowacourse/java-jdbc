@@ -2,7 +2,9 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
@@ -43,6 +45,35 @@ class JdbcTemplateTest {
 
         // then
         assertThat(users).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("query 메서드 이후에 resource가 잘 닫히는지 확인")
+    void queryCloseResource() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        final String sql = "select id from user";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when
+        jdbcTemplate.query(sql, rowMapper());
+
+        // then
+        assertAll(
+                () -> verify(connection).close(),
+                () -> verify(preparedStatement).close(),
+                () -> verify(resultSet).close()
+        );
     }
 
     @Test
@@ -93,6 +124,34 @@ class JdbcTemplateTest {
                 .isExactlyInstanceOf(DataAccessException.class);
     }
 
+    @Test
+    @DisplayName("queryForObject 메서드 이후에 resource가 잘 닫히는지 확인")
+    void queryForObjectCloseResource() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        final String sql = "select id from user where id = ?";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when
+        jdbcTemplate.queryForObject(sql, rowMapper(), 1L);
+
+        // then
+        assertAll(
+                () -> verify(connection).close(),
+                () -> verify(preparedStatement).close(),
+                () -> verify(resultSet).close()
+        );
+    }
 
     @Test
     @DisplayName("update 로직 테스트")
@@ -115,5 +174,31 @@ class JdbcTemplateTest {
 
         // then
         assertThat(update).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("update 메서드 이후에 resource가 잘 닫히는지 확인")
+    void updateCloseResource() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+
+        final String sql = "insert into users (id) values (?)";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when
+        jdbcTemplate.update(sql, rowMapper(), 1L);
+
+        // then
+        assertAll(
+                () -> verify(connection).close(),
+                () -> verify(preparedStatement).close()
+        );
     }
 }
