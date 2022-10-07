@@ -4,63 +4,101 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
-public class JdbcTemplate {
+public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    protected final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = injectParams(conn.prepareStatement(sql), params);
-             ResultSet resultSet = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-            return jdbcMapper.mapRow(resultSet);
-
-        } catch (SQLException | DataAccessException | InvocationTargetException | NoSuchMethodException |
-                 InstantiationException | IllegalAccessException e) {
+    private <T> ResultSet executeQuery(SqlSetter<T> sqlSetter, PreparedStatement preparedStatement) {
+        try {
+            sqlSetter.injectParams(preparedStatement);
+            return preparedStatement.executeQuery();
+        }
+        catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException();
         }
     }
 
-    public void nonSelectQuery(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = injectParams(conn.prepareStatement(sql), params)) {
+    protected abstract DataSource getDataSource();
 
+    public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
+        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet resultSet = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
-            pstmt.executeUpdate();
+            resultSet = executeQuery(sqlSetter, pstmt);
+            return jdbcMapper.mapRow(resultSet);
 
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException();
+        }
+        finally {
+            try {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
         }
     }
 
-    private PreparedStatement injectParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
-        ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
-        int totalParamCount = parameterMetaData.getParameterCount();
-        if (totalParamCount != params.length) {
-            throw new DataAccessException("SQL의 파라미터 갯수가 맞지 않습니다.");
+    public <T> int nonSelectQuery(String sql, Object... params) {
+        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            sqlSetter.injectParams(pstmt);
+            log.debug("query : {}", sql);
+            return pstmt.executeUpdate();
+
+        } catch (SQLException | DataAccessException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException();
         }
-        for (int i = 0; i < totalParamCount; i++) {
-            if (!parameterMetaData.getParameterClassName(i + 1).equals(params[i].getClass().getCanonicalName())) {
-                throw new DataAccessException("SQL의 파라미터 클래스 타입이 맞지 않습니다.");
-            }
+
+        finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
         }
-        for (int i = 0; i < totalParamCount; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
-        }
-        return preparedStatement;
     }
 }

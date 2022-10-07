@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.repository.UserJdbcTemplate;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
@@ -24,7 +25,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new UserJdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
