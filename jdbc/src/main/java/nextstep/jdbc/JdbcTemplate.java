@@ -20,33 +20,17 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, newArgPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
+        return query(sql, new ArgumentPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> result = query(sql, newArgPreparedStatementSetter(args),
+        final List<T> result = query(sql, new ArgumentPreparedStatementSetter(args),
                 new RowMapperResultSetExtractor<>(rowMapper));
+
         if (result.size() > 1) {
             throw new DataAccessException("Incorrect result size: expected 1, actual " + result.size());
         }
         return result.iterator().next();
-    }
-
-    public int update(final String sql, final Object... args) {
-        return update(sql, newArgPreparedStatementSetter(args));
-    }
-
-    private PreparedStatementSetter newArgPreparedStatementSetter(final Object[] args) {
-        return new ArgumentPreparedStatementSetter(args);
-    }
-
-    private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        log.debug("execute SQL update [{}]", sql);
-
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
     }
 
     private <T> T query(final String sql, final PreparedStatementSetter preparedStatementSetter,
@@ -58,6 +42,19 @@ public class JdbcTemplate {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return resultSetExtractor.extractData(resultSet);
             }
+        });
+    }
+
+    public int update(final String sql, final Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        log.debug("execute SQL update [{}]", sql);
+
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
         });
     }
 
