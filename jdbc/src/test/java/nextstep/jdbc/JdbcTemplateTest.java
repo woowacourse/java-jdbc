@@ -102,7 +102,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("2개의 결과가 나오는 queryForObject는 예외가 발생한다")
+    @DisplayName("2개의 결과가 나오는 queryForObject는 예외가 발생하고 Checked Exception이 아닌 Unchecked Exception이 반환되도록 한다")
     void queryForObjectException() throws SQLException {
         // given
         final DataSource dataSource = mock(DataSource.class);
@@ -200,5 +200,24 @@ class JdbcTemplateTest {
                 () -> verify(connection).close(),
                 () -> verify(preparedStatement).close()
         );
+    }
+
+    @Test
+    @DisplayName("sql이 잘못되었을 때 Checked Exception이 아닌 Unchecked Exception이 반환되도록 한다")
+    void invalidSqlThrowUncheckedException() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+
+        final String sql = "invalid";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenThrow(SQLException.class);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when, then
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, rowMapper(), 1L))
+                .isExactlyInstanceOf(DataAccessException.class);
     }
 }
