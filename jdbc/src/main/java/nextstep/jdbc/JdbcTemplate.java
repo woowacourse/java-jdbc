@@ -14,7 +14,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int INITIAL_PARAM_INDEX = 1;
-    private static final int SINGLE_RESULT_INDEX = 0;
     private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
@@ -30,7 +29,7 @@ public class JdbcTemplate {
         });
     }
 
-    private Object runContext(final String sql, JdbcAction action) {
+    private <T> T runContext(final String sql, JdbcAction<T> action) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -50,7 +49,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> find(final String sql, RowMapper<T> rowMapper, Object... params) {
-        return (List<T>) runContext(sql, statement -> {
+        return runContext(sql, statement -> {
             setParams(statement, params);
             final ResultSet resultSet = statement.executeQuery();
             return mapToList(resultSet, rowMapper);
@@ -63,14 +62,13 @@ public class JdbcTemplate {
             final T mappedValue = rowMapper.mapRow(resultSet);
             result.add(mappedValue);
         }
-        resultSet.close();
         return result;
     }
 
     public <T> T findSingleResult(final String sql, RowMapper<T> rowMapper, Object... params) {
         final List<T> results = find(sql, rowMapper, params);
         validateSingleResult(results);
-        return results.get(SINGLE_RESULT_INDEX);
+        return results.iterator().next();
     }
 
     private <T> void validateSingleResult(final List<T> results) {
