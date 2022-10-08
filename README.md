@@ -14,3 +14,12 @@
 - update
 - queryForObject
 - query
+
+## 🚀 2단계 - 리팩터링
+
+- [x] Connection 생성
+- [x] Statement 준비 및 실행
+- [x] ResultSet 생성
+- [x] 예외 처리
+- [ ] 트랜잭션 관리
+- [x] Connection, Statement, ResultSet 객체 close
