@@ -8,13 +8,12 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import nextstep.jdbc.exception.DataAccessException;
+import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -22,9 +21,11 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

@@ -31,7 +31,6 @@ class JdbcTemplateTest {
         jdbcTemplate.query("", (rs, rowNum) -> null);
 
         verify(preparedStatement).close();
-        verify(connection).close();
         verify(resultSet).close();
     }
 }

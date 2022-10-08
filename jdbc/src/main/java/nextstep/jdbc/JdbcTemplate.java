@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -43,8 +44,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -58,5 +59,9 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i, parameters[i - 1]);
             }
         };
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
