@@ -5,7 +5,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
+import nextstep.jdbc.support.IntConsumerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,9 +84,9 @@ public class JdbcTemplate {
     private PreparedStatementCreator preparedStatementCreator(final Object... args) {
         return (connection, sql) -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            IntStream.range(0, args.length)
+                .forEach(IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, args[index])));
+
             return pstmt;
         };
     }
