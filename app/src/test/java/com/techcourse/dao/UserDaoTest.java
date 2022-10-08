@@ -1,11 +1,13 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,12 +15,13 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
         clearTables(jdbcTemplate);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -26,8 +29,8 @@ class UserDaoTest {
     }
 
     private void clearTables(final JdbcTemplate jdbcTemplate) {
-        jdbcTemplate.executeQuery(connection -> connection.prepareStatement("truncate table users"));
-        jdbcTemplate.executeQuery(
+        jdbcTemplate.query(connection -> connection.prepareStatement("truncate table users"));
+        jdbcTemplate.query(
                 connection -> connection.prepareStatement("alter table users alter column id restart with 1"));
     }
 
@@ -46,6 +49,14 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
         assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
         assertThat(user.getPassword()).isEqualTo("password");
+    }
+
+    @Test
+    void notFindById() {
+        clearTables(jdbcTemplate);
+
+        assertThatThrownBy(() -> userDao.findById(1L))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test

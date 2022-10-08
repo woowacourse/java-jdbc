@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -38,12 +37,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
+            return getResults(rowMapper, preparedStatement.executeQuery());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -56,18 +50,21 @@ public class JdbcTemplate {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            return null;
+            return DataAccessUtils.singleResult(getResults(rowMapper, preparedStatement.executeQuery()));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public void executeQuery(final PreparedStatementExecutor executor) {
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        return results(new RowMapperResultSetExtractor<>(rowMapper), resultSet);
+    }
+    private <T> List<T> results(final ResultSetExtractor<List<T>> extractor, final ResultSet resultSet) throws SQLException {
+        return extractor.extractData(resultSet);
+    }
+
+    public void query(final PreparedStatementExecutor executor) {
         try (Connection connection = getConnection()) {
             PreparedStatement preparedStatement = executor.execute(connection);
             preparedStatement.executeUpdate();

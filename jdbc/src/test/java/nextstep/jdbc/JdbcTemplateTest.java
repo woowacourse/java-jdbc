@@ -108,7 +108,7 @@ class JdbcTemplateTest {
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(sql);
         verify(preparedStatement, times(1)).executeQuery();
-        verify(resultSet, times(1)).next();
+        verify(resultSet, times(2)).next();
         assertThat(user.getId()).isEqualTo(1L);
     }
 }
