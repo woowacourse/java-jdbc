@@ -33,18 +33,17 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(final String sql,
-                          final ThrowingFunction<ResultSet, T, SQLException> rowMapper,
+                          final RowMapper<T> rowMapper,
                           final Object... conditionParams) {
 
         log.debug("query : {}", sql);
         ResultSet rs = null;
         try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)
-        ) {
+             final var pstmt = conn.prepareStatement(sql)) {
             setPstmtParams(pstmt, conditionParams);
             rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rowMapper.apply(rs);
+                return rowMapper.map(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -56,7 +55,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryAll(final String sql,
-                                final ThrowingFunction<ResultSet, T, SQLException> userRowMapper) {
+                                final RowMapper<T> userRowMapper) {
         log.debug("query : {}", sql);
         ResultSet rs = null;
         try (final var conn = dataSource.getConnection();
@@ -65,7 +64,7 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
             List<T> resultRows = new ArrayList<>();
             while (rs.next()) {
-                final T resultRow = userRowMapper.apply(rs);
+                final T resultRow = userRowMapper.map(rs);
                 resultRows.add(resultRow);
             }
             return resultRows;
