@@ -21,8 +21,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -32,8 +32,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             ResultSet resultSet = preparedStatement.executeQuery();
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
@@ -63,9 +63,10 @@ public class JdbcTemplate {
         }
     }
 
-    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
+    public void executeQuery(final PreparedStatementExecutor executor) {
         try (Connection connection = getConnection()) {
-            executor.execute(connection, sql);
+            PreparedStatement preparedStatement = executor.execute(connection);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
