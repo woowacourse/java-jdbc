@@ -9,6 +9,12 @@ import java.util.List;
 
 public class UserDao {
 
+    private static final RowMapper<User> ROW_MAPPER = (resultSet) ->
+            new User(resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -36,22 +42,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
-
-    private final RowMapper<User> rowMapper = (resultSet) ->
-            new User(resultSet.getLong("id"),
-                    resultSet.getString("account"),
-                    resultSet.getString("password"),
-                    resultSet.getString("email"));
 }
