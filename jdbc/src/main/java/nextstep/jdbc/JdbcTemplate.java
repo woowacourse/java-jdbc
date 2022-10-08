@@ -6,9 +6,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.resultset.ExecuteStrategy;
-import nextstep.jdbc.resultset.PreparedStatementCreator;
-import nextstep.jdbc.resultset.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
