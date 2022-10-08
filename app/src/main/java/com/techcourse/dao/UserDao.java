@@ -1,121 +1,70 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import nextstep.jdbc.DataAccessException;
+import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.RowMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
-
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
+            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        } catch (DataAccessException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public void update(final User user) {
-        // todo
-    }
-
-    public List<User> findAll() {
-        // todo
-        return null;
-    }
-
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+        final String sql = "update users set account = ?, password = ?, email = ?";
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
+            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+        } catch (DataAccessException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
+    public List<User> findAll() {
+        final String sql = "select id, account, password, email from users";
+
+        return jdbcTemplate.query(sql, new UserRowMapper());
+    }
+
+    public User findById(final Long id) {
+        final String sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryForObject(sql, List.of(id), new UserRowMapper());
+    }
+
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, List.of(account), new UserRowMapper());
+    }
+
+    private static class UserRowMapper implements RowMapper<User> {
+
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
+        }
     }
 }
