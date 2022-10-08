@@ -8,6 +8,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.Proxy;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,12 @@ class UserServiceTest {
 
         final PlatformTransactionManager transactionManager = new DataSourceTransactionManager(
                 jdbcTemplate.getDataSource());
-        final TxUserService userService = new TxUserService(transactionManager, appUserService);
+
+        final UserService userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                new TxUserServiceHandler(transactionManager, appUserService)
+        );
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
