@@ -19,68 +19,55 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void execute(final String sql) {
+        execute(sql, PreparedStatement::execute);
+    }
+
     public int update(final String sql, final Object... objects) {
         return update(sql, new ArgumentPreparedStatementSetter(objects));
-    }
-
-    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return getResults(rowMapper, preparedStatement.executeQuery());
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        return results(new RowMapperResultSetExtractor<>(rowMapper), resultSet);
-    }
-    private <T> List<T> results(final ResultSetExtractor<List<T>> extractor, final ResultSet resultSet) throws SQLException {
-        return extractor.extractData(resultSet);
     }
 
     public <T> T query(final String sql,
                        final RowMapper<T> rowMapper,
                        final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = getConnection();
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return DataAccessUtils.singleResult(getResults(preparedStatement, rowMapper));
+        });
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql, preparedStatement -> getResults(preparedStatement, rowMapper));
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = executeQuery(preparedStatement, preparedStatementSetter);
-            return DataAccessUtils.singleResult(getResults(rowMapper, resultSet));
+            return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private ResultSet executeQuery(final PreparedStatement preparedStatement,
-                                   final PreparedStatementSetter preparedStatementSetter) throws SQLException {
-        preparedStatementSetter.setValues(preparedStatement);
-        return preparedStatement.executeQuery();
+    private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
     }
 
-    public void executeUpdate(final PreparedStatementExecutor executor) {
-        try (Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = executor.execute(connection);
-            preparedStatement.executeUpdate();
+    private <T> List<T> getResults(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return results(new RowMapperResultSetExtractor<>(rowMapper), resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    private <T> List<T> results(final ResultSetExtractor<List<T>> extractor,
+                                final ResultSet resultSet) throws SQLException {
+        return extractor.extractData(resultSet);
     }
 }

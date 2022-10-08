@@ -59,17 +59,13 @@ class JdbcTemplateTest {
         JdbcUser jdbcUser = new JdbcUser("hoho", "password", "hoho@email.com");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, ps -> {
-            ps.setString(1, jdbcUser.getAccount());
-            ps.setString(2, jdbcUser.getPassword());
-            ps.setString(3, jdbcUser.getEmail());
-        });
+        jdbcTemplate.update(sql, jdbcUser.getAccount(), jdbcUser.getPassword(), jdbcUser.getEmail());
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(sql);
-        verify(preparedStatement, times(1)).setString(1, "hoho");
-        verify(preparedStatement, times(1)).setString(2, "password");
-        verify(preparedStatement, times(1)).setString(3, "hoho@email.com");
+        verify(preparedStatement, times(1)).setObject(1, "hoho");
+        verify(preparedStatement, times(1)).setObject(2, "password");
+        verify(preparedStatement, times(1)).setObject(3, "hoho@email.com");
         verify(preparedStatement, times(1)).executeUpdate();
     }
 
@@ -132,8 +128,8 @@ class JdbcTemplateTest {
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
 
-        jdbcTemplate.executeUpdate(connection -> connection.prepareStatement("delete from jdbc_user"));
+        jdbcTemplate.execute("delete from jdbc_user");
 
-        verify(preparedStatement, times(1)).executeUpdate();
+        verify(preparedStatement, times(1)).execute();
     }
 }
