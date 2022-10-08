@@ -76,13 +76,7 @@ public class JdbcTemplate {
         }
     }
 
-    @FunctionalInterface
-    private interface CallBack<T> {
-
-        T action(final PreparedStatement statement) throws SQLException;
-    }
-
-    private <T> T execute(final String sql, final CallBack<T> callBack) {
+    private <T> T execute(final String sql, final ExecuteCallBack<T> callBack) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
