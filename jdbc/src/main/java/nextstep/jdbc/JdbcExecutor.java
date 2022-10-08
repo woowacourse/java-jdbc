@@ -19,21 +19,21 @@ public class JdbcExecutor {
 
     public <T> T execute(String sql, Object[] args, JdbcCallback<T> jdbcCallback) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
-            return jdbcCallback.call(pstmt);
+            setParameters(preparedStatement, args);
+            return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setParameters(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 }
