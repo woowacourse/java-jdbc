@@ -20,13 +20,10 @@ public class JdbcResourceHandler {
 
     public Object executeQuery(String sql, JdbcStrategy jdbcStrategy, Object... objects) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects)){
+             PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects);
+             ResultSet resultSet = preparedStatement.executeQuery()){
             log.info("query : {}", sql);
-            preparedStatement.executeQuery();
-            ResultSet resultSet = preparedStatement.executeQuery();
-            Object result = jdbcStrategy.apply(resultSet);
-            resultSet.close();
-            return result;
+            return jdbcStrategy.apply(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
