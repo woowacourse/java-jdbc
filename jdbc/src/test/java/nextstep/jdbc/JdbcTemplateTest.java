@@ -47,7 +47,7 @@ class JdbcTemplateTest {
     @Test
     void update() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final var args = new Object[]{"arg1", 2};
 
         // when
@@ -67,7 +67,7 @@ class JdbcTemplateTest {
     @Test
     void query() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
 
         given(statement.executeQuery()).willReturn(resultSet);
@@ -89,7 +89,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 
@@ -112,7 +112,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_empty() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 
@@ -128,7 +128,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_over() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 

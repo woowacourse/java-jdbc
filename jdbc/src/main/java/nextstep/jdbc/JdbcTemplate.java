@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.exception.EmptyResultException;
-import nextstep.jdbc.exception.IncorrectDataSizeException;
 import nextstep.jdbc.resultset.ResultSetExecutor;
 import nextstep.jdbc.resultset.RowMapper;
 import nextstep.jdbc.resultset.RowMapperResultSetExecutor;
@@ -19,9 +17,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private static final int RESULT_SIZE_OF_ONE = 1;
-    private static final int FIRST_INDEX_OF_RESULT = 0;
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -29,6 +24,8 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        DataAccessUtils.notBlank(sql, "SQL");
+
         return execute(sql, (statement -> {
             setParameters(args, statement);
             return statement.executeUpdate();
@@ -36,13 +33,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        DataAccessUtils.notBlank(sql, "SQL");
+        DataAccessUtils.notNull(rowMapper, "RowMapper");
+
         return query(sql, new RowMapperResultSetExecutor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        DataAccessUtils.notBlank(sql, "SQL");
+        DataAccessUtils.notNull(rowMapper, "RowMapper");
+
         final List<T> result = query(sql, new RowMapperResultSetExecutor<>(rowMapper), args);
-        validateResultSize(result);
-        return result.get(FIRST_INDEX_OF_RESULT);
+        return DataAccessUtils.singleResult(result);
     }
 
     private <T> T query(final String sql, final ResultSetExecutor<T> executor, final Object... args) {
@@ -64,15 +66,6 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("Failed to execute a sql.", e);
-        }
-    }
-
-    private <T> void validateResultSize(final List<T> result) {
-        if (result.isEmpty()) {
-            throw new EmptyResultException(RESULT_SIZE_OF_ONE);
-        }
-        if (result.size() > RESULT_SIZE_OF_ONE) {
-            throw new IncorrectDataSizeException(RESULT_SIZE_OF_ONE, result.size());
         }
     }
 
