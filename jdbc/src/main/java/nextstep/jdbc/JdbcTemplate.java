@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -14,6 +15,17 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public void executeQuery(final PreparedStatementExecutor executor, final String sql) {

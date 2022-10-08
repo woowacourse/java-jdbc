@@ -1,9 +1,7 @@
 package com.techcourse.dao;
 
-import com.techcourse.dao.statement.InsertPreparedStatement;
 import com.techcourse.dao.statement.SelectAllResultSet;
 import com.techcourse.dao.statement.SelectResultSet;
-import com.techcourse.dao.statement.UpdatePreparedStatement;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
@@ -22,12 +20,21 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeQuery(new InsertPreparedStatement(user), sql);
+        jdbcTemplate.update(sql, ps -> {
+            ps.setString(1, user.getAccount());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.executeQuery(new UpdatePreparedStatement(user), sql);
+        jdbcTemplate.update(sql, ps -> {
+            ps.setString(1, user.getAccount());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getEmail());
+            ps.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
