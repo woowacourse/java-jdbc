@@ -40,11 +40,11 @@ class JdbcTemplateTest {
 
         // then
         assertAll(() -> {
-            verify(dataSource, times(1)).getConnection();
-            verify(connection, times(1)).prepareStatement(sql);
-            verify(preparedStatement, times(1)).executeUpdate();
-            verify(connection, times(1)).close();
-            verify(preparedStatement, times(1)).close();
+            verify(dataSource).getConnection();
+            verify(connection).prepareStatement(sql);
+            verify(preparedStatement).executeUpdate();
+            verify(connection).close();
+            verify(preparedStatement).close();
         });
     }
 
@@ -64,12 +64,12 @@ class JdbcTemplateTest {
 
         // then
         assertAll(() -> {
-            verify(dataSource, times(1)).getConnection();
-            verify(connection, times(1)).prepareStatement(sql);
-            verify(preparedStatement, times(1)).executeQuery();
-            verify(resultSet, times(1)).close();
-            verify(connection, times(1)).close();
-            verify(preparedStatement, times(1)).close();
+            verify(dataSource).getConnection();
+            verify(connection).prepareStatement(sql);
+            verify(preparedStatement).executeQuery();
+            verify(resultSet).close();
+            verify(connection).close();
+            verify(preparedStatement).close();
         });
     }
 
@@ -110,12 +110,12 @@ class JdbcTemplateTest {
 
         // then
         assertAll(() -> {
-            verify(dataSource, times(1)).getConnection();
-            verify(connection, times(1)).prepareStatement(sql);
-            verify(preparedStatement, times(1)).executeQuery();
-            verify(resultSet, times(1)).close();
-            verify(connection, times(1)).close();
-            verify(preparedStatement, times(1)).close();
+            verify(dataSource).getConnection();
+            verify(connection).prepareStatement(sql);
+            verify(preparedStatement).executeQuery();
+            verify(resultSet).close();
+            verify(connection).close();
+            verify(preparedStatement).close();
         });
     }
 
