@@ -21,75 +21,41 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
             return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
-            return executeGetObjectQuery(rowMapper, preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return executeQueryForObject(rowMapper, preparedStatement);
+        });
     }
 
-    private <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
-                                               final PreparedStatement preparedStatement) {
-        try (
-                ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            throw new RuntimeException("결과가 존재하지 않습니다.");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+    private <T> T executeQueryForObject(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) {
+        List<T> queryResults = executeQuery(rowMapper, preparedStatement);
+        if (queryResults.size() != 1) {
+            throw new DataAccessException("결과가 1개가 아닙니다.");
         }
+        return queryResults.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
-            return executeGetListQuery(rowMapper, preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return executeQuery(rowMapper, preparedStatement);
+        });
     }
 
-    private <T> ArrayList<T> executeGetListQuery(final RowMapper<T> rowMapper,
-                                                        final PreparedStatement preparedStatement) {
-        try (
-                ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            ArrayList<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
+    private <T> T connect(final String sql, final QueryExecutor<T> executor) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -98,5 +64,22 @@ public class JdbcTemplate {
         for (int idx = 0; idx < args.length; idx++) {
             preparedStatement.setObject(idx + 1, args[idx]);
         }
+    }
+
+    private <T> List<T> executeQuery(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getQueryResults(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> getQueryResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 }
