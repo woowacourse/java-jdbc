@@ -38,7 +38,13 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> entities = query(sql, rowMapper, args);
-        return DataAccessUtils.optionalSingleResult(entities);
+        if (entities.size() > 1) {
+            throw new DataAccessException("조회된 데이터의 개수가 1개를 초과합니다.");
+        }
+        if (entities.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(entities.get(0));
     }
 
     public int update(String sql, Object... args) {
