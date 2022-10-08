@@ -23,34 +23,31 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return executeQueryTemplate(sql, pstmt -> {
             setArguments(pstmt, args);
-
             return executeQuery(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, rowMapper, args);
-        return extractOne(sql, result);
+        return extractOne(result);
     }
 
     public int update(final String sql, final Object... args) {
+        return executeQueryTemplate(sql, pstmt -> {
+            setArguments(pstmt, args);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    private <T> T executeQueryTemplate(final String sql, final QueryExecutor<T> queryExecutor) {
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            setArguments(pstmt, args);
-
-            return pstmt.executeUpdate();
+            return queryExecutor.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -81,12 +78,12 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T extractOne(final String sql, final List<T> result) {
+    private <T> T extractOne(final List<T> result) {
         if (result.isEmpty()) {
-            throw new DataAccessException(String.format("조회 결과가 없습니다. [%s]", sql));
+            throw new DataAccessException("조회 결과가 없습니다.");
         }
         if (result.size() > 1) {
-            throw new DataAccessException(String.format("조회 결과가 1개 이상입니다. [%s]", sql));
+            throw new DataAccessException("조회 결과가 1개 이상입니다.");
         }
         return result.get(0);
     }
