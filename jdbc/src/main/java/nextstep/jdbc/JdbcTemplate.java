@@ -45,4 +45,8 @@ public class JdbcTemplate {
             statement.setObject(paramIndex++, param);
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
