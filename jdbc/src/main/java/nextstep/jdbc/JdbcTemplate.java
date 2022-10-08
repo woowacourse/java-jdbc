@@ -25,18 +25,13 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
 
-            class QueryStatementCallback implements StatementCallback<T> {
-
-                @Override
-                public T doInStatement(final PreparedStatement pstmt) {
-                    try (ResultSet resultSet = pstmt.executeQuery()) {
-                        return resultSetExtractor.extractData(resultSet);
-                    } catch (SQLException e) {
-                        throw new DataAccessException("query exception", e);
-                    }
+            return execute(preparedStatement -> {
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    return resultSetExtractor.extractData(resultSet);
+                } catch (SQLException e) {
+                    throw new DataAccessException("query exception", e);
                 }
-            }
-            return execute(new QueryStatementCallback(), pstmt);
+            }, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("query exception", e);
         }
@@ -56,19 +51,13 @@ public class JdbcTemplate {
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(sql, objects);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
-
-            class UpdateStatementCallback implements StatementCallback<Integer> {
-
-                @Override
-                public Integer doInStatement(final PreparedStatement pstmt) {
-                    try {
-                        return pstmt.executeUpdate();
-                    } catch (SQLException e) {
-                        throw new DataAccessException("update Error", e);
-                    }
+            return execute(preparedStatement -> {
+                try {
+                    return pstmt.executeUpdate();
+                } catch (SQLException e) {
+                    throw new DataAccessException("update Error", e);
                 }
-            }
-            return execute(new UpdateStatementCallback(), pstmt);
+            }, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("update exception", e);
         }
