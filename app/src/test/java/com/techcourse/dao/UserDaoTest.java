@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,13 @@ class UserDaoTest {
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void clear() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users");
+        jdbcTemplate.update("alter table users alter column id restart with 1");
     }
 
     @Test
