@@ -31,8 +31,8 @@ public class JdbcTemplate {
             try (final var resultSet = pstmt.executeQuery()) {
                 List<T> result = mapToObjects(rowMapper, resultSet);
 
-                return result.get(0);
-            } catch (SQLException | IndexOutOfBoundsException e) {
+                return DataAccessUtils.nullableSingleResult(result);
+            } catch (SQLException e) {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             }
