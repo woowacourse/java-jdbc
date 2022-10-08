@@ -1,9 +1,11 @@
 package nextstep.jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+@FunctionalInterface
 public interface PreparedStatementExecutor {
 
-    void execute(Connection connection, String sql) throws SQLException;
+    PreparedStatement execute(Connection connection) throws SQLException;
 }

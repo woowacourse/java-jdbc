@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.PreparedStatement;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,16 +25,10 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
-    private static void clearTables(final JdbcTemplate jdbcTemplate) {
-        jdbcTemplate.executeQuery((connection, sql) -> {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.executeUpdate();
-        }, "truncate table users");
-
-        jdbcTemplate.executeQuery((connection, sql) -> {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.executeUpdate();
-        }, "alter table users alter column id restart with 1");
+    private void clearTables(final JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.executeQuery(connection -> connection.prepareStatement("truncate table users"));
+        jdbcTemplate.executeQuery(
+                connection -> connection.prepareStatement("alter table users alter column id restart with 1"));
     }
 
     @Test
