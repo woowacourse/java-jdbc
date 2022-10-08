@@ -34,9 +34,6 @@ public class JdbcTemplate {
                 List<T> result = mapToObjects(rowMapper, resultSet);
 
                 return DataAccessUtils.nullableSingleResult(result);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
             }
         }, args);
     }
@@ -46,12 +43,8 @@ public class JdbcTemplate {
                                     final Object... args) {
         return execute(sql, pstmt -> {
             try (final var resultSet = pstmt.executeQuery()) {
-                List<T> result = mapToObjects(rowMapper, resultSet);
 
-                return result;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
+                return mapToObjects(rowMapper, resultSet);
             }
         }, args);
     }
