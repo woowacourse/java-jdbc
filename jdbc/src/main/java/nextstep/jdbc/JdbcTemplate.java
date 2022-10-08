@@ -73,7 +73,7 @@ public class JdbcTemplate {
             return getQueryResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
