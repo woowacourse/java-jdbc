@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.dao.statement.SelectResultSet;
 import com.techcourse.domain.User;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
@@ -50,11 +49,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select * from users where id = ?";
-        return (User) jdbcTemplate.executeQueryForObject(new SelectResultSet(), sql, new Object[]{id});
+        return jdbcTemplate.query(sql, ROW_MAPPER, ps -> ps.setLong(1, id));
     }
 
     public User findByAccount(final String account) {
         String sql = "select * from users where account = ?";
-        return (User) jdbcTemplate.executeQueryForObject(new SelectResultSet(), sql, new Object[]{account});
+        return jdbcTemplate.query(sql, ROW_MAPPER, ps -> ps.setString(1, account));
     }
 }

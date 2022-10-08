@@ -46,20 +46,26 @@ public class JdbcTemplate {
         }
     }
 
-    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
-        try (Connection connection = getConnection()) {
-            executor.execute(connection, sql);
+    public <T> T query(final String sql,
+                       final RowMapper<T> rowMapper,
+                       final PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
+            }
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public Object executeQueryForObject(final ResultSetExecutor executor,
-                                        final String sql,
-                                        final Object[] columns) {
+    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
         try (Connection connection = getConnection()) {
-            return executor.execute(connection, sql, columns);
+            executor.execute(connection, sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
