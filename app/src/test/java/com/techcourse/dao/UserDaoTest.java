@@ -29,8 +29,8 @@ class UserDaoTest {
     }
 
     private void clearTables(final JdbcTemplate jdbcTemplate) {
-        jdbcTemplate.query(connection -> connection.prepareStatement("truncate table users"));
-        jdbcTemplate.query(
+        jdbcTemplate.executeUpdate(connection -> connection.prepareStatement("truncate table users"));
+        jdbcTemplate.executeUpdate(
                 connection -> connection.prepareStatement("alter table users alter column id restart with 1"));
     }
 

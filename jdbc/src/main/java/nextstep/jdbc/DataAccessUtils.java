@@ -5,7 +5,7 @@ import java.util.List;
 public class DataAccessUtils {
 
     public static <T> T singleResult(final List<T> results) {
-        if (results.isEmpty() || results.size() > 2) {
+        if (results.size() != 1) {
             throw new DataAccessException();
         }
         return results.iterator().next();

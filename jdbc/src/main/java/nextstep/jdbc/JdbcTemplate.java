@@ -19,6 +19,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(final String sql, final Object... objects) {
+        update(sql, new ArgumentPreparedStatementSetter(objects));
+    }
+
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -30,27 +34,10 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final Object... objects) {
-        update(sql, new ArgumentPreparedStatementSetter(objects));
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return getResults(rowMapper, preparedStatement.executeQuery());
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> T query(final String sql,
-                       final RowMapper<T> rowMapper,
-                       final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return DataAccessUtils.singleResult(getResults(rowMapper, preparedStatement.executeQuery()));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -64,7 +51,26 @@ public class JdbcTemplate {
         return extractor.extractData(resultSet);
     }
 
-    public void query(final PreparedStatementExecutor executor) {
+    public <T> T query(final String sql,
+                       final RowMapper<T> rowMapper,
+                       final PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            ResultSet resultSet = executeQuery(preparedStatement, preparedStatementSetter);
+            return DataAccessUtils.singleResult(getResults(rowMapper, resultSet));
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private ResultSet executeQuery(final PreparedStatement preparedStatement,
+                                   final PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        preparedStatementSetter.setValues(preparedStatement);
+        return preparedStatement.executeQuery();
+    }
+
+    public void executeUpdate(final PreparedStatementExecutor executor) {
         try (Connection connection = getConnection()) {
             PreparedStatement preparedStatement = executor.execute(connection);
             preparedStatement.executeUpdate();
