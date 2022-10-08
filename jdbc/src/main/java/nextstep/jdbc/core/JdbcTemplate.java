@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.ExecuteException;
 import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.ExecuteCallBack;
 import nextstep.jdbc.support.ResultSetExecutor;
@@ -34,43 +34,6 @@ public class JdbcTemplate {
         }));
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        DataAccessUtils.notBlank(sql, "SQL");
-        DataAccessUtils.notNull(rowMapper, "RowMapper");
-
-        return query(sql, new RowMapperResultSetExecutor<>(rowMapper));
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        DataAccessUtils.notBlank(sql, "SQL");
-        DataAccessUtils.notNull(rowMapper, "RowMapper");
-
-        final List<T> result = query(sql, new RowMapperResultSetExecutor<>(rowMapper), args);
-        return DataAccessUtils.singleResult(result);
-    }
-
-    private <T> T query(final String sql, final ResultSetExecutor<T> executor, final Object... args) {
-        return execute(sql, (statement -> {
-            setParameters(args, statement);
-            return executeQueryAndExtractData(statement, executor);
-        }));
-    }
-
-    private void setParameters(final Object[] args, final PreparedStatement statement) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
-        }
-    }
-
-    private <T> T executeQueryAndExtractData(final PreparedStatement statement, final ResultSetExecutor<T> executor) {
-        try (final ResultSet resultSet = statement.executeQuery()) {
-            return executor.extractData(resultSet);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to execute a sql.", e);
-        }
-    }
-
     private <T> T execute(final String sql, final ExecuteCallBack<T> callBack) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -80,7 +43,37 @@ public class JdbcTemplate {
             return callBack.action(statement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to execute a query.", e);
+            throw new ExecuteException(e);
+        }
+    }
+
+    private void setParameters(final Object[] args, final PreparedStatement statement) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + 1, args[i]);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        DataAccessUtils.notBlank(sql, "SQL");
+        DataAccessUtils.notNull(rowMapper, "RowMapper");
+
+        return execute(sql, (statement -> {
+            setParameters(args, statement);
+            return executeQueryAndExtractData(statement, new RowMapperResultSetExecutor<>(rowMapper));
+        }));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        return DataAccessUtils.singleResult(results);
+    }
+
+    private <T> T executeQueryAndExtractData(final PreparedStatement statement, final ResultSetExecutor<T> executor) {
+        try (final ResultSet resultSet = statement.executeQuery()) {
+            return executor.extractData(resultSet);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new ExecuteException(e);
         }
     }
 }
