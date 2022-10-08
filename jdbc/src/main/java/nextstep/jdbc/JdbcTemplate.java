@@ -6,7 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.MultipleResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,34 +25,30 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        execute(sql, preparedStatement -> {
             setParams(preparedStatement, params);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+            return preparedStatement.executeUpdate();
+        });
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> result = query(sql, rowMapper, params);
+        return getSingleSize(result);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        log.debug("query : {}", sql);
-        return execute(sql, rowMapper, params);
+        return execute(sql, preparedStatement -> {
+            setParams(preparedStatement, params);
+            return toList(preparedStatement, rowMapper);
+        });
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
         log.debug("query : {}", sql);
 
-        List<T> result = execute(sql, rowMapper, params);
-        validateSingleSize(result);
-        return result.get(0);
-    }
-
-    private <T> List<T> execute(final String sql, final RowMapper<T> rowMapper, final Object[] params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParams(preparedStatement, params);
-            return toList(preparedStatement.executeQuery(), rowMapper);
+            return preparedStatementCallback.doProcess(preparedStatement);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -64,11 +63,11 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> toList(final ResultSet resultSet, final RowMapper<T> rowMapper) {
-        try (resultSet) {
+    private <T> List<T> toList(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet));
+                result.add(rowMapper.mapRow(resultSet));
             }
             return result;
         } catch (SQLException e) {
@@ -76,9 +75,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> void validateSingleSize(final List<T> result) {
-        if (result.size() != SINGLE_COUNT) {
-            throw new DataAccessException("조회 결과 값이 0개 또는 여러개가 존재합니다.");
+    private <T> Optional<T> getSingleSize(final List<T> result) {
+        if (result.isEmpty()) {
+            return Optional.empty();
         }
+        if (result.size() > SINGLE_COUNT) {
+            throw new MultipleResultException();
+        }
+        return Optional.ofNullable(result.get(0));
     }
 }
