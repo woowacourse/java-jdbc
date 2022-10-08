@@ -30,13 +30,12 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
-            return executeGetObjectQuery(rowMapper, preparedStatement);
+            return executeQueryForObject(rowMapper, preparedStatement);
         });
     }
 
-    private <T> T executeGetObjectQuery(final RowMapper<T> rowMapper,
-                                        final PreparedStatement preparedStatement) {
-        List<T> queryResults = executeGetListQuery(rowMapper, preparedStatement);
+    private <T> T executeQueryForObject(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) {
+        List<T> queryResults = executeQuery(rowMapper, preparedStatement);
         if (queryResults.size() != 1) {
             throw new DataAccessException("결과가 1개가 아닙니다.");
         }
@@ -46,11 +45,11 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
-            return executeGetListQuery(rowMapper, preparedStatement);
+            return executeQuery(rowMapper, preparedStatement);
         });
     }
 
-    private  <T> T connect(final String sql, final Executor<T> executor) {
+    private <T> T connect(final String sql, final QueryExecutor<T> executor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return executor.execute(preparedStatement);
@@ -67,8 +66,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> executeGetListQuery(final RowMapper<T> rowMapper,
-                                                 final PreparedStatement preparedStatement) {
+    private <T> List<T> executeQuery(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) {
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
             return getQueryResults(rowMapper, resultSet);
         } catch (SQLException e) {
