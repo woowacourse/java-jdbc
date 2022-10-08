@@ -32,6 +32,66 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @DisplayName("커스텀 queryForObject 메서드는 데이터를 조회하여 Optional로 반환")
+    @Nested
+    class QueryForObjectTest {
+
+        @Test
+        void 조회된_로우가_없을_때_빈_Optional_반환() throws Exception {
+            final var connection = mock(Connection.class);
+            final var preparedStatement = mock(PreparedStatement.class);
+            final var resultSet = mock(ResultSet.class);
+
+            when(dataSource.getConnection()).thenReturn(connection);
+            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(false);
+
+            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=1", ROW_MAPPER);
+
+            verify(dataSource, times(1)).getConnection();
+            verify(connection, times(1)).prepareStatement(any());
+            verify(preparedStatement, times(1)).executeQuery();
+            verify(resultSet, times(1)).next();
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void 조회된_로우가_1개_존재하면_해당_데이터가_담긴_Optional_반환() throws Exception {
+            final var connection = mock(Connection.class);
+            final var preparedStatement = mock(PreparedStatement.class);
+            final var resultSet = mock(ResultSet.class);
+
+            when(dataSource.getConnection()).thenReturn(connection);
+            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true).thenReturn(false);
+
+            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1);
+
+            verify(dataSource, times(1)).getConnection();
+            verify(connection, times(1)).prepareStatement(any());
+            verify(preparedStatement, times(1)).executeQuery();
+            verify(resultSet, times(2)).next();
+            assertThat(result).isPresent();
+        }
+
+        @Test
+        void 복수의_로우가_조회된_경우_예외가_발생한다() throws Exception {
+            final var connection = mock(Connection.class);
+            final var preparedStatement = mock(PreparedStatement.class);
+            final var resultSet = mock(ResultSet.class);
+
+            when(dataSource.getConnection()).thenReturn(connection);
+            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1))
+                    .isInstanceOf(DataAccessException.class);
+        }
+    }
+
     @DisplayName("query 메서드는 데이터를 조회하여 리스트로 반환")
     @Nested
     class QueryTest {
@@ -95,66 +155,6 @@ class JdbcTemplateTest {
             verify(preparedStatement, times(1)).executeQuery();
             verify(resultSet, times(2)).next();
             assertThat(result).hasSize(1);
-        }
-    }
-
-    @DisplayName("커스텀 queryForObject 메서드는 데이터를 조회하여 Optional로 반환")
-    @Nested
-    class QueryForObjectTest {
-
-        @Test
-        void 조회된_로우가_없을_때_빈_Optional_반환() throws Exception {
-            final var connection = mock(Connection.class);
-            final var preparedStatement = mock(PreparedStatement.class);
-            final var resultSet = mock(ResultSet.class);
-
-            when(dataSource.getConnection()).thenReturn(connection);
-            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
-            when(preparedStatement.executeQuery()).thenReturn(resultSet);
-            when(resultSet.next()).thenReturn(false);
-
-            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=1", ROW_MAPPER);
-
-            verify(dataSource, times(1)).getConnection();
-            verify(connection, times(1)).prepareStatement(any());
-            verify(preparedStatement, times(1)).executeQuery();
-            verify(resultSet, times(1)).next();
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        void 조회된_로우가_1개_존재하면_해당_데이터가_담긴_Optional_반환() throws Exception {
-            final var connection = mock(Connection.class);
-            final var preparedStatement = mock(PreparedStatement.class);
-            final var resultSet = mock(ResultSet.class);
-
-            when(dataSource.getConnection()).thenReturn(connection);
-            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
-            when(preparedStatement.executeQuery()).thenReturn(resultSet);
-            when(resultSet.next()).thenReturn(true).thenReturn(false);
-
-            Optional<Object> result = jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1);
-
-            verify(dataSource, times(1)).getConnection();
-            verify(connection, times(1)).prepareStatement(any());
-            verify(preparedStatement, times(1)).executeQuery();
-            verify(resultSet, times(2)).next();
-            assertThat(result).isPresent();
-        }
-
-        @Test
-        void 복수의_로우가_조회된_경우_예외가_발생한다() throws Exception {
-            final var connection = mock(Connection.class);
-            final var preparedStatement = mock(PreparedStatement.class);
-            final var resultSet = mock(ResultSet.class);
-
-            when(dataSource.getConnection()).thenReturn(connection);
-            when(connection.prepareStatement(any())).thenReturn(preparedStatement);
-            when(preparedStatement.executeQuery()).thenReturn(resultSet);
-            when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-
-            assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from table_name where id=?", ROW_MAPPER, 1))
-                    .isInstanceOf(DataAccessException.class);
         }
     }
 
