@@ -31,6 +31,10 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(final String sql, final Object... objects) {
+        update(sql, new ArgumentPreparedStatementSetter(objects));
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
