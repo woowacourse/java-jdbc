@@ -51,3 +51,8 @@
 - [x] 예외를 처리한다.
     - [x] `executeQuery` 의 결과가 없는 경우
     - [x] `executeQuery` 의 결과가 둘 이상인 경우
+
+- [x] 부족한 테스트를 추가한다.
+  - JdbcTemplate 테스트로 QueryExecutor를 간접 테스트한다.
+  - [x] `executeQuery` 의 결과가 없는 경우 
+  - [x] `executeQuery` 의 결과가 둘 이상인 경우

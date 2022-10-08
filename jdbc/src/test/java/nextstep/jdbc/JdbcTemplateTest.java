@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -15,6 +16,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
@@ -50,31 +52,89 @@ class JdbcTemplateTest {
         );
     }
 
-    @Test
-    @DisplayName("queryForObject 메서드는 쿼리를 실행하고 단일객체를 반환한다.")
-    void queryForObject() throws SQLException {
-        // given
-        final ResultSet resultSet = mock(ResultSet.class);
+    @Nested
+    @DisplayName("queryForObject 메서드는 ")
+    class QueryForObject {
+        @Test
+        @DisplayName("쿼리를 실행하고 단일객체를 반환한다.")
+        void success() throws SQLException {
+            // given
+            final ResultSet resultSet = mock(ResultSet.class);
 
-        given(statement.executeQuery()).willReturn(resultSet);
-        given(resultSet.next()).willReturn(true).willReturn(false);
-        given(resultSet.getString("account")).willReturn("roma");
-        given(resultSet.getString("password")).willReturn("1234");
-        given(resultSet.getString("email")).willReturn("roma@service.apply");
+            given(statement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next()).willReturn(true, false);
+            given(resultSet.getString("account")).willReturn("roma");
+            given(resultSet.getString("password")).willReturn("1234");
+            given(resultSet.getString("email")).willReturn("roma@service.apply");
 
-        // when
-        final String sql = "select account, password, email from users where account = ?";
-        final String result = jdbcTemplate.queryForObject(sql, getRowMapper(), "roma");
+            // when
+            final String sql = "select account, password, email from users where account = ?";
+            final String result = jdbcTemplate.queryForObject(sql, getRowMapper(), "roma");
 
-        // then
-        assertAll(
-                () -> assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
-                () -> verify(statement).setObject(1, "roma"),
-                () -> verify(statement).executeQuery(),
-                () -> verify(connection).close(),
-                () -> verify(statement).close(),
-                () -> verify(resultSet).close()
-        );
+            // then
+            assertAll(
+                    () -> assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
+                    () -> verify(statement).setObject(1, "roma"),
+                    () -> verify(statement).executeQuery(),
+                    () -> verify(connection).close(),
+                    () -> verify(statement).close(),
+                    () -> verify(resultSet).close()
+            );
+        }
+
+        @Test
+        @DisplayName("하나 이상의 쿼리 결과가 나오면 예외를 반환한다.")
+        void queryForObject_moreThanOne_exception() throws SQLException {
+            // given
+            final ResultSet resultSet = mock(ResultSet.class);
+
+            given(statement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next()).willReturn(true, true, false);
+            given(resultSet.getString("account")).willReturn("roma");
+            given(resultSet.getString("password")).willReturn("1234");
+            given(resultSet.getString("email")).willReturn("roma@service.apply");
+
+            // when
+            final String sql = "select account, password, email from users where account = ?";
+
+            // then
+            assertAll(
+                    () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getRowMapper(), "roma"))
+                            .isInstanceOf(DataAccessException.class)
+                            .hasMessage("more than one result!"),
+                    () -> verify(statement).executeQuery(),
+                    () -> verify(connection).close(),
+                    () -> verify(statement).close(),
+                    () -> verify(resultSet).close()
+            );
+        }
+
+        @Test
+        @DisplayName("쿼리 조회 결과가 없으면 예외를 반환한다.")
+        void queryForObject_resultNull_exception() throws SQLException {
+            // given
+            final ResultSet resultSet = mock(ResultSet.class);
+
+            given(statement.executeQuery()).willReturn(resultSet);
+            given(resultSet.next()).willReturn(false);
+            given(resultSet.getString("account")).willReturn("roma");
+            given(resultSet.getString("password")).willReturn("1234");
+            given(resultSet.getString("email")).willReturn("roma@service.apply");
+
+            // when
+            final String sql = "select account, password, email from users where account = ?";
+
+            // then
+            assertAll(
+                    () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getRowMapper(), "roma"))
+                            .isInstanceOf(DataAccessException.class)
+                            .hasMessage("query result is null"),
+                    () -> verify(statement).executeQuery(),
+                    () -> verify(connection).close(),
+                    () -> verify(statement).close(),
+                    () -> verify(resultSet).close()
+            );
+        }
     }
 
     @Test
@@ -84,19 +144,10 @@ class JdbcTemplateTest {
         final ResultSet resultSet = mock(ResultSet.class);
 
         given(statement.executeQuery()).willReturn(resultSet);
-        given(resultSet.next())
-                .willReturn(true)
-                .willReturn(true)
-                .willReturn(false);
-        given(resultSet.getString("account"))
-                .willReturn("roma")
-                .willReturn("jason");
-        given(resultSet.getString("password"))
-                .willReturn("1234")
-                .willReturn("4321");
-        given(resultSet.getString("email"))
-                .willReturn("roma@service.apply")
-                .willReturn("jason@service.apply");
+        given(resultSet.next()).willReturn(true, true, false);
+        given(resultSet.getString("account")).willReturn("roma", "jason");
+        given(resultSet.getString("password")).willReturn("1234", "4321");
+        given(resultSet.getString("email")).willReturn("roma@service.apply", "jason@service.apply");
 
         // when
         final String sql = "select account, password, email from users";
