@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -31,6 +33,16 @@ public class UserDao {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId());
+    }
+
+    public void update(final Connection connection, final User user) throws SQLException {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(connection, sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),

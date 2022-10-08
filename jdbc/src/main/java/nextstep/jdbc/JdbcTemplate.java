@@ -20,6 +20,10 @@ public class JdbcTemplate {
         query(sql, PreparedStatement::execute, params);
     }
 
+    public void update(final Connection connection, final String sql, final Object... params) throws SQLException {
+        query(connection, sql, PreparedStatement::execute, params);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return query(sql, statement -> QueryExecutor.executeQuery(rowMapper, statement), params);
     }
@@ -34,6 +38,17 @@ public class JdbcTemplate {
             setParams(statement, params);
             return strategy.apply(statement);
         } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T query(final Connection connection, final String sql, final StatementCallBack<T> strategy,
+                        final Object... params) throws SQLException {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setParams(statement, params);
+            return strategy.apply(statement);
+        } catch (final SQLException e) {
+            connection.rollback();
             throw new RuntimeException(e);
         }
     }

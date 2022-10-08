@@ -53,6 +53,13 @@
     - [x] `executeQuery` 의 결과가 둘 이상인 경우
 
 - [x] 부족한 테스트를 추가한다.
-  - JdbcTemplate 테스트로 QueryExecutor를 간접 테스트한다.
-  - [x] `executeQuery` 의 결과가 없는 경우 
-  - [x] `executeQuery` 의 결과가 둘 이상인 경우
+    - JdbcTemplate 테스트로 QueryExecutor를 간접 테스트한다.
+    - [x] `executeQuery` 의 결과가 없는 경우
+    - [x] `executeQuery` 의 결과가 둘 이상인 경우
+
+## 3단계 - Transaction 적용하기
+
+**체크 리스트**
+
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
