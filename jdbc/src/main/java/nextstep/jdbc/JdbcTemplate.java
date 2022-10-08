@@ -2,7 +2,10 @@ package nextstep.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,18 +31,24 @@ public class JdbcTemplate {
         }
     }
 
-    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (Connection connection = getConnection()) {
-            executor.execute(connection, sql);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public Object executeQueryForList(final ResultSetExecutor executor, final String sql) {
+    public void executeQuery(final PreparedStatementExecutor executor, final String sql) {
         try (Connection connection = getConnection()) {
-            return executor.execute(connection, sql, null);
+            executor.execute(connection, sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
