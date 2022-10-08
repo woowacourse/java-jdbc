@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.support;
 
 import java.util.List;
 import nextstep.jdbc.exception.BlankException;

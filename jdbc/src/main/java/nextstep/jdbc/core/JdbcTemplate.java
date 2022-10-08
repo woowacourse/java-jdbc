@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,9 +7,11 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.resultset.ResultSetExecutor;
-import nextstep.jdbc.resultset.RowMapper;
-import nextstep.jdbc.resultset.RowMapperResultSetExecutor;
+import nextstep.jdbc.support.DataAccessUtils;
+import nextstep.jdbc.support.ExecuteCallBack;
+import nextstep.jdbc.support.ResultSetExecutor;
+import nextstep.jdbc.support.RowMapper;
+import nextstep.jdbc.support.RowMapperResultSetExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

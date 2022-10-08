@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.EmptyResultException;
 import nextstep.jdbc.exception.IncorrectDataSizeException;
-import nextstep.jdbc.resultset.RowMapper;
+import nextstep.jdbc.support.RowMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
