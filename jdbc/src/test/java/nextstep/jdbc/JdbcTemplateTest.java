@@ -1,9 +1,10 @@
 package nextstep.jdbc;
 
+import static nextstep.jdbc.Fixture.비비;
+import static nextstep.jdbc.Fixture.카더가든;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.anyString;
 import static org.mockito.BDDMockito.given;
@@ -23,8 +24,6 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final User 카더가든 = new User(1L, "차정원");
-    private static final User 비비 = new User(2L, "김형서");
     private static final String FIND_ALL_QUERY = "SELECT * FROM users";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM users WHERE id = ?";
     private static final String INSERT_QUERY = "INSERT INTO users (name) VALUES(?)";
@@ -66,7 +65,7 @@ class JdbcTemplateTest {
     void 쿼리를_실행시켜_한_개의_엔티티를_반환한다() throws SQLException {
         // given
         given(resultSet.next()).willReturn(true, false);
-        given(resultSet.getObject(anyInt(), any(Class.class))).willReturn(1L, "차정원");
+        given(resultSet.getObject(anyInt())).willReturn(1L, "차정원");
 
         // when
         final var user = jdbcTemplate.queryForObject(FIND_BY_ID_QUERY, User.class, 1L);
@@ -102,7 +101,7 @@ class JdbcTemplateTest {
     void 쿼리를_실행시켜_두_개_이상의_엔티티를_반환한다() throws SQLException {
         // given
         given(resultSet.next()).willReturn(true, true, false);
-        given(resultSet.getObject(anyInt(), any(Class.class))).willReturn(1L, "차정원", 2L, "김형서");
+        given(resultSet.getObject(anyInt())).willReturn(1L, "차정원", 2L, "김형서");
 
         // when
         final var result = jdbcTemplate.query(FIND_ALL_QUERY, User.class);
@@ -125,15 +124,5 @@ class JdbcTemplateTest {
                 () -> verify(connection).prepareStatement(INSERT_QUERY),
                 () -> verify(preparedStatement).executeUpdate()
         );
-    }
-
-    private static class User {
-        private Long id;
-        private String name;
-
-        private User(final Long id, final String name) {
-            this.id = id;
-            this.name = name;
-        }
     }
 }

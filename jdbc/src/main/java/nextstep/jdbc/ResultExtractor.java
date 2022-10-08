@@ -1,7 +1,5 @@
 package nextstep.jdbc;
 
-import static java.lang.ClassLoader.getSystemClassLoader;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -50,25 +48,23 @@ public class ResultExtractor {
             final var classes = new Class[columnCount];
             final var params = new Object[columnCount];
             for (int i = 0; i < columnCount; i++) {
-                final var clazz = getClass(metaData, i);
-                classes[i] = clazz;
-                params[i] = getParam(resultSet, i, clazz);
+                classes[i] = getClass(metaData, i);
+                params[i] = getParam(resultSet, i);
             }
             return getConstructor(t, classes).newInstance(params);
         }
 
         private static Class<?> getClass(final ResultSetMetaData metaData, final int index)
-                throws ClassNotFoundException, SQLException {
-            final var columnClassName = metaData.getColumnClassName(index + 1);
-            return getSystemClassLoader().loadClass(columnClassName);
+                throws SQLException, ClassNotFoundException {
+            final var className = metaData.getColumnClassName(index + 1);
+            return ClassLoader.getSystemClassLoader().loadClass(className);
         }
 
-        private static Object getParam(final ResultSet resultSet, final int index,
-                                       final Class<?> clazz) throws SQLException {
-            return resultSet.getObject(index + 1, clazz);
+        private static Object getParam(final ResultSet resultSet, final int index) throws SQLException {
+            return resultSet.getObject(index + 1);
         }
 
-        private static <T> Constructor<T> getConstructor(final Class<T> t, final Class[] classes)
+        private static <T> Constructor<T> getConstructor(final Class<T> t, final Class<?>[] classes)
                 throws NoSuchMethodException {
             final var constructor = t.getDeclaredConstructor(classes);
             constructor.setAccessible(true);
