@@ -16,7 +16,7 @@
 
 > 자바가 제공하는 기능을 극한으로 활용해 클린 코드를 작성하는 연습을 한다.
 
-- [ ] 익명 클래스, 함수형 인터페이스, 제네릭, 가변 인자, 람다, try-with-resources, checked vs unchecked exception 등을 활용한다.
+- [X] 익명 클래스, 함수형 인터페이스, 제네릭, 가변 인자, 람다, try-with-resources, checked vs unchecked exception 등을 활용한다.
 
 <img width="537" alt="image" src="https://user-images.githubusercontent.com/45311765/194697540-2027c7b5-9592-4c39-b590-6cfd46d664d8.png">
 

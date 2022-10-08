@@ -22,30 +22,27 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private final DataSource dataSource;
-    private final Connection connection;
-    private final PreparedStatement statement;
-    private final ResultSet resultSet;
-    private final JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
+    private Connection connection;
+    private PreparedStatement statement;
+    private ResultSet resultSet;
+    private JdbcTemplate jdbcTemplate;
 
-    public JdbcTemplateTest() {
+    @BeforeEach
+    void setUp() throws SQLException {
         this.dataSource = mock(DataSource.class);
         this.connection = mock(Connection.class);
         this.statement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
-
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
-    @BeforeEach
-    void setUp() throws SQLException {
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(statement);
     }
 
     @DisplayName("update query 수행을 확인한다.")
     @Test
-    void update() throws SQLException {
+    void update() {
         // given
         final var sql = "sql";
         final var args = new Object[]{"arg1", 2};
