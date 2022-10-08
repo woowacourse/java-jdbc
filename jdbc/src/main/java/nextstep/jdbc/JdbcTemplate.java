@@ -19,15 +19,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... objects) {
-        update(sql, new ArgumentPreparedStatementSetter(objects));
+    public int update(final String sql, final Object... objects) {
+        return update(sql, new ArgumentPreparedStatementSetter(objects));
     }
 
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);

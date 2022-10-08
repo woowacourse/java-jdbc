@@ -1,7 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.text.MessageFormat;
 import java.util.List;
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 import org.slf4j.Logger;
@@ -25,12 +27,20 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        int rowCount = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+
+        if (rowCount != 1) {
+            throw new DataAccessException(MessageFormat.format("wrong query : {0}", sql));
+        }
     }
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        int rowCount = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+
+        if (rowCount != 1) {
+            throw new DataAccessException(MessageFormat.format("wrong query : {0}", sql));
+        }
     }
 
     public List<User> findAll() {
