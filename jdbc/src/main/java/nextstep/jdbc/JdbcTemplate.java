@@ -14,21 +14,18 @@ public class JdbcTemplate {
         this.jdbcResourceHandler = new JdbcResourceHandler(dataSource);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
         Object result = jdbcResourceHandler.executeQuery(
-                sql, (resultSet -> extractResult(resultSet, rowMapper))
+                sql, (resultSet -> extractResult(resultSet, rowMapper)), parameters
         );
 
         return (List<T>) result;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Object result = jdbcResourceHandler.executeQuery(
-                sql, resultSet -> extractResult(resultSet, rowMapper), parameters
-        );
+        List<T> results = queryForList(sql, rowMapper, parameters);
 
-        List<T> result1 = (List<T>) result;
-        return result1.stream()
+        return results.stream()
                 .findAny()
                 .orElseThrow(() -> new DataAccessException("not found object of query: " + sql));
     }
