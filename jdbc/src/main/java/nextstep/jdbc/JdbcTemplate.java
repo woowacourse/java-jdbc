@@ -25,8 +25,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... objects) {
         executePreparedStatement(sql, pstmt -> {
             setParams(pstmt, objects);
-            pstmt.executeUpdate();
-            return null;
+            return pstmt.executeUpdate();
         });
     }
 
@@ -42,7 +41,7 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T executePreparedStatement(final String sql, QueryExecutor<T> executor) {
+    private <T> T executePreparedStatement(final String sql, final QueryExecutor<T> executor) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
@@ -66,7 +65,7 @@ public class JdbcTemplate {
     private <T> List<T> convertRows(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (rs.next()) {
-            final T result = rowMapper.mapTow(rs);
+            final T result = rowMapper.mapRow(rs);
             results.add(result);
         }
         return results;
