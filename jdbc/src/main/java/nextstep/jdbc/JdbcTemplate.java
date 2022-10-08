@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -20,10 +21,6 @@ public class JdbcTemplate {
         query(sql, PreparedStatement::execute, params);
     }
 
-    public void update(final Connection connection, final String sql, final Object... params) throws SQLException {
-        query(connection, sql, PreparedStatement::execute, params);
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return query(sql, statement -> QueryExecutor.executeQuery(rowMapper, statement), params);
     }
@@ -33,23 +30,12 @@ public class JdbcTemplate {
     }
 
     private <T> T query(final String sql, final StatementCallBack<T> strategy, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParams(statement, params);
-            return strategy.apply(statement);
-        } catch (final SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> T query(final Connection connection, final String sql, final StatementCallBack<T> strategy,
-                        final Object... params) throws SQLException {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(statement, params);
             return strategy.apply(statement);
         } catch (final SQLException e) {
-            connection.rollback();
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
