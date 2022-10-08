@@ -112,9 +112,9 @@ class JdbcTemplateTest {
                 rs.getLong("id"),
                 rs.getString("account"),
                 rs.getString("password"),
-                rs.getString("email")), ps -> {
-            ps.setLong(1, 1L);
-        });
+                rs.getString("email")),
+            1L
+        );
 
         verify(dataSource, times(1)).getConnection();
         verify(connection, times(1)).prepareStatement(sql);

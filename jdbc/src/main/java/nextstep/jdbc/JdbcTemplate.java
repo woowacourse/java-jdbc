@@ -24,16 +24,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... objects) {
-        return update(sql, new ArgumentPreparedStatementSetter(objects));
+        return execute(sql, objects);
     }
 
-    public <T> T query(final String sql,
-                       final RowMapper<T> rowMapper,
-                       final PreparedStatementSetter preparedStatementSetter) {
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return DataAccessUtils.singleResult(getResults(preparedStatement, rowMapper));
-        });
+    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        return execute(sql, preparedStatement -> getResult(rowMapper, preparedStatement, objects));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
@@ -50,11 +45,23 @@ public class JdbcTemplate {
         }
     }
 
-    private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    private int execute(final String sql, final Object[] objects) {
         return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+            setValues(preparedStatement, objects);
             return preparedStatement.executeUpdate();
         });
+    }
+
+    private void setValues(final PreparedStatement preparedStatement, Object[] objects) throws SQLException {
+        PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(objects);
+        preparedStatementSetter.setValues(preparedStatement);
+    }
+
+    private <T> T getResult(final RowMapper<T> rowMapper,
+                            final PreparedStatement preparedStatement,
+                            final Object[] objects) throws SQLException {
+        setValues(preparedStatement, objects);
+        return DataAccessUtils.singleResult(getResults(preparedStatement, rowMapper));
     }
 
     private <T> List<T> getResults(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {

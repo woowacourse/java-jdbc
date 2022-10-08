@@ -27,6 +27,7 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        log.debug(sql);
         int rowCount = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         if (rowCount != 1) {
@@ -36,6 +37,7 @@ public class UserDao {
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        log.debug(sql);
         int rowCount = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
 
         if (rowCount != 1) {
@@ -44,17 +46,20 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final String sql = "select * from users";
+        String sql = "select * from users";
+        log.debug(sql);
         return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         String sql = "select * from users where id = ?";
-        return jdbcTemplate.query(sql, ROW_MAPPER, ps -> ps.setLong(1, id));
+        log.debug(sql);
+        return jdbcTemplate.query(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "select * from users where account = ?";
-        return jdbcTemplate.query(sql, ROW_MAPPER, ps -> ps.setString(1, account));
+        log.debug(sql);
+        return jdbcTemplate.query(sql, ROW_MAPPER, account);
     }
 }
