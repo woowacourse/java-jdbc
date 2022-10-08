@@ -59,7 +59,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
