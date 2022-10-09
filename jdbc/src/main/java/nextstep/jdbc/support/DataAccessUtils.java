@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nextstep.jdbc.RowMapper;
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 
 public class DataAccessUtils {
