@@ -15,7 +15,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int FIRST_INDEX = 0;
-    private static final int PARAMETER_INDEX_INCREMENT = 1;
 
     private final DataSource dataSource;
 
@@ -24,8 +23,9 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args)) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
+                     connection.prepareStatement(sql), args)) {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("error : {}", e);
@@ -34,8 +34,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
+                     connection.prepareStatement(sql), args);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
 
             final List<T> results = new ArrayList<>();
@@ -52,18 +53,5 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> query = query(sql, rowMapper, args);
         return query.get(FIRST_INDEX);
-    }
-
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
-    private PreparedStatement createPreparedStatement(final Connection connection, final String sql,
-                                                      final Object... args) throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = FIRST_INDEX; i < args.length; i++) {
-            preparedStatement.setObject(i + PARAMETER_INDEX_INCREMENT, args[i]);
-        }
-        return preparedStatement;
     }
 }
