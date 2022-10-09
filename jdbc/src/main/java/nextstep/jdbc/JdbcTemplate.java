@@ -33,7 +33,9 @@ public abstract class JdbcTemplate {
         }
     }
 
-    protected abstract DataSource getDataSource();
+    public DataSource getDataSource() {
+        return this.dataSource;
+    }
 
     public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);

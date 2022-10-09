@@ -14,11 +14,6 @@ public class UserJdbcTemplate extends JdbcTemplate {
         super(dataSource);
     }
 
-    @Override
-    protected DataSource getDataSource() {
-        return this.dataSource;
-    }
-
     public Connection getConnection() {
         try {
             return DataSourceConfig.getInstance().getConnection();

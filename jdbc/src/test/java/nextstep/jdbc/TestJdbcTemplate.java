@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class TestJdbcTemplate extends JdbcTemplate {
 
@@ -9,8 +8,4 @@ public class TestJdbcTemplate extends JdbcTemplate {
         super(dataSource);
     }
 
-    @Override
-    protected DataSource getDataSource() {
-        return null;
-    }
 }
