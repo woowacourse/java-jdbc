@@ -45,7 +45,7 @@ class JdbcTemplateTest {
         given(connection.prepareStatement(sql)).willReturn(preparedStatement);
 
         // when
-        jdbcTemplate.execute(sql, "account", "password", "email");
+        jdbcTemplate.update(sql, "account", "password", "email");
 
         // then
         assertAll(
@@ -65,7 +65,7 @@ class JdbcTemplateTest {
         given(connection.prepareStatement(sql)).willReturn(preparedStatement);
 
         // when
-        jdbcTemplate.execute(sql, "account", "password", "email", 1);
+        jdbcTemplate.update(sql, "account", "password", "email", 1);
 
         // then
         assertAll(

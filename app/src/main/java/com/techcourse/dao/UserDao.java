@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
@@ -16,22 +15,18 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
