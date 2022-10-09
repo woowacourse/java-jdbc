@@ -49,7 +49,10 @@ public class JdbcTemplate {
             return executor.apply(pstmt);
 
         } catch (final SQLException e) {
+            DataSourceUtils.releaseConnection(conn, getDataSource());
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, getDataSource());
         }
     }
 
