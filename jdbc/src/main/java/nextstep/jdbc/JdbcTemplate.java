@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -42,9 +43,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executePreparedStatement(final String sql, final QueryExecutor<T> executor) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return executor.apply(pstmt);
 
@@ -88,5 +88,9 @@ public class JdbcTemplate {
             final var object = objects[i];
             pstmt.setObject(parameterIndex, object);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
