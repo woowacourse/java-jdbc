@@ -2,9 +2,6 @@ package com.techcourse.dao;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
-
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
@@ -21,10 +18,6 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -37,6 +30,7 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account =?, password = ?, email = ? ";
+
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 

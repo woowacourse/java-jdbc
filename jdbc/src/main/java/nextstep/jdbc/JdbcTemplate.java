@@ -11,26 +11,29 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate {
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.statementSetter.ArgumentPreparedStatementSetter;
+
+public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    protected abstract DataSource getDataSource();
 
     public void update(final String sql, Object... args) {
+        ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+
         execute(sql, preparedStatement -> {
-            setStatement(preparedStatement, args);
+            statementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         });
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
+        ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+
         return execute(sql, preparedStatement -> {
-            setStatement(preparedStatement, args);
+            statementSetter.setValues(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
             return ResultSetExtractor.extract(rowMapper, rs);
         });
@@ -43,15 +46,10 @@ public class JdbcTemplate {
         });
     }
 
-    private void setStatement(final PreparedStatement statement, final Object[] data) throws SQLException {
-        for (int i = 0; i < data.length; i++) {
-            statement.setObject(i + 1, data[i]);
-        }
-    }
-
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)
+        try (Connection conn = getDataSource().getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
+                 ResultSet.CONCUR_UPDATABLE)
         ) {
             log.debug("query : {}", sql);
             return callback.doInStatement(statement);
