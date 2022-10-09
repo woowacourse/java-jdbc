@@ -41,9 +41,8 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
 
-            return getResult(rowMapper, rs);
+            return getResult(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -57,13 +56,15 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private <T> List<T> getResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs, rs.getRow()));
+    private <T> List<T> getResult(final PreparedStatement preparedStatement,
+                                  final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = preparedStatement.executeQuery()) {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return result;
         }
-        rs.close();
-        return results;
     }
 
     private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
