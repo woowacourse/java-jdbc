@@ -53,6 +53,25 @@ class JdbcTemplateTest {
         verify(connection, callTimes).close();
     }
 
+    @DisplayName("update 메서드 테스트")
+    @Nested
+    class UpdateTest {
+
+        private void update() {
+            jdbcTemplate.update(SQL, ROW_MAPPER);
+        }
+
+        @DisplayName("할당된 모든 자원을 해제한다.")
+        @Test
+        void closeResources() throws Exception {
+            // when
+            update();
+
+            // then
+            verifyAllResourcesClosed();
+        }
+    }
+
     @DisplayName("query 메서드 테스트")
     @Nested
     class QueryTest {
