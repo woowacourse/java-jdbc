@@ -132,7 +132,6 @@ class JdbcTemplateTest {
     @DisplayName("queryForOne 메서드는 결과 행이 2 이상이면 예외를 던진다")
     @Test
     void queryOne_exception_when_data_size_2() throws SQLException {
-
         // given
         final AtomicInteger dataRowsObject = new AtomicInteger(2);
         given(resultSet.next()).will(invocation -> dataRowsObject.getAndDecrement() > 0);

@@ -22,6 +22,7 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... params) {
         log.debug("query : {}", sql);
+        log.debug("params : {}", params);
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             setStatementParams(pstmt, params);
@@ -58,7 +59,7 @@ public class JdbcTemplate {
              final var pstmt = conn.prepareStatement(sql)) {
             setStatementParams(pstmt, conditionParams);
             rs = pstmt.executeQuery();
-            return rows(rowMapper, rs);
+            return loadRows(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -67,7 +68,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> rows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> List<T> loadRows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         final List<T> result = new ArrayList<>();
         while (rs.next()) {
             result.add(rowMapper.map(rs));
