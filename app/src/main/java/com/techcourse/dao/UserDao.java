@@ -5,7 +5,6 @@ import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
 
-
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;

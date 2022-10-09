@@ -31,9 +31,10 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
         Connection connection = status.getConnection();
         try {
             connection.commit();
-            DataSourceUtils.release(dataSource);
+            connection.setAutoCommit(true);
+            DataSourceUtils.release(connection, dataSource);
         } catch (SQLException e) {
-            throw new TransactionException();
+            throw new TransactionException(e);
         }
     }
 
@@ -42,9 +43,10 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
         Connection connection = status.getConnection();
         try {
             connection.rollback();
-            DataSourceUtils.release(dataSource);
+            connection.setAutoCommit(true);
+            DataSourceUtils.release(connection, dataSource);
         } catch (SQLException e) {
-            throw new TransactionException();
+            throw new TransactionException(e);
         }
     }
 }

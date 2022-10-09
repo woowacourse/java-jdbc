@@ -24,6 +24,7 @@ class DataSourceTransactionManagerTest {
         dataSource = Mockito.mock(DataSource.class);
         connection = Mockito.mock(Connection.class);
         given(dataSource.getConnection()).willReturn(connection);
+        given(connection.getAutoCommit()).willReturn(true);
     }
 
     @Test
