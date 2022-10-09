@@ -21,27 +21,34 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private <T> T execute(StatementExecutor<T> statementExecutor, PreparedStatement pstmt) {
+        return statementExecutor.execute(pstmt);
+    }
+
     public int update(final String sql, final Object... args) {
         return update(new SimplePreparedStatementSetter(sql, args));
     }
 
     public int update(final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = pss.setValues(conn)) {
-            return pstmt.executeUpdate();
+             PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+
+            return execute((prepareStatement) -> {
+                try {
+                    return prepareStatement.executeUpdate();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return query(rowMapper, new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
-    }
-
-    private <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+    private <T> List<T> query(final RowMapper<T> rowMapper, final SimplePreparedStatementSetter spss) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = pss.setValues(conn);
+             PreparedStatement pstmt = spss.createPreparedStatement(conn);
              ResultSet rs = pstmt.executeQuery()) {
             List<T> result = new ArrayList<>();
             if (rs.next()) {
@@ -53,6 +60,10 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return query(rowMapper, new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
