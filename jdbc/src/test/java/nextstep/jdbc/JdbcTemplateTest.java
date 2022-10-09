@@ -28,7 +28,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement("select * from users where id = 1")).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
-        when(jdbcMapper.mapRow(resultSet)).thenReturn(List.of(new TestUser(1L, "bcc0830@naver.com", "1234")));
+        when(jdbcMapper.mapRow(resultSet)).thenReturn(new TestUser(1L, "bcc0830@naver.com", "1234"));
         JdbcTemplate jdbcTemplate = new TestJdbcTemplate(dataSource);
 
         // when

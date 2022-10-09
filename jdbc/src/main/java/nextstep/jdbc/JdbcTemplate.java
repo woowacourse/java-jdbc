@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class JdbcTemplate {
@@ -43,7 +44,11 @@ public abstract class JdbcTemplate {
             pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             resultSet = executeQuery(sqlSetter, pstmt);
-            return jdbcMapper.mapRow(resultSet);
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(jdbcMapper.mapRow(resultSet));
+            }
+            return results;
 
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
@@ -72,33 +77,33 @@ public abstract class JdbcTemplate {
 
     public <T> int nonSelectQuery(String sql, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);
-        Connection conn = null;
-        PreparedStatement pstmt = null;
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             sqlSetter.injectParams(pstmt);
             log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
+            int executeCount = pstmt.executeUpdate();
+            return executeCount;
 
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
         }
+    }
 
-        finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+    public <T> int nonSelectQueryWithConnection(Connection connection, String sql, Object... params) {
+        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            sqlSetter.injectParams(pstmt);
+            log.debug("query : {}", sql);
+            int executeCount = pstmt.executeUpdate();
+            return executeCount;
+
+        } catch (SQLException | DataAccessException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException();
         }
     }
 }

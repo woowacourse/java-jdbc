@@ -4,7 +4,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import nextstep.jdbc.DataAccessException;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class UserService {
@@ -26,9 +29,28 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+
+        Connection connection = null;
+        try {
+            connection = userDao.getConnection();
+            connection.setAutoCommit(false);
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            connection.commit();
+        }
+        catch (SQLException | DataAccessException e) {
+            try {
+                connection.rollback();
+            }
+            catch (SQLException ignored) {}
+            throw new DataAccessException();
+        }
+        finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
     }
 }
