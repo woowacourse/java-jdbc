@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,6 +19,12 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public int update(final Connection connection,
+                      final String sql,
+                      final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public int update(final String sql,
@@ -54,6 +61,21 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T execute(final Connection connection,
+                          final String sql,
+                          final StatementCallBack<T> statement,
+                          final Object... args) {
+        PreparedStatementCreator statementCreator = preparedStatementCreator(args);
+
+        try (final var preparedStatement = statementCreator.create(connection, sql)) {
+
+            return statement.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to Access DataBase", e);
+        }
+    }
+
     private <T> T execute(final String sql,
                           final StatementCallBack<T> statement,
                           final Object... args) {
@@ -74,7 +96,8 @@ public class JdbcTemplate {
         return (connection, sql) -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             IntStream.range(0, args.length)
-                .forEach(IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, args[index])));
+                .forEach(
+                    IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, args[index])));
 
             return pstmt;
         };
