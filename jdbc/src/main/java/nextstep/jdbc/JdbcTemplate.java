@@ -34,7 +34,7 @@ public class JdbcTemplate {
             return execute(new SimpleStatementExecutor<>(), pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -46,12 +46,12 @@ public class JdbcTemplate {
                 try (ResultSet rs = pstmt.executeQuery()) {
                     return rse.extract(rs);
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                    throw new DataAccessException(e);
                 }
             }, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -62,6 +62,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(new SimpleResultSetExtractor<>(rowMapper), new SimplePreparedStatementSetter(sql, args));
+
         if (result.size() != 1) {
             throw new RuntimeException();
         }

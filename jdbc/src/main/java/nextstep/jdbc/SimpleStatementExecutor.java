@@ -10,7 +10,7 @@ public class SimpleStatementExecutor<T> implements StatementExecutor<Integer> {
         try {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
