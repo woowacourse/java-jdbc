@@ -72,11 +72,8 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        int index = SINGLE_RESULT_SIZE;
-        for (Object arg : args) {
-            pstmt.setObject(index, arg);
-            index++;
-        }
+    private void setArguments(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
+        PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        preparedStatementSetter.setValues(preparedStatement);
     }
 }
