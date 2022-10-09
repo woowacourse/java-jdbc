@@ -16,14 +16,13 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
-        connection = mock(Connection.class);
+        Connection connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
 
@@ -45,7 +44,6 @@ class JdbcTemplateTest {
         jdbcTemplate.query(sql, null);
 
         // then
-        verify(connection).close();
         verify(preparedStatement).close();
         verify(resultSet).close();
     }
@@ -60,7 +58,6 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql);
 
         // then
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 }

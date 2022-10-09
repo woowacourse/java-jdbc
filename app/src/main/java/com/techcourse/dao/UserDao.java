@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
@@ -25,11 +24,6 @@ public class UserDao {
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void updateForTransaction(final User user, final Connection connection) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.updateForTransaction(sql, connection, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final User user) {
