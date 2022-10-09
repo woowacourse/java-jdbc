@@ -54,10 +54,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
-        QueryExecutor queryExecutor = (pstmt) -> {
-            pstmt.executeUpdate();
-            return null;
-        };
+        QueryExecutor queryExecutor = (pstmt) -> pstmt.executeUpdate();
 
         executeQuery(queryExecutor, sql, parameters);
     }
