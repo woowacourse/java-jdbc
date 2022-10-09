@@ -8,6 +8,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.support.DataAccessUtils;
 
 public class JdbcTemplate {
 
@@ -24,18 +25,19 @@ public class JdbcTemplate {
         return statementExecutor.execute(pstmt);
     }
 
-    public int update(final String sql, final Object... args) {
-        return update(new SimplePreparedStatementSetter(sql, args));
-    }
-
     public int update(final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+
             return execute(new SimpleStatementExecutor<>(), pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public int update(final String sql, final Object... args) {
+        return update(new SimplePreparedStatementSetter(sql, args));
     }
 
     public <T> List<T> query(final SimpleResultSetExtractor<T> rse, final PreparedStatementSetter pss) {
@@ -62,10 +64,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(new SimpleResultSetExtractor<>(rowMapper), new SimplePreparedStatementSetter(sql, args));
-
-        if (result.size() != 1) {
-            throw new RuntimeException();
-        }
-        return result.get(0);
+        return DataAccessUtils.nullableSingleResult(result);
     }
 }
