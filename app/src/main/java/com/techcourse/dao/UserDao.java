@@ -2,13 +2,11 @@ package com.techcourse.dao;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import com.techcourse.domain.User;
 
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import nextstep.jdbc.StatementCallback;
+import nextstep.jdbc.callback.StatementCallback;
 
 public class UserDao {
 

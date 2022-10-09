@@ -10,6 +10,9 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nextstep.jdbc.callback.ExecuteCallback;
+import nextstep.jdbc.callback.RowMapperCallback;
+
 public class JdbcUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);

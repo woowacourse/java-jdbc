@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import com.techcourse.domain.UserHistory;
 
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.StatementCallback;
+import nextstep.jdbc.callback.StatementCallback;
 
 public class UserHistoryDao {
 

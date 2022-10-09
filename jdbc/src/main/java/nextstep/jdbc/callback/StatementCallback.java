@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.callback;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

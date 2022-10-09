@@ -15,6 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import nextstep.jdbc.callback.ExecuteCallback;
+import nextstep.jdbc.callback.RowMapperCallback;
+
 class JdbcUtilTest {
 
 	private JdbcUtil jdbcUtil;
