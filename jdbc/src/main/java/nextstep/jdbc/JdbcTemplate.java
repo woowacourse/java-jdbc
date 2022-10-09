@@ -21,46 +21,41 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            setParams(preparedStatement, params);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        execute(sql, PreparedStatement::executeUpdate, params);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, preparedStatement -> getObjects(preparedStatement, rowMapper), params);
+    }
+
+    private <T> List<T> getObjects(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        List<T> objects = new ArrayList<>();
+        for (int rowNumber = 0; resultSet.next(); rowNumber++) {
+            objects.add(rowMapper.mapRow(resultSet, rowNumber));
         }
+        return objects;
+
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try {
-            List<T> result = query(sql, rowMapper, params);
-            return extractObject(result);
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        List<T> results = query(sql, rowMapper, params);
+        return extractObject(results);
     }
 
-    private <T> T extractObject(List<T> result) throws SQLException {
+    private <T> T extractObject(List<T> result) {
         if (result.size() != 1) {
             throw new IncorrectResultSizeDataAccessException();
         }
         return result.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            List<T> objects = new ArrayList<>();
             setParams(preparedStatement, params);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            for (int rowNumber = 0; resultSet.next(); rowNumber++) {
-                objects.add(rowMapper.mapRow(resultSet, rowNumber));
-            }
-            return objects;
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
