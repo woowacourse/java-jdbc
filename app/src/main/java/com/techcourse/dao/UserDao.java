@@ -34,9 +34,9 @@ public class UserDao {
         this.userJdbcTemplate.nonSelectQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection connection, final User user) {
+    public void update(final User user) {
         String sql = "update users set password = ? where account = ?";
-        this.userJdbcTemplate.nonSelectQueryWithConnection(connection, sql, user.getPassword(), user.getAccount());
+        this.userJdbcTemplate.nonSelectQuery(sql, user.getPassword(), user.getAccount());
 
     }
 

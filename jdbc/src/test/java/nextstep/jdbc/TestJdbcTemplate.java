@@ -13,9 +13,4 @@ public class TestJdbcTemplate extends JdbcTemplate {
     protected DataSource getDataSource() {
         return null;
     }
-
-    @Override
-    public Connection getConnection() {
-        return null;
-    }
 }

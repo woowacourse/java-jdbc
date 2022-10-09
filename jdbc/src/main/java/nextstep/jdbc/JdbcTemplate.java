@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -36,14 +37,11 @@ public abstract class JdbcTemplate {
 
     public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
-            resultSet = executeQuery(sqlSetter, pstmt);
+            ResultSet resultSet = executeQuery(sqlSetter, pstmt);
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(jdbcMapper.mapRow(resultSet));
@@ -54,48 +52,14 @@ public abstract class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
         }
-        finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
     }
 
     public <T> int nonSelectQuery(String sql, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            sqlSetter.injectParams(pstmt);
-            log.debug("query : {}", sql);
-            int executeCount = pstmt.executeUpdate();
-            return executeCount;
-
-        } catch (SQLException | DataAccessException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException();
-        }
-    }
-
-    public <T> int nonSelectQueryWithConnection(Connection connection, String sql, Object... params) {
-        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
-
         try {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             sqlSetter.injectParams(pstmt);
             log.debug("query : {}", sql);
             int executeCount = pstmt.executeUpdate();
