@@ -49,7 +49,7 @@ class UserServiceTest {
         final var appUserService = new AppUserService(userDao, userHistoryDao);
 
         final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var userService = new TransactionalUserService(transactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
