@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public interface JdbcAction {
-    Object doAction(PreparedStatement statement) throws SQLException;
+@FunctionalInterface
+public interface JdbcAction<T> {
+    T doAction(PreparedStatement statement) throws SQLException;
 }
