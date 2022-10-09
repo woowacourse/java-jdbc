@@ -24,7 +24,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, preparedStatement -> {
-            log.debug(QUERY_FORMAT, sql);
             setParameters(preparedStatement, args);
             return update(preparedStatement);
         });
@@ -46,8 +45,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatement -> {
             setParameters(preparedStatement, args);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                log.debug(QUERY_FORMAT, sql);
-
                 final List<T> values = new ArrayList<>();
                 while (resultSet.next()) {
                     values.add(rowMapper.mapRow(resultSet));
@@ -58,10 +55,7 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql) {
-        execute(sql, preparedStatement -> {
-            log.debug(QUERY_FORMAT, sql);
-            return preparedStatement.execute();
-        });
+        execute(sql, PreparedStatement::execute);
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... args) {
@@ -78,6 +72,7 @@ public class JdbcTemplate {
     private <R> R execute(final String sql, final PreparedStatementCallback<R> action) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug(QUERY_FORMAT, sql);
             return action.doInStatement(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
