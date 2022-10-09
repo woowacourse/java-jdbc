@@ -4,13 +4,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -64,8 +64,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             return callback.doInStatement(statement);
@@ -73,5 +74,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
