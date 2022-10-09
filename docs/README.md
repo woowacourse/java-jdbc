@@ -13,7 +13,7 @@
 ### 2단계 - 리팩터링
 
 - [x] DataAccessUtils를 통한 데이터 체크
-- [ ] Wrapper 클래스를 통한 stream에서의 예외처리
+- [x] Wrapper 클래스를 통한 stream에서의 예외처리
 - [x] 중복되는 ResultSet 생성 처리 제거
 
 ### 3단계 - Transaction 적용하기
