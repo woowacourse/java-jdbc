@@ -27,13 +27,13 @@ public class TransactionSynchronizationManager {
         primitiveResources.put(dataSource, connection);
     }
 
-    public static void release(final Object key) {
+    public static Object release(final Object key) {
         Map<Object, Object> primitiveResources = resources.get();
         if (primitiveResources == null) {
             resources.remove();
-            return;
+            return null;
         }
-        primitiveResources.remove(key);
+        return primitiveResources.remove(key);
     }
 
     private TransactionSynchronizationManager() {
