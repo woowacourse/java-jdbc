@@ -17,6 +17,8 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
     public TransactionStatus getTransaction(final TransactionDefinition definition) throws TransactionException {
         try {
             Connection connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(definition.getIsolationLevel().getIndex());
             return new TransactionStatus(definition.getIsolationLevel(), definition.getPropagationBehavior(),
                     definition.isReadOnly(), connection);
         } catch (SQLException e) {

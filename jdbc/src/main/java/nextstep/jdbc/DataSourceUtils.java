@@ -11,7 +11,6 @@ public class DataSourceUtils {
         Object resource = TransactionSynchronizationManager.getResource(dataSource);
         if (resource == null) {
             Connection connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindConnection(dataSource, connection);
             return connection;
         }

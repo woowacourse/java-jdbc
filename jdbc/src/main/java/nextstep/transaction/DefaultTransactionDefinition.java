@@ -18,7 +18,7 @@ public class DefaultTransactionDefinition implements TransactionDefinition {
     }
 
     public DefaultTransactionDefinition() {
-        this(TransactionPropagation.PROPAGATION_REQUIRED, TransactionIsolation.ISOLATION_DEFAULT, false);
+        this(TransactionPropagation.PROPAGATION_REQUIRED, TransactionIsolation.READ_UNCOMMITTED, false);
     }
 
     public void setReadOnly(final boolean readOnly) {

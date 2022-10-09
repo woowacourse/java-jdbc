@@ -1,6 +1,6 @@
 package nextstep.transaction;
 
-import static nextstep.transaction.support.TransactionIsolation.ISOLATION_DEFAULT;
+import static nextstep.transaction.support.TransactionIsolation.READ_UNCOMMITTED;
 import static nextstep.transaction.support.TransactionPropagation.PROPAGATION_REQUIRED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -13,7 +13,7 @@ class DefaultTransactionDefinitionTest {
     void defaultTransactionDefinition() {
         DefaultTransactionDefinition defaultTransactionDefinition = new DefaultTransactionDefinition();
         assertAll(
-                () -> assertThat(defaultTransactionDefinition.getIsolationLevel()).isEqualTo(ISOLATION_DEFAULT),
+                () -> assertThat(defaultTransactionDefinition.getIsolationLevel()).isEqualTo(READ_UNCOMMITTED),
                 () -> assertThat(defaultTransactionDefinition.getPropagationBehavior()).isEqualTo(PROPAGATION_REQUIRED),
                 () -> assertThat(defaultTransactionDefinition.isReadOnly()).isFalse()
         );

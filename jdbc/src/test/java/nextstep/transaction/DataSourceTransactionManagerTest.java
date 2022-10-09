@@ -1,6 +1,6 @@
 package nextstep.transaction;
 
-import static nextstep.transaction.support.TransactionIsolation.ISOLATION_DEFAULT;
+import static nextstep.transaction.support.TransactionIsolation.READ_UNCOMMITTED;
 import static nextstep.transaction.support.TransactionPropagation.PROPAGATION_REQUIRED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -33,7 +33,7 @@ class DataSourceTransactionManagerTest {
         TransactionStatus transaction = dataSourceTransactionManager.getTransaction(defaultTransactionDefinition);
 
         assertAll(
-                () -> assertThat(transaction.getTransactionIsolation()).isEqualTo(ISOLATION_DEFAULT),
+                () -> assertThat(transaction.getTransactionIsolation()).isEqualTo(READ_UNCOMMITTED),
                 () -> assertThat(transaction.getTransactionPropagation()).isEqualTo(PROPAGATION_REQUIRED),
                 () -> assertThat(transaction.getConnection()).isEqualTo(connection)
         );

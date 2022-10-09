@@ -17,11 +17,13 @@ public class JdbcTemplate {
 
     private <T> T execute(final StatementCallback<T> statementCallback,
                           final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
             return statementCallback.doInStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("query exception", e);
+        } finally {
+            release();
         }
     }
 
@@ -56,5 +58,13 @@ public class JdbcTemplate {
                 throw new DataAccessException("update Error", e);
             }
         }, preparedStatementSetter);
+    }
+
+    private void release() {
+        try {
+            DataSourceUtils.release(dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
