@@ -66,7 +66,7 @@ public class JdbcTemplate {
         try (ResultSet rs = preparedStatement.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(rowMapper.mapRow(rs, rs.getRow()));
+                result.add(rowMapper.mapRow(rs));
             }
             return result;
         }
