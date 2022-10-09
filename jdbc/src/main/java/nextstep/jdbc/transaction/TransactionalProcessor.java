@@ -45,7 +45,7 @@ public class TransactionalProcessor {
                 return invoked;
             } catch (RuntimeException e) {
                 manager.rollback(status);
-                throw new RollbackException(e);
+                throw e;
             }
         }
     }
