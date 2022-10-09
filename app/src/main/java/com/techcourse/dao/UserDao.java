@@ -5,12 +5,9 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
@@ -18,16 +15,13 @@ public class UserDao {
             rs.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
