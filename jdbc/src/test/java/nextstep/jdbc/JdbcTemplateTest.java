@@ -15,7 +15,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 class JdbcTemplateTest {
 
@@ -77,6 +76,6 @@ class JdbcTemplateTest {
         assertThatThrownBy(() ->
                 jdbcTemplate.queryForObject("SELECT id, account, password, email FROM users WHERE id = ?",
                         (rs, rowNum) -> any(), 1L))
-                .isInstanceOf(EmptyResultDataAccessException.class);
+                .isInstanceOf(DataAccessException.class);
     }
 }

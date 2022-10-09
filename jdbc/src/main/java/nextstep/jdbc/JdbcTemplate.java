@@ -8,10 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.util.CollectionUtils;
 
 public class JdbcTemplate {
 
@@ -23,28 +19,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setValues(preparedStatement, args);
+            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
+            preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("Execute Query Failed: " + e);
             throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }
     }
-    private void setValues(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
-        for (int idx = 0; idx < args.length; idx++) {
-            preparedStatement.setObject(idx + 1, args[idx]);
-        }
+
+    private PreparedStatementSetter setPreparedStatement(final Object[] args) {
+        final PreparedStatementSetter preparedStatementSetter = ps -> {
+            for (int idx = 0; idx < args.length; idx++) {
+                ps.setObject(idx + 1, args[idx]);
+            }
+        };
+        return preparedStatementSetter;
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final Object... args
+    ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setValues(preparedStatement, args);
+            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
+            preparedStatementSetter.setValues(preparedStatement);
             return getResultSetData(preparedStatement, rowMapper);
         } catch (SQLException e) {
             log.error("Execute Query Failed: " + e);
@@ -63,13 +67,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (CollectionUtils.isEmpty(results)) {
-            throw new EmptyResultDataAccessException(1);
-        }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        if (results.size() != 1) {
+            throw new DataAccessException("queryForObject는 결괏값이 1개여야 합니다.");
         }
         return results.iterator()
                 .next();

@@ -33,26 +33,21 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                        new User(
-                                rs.getLong("id"),
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email")
-                        )
-        );
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new User(rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")));
     }
 
     public User findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
-                        new User(
-                                rs.getLong("id"),
-                                rs.getString("account"),
-                                rs.getString("password"),
-                                rs.getString("email")
-                        ),
-                id);
+                new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                ), id);
     }
 
     public User findByAccount(final String account) {
