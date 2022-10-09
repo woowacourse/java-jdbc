@@ -20,7 +20,7 @@ public class ResultExtractor {
 
     public static <T> List<T> extractData(final Class<T> targetType, final ResultSet resultSet) {
         final List<T> results = new ArrayList<>();
-        try {
+        try (resultSet) {
             while (resultSet.next()) {
                 results.add(InstanceCreator.createInstance(targetType, resultSet));
             }

@@ -2,9 +2,11 @@ package nextstep.jdbc;
 
 import static nextstep.jdbc.Fixture.카더가든;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -29,7 +31,10 @@ class ResultExtractorTest {
         final List<User> users = ResultExtractor.extractData(User.class, resultSet);
 
         // then
-        assertThat(users).usingRecursiveFieldByFieldElementComparator()
-                .containsExactly(카더가든);
+        assertAll(
+                () -> assertThat(users).usingRecursiveFieldByFieldElementComparator()
+                        .containsExactly(카더가든),
+                () -> verify(resultSet).close()
+        );
     }
 }
