@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -39,17 +38,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+    public <T> List<T> query(final SimpleResultSetExtractor<T> rse, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+
             return execute((preparedStatement) -> {
                 try (ResultSet rs = pstmt.executeQuery()) {
-                    List<T> result = new ArrayList<>();
-                    if (rs.next()) {
-                        T t = rowMapper.mapRow(rs);
-                        result.add(t);
-                    }
-                    return result;
+                    return rse.extract(rs);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
@@ -61,11 +56,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return query(rowMapper, new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
+        return query(new SimpleResultSetExtractor<>(rowMapper),
+                new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> result = query(rowMapper, new SimplePreparedStatementSetter(sql, args));
+        List<T> result = query(new SimpleResultSetExtractor<>(rowMapper), new SimplePreparedStatementSetter(sql, args));
         if (result.size() != 1) {
             throw new RuntimeException();
         }
