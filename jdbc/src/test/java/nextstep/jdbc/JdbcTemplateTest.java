@@ -99,7 +99,7 @@ class JdbcTemplateTest {
             // given
             setResultSize(resultSet, 0);
 
-            // when
+            // when & then
             Assertions.assertThatThrownBy(this::queryForObject)
                     .isInstanceOf(EmptyResultDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1, actual " + 0);
@@ -111,7 +111,7 @@ class JdbcTemplateTest {
             // given
             setResultSize(resultSet, 2);
 
-            // when
+            // when & then
             Assertions.assertThatThrownBy(this::queryForObject)
                     .isInstanceOf(IncorrectResultSizeDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1, actual " + 2);
