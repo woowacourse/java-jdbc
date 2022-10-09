@@ -21,6 +21,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void execute(final String sql) {
+        execute(sql, PreparedStatement::execute);
+    }
 
     public void update(final String sql, final Object... args) {
         execute(sql, preparedStatement -> {

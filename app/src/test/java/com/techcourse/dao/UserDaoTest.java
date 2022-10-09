@@ -74,7 +74,7 @@ class UserDaoTest {
 
     @AfterEach
     void cleanDatabase() {
-        jdbcTemplate.update("TRUNCATE TABLE users");
-        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1;");
+        jdbcTemplate.execute("TRUNCATE TABLE users");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1;");
     }
 }
