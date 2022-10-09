@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.sql.DataSource;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -26,7 +25,7 @@ class UserServiceTest {
     void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
