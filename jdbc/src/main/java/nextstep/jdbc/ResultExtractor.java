@@ -18,11 +18,11 @@ public class ResultExtractor {
         throw new RuntimeException("생성할 수 없는 클래스입니다.");
     }
 
-    public static <T> List<T> extractData(final Class<T> t, final ResultSet resultSet) {
+    public static <T> List<T> extractData(final Class<T> targetType, final ResultSet resultSet) {
         final List<T> results = new ArrayList<>();
         try {
             while (resultSet.next()) {
-                results.add(InstanceCreator.createInstance(t, resultSet));
+                results.add(InstanceCreator.createInstance(targetType, resultSet));
             }
             return results;
         } catch (SQLException e) {
@@ -41,7 +41,7 @@ public class ResultExtractor {
             throw new RuntimeException("생성할 수 없는 클래스입니다.");
         }
 
-        private static <T> T createInstance(final Class<T> t, final ResultSet resultSet)
+        private static <T> T createInstance(final Class<T> targetType, final ResultSet resultSet)
                 throws SQLException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
             final var metaData = resultSet.getMetaData();
             final var columnCount = metaData.getColumnCount();
@@ -51,7 +51,7 @@ public class ResultExtractor {
                 classes[i] = getClass(metaData, i);
                 params[i] = getParam(resultSet, i);
             }
-            return getConstructor(t, classes).newInstance(params);
+            return getConstructor(targetType, classes).newInstance(params);
         }
 
         private static Class<?> getClass(final ResultSetMetaData metaData, final int index)
@@ -64,9 +64,9 @@ public class ResultExtractor {
             return resultSet.getObject(index + 1);
         }
 
-        private static <T> Constructor<T> getConstructor(final Class<T> t, final Class<?>[] classes)
+        private static <T> Constructor<T> getConstructor(final Class<T> targetType, final Class<?>[] classes)
                 throws NoSuchMethodException {
-            final var constructor = t.getDeclaredConstructor(classes);
+            final var constructor = targetType.getDeclaredConstructor(classes);
             constructor.setAccessible(true);
             return constructor;
         }

@@ -20,8 +20,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql, final Class<T> t, final Object... objects) {
-        final StatementCallback<List<T>> statementCallback = statement -> extractData(t, statement.executeQuery());
+    public <T> List<T> query(final String sql, final Class<T> targetType, final Object... objects) {
+        final StatementCallback<List<T>> statementCallback = statement -> extractData(targetType,
+                statement.executeQuery());
         return execute(sql, statementCallback, objects);
     }
 
@@ -36,8 +37,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final Class<T> t, final Object... objects) {
-        final StatementCallback<List<T>> statementCallback = statement -> extractData(t, statement.executeQuery());
+    public <T> T queryForObject(final String sql, final Class<T> targetType, final Object... objects) {
+        final StatementCallback<List<T>> statementCallback = statement -> extractData(targetType,
+                statement.executeQuery());
         return JdbcTemplateUtils.singleResult(execute(sql, statementCallback, objects));
     }
 
