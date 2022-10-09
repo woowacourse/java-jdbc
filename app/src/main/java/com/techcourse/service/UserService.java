@@ -6,10 +6,14 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.service.exception.NotFoundUserException;
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -33,26 +37,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        Connection connection = null;
         try {
-            connection = DataSourceConfig.getInstance().getConnection();
-            connection.setAutoCommit(false);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (SQLException e) {
-            if (connection != null) {
-                try {
-                    log.error("Transaction is being rolled back");
-                    connection.rollback();
-                } catch (SQLException excep) {
-                    log.error(excep.getMessage(), excep);
-                    throw new RuntimeException(excep);
-                }
-            }
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(transactionStatus);
+        } catch (DataAccessException e) {
+            log.error("Transaction is being rolled back");
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
         }
     }
 }

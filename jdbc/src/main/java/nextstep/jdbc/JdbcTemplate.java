@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -54,9 +55,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             PreparedStatementSetter.setValues(preparedStatement, args);
             return queryExecutor.execute(preparedStatement);
         } catch (SQLException e) {

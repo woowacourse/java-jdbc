@@ -40,4 +40,8 @@
 - [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
   - [x] changePassword() 에 대해 트랜잭션 롤백을 적용하여 예외가 발생하면 트랜잭션 시작 이전 상태로 되돌린다.
   - [x] JdbcTemplate은 Connection을 파라미터로 받아 update 할 수 있다.
+- [x] 트랜잭션 동기화 적용
+  - [x] 스프링에서 제공하는 PlatformTransactionManager 를 통해서 트랜잭션 동기화를 적용한다.
+    - [x] 트랜잭션을 위한 Connection을 별도로 보관해두고 DAO에서 호출시 저장된 커넥션을 사용한다.
+  - [x] 스프링을 통해서 트랜잭션을 관리하므로 JdbcTemplate 에서는 DataSourceUtils를 통해서 동일한 Connetion 획득
 - [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
