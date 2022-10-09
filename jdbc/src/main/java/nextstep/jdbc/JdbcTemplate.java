@@ -12,6 +12,7 @@ import nextstep.jdbc.core.RowMapperResultSetExtractor;
 import nextstep.jdbc.support.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -65,8 +66,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ptsmt = conn.prepareStatement(sql)) {
+        try {
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement ptsmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
             return callback.doInPreparedStatement(ptsmt);
