@@ -15,7 +15,7 @@ public class SimplePreparedStatementSetter implements PreparedStatementSetter {
     }
 
     @Override
-    public PreparedStatement setPreparedStatement(final Connection connection) throws SQLException {
+    public PreparedStatement setValues(final Connection connection) throws SQLException {
         PreparedStatement pstmt = connection.prepareStatement(sql);
         for (int index = 0; index < args.length; index++) {
             pstmt.setObject(index + 1, args[index]);

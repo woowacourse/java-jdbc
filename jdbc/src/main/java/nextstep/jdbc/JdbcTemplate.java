@@ -25,9 +25,9 @@ public class JdbcTemplate {
         return update(new SimplePreparedStatementSetter(sql, args));
     }
 
-    public int update(final PreparedStatementSetter prepareStatementSetter) {
+    public int update(final PreparedStatementSetter ps) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatementSetter.setPreparedStatement(conn)) {
+             PreparedStatement pstmt = ps.setValues(conn)) {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,9 +39,9 @@ public class JdbcTemplate {
         return query(rowMapper, new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
     }
 
-    private <T> List<T> query(final RowMapper<T> rowMapper, final SimplePreparedStatementSetter spss) {
+    private <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatementSetter ps) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = spss.setPreparedStatement(conn);
+             PreparedStatement pstmt = ps.setValues(conn);
              ResultSet rs = pstmt.executeQuery()) {
             List<T> result = new ArrayList<>();
             if (rs.next()) {
