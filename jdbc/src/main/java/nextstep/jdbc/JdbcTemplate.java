@@ -29,6 +29,13 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, preparedStatement -> {
+            setParameters(preparedStatement, args);
+            return update(preparedStatement);
+        });
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, rowMapper, args);
         if (result.isEmpty()) {
@@ -78,6 +85,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException("데이터 접근에 실패했습니다.");
         }
+    }
+
+    private <R> R execute(final Connection connection, final String sql, final PreparedStatementCallback<R> action) {
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            log.debug(QUERY_FORMAT, sql);
+            return action.doInStatement(preparedStatement);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        throw new DataAccessException();
     }
 
     private int update(final PreparedStatement preparedStatement) {
