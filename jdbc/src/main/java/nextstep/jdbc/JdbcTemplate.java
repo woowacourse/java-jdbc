@@ -66,8 +66,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
             PreparedStatement ptsmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
@@ -75,6 +75,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
