@@ -2,6 +2,8 @@ package nextstep.jdbc;
 
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.EmptyResultDataAccessException;
+import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.execution.QueryExecution;
 import nextstep.jdbc.execution.UpdateExecution;
 
@@ -25,8 +27,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
         List<T> results = connector.execute(new QueryExecution<>(sql, rowMapper, arguments));
-        if (results.size() != 1) {
-            throw new DataAccessException("The result of query isn't single. count : " + results.size());
+        if (results.size() == 0) {
+            throw new EmptyResultDataAccessException("Failed to find result.");
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("The result of query isn't single. " + results.size());
         }
         return results.get(SINGLE_RESULT - 1);
     }

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.execution.Execution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
