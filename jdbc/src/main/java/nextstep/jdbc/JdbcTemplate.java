@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(StatementExecutor<T> statementExecutor, PreparedStatement pstmt) {
+    private <T> T execute(final StatementExecutor<T> statementExecutor, final PreparedStatement pstmt) {
         return statementExecutor.execute(pstmt);
     }
 
@@ -32,30 +32,28 @@ public class JdbcTemplate {
     public int update(final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
-
-            return execute((prepareStatement) -> {
-                try {
-                    return prepareStatement.executeUpdate();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }, pstmt);
+            return execute(new SimpleStatementExecutor<>(), pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> query(final RowMapper<T> rowMapper, final SimplePreparedStatementSetter spss) {
+    private <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = spss.createPreparedStatement(conn);
-             ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            if (rs.next()) {
-                T t = rowMapper.mapRow(rs);
-                result.add(t);
-            }
-            return result;
+             PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+            return execute((preparedStatement) -> {
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    List<T> result = new ArrayList<>();
+                    if (rs.next()) {
+                        T t = rowMapper.mapRow(rs);
+                        result.add(t);
+                    }
+                    return result;
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
