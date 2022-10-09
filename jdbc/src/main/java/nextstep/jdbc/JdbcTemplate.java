@@ -43,8 +43,8 @@ public class JdbcTemplate {
 
 
     private <T> T execute(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            Connection connection = DataSourceUtils.getConnection(dataSource);
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             PreparedStatementStarter preparedStatementStarter = new SimplePreparedStatementStarter(preparedStatement);
             preparedStatementStarter.setParameters(parameters);
@@ -52,6 +52,8 @@ public class JdbcTemplate {
             return queryExecutor.executePreparedStatement(preparedStatementStarter);
         } catch (SQLException e) {
             throw new ImpossibleSQLExecutionException();
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
