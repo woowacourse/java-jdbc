@@ -23,7 +23,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Executor<List<T>> executor = (pstmt) -> {
+        QueryExecutor<List<T>> queryExecutor = (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 int rowNum = 1;
@@ -36,7 +36,7 @@ public class JdbcTemplate {
             }
         };
 
-        return executeQuery(executor, sql, parameters);
+        return executeQuery(queryExecutor, sql, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -54,22 +54,22 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
-        Executor executor = (pstmt) -> {
+        QueryExecutor queryExecutor = (pstmt) -> {
             pstmt.executeUpdate();
             return null;
         };
 
-        executeQuery(executor, sql, parameters);
+        executeQuery(queryExecutor, sql, parameters);
     }
 
-    private <T> T executeQuery(Executor<T> executor, String sql, Object... parameters) {
+    private <T> T executeQuery(QueryExecutor<T> queryExecutor, String sql, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             bindParameters(pstmt, parameters);
-            return executor.execute(pstmt);
+            return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
