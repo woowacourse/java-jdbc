@@ -34,3 +34,8 @@
 - [x] JdbcTemplateTest 개선
   - [x] ResultSet도 함께 mocking 하여 구체적인 결과도 함께 테스트하도록 수정
 - [x] RowMapper 에서 제네릭을 활용
+
+
+## 3단계 구현 내용 정리
+- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
