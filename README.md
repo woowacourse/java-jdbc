@@ -7,8 +7,8 @@
 ---
 
 ![Generic badge](https://img.shields.io/badge/Level4-JDBC-green.svg)
-![Generic badge](https://img.shields.io/badge/test-0_passed-blue.svg)
-![Generic badge](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)
+![Generic badge](https://img.shields.io/badge/test-10_passed-blue.svg)
+![Generic badge](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)
 
 > 우아한테크코스 웹 백엔드 4기, JDBC 구현하기 저장소입니다.
 
@@ -18,6 +18,31 @@
 - 데이터베이스에 대한 이해도를 높인다.
 
 <br>
+
+## 🚀 2단계 - 리팩터링 힌트
+
+---
+
+### 미션 설명
+
+- 자바가 제공하는 기능을 극한으로 활용해 클린 코드를 작성하는 연습을 한다.
+- `익명 클래스`, `함수형 인터페이스`, `제네릭`, `가변 인자`, `람다`, `try-with-resources`, `checked vs unchecked exception`
+
+<br>
+
+### 레벨2 미션 개인 목표
+
+- [x] 미션 설명에서 제안한 기능들은 step1에서 이미 적용되었다.
+- [x] JDBC 라이브러리와 개발자간 기능 구현 분리에 대해서도 LMS 예시대로 step1에서 적용되었다.
+    - JDBC 라이브러리 : Connection 생성, Statement 준비 및 실행, ResultSet 생성, 예외 처리, 트랜잭션 관리, Connection, Statement, ResultSet 객체
+      close
+    - 개발자 : 연결 매개변수 설정, SQL문 작성, SQL문의 매개변수와 값 설정, ResultSet에서 데이터 추출
+- [x] 추상 클래스, 템플릿 메서드 패턴을 적용하기에는 update/insert에 중복 코드가 없으며,도메인 의존도도 존재하지 않는다.
+- [x] `JdbcTemplate`의 `command`, `queryForList` 메서드는 템플릿 코드가 중복되고 있다.
+    - 이 지점에 대해서 중복 제거를 도전해보자.
+    - 템플릿 콜백 패턴을 이용해 `JdbcTemplate`의 중복되던 내용을 템플릿화 하여 `command`와 `queryForList`의 중복을 제거했다.
+
+<br><br>
 
 ## 🚀 1단계 - JDBC 라이브러리 구현하기
 
