@@ -21,10 +21,9 @@ class JdbcConnectorTest {
         // given
         JdbcConnector connector = new JdbcConnector(DataSourceConfig.getInstance());
         String sql = "insert into member (name, age) values (?, ?)";
-        Object[] arguments = new Object[]{"hello", 123};
 
         // when
-        Execution<Integer> updateExecution = new UpdateExecution(sql, arguments);
+        Execution<Integer> updateExecution = new UpdateExecution(sql, "hello", 123);
 
         // then
         assertThatNoException().isThrownBy(

@@ -30,11 +30,9 @@ class TransactionalProcessorTest {
     void throwsExceptionWithConstructorMismatched() {
         // given
         TransactionalProcessor processor = new TransactionalProcessor(DataSourceConfig.getInstance());
-        // when
-        Object[] arguments = {"invalid", "arguments"};
-        // then
+        // when & then
         assertThatThrownBy(
-                () -> processor.createProxy(TransactionalAnnotated.class, arguments)
-        );
+                () -> processor.createProxy(TransactionalAnnotated.class, "invalid", "arguments")
+        ).isInstanceOf(IllegalArgumentException.class);
     }
 }

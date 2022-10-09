@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 public class ArgumentsSetter {
 
-    public static void setArguments(PreparedStatement statement, Object[] arguments) throws SQLException {
+    public static void setArguments(PreparedStatement statement, Object... arguments) throws SQLException {
         if (arguments == null) {
             return;
         }

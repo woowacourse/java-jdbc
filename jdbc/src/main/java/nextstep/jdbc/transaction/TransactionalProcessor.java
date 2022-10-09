@@ -69,7 +69,7 @@ public class TransactionalProcessor {
                 .collect(Collectors.toList());
     }
 
-    private Object createProxyObject(Enhancer enhancer, Class<?> clazz, Object[] arguments) {
+    private Object createProxyObject(Enhancer enhancer, Class<?> clazz, Object... arguments) {
         Class<?>[] parameters = Arrays.stream(clazz.getDeclaredConstructors())
                 .filter(constructor -> isAssignable(constructor, arguments))
                 .findAny()

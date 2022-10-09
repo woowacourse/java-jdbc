@@ -33,8 +33,7 @@ class QueryExecutionTest {
                         resultSet.getLong("id"),
                         resultSet.getString("name"),
                         resultSet.getInt("age")
-                ), new Object[]{"hi"}
-        );
+                ), "hi");
 
         Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement statement = connection.prepareStatement(execution.getSql());

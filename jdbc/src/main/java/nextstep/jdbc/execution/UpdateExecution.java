@@ -9,7 +9,7 @@ public class UpdateExecution implements Execution<Integer> {
     private final String sql;
     private final Object[] arguments;
 
-    public UpdateExecution(String sql, Object[] arguments) {
+    public UpdateExecution(String sql, Object... arguments) {
         this.sql = sql;
         this.arguments = arguments;
     }

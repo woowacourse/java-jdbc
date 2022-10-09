@@ -26,8 +26,7 @@ class UpdateExecutionTest {
         // given
         Execution<Integer> execution = new UpdateExecution(
                 "insert into member (name, age) values (?, ?)",
-                new Object[]{"hello", 11}
-        );
+                "hello", 11);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement statement = connection.prepareStatement(execution.getSql());
 
