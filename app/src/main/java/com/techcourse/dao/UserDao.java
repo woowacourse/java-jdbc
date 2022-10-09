@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;

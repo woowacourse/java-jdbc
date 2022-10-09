@@ -1,13 +1,9 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import nextstep.jdbc.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class AppUserService implements UserService {
 
