@@ -37,5 +37,7 @@
 
 
 ## 3단계 구현 내용 정리
-- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+  - [x] changePassword() 에 대해 트랜잭션 롤백을 적용하여 예외가 발생하면 트랜잭션 시작 이전 상태로 되돌린다.
+  - [x] JdbcTemplate은 Connection을 파라미터로 받아 update 할 수 있다.
 - [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
