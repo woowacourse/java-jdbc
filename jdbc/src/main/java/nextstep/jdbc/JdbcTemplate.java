@@ -30,6 +30,17 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(Connection connection, String sql, final Object... args) {
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            setArguments(pstmt, args);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.info("jdbcTemplate query:{}", sql);
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return DataAccessUtils.uniqueResult(query(sql, new RowMapperResultSetExtractor<>(rowMapper, 1), args));
     }
