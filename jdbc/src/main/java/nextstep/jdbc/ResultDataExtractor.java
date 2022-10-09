@@ -26,21 +26,6 @@ public class ResultDataExtractor {
         return objects;
     }
 
-    public static <T> T extractSingleData(ResultSet resultSet, Class<T> clazz) {
-        final Constructor<T> constructor = getConstructor(clazz);
-
-        try {
-            if (!resultSet.next()) {
-                throw new DataAccessException();
-            }
-
-            final List<Object> parameters = extractData(resultSet, constructor);
-            return constructor.newInstance(parameters.toArray());
-        } catch (Exception exception) {
-            throw new DataAccessException();
-        }
-    }
-
     private static <T> Constructor<T> getConstructor(Class<T> clazz) {
         final Field[] declaredFields = clazz.getDeclaredFields();
         Class[] types = new Class[declaredFields.length];

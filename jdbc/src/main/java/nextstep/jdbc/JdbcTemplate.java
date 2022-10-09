@@ -21,39 +21,33 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, Class<T> clazz, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            setParameters(pstmt, args);
-            return executeQuery(clazz, pstmt);
-        } catch (Exception exception) {
-            throw new DataAccessException();
-        }
-    }
-
-    private <T> List<T> executeQuery(Class<T> clazz, PreparedStatement pstmt) {
-        try (final ResultSet resultSet = pstmt.executeQuery()){
-            return ResultDataExtractor.extractData(resultSet, clazz);
-        }catch (SQLException exception){
-            throw new DataAccessException();
-        }
+        return execute(sql, (preparedStatement -> getResult(clazz, preparedStatement)), args);
     }
 
     public <T> T queryForObject(String sql, Class<T> clazz, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        final List<T> result = query(sql, clazz, args);
+        return result.get(0);
+    }
 
-            setParameters(pstmt, args);
-            return executeQueryForObject(clazz, pstmt);
-        } catch (Exception exception) {
+    private <T> List<T> getResult(Class<T> clazz, PreparedStatement pstmt) {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            return ResultDataExtractor.extractData(resultSet, clazz);
+        } catch (SQLException exception) {
             throw new DataAccessException();
         }
     }
 
-    private <T> T executeQueryForObject(Class<T> clazz, PreparedStatement pstmt) {
-        try (final ResultSet resultSet = pstmt.executeQuery()){
-            return ResultDataExtractor.extractSingleData(resultSet, clazz);
-        }catch (SQLException exception){
+    public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementSetter<T> pstmtSetter, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            setParameters(pstmt, args);
+            return pstmtSetter.execute(pstmt);
+        } catch (Exception exception) {
             throw new DataAccessException();
         }
     }
@@ -61,18 +55,6 @@ public class JdbcTemplate {
     private void setParameters(PreparedStatement pstmt, Object[] objects) throws SQLException {
         for (int i = 0; i < objects.length; i++) {
             pstmt.setObject(i+1, objects[i]);
-        }
-    }
-
-    public void update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            setParameters(pstmt, args);
-
-            pstmt.executeUpdate();
-        } catch (Exception exception) {
-            throw new DataAccessException();
         }
     }
 }
