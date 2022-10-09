@@ -6,12 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -25,22 +21,17 @@ public class JdbcTemplate {
 
     private <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... objects)
             throws DataAccessException {
-        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql, objects);
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(sql, objects);
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(connection)) {
+             PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
 
-            class QueryStatementCallback implements StatementCallback<T> {
-
-                @Override
-                public T doInStatement(final PreparedStatement pstmt) {
-                    try (ResultSet resultSet = pstmt.executeQuery()) {
-                        return resultSetExtractor.extractData(resultSet);
-                    } catch (SQLException e) {
-                        throw new DataAccessException("query exception", e);
-                    }
+            return execute(preparedStatement -> {
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    return resultSetExtractor.extractData(resultSet);
+                } catch (SQLException e) {
+                    throw new DataAccessException("query exception", e);
                 }
-            }
-            return execute(new QueryStatementCallback(), pstmt);
+            }, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("query exception", e);
         }
@@ -51,32 +42,22 @@ public class JdbcTemplate {
         return query(sql, new RowMapperResultSetExtractor<>(rowMapper), objects);
     }
 
-    public <T> List<T> query(final String sql, final Class<T> cls, Object... objects) throws DataAccessException {
-        return query(sql, new SingleColumnRowMapper<>(cls), objects);
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... objects)
             throws DataAccessException {
         return DataAccessUtils.nullableSingleResult(query(sql, new RowMapperResultSetExtractor<>(rowMapper), objects));
     }
 
     public int update(final String sql, final Object... objects) throws DataAccessException {
-        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql, objects);
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(sql, objects);
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(connection)) {
-
-            class UpdateStatementCallback implements StatementCallback<Integer> {
-
-                @Override
-                public Integer doInStatement(final PreparedStatement pstmt) {
-                    try {
-                        return pstmt.executeUpdate();
-                    } catch (SQLException e) {
-                        throw new DataAccessException("update Error", e);
-                    }
+             PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
+            return execute(preparedStatement -> {
+                try {
+                    return pstmt.executeUpdate();
+                } catch (SQLException e) {
+                    throw new DataAccessException("update Error", e);
                 }
-            }
-            return execute(new UpdateStatementCallback(), pstmt);
+            }, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("update exception", e);
         }

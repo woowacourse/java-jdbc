@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class PreparedStatementCreatorTest {
+class PreparedStatementSetterTest {
 
     private Connection connection;
     private PreparedStatement preparedStatement;
@@ -27,15 +27,15 @@ class PreparedStatementCreatorTest {
 
     @Test
     void createPreparedStatementWhenNull() throws SQLException {
-        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator("SELECT * FROM USER", null);
-        assertDoesNotThrow(() -> preparedStatementCreator.createPreparedStatement(connection));
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter("SELECT * FROM USER", null);
+        assertDoesNotThrow(() -> preparedStatementSetter.createPreparedStatement(connection));
     }
 
     @Test
     void createPreparedStatement() throws SQLException {
-        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(
                 "SELECT * FROM USER WHERE id = ?", new Object[]{1});
-        preparedStatementCreator.createPreparedStatement(connection);
+        preparedStatementSetter.createPreparedStatement(connection);
         verify(preparedStatement).setObject(1, 1);
     }
 }
