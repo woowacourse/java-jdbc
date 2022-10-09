@@ -3,12 +3,17 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.ParameterSource;
 import nextstep.jdbc.RowMapper;
 
 import java.util.List;
 
 public class UserDao {
+
+    private static final RowMapper<User> ROW_MAPPER = (resultSet) ->
+            new User(resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -18,51 +23,35 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final var parameterSource = new ParameterSource();
-        parameterSource.addParam(user.getAccount());
-        parameterSource.addParam(user.getPassword());
-        parameterSource.addParam(user.getEmail());
+        final var account = user.getAccount();
+        final var password = user.getPassword();
+        final var email = user.getEmail();
 
-        jdbcTemplate.executeUpdate(sql, parameterSource);
+        jdbcTemplate.update(sql, account, password, email);
     }
 
     public void update(final User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        final var parameterSource = new ParameterSource();
-        parameterSource.addParam(user.getAccount());
-        parameterSource.addParam(user.getPassword());
-        parameterSource.addParam(user.getEmail());
-        parameterSource.addParam(user.getId());
+        final var account = user.getAccount();
+        final var password = user.getPassword();
+        final var email = user.getEmail();
+        final var id = user.getId();
 
-        jdbcTemplate.executeUpdate(sql, parameterSource);
+        jdbcTemplate.update(sql, account, password, email, id);
     }
 
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
-        final var parameterSource = new ParameterSource();
-
-        return jdbcTemplate.executeQuery(sql, parameterSource, rowMapper);
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        final var parameterSource = new ParameterSource();
-        parameterSource.addParam(id);
-
-        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        final var parameterSource = new ParameterSource();
-        parameterSource.addParam(account);
-
-        return jdbcTemplate.executeQueryForObject(sql, parameterSource, rowMapper);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
-
-    private final RowMapper<User> rowMapper = (resultSet) ->
-            new User(resultSet.getLong("id"),
-                    resultSet.getString("account"),
-                    resultSet.getString("password"),
-                    resultSet.getString("email"));
 }
