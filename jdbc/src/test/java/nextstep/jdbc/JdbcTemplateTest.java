@@ -104,7 +104,7 @@ class JdbcTemplateTest {
         given(resultSet.getObject(anyInt())).willReturn(1L, "차정원", 2L, "김형서");
 
         // when
-        final var result = jdbcTemplate.query(FIND_ALL_QUERY, User.class);
+        final var result = jdbcTemplate.queryForList(FIND_ALL_QUERY, User.class);
 
         // then
         assertThat(result).usingRecursiveFieldByFieldElementComparator()
@@ -117,7 +117,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeUpdate()).willReturn(1);
 
         // when
-        jdbcTemplate.execute(INSERT_QUERY, "안영윤");
+        jdbcTemplate.update(INSERT_QUERY, "안영윤");
 
         // then
         assertAll(

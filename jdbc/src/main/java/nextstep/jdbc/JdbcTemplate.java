@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql, final Class<T> targetType, final Object... objects) {
+    public <T> List<T> queryForList(final String sql, final Class<T> targetType, final Object... objects) {
         final StatementCallback<List<T>> statementCallback = statement -> extractData(targetType,
                 statement.executeQuery());
         return execute(sql, statementCallback, objects);
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         return JdbcTemplateUtils.singleResult(execute(sql, statementCallback, objects));
     }
 
-    public int execute(final String sql, final Object... objects) {
+    public int update(final String sql, final Object... objects) {
         final StatementCallback<Integer> statementCallback = PreparedStatement::executeUpdate;
         return execute(sql, statementCallback, objects);
     }
