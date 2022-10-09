@@ -2,17 +2,24 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
-import nextstep.jdbc.config.DataSourceConfig;
-import org.junit.jupiter.api.AfterEach;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.RowMapper;
 
 class JdbcTemplateTest {
 
-    private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
+    private final RowMapper<User> userRowMapper = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
@@ -20,22 +27,22 @@ class JdbcTemplateTest {
     );
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
+    private final Connection connection;
+    private final PreparedStatement statement;
+    private final ResultSet resultSet;
 
-    public JdbcTemplateTest() {
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    public JdbcTemplateTest() throws SQLException {
+        dataSource = mock(DataSource.class);
+        connection = mock(Connection.class);
+        statement = mock(PreparedStatement.class);
+        resultSet = mock(ResultSet.class);
 
-        jdbcTemplate.update("create table if not exists users ( "
-                + "    id bigint auto_increment, "
-                + "    account varchar(100) not null, "
-                + "    password varchar(100) not null, "
-                + "    email varchar(100) not null, "
-                + "    primary key(id) "
-                + ");");
-    }
+        jdbcTemplate = new JdbcTemplate(dataSource);
 
-    @AfterEach
-    void tearDown() {
-        jdbcTemplate.update("delete from users");
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(any())).willReturn(statement);
+        given(statement.executeQuery()).willReturn(resultSet);
     }
 
     @DisplayName("update는 sql 쿼리를 실행시킨다")
@@ -51,27 +58,40 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, account, password, email);
 
         // then
-        final String findSql = "select id, account, password, email from users";
-        final User user = jdbcTemplate.queryForObject(findSql, userRowMapper);
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> verify(statement).setObject(1, account),
+                () -> verify(statement).setObject(2, password),
+                () -> verify(statement).setObject(3, email),
+                () -> verify(statement).executeUpdate(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close()
+        );
     }
 
     @DisplayName("queryForObject는 한개의 결과를 반환한다.")
     @Test
-    void queryForObject() {
+    void queryForObject() throws Exception {
         // given
         final String account = "alien";
-        final String password = "password";
-        final String email = "alien@mail.com";
-        insertUser(account, password, email);
-
         final var sql = "select id, account, password, email from users where account = ?";
+
+        given(resultSet.next()).willReturn(true, false);
 
         // when
         final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account);
 
         // then
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(user).isNotNull(),
+                () -> verify(statement).setObject(1, account),
+                () -> verify(resultSet).getLong("id"),
+                () -> verify(resultSet).getString("account"),
+                () -> verify(resultSet).getString("password"),
+                () -> verify(resultSet).getString("email"),
+                () -> verify(statement).executeQuery(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close()
+        );
     }
 
     @DisplayName("queryForObject는 결과가 없으면 예외를 던진다.")
@@ -87,10 +107,9 @@ class JdbcTemplateTest {
 
     @DisplayName("queryForObject는 결과가 두개 이상이면 예외가 던진다.")
     @Test
-    void queryForObjectWithMultiData() {
+    void queryForObjectWithMultiData() throws Exception {
         // given
-        insertUser("alien", "password", "alien@mail.com");
-        insertUser("gugu", "password", "gugu@mail.com");
+        given(resultSet.next()).willReturn(true, true, false);
 
         final var sql = "select id, account, password, email from users";
 
@@ -102,10 +121,9 @@ class JdbcTemplateTest {
 
     @DisplayName("query는 결과를 List형으로 반환한다.")
     @Test
-    void query() {
+    void query() throws Exception {
         // given
-        insertUser("alien", "password", "alien@mail.com");
-        insertUser("gugu", "password", "gugu@mail.com");
+        given(resultSet.next()).willReturn(true, true, false);
 
         final var sql = "select id, account, password, email from users";
 
@@ -116,12 +134,7 @@ class JdbcTemplateTest {
         assertThat(users).hasSize(2);
     }
 
-    private void insertUser(final String account, final String password, final String email) {
-        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, account, password, email);
-    }
-
-    class User {
+    static class User {
 
         private Long id;
         private final String account;
