@@ -81,4 +81,8 @@ public class JdbcTemplate {
             return pstmt;
         };
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
