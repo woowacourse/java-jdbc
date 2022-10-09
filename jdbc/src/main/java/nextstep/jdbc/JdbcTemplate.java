@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.support.IntConsumerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -19,12 +20,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public int update(final Connection connection,
-                      final String sql,
-                      final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public int update(final String sql,
@@ -61,29 +56,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final Connection connection,
-                          final String sql,
-                          final StatementCallBack<T> statement,
-                          final Object... args) {
-        PreparedStatementCreator statementCreator = preparedStatementCreator(args);
-
-        try (final var preparedStatement = statementCreator.create(connection, sql)) {
-
-            return statement.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to Access DataBase", e);
-        }
-    }
-
     private <T> T execute(final String sql,
                           final StatementCallBack<T> statement,
                           final Object... args) {
         PreparedStatementCreator statementCreator = preparedStatementCreator(args);
 
-        try (
-            final var connection = dataSource.getConnection();
-            final var preparedStatement = statementCreator.create(connection, sql)) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (final var preparedStatement = statementCreator.create(connection, sql)) {
 
             return statement.execute(preparedStatement);
         } catch (SQLException e) {

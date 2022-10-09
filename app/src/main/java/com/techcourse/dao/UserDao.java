@@ -38,12 +38,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set password = ? where id = ?";
-
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
-    }
-
     public List<User> findAll() {
         final var sql = "select * from users";
 
