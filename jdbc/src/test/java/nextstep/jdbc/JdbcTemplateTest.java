@@ -65,7 +65,7 @@ class JdbcTemplateTest {
         given(resultSet.next()).willReturn(false);
 
         //when
-        List<Object> result = jdbcTemplate.query(sql, (resultSet, rowNum) -> "test");
+        List<Object> result = jdbcTemplate.queryForList(sql, (resultSet, rowNum) -> "test");
 
         //then
         assertThat(result).isEmpty();
