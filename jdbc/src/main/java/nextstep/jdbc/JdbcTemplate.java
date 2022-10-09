@@ -24,6 +24,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void updateForTransaction(final String sql, final Connection connection, final Object... params) {
+        log.debug("query : {}", sql);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParams(preparedStatement, params);
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public void update(final String sql, final Object... params) {
         execute(sql, preparedStatement -> {
             setParams(preparedStatement, params);
