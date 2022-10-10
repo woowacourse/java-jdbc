@@ -1,5 +1,7 @@
 package nextstep.jdbc;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 public class JdbcTemplateUtils {
@@ -16,5 +18,14 @@ public class JdbcTemplateUtils {
 			throw new DataAccessException(String.format("조회 데이터 갯수가 %d 입니다.", results.size()));
 		}
 		return results.get(0);
+	}
+
+	public static PreparedStatement setValues(final PreparedStatement statement, final Object... objects) throws
+		SQLException {
+		for (int i = 0; i < objects.length; i++) {
+			statement.setObject(i + 1, objects[i]);
+		}
+
+		return statement;
 	}
 }

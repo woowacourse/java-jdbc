@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static nextstep.jdbc.Extractor.extractData;
+import static nextstep.jdbc.JdbcTemplateUtils.setValues;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,10 +31,7 @@ public class JdbcTemplate {
 	private <T> T execute(final String sql, final StatementCallback<T> statementCallback, final Object... objects) {
 		try (final Connection connection = dataSource.getConnection();
 			 final PreparedStatement statement = connection.prepareStatement(sql)) {
-			for (int i = 0; i < objects.length; i++) {
-				statement.setObject(i + 1, objects[i]);
-			}
-			return statementCallback.doInStatement(statement);
+			return statementCallback.doInStatement(setValues(statement, objects));
 		} catch (SQLException e) {
 			log.error(e.getMessage(), e);
 			throw new DataAccessException(e.getMessage(), e);
