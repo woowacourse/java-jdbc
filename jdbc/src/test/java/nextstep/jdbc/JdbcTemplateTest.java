@@ -69,7 +69,6 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
 
         jdbcTemplate.queryForObject("sql", rs -> "mockResultSet", "arg2");
 
