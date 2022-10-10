@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
@@ -25,9 +27,7 @@ class UserDaoTest {
 	@Test
 	void findAll() {
 		final var users = userDao.findAll();
-		for (User user : users) {
-			System.out.println(user.getAccount());
-		}
+		assertThat(users).isNotEmpty();
 	}
 
 	@Test
@@ -37,11 +37,25 @@ class UserDaoTest {
 	}
 
 	@Test
+	void findById_false() {
+		assertThatThrownBy(() -> userDao.findById(100L))
+			.isInstanceOf(DataAccessException.class)
+			.hasMessage("일치하는 데이터가 없습니다.");
+	}
+
+	@Test
 	void findByAccount() {
 		final var account = "조시";
 		final var user = userDao.findByAccount(account);
-
 		assertThat(user.getAccount()).isEqualTo(account);
+	}
+
+	@Test
+	void findByAccount_false() {
+		final var account = "없는 데이터";
+		assertThatThrownBy(() -> userDao.findByAccount(account))
+			.isInstanceOf(DataAccessException.class)
+			.hasMessage("일치하는 데이터가 없습니다.");
 	}
 
 	@Test
