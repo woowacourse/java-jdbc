@@ -27,6 +27,16 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setArgsToPreparedStatement(preparedStatement, args);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return connect(sql, (PreparedStatement preparedStatement) -> {
             setArgsToPreparedStatement(preparedStatement, args);
