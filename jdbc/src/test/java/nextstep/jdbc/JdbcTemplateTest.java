@@ -59,7 +59,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void query() throws SQLException {
+    void queryForList() throws SQLException {
         //given
         final var sql = "query";
         given(resultSet.next()).willReturn(false);
