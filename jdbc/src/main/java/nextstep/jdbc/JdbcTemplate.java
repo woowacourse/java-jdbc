@@ -21,16 +21,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         return execute(PreparedStatement::executeUpdate, sql, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.getSingleResult(results);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(preparedStatement -> executeQueryAndMappingList(preparedStatement, rowMapper), sql, args);
     }
 
@@ -50,7 +50,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... args) {
+    private <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql,
+                          final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = createStatement(connection, sql, args)) {
             return preparedStatementCallback.call(statement);
