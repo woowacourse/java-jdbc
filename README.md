@@ -12,5 +12,7 @@
 - [x] queryForObject에서 결과 한 개 이상 또는 비었을 때 예외 처리
 
 ## step3
-- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과하게 한다. 
-- [ ] 트랜잭션 서비스와 애플리케이션 서비스 분리하기 
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과하게 한다. 
+- [x] UserDao와 UserHistoryDao에 트랜잭션 적용 
+- [x] UserDao와 userHistoryDao를 한 트랜잭션으로 묶기
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스 분리하기
