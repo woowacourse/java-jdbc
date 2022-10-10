@@ -68,7 +68,7 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql) {
-        execute(sql, (PreparedStatement::execute));
+        execute(sql, PreparedStatement::execute);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
