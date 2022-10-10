@@ -90,4 +90,8 @@ public class JdbcTemplate {
             throw new InvalidStatementException();
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
