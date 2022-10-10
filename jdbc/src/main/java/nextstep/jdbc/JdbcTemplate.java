@@ -34,6 +34,17 @@ public class JdbcTemplate {
         return execute(preparedStatement -> executeQueryAndMappingList(preparedStatement, rowMapper), sql, args);
     }
 
+    private <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql,
+                          final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = createStatement(connection, sql, args)) {
+            return preparedStatementCallback.call(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
+    }
+
     private <T> List<T> executeQueryAndMappingList(final PreparedStatement preparedStatement,
                                                    final RowMapper<T> rowMapper) {
         try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -44,17 +55,6 @@ public class JdbcTemplate {
             }
 
             return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    private <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql,
-                          final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = createStatement(connection, sql, args)) {
-            return preparedStatementCallback.call(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
