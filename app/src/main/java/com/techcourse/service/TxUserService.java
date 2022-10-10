@@ -27,15 +27,19 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        transactional(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        transactional(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void transactional(final TransactionalExecutor executor) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.changePassword(id, newPassword, createBy);
+            executor.execute();
             transactionManager.commit(transactionStatus);
         } catch (RuntimeException e) {
             log.error("Transaction is being rolled back");

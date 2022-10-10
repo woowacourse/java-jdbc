@@ -48,3 +48,4 @@
   - [x] UserService 인터페이스를 도출한다.
   - [x] 데이터 액세스를 처리하는 AppUserService를 분리한다.
   - [x] 트랜잭션 처리를 담당하는 TxUserService를 분리하고, AppUserService를 이용하여 서비스 로직을 처리한다.
+  - [x] FunctionalInterface 를 활용하여 중복 로직을 제거한다.
