@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -29,7 +30,7 @@ public class JdbcTemplate {
 	}
 
 	private <T> T execute(final String sql, final StatementCallback<T> statementCallback, final Object... objects) {
-		try (final Connection connection = dataSource.getConnection();
+		try (final Connection connection = DataSourceUtils.getConnection(dataSource);
 			 final PreparedStatement statement = connection.prepareStatement(sql)) {
 			return statementCallback.doInStatement(setValues(statement, objects));
 		} catch (SQLException e) {
@@ -48,5 +49,9 @@ public class JdbcTemplate {
 		final StatementCallback<List<T>> statementCallback = statement -> extractData(type,
 			statement.executeQuery());
 		return execute(sql, statementCallback, objects);
+	}
+
+	public DataSource getDataSource() {
+		return dataSource;
 	}
 }
