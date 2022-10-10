@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.calls;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -68,7 +69,10 @@ class JdbcTemplateTest {
         List<Object> result = jdbcTemplate.queryForList(sql, (resultSet, rowNum) -> "test");
 
         //then
-        assertThat(result).isEmpty();
+        assertAll(
+                () -> assertThat(result).isEmpty(),
+                () -> verify(preparedStatement.executeQuery(), calls(1))
+        );
     }
 
     @Test
@@ -83,5 +87,6 @@ class JdbcTemplateTest {
 
         //then
         assertThat(actual).isNotNull();
+        verify(preparedStatement.executeQuery(), calls(1));
     }
 }
