@@ -40,7 +40,7 @@ public class JdbcTemplate {
             setParameters(preparedStatement, values);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> result = getResult(rowMapper, resultSet);
-                return result.get(0);
+                return DatabaseAccessUtils.singleResult(result);
             }
         }));
     }
