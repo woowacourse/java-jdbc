@@ -2,7 +2,7 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.techcourse.config.DataSourceConfig;
@@ -13,33 +13,32 @@ import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
-	private UserDao userDao;
+	private static UserDao userDao;
 
-	@BeforeEach
-	void setup() {
+	@BeforeAll
+	static void setUp() {
 		DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-		userDao = new UserDao(DataSourceConfig.getInstance(),new JdbcTemplate(DataSourceConfig.getInstance()));
-		final var user = new User("gugu", "password", "hkkang@woowahan.com");
-		userDao.insert(user);
+		userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+		userDao.insert(new User("조시", "password", "조시@바보"));
 	}
 
 	@Test
 	void findAll() {
 		final var users = userDao.findAll();
-		assertThat(users).isNotEmpty();
+		for (User user : users) {
+			System.out.println(user.getAccount());
+		}
 	}
 
 	@Test
 	void findById() {
 		final var user = userDao.findById(1L);
-
-		assertThat(user.getAccount()).isEqualTo("gugu");
+		assertThat(user.getAccount()).isEqualTo("조시");
 	}
 
 	@Test
 	void findByAccount() {
-		final var account = "gugu";
+		final var account = "조시";
 		final var user = userDao.findByAccount(account);
 
 		assertThat(user.getAccount()).isEqualTo(account);
@@ -47,7 +46,7 @@ class UserDaoTest {
 
 	@Test
 	void insert() {
-		final var account = "insert-gugu";
+		final var account = "insert-조시";
 		final var user = new User(account, "password", "hkkang@woowahan.com");
 		userDao.insert(user);
 
