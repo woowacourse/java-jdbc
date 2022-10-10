@@ -19,12 +19,12 @@ class DataAccessUtilsTest {
     @Test
     void emptyList() {
         assertThatThrownBy(() -> DataAccessUtils.singleResult(Collections.emptyList()))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
     void twoValueList() {
         assertThatThrownBy(() -> DataAccessUtils.singleResult(List.of("1", "2")))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 }
