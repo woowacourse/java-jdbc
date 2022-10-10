@@ -19,7 +19,7 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected abstract DataSource getDataSource();
+    public abstract DataSource getDataSource();
 
     public void update(final String sql, Object... args) {
         ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
