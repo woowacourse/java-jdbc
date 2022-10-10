@@ -7,9 +7,9 @@ import com.techcourse.domain.UserHistory;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 public class UserService {
 
@@ -34,32 +34,17 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = getConnection();
-
+        final var transactionManager = new DataSourceTransactionManager(dataSource);
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            connection.setAutoCommit(false);
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
+            userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
-            connection.commit();
-        } catch (final DataAccessException | SQLException e) {
-            try {
-                connection.rollback();
-                throw new DataAccessException();
-            } catch (final SQLException ex) {
-                ex.printStackTrace();
-            }
+            transactionManager.commit(transactionStatus);
+        } catch (final DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
         }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (final SQLException e) {
-            e.printStackTrace();
-        }
-
-        throw new DataAccessException();
     }
 }

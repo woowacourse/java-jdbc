@@ -20,14 +20,13 @@ import java.util.List;
 class JdbcTemplateTest {
 
     private ResultSet resultSet;
-    private Connection connection;
     private PreparedStatement preparedStatement;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
         final DataSource dataSource = mock(DataSource.class);
-        this.connection = mock(Connection.class);
+        final Connection connection = mock(Connection.class);
         this.resultSet = mock(ResultSet.class);
         this.preparedStatement = mock(PreparedStatement.class);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -53,8 +52,7 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).setObject(1, 1L),
                 () -> verify(preparedStatement).executeQuery(),
                 () -> verify(resultSet).close(),
-                () -> verify(preparedStatement).close(),
-                () -> verify(connection).close()
+                () -> verify(preparedStatement).close()
         );
     }
 
@@ -91,8 +89,7 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).setObject(1, List.of(1L, 2L)),
                 () -> verify(preparedStatement).executeQuery(),
                 () -> verify(resultSet).close(),
-                () -> verify(preparedStatement).close(),
-                () -> verify(connection).close()
+                () -> verify(preparedStatement).close()
         );
     }
 
@@ -111,8 +108,7 @@ class JdbcTemplateTest {
                 () -> assertThat(insertedRows).isOne(),
                 () -> verify(preparedStatement).setObject(1, 1L),
                 () -> verify(preparedStatement).setObject(2, "sun"),
-                () -> verify(preparedStatement).close(),
-                () -> verify(connection).close()
+                () -> verify(preparedStatement).close()
         );
     }
 }

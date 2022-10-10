@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import nextstep.jdbc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,13 +25,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, preparedStatement -> {
-            setParameters(preparedStatement, args);
-            return update(preparedStatement);
-        });
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, preparedStatement -> {
             setParameters(preparedStatement, args);
             return update(preparedStatement);
         });
@@ -77,25 +71,15 @@ public class JdbcTemplate {
     }
 
     private <R> R execute(final String sql, final PreparedStatementCallback<R> action) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug(QUERY_FORMAT, sql);
             return action.doInStatement(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
             throw new DataAccessException("데이터 접근에 실패했습니다.");
         }
-    }
-
-    private <R> R execute(final Connection connection, final String sql, final PreparedStatementCallback<R> action) {
-        try {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            log.debug(QUERY_FORMAT, sql);
-            return action.doInStatement(preparedStatement);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        throw new DataAccessException();
     }
 
     private int update(final PreparedStatement preparedStatement) {
