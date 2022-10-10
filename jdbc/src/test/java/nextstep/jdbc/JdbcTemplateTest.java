@@ -1,85 +1,141 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
     private static final RowMapper<UserObject> OBJECT_ROW_MAPPER = rs -> new UserObject(
-                            rs.getLong("id"),
-                            rs.getString("account"),
-                            rs.getString("password"),
-                            rs.getString("email")
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
     );
 
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
-        final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        DatabasePopulatorUtils.execute(jdbcDataSource);
-        jdbcTemplate = new JdbcTemplate(jdbcDataSource);
+        dataSource = mock(DataSource.class);
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test
-    void insert() {
-        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        int count = jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
+    void update() throws SQLException {
+        // given
+        Connection conn = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
 
-        String selectSql = "select id, account, password, email from users";
-        List<UserObject> users = jdbcTemplate.query(selectSql, OBJECT_ROW_MAPPER);
+        given(dataSource.getConnection()).willReturn(conn);
+        given(conn.prepareStatement(any())).willReturn(pstmt);
 
-        assertAll(
-                () -> assertThat(count).isEqualTo(1),
-                () -> assertThat(users.get(0)).isEqualTo(new UserObject(1L, "brorae", "password", "brorae@woowa.com"))
-        );
+        // when
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        String account = "brorae";
+        String password = "password";
+        String email = "brorae@woowa.com";
+        jdbcTemplate.update(sql, account, password, email);
+
+        // then
+        verify(pstmt).setObject(1, account);
+        verify(pstmt).setObject(2, password);
+        verify(pstmt).setObject(3, email);
+        verify(pstmt).executeUpdate();
+        verify(conn).close();
+        verify(pstmt).close();
     }
 
     @Test
-    void update() {
-        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
+    void queryForObject() throws SQLException {
+        // given
+        Connection conn = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-        String updateSql = "update users set account=?, password=?, email=? where id=?";
-        int count = jdbcTemplate.update(updateSql, "rennon", "password123", "rennon@woowa.com", 1L);
+        given(dataSource.getConnection()).willReturn(conn);
+        given(conn.prepareStatement(any())).willReturn(pstmt);
+        given(pstmt.executeQuery()).willReturn(rs);
+        given(rs.next()).willReturn(true, false);
 
-        String selectSql = "select id, account, password, email from users";
-        List<UserObject> users = jdbcTemplate.query(selectSql, OBJECT_ROW_MAPPER);
+        // when
+        String sql = "select id, account, password, email from users where id = ?";
+        UserObject user = jdbcTemplate.queryForObject(sql, OBJECT_ROW_MAPPER, 1L);
 
-        assertAll(
-                () -> assertThat(count).isEqualTo(1),
-                () -> assertThat(users.get(0)).isEqualTo(
-                        new UserObject(1L, "rennon", "password123", "rennon@woowa.com"))
-        );
+        // then
+        assertThat(user).isNotNull();
+        verify(conn).close();
+        verify(pstmt).close();
     }
 
     @Test
-    void queryForObject() {
-        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
+    void queryForObjectWithNoDataThrowException() throws SQLException {
+        // given
+        Connection conn = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-        String selectSql = "select id, account, password, email from users where id=?";
-        UserObject userObject = jdbcTemplate.queryForObject(selectSql, OBJECT_ROW_MAPPER, 1L);
+        given(dataSource.getConnection()).willReturn(conn);
+        given(conn.prepareStatement(any())).willReturn(pstmt);
+        given(pstmt.executeQuery()).willReturn(rs);
+        given(rs.next()).willReturn(false);
 
-        assertThat(userObject).isEqualTo(new UserObject(1L, "brorae", "password", "brorae@woowa.com"));
+        // when & then
+        String sql = "select id, account, password, email from users where id = ?";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, OBJECT_ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
-    void query() {
-        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
+    void queryForObjectWithMoreThanTwoThrowException() throws SQLException {
+        // given
+        Connection conn = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
 
-        List<UserObject> users = jdbcTemplate.query("select id, account, password, email from users",
-                OBJECT_ROW_MAPPER);
+        given(dataSource.getConnection()).willReturn(conn);
+        given(conn.prepareStatement(any())).willReturn(pstmt);
+        given(pstmt.executeQuery()).willReturn(rs);
+        given(rs.next()).willReturn(true, true, false);
 
-        assertThat(users).hasSize(1);
+        // when & then
+        String sql = "select id, account, password, email from users where id = ?";
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, OBJECT_ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void query() throws SQLException {
+        // given
+        Connection conn = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+
+        given(dataSource.getConnection()).willReturn(conn);
+        given(conn.prepareStatement(any())).willReturn(pstmt);
+        given(pstmt.executeQuery()).willReturn(rs);
+        given(rs.next()).willReturn(true, true, false);
+
+        // when
+        String sql = "select id, account, password, email from users";
+        List<UserObject> users = jdbcTemplate.query(sql, OBJECT_ROW_MAPPER);
+
+        // then
+        assertThat(users).hasSize(2);
+        verify(conn).close();
+        verify(pstmt).close();
     }
 }

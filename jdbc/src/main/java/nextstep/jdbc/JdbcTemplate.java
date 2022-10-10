@@ -57,6 +57,14 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.mapRow(rs));
+        }
+        return result;
+    }
+
     private <T> void validateData(List<T> result) {
         if (result.isEmpty()) {
             log.error("no data found");
@@ -66,13 +74,5 @@ public class JdbcTemplate {
             log.error("more than 1 data found");
             throw new DataAccessException();
         }
-    }
-
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(rowMapper.mapRow(rs));
-        }
-        return result;
     }
 }
