@@ -21,84 +21,29 @@ public class UserDao {
 	private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
 	private final DataSource dataSource;
+	private final InsertJdbcTemplate insertJdbcTemplate;
+	private final UpdateJdbcTemplate updateJdbcTemplate;
 
-	public UserDao(final DataSource dataSource) {
+	public UserDao(final DataSource dataSource, InsertJdbcTemplate insertJdbcTemplate,
+		UpdateJdbcTemplate updateJdbcTemplate) {
 		this.dataSource = dataSource;
+		this.insertJdbcTemplate = insertJdbcTemplate;
+		this.updateJdbcTemplate = updateJdbcTemplate;
 	}
 
-	public UserDao(final JdbcTemplate jdbcTemplate) {
+	public UserDao(final JdbcTemplate jdbcTemplate, InsertJdbcTemplate insertJdbcTemplate,
+		UpdateJdbcTemplate updateJdbcTemplate) {
+		this.insertJdbcTemplate = insertJdbcTemplate;
+		this.updateJdbcTemplate = updateJdbcTemplate;
 		this.dataSource = null;
 	}
 
 	public void insert(final User user) {
-		final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-		Connection conn = null;
-		PreparedStatement pstmt = null;
-		try {
-			conn = dataSource.getConnection();
-			pstmt = conn.prepareStatement(sql);
-
-			log.debug("query : {}", sql);
-
-			pstmt.setString(1, user.getAccount());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getEmail());
-			pstmt.executeUpdate();
-		} catch (SQLException e) {
-			log.error(e.getMessage(), e);
-			throw new RuntimeException(e);
-		} finally {
-			try {
-				if (pstmt != null) {
-					pstmt.close();
-				}
-			} catch (SQLException ignored) {
-			}
-
-			try {
-				if (conn != null) {
-					conn.close();
-				}
-			} catch (SQLException ignored) {
-			}
-		}
+		insertJdbcTemplate.insert(user);
 	}
 
 	public void update(final User user) {
-		final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-		Connection conn = null;
-		PreparedStatement pstmt = null;
-		try {
-			conn = dataSource.getConnection();
-			pstmt = conn.prepareStatement(sql);
-
-			log.debug("query : {}", sql);
-
-			pstmt.setString(1, user.getAccount());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getEmail());
-			pstmt.setLong(4, user.getId());
-			pstmt.executeUpdate();
-		} catch (SQLException e) {
-			log.error(e.getMessage(), e);
-			throw new RuntimeException(e);
-		} finally {
-			try {
-				if (pstmt != null) {
-					pstmt.close();
-				}
-			} catch (SQLException ignored) {
-			}
-
-			try {
-				if (conn != null) {
-					conn.close();
-				}
-			} catch (SQLException ignored) {
-			}
-		}
+		updateJdbcTemplate.update(user);
 	}
 
 	public List<User> findAll() {
