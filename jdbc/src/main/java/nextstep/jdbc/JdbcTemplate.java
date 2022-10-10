@@ -55,9 +55,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
+        ObjectFactory<T> objectFactory = new ObjectFactory<>(rowMapper);
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<ResultSet> sqlExecutor = PreparedStatement::executeQuery;
-        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = sqlResult -> makeObjects(rowMapper, sqlResult);
+        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = objectFactory::build;
 
         return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
@@ -80,14 +81,6 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    private <T> List<T> makeObjects(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        List<T> objects = new ArrayList<>();
-        while (resultSet.next()) {
-            objects.add(rowMapper.makeObject(resultSet));
-        }
-        return objects;
     }
 
     private void setSqlParameters(PreparedStatement pstmt, Object... args) throws SQLException {
