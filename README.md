@@ -8,3 +8,14 @@
 ### 체크리스트
 - [X] UserDaoTest의 모든 테스트 케이스가 통과한다.
 - [X] UserDao가 아닌 JdbcTemplate 클래스에서 JDBC와 관련된 처리를 담당하고 있다.
+
+## [🚀 3단계 - Transaction 적용하기](https://techcourse.woowahan.com/s/cCM7rQR9/ls/wB9LdcU2)
+
+### 요구사항
+- [ ] UserDao, UserHistoryDao가 한 트랜잭션을 공유하도록 한다.
+- [ ] 트랜잭션 동기화를 통해 Dao가 Connection 객체를 parameter로 전달받지 않도록 한다.
+- [ ] UserService를 추상화하여 트랜잭션 처리 로직을 분리한다.
+
+### 체크리스트
+- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
