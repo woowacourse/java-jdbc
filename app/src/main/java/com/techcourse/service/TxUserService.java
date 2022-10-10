@@ -19,21 +19,35 @@ public class TxUserService implements UserService{
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        Executable<User> insert = () -> userService.findById(id);
+        return execute(insert);
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        Executable<Void> insert = () -> {
+            userService.insert(user);
+            return null;
+        };
+        execute(insert);
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
+        Executable<Void> changePassword = () -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        };
+        execute(changePassword);
+    }
+
+    public <T> T execute(Executable<T> executable) {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.changePassword(id, newPassword, createBy);
+            T result = executable.execute();
             transactionManager.commit(transactionStatus);
+            return result;
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
