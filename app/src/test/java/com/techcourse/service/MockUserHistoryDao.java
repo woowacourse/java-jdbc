@@ -2,13 +2,16 @@ package com.techcourse.service;
 
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
+
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 
-public class MockUserHistoryDao extends UserHistoryDao {
+public class MockUserHistoryDao implements UserHistoryDao {
+
+    private final JdbcTemplate jdbcTemplate;
 
     public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate);
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override

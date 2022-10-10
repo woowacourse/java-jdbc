@@ -2,24 +2,36 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.*;
 
+import javax.sql.DataSource;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.techcourse.TestDataUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
-class UserDaoTest {
+import nextstep.jdbc.JdbcTemplate;
 
-    private UserDao userDao;
+class JdbcUserDaoTest {
+
+    private final DataSource dataSource = DataSourceConfig.getInstance();
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+    private JdbcUserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
+        userDao = new JdbcUserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.save(user);
+    }
+
+    @AfterEach
+    void teardown() {
+        TestDataUtils.h2TruncateTables(jdbcTemplate, "users");
     }
 
     @Test
