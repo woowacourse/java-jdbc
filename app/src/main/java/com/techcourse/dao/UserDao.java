@@ -24,9 +24,9 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Long insert(final User user) {
+    public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        return jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public User findById(final Long id) {
