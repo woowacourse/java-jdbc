@@ -22,10 +22,10 @@ public class JdbcTemplate {
 		this.dataSource = dataSource;
 	}
 
-	public <T> List<T> query(final String sql, final Class<T> type, final Object... objects) {
+	public <T> T queryForObject(final String sql, final Class<T> type, final Object... objects) {
 		final StatementCallback<List<T>> statementCallback = statement -> extractData(type,
-			statement.executeQuery(sql));
-		return execute(sql, statementCallback, objects);
+			statement.executeQuery());
+		return JdbcTemplateUtils.singleResult(execute(sql, statementCallback, objects));
 	}
 
 	public int update(final String sql, final Object... objects) {
