@@ -22,7 +22,7 @@ public class JdbcTemplate {
 
     private <T> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = sqlPreProcessor.preProcess(conn);) {
+             PreparedStatement pstmt = sqlPreProcessor.preProcess(conn)) {
             setSqlParameters(pstmt, args);
             return sqlExecutor.execute(pstmt);
         } catch (SQLException e) {
@@ -67,13 +67,11 @@ public class JdbcTemplate {
 
     private Long getGeneratedKey(PreparedStatement pstmt) {
         try (ResultSet rs = pstmt.getGeneratedKeys()) {
-            if (rs.next()) {
-                return rs.getLong("id");
-            }
-            return null;
+            rs.next();
+            return rs.getLong("id");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException("failed to get generatedKey");
         }
     }
 
