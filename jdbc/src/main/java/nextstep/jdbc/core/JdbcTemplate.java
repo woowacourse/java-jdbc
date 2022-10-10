@@ -95,9 +95,4 @@ public class JdbcTemplate {
     private Connection getConnection() {
         return DataSourceUtils.getConnection(dataSource);
     }
-
-    public void connectionClose() {
-        final Connection connection = getConnection();
-        DataSourceUtils.releaseConnection(connection, dataSource);
-    }
 }
