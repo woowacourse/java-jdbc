@@ -40,7 +40,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                results.add(rowMapper.map(resultSet));
+                results.add(rowMapper.mapRow(resultSet));
             }
 
             return results;
