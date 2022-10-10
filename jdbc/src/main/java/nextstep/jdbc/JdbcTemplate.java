@@ -60,10 +60,13 @@ public class JdbcTemplate {
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... args)
             throws SQLException {
-
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
+        PreparedStatementSetter preparedStatementSetter = (ps, objects) ->
+        {
+            for (int i = 0; i < objects.length; i++) {
+                ps.setObject(i + 1, objects[i]);
+            }
+        };
+        preparedStatementSetter.setValues(preparedStatement, args);
     }
 
     private <T> T getSingleResult(final List<T> results) {
