@@ -27,6 +27,8 @@ public class JdbcConnector {
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
