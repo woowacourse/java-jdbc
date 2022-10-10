@@ -71,4 +71,8 @@ public class JdbcTemplate {
         PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
         preparedStatementSetter.setValues(preparedStatement);
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }

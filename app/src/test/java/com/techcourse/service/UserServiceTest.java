@@ -1,12 +1,7 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -19,6 +14,7 @@ import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 class UserServiceTest {
 
@@ -39,7 +35,7 @@ class UserServiceTest {
     void testChangePassword() {
         //given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         //when
         final var newPassword = "qqqqq";
@@ -55,7 +51,9 @@ class UserServiceTest {
     void testTransactionRollback() {
         //given
         final var userHistoryDao = mock(UserHistoryDao.class);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        final var userService = new TxUserService(transactionManager, appUserService);
         doThrow(new DataAccessException()).when(userHistoryDao).log(any());
 
         //when
