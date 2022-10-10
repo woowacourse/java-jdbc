@@ -17,3 +17,8 @@
  * [x] 람다
  * [x] try-with-resources
  * [x] checked vs unchecked exception
+
+## 🚀 3단계 - Transaction 적용하기
+
+ * [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+ * [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
