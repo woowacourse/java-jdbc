@@ -54,7 +54,7 @@ public class JdbcTemplate {
         execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
 
-    public <T> List<T> finds(ObjectMapper<T> objectMapper, String sql, Object... args) {
+    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<ResultSet> sqlExecutor = PreparedStatement::executeQuery;
         SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = sqlResult -> makeObjects(objectMapper, sqlResult);
@@ -62,8 +62,8 @@ public class JdbcTemplate {
         return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
 
-    public <T> T find(ObjectMapper<T> objectMapper, String sql, Object... args) {
-        List<T> results = finds(objectMapper, sql, args);
+    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql, Object... args) {
+        List<T> results = query(objectMapper, sql, args);
         if (results.size() != 1) {
             throw new IllegalStateException();
         }

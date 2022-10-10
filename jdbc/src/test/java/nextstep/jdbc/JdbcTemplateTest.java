@@ -57,7 +57,7 @@ class JdbcTemplateTest {
 
         sql = "select id, account, password, email from users where id = ?";
 
-        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, keyHolder.getKey());
+        TestUser result = jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }
@@ -71,7 +71,7 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where account = ?";
-        List<TestUser> results = jdbcTemplate.finds(OBJECT_MAPPER, sql, user.getAccount());
+        List<TestUser> results = jdbcTemplate.query(OBJECT_MAPPER, sql, user.getAccount());
 
         assertAll(
                 () -> assertThat(results.size()).isEqualTo(1),
@@ -90,7 +90,7 @@ class JdbcTemplateTest {
         sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), keyHolder.getKey());
         sql = "select id, account, password, email from users where id = ?";
-        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, keyHolder.getKey());
+        TestUser result = jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }
