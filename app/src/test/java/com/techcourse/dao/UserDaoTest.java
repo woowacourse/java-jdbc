@@ -74,7 +74,9 @@ class UserDaoTest {
     @AfterEach
     void setDown() {
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        final String sql = "delete from users";
+        final String sql = "truncate table users";
         jdbcTemplate.update(sql);
+        final String alterSql = "alter table users alter column id restart with 1";
+        jdbcTemplate.update(alterSql);
     }
 }
