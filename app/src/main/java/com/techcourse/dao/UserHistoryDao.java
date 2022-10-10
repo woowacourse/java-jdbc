@@ -25,6 +25,5 @@ public class UserHistoryDao {
 			userHistory.getEmail(),
 			userHistory.getCreatedAt(),
 			userHistory.getCreateBy());
-
 	}
 }
