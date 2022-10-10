@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.techcourse.config.DataSourceConfig;
@@ -30,7 +32,60 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void 회원을_아이디로_불러올_수_있다() {
+        // given
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao);
+
+        // when
+        final User actual = userService.findById(1L);
+
+        // then
+        assertAll(
+                () -> assertThat(actual.getId()).isEqualTo(1L),
+                () -> assertThat(actual).usingRecursiveComparison()
+                        .ignoringFields("id")
+                        .isEqualTo(new User("gugu", "password", "hkkang@woowahan.com"))
+        );
+    }
+
+    @Test
+    void 회원을_추가할_수_있다() {
+        // given
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao);
+        final User user = new User("corinne", "password", "yoo77hyeon@gmail.com");
+
+        // when
+        userService.insert(user);
+
+        // then
+        final User found = userService.findById(2L);
+        assertAll(
+                () -> assertThat(found.getId()).isEqualTo(2L),
+                () -> assertThat(found).usingRecursiveComparison()
+                        .ignoringFields("id")
+                        .isEqualTo(user)
+        );
+    }
+
+    @Test
+    void 회원_추가_시_예외가_발생하면_작업이_롤백된다() {
+        // given
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var mockUserDao = new MockUserDao(jdbcTemplate);
+        final var userService = new UserService(mockUserDao, userHistoryDao);
+        final User user = new User("corinne", "password", "yoo77hyeon@gmail.com");
+
+        // when, then
+        assertAll(
+                () -> assertThatThrownBy(() -> userService.insert(user)).isInstanceOf(DataAccessException.class),
+                () -> assertThat(userService.findById(2L)).isNull()
+        );
+    }
+
+    @Test
+    void 비밀번호를_변경할_수_있다() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
@@ -44,20 +99,21 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
+    void 비밀번호_변경_시_예외가_발생하면_모든_작업이_롤백된다() {
+        // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        // when, then
+        assertAll(
+                () -> assertThrows(DataAccessException.class,
+                        () -> userService.changePassword(1L, newPassword, createBy)),
+                () -> assertThat(userService.findById(1L)
+                        .getPassword()).isNotEqualTo(newPassword)
+        );
     }
 
     @AfterEach
