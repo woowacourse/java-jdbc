@@ -34,8 +34,7 @@ public class JdbcTemplate {
                         final ResultSetExtractor<T> resultSetExtractor) {
         log.debug("execute SQL query [{}]", sql);
 
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+        return execute(sql, preparedStatementSetter, preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return resultSetExtractor.extractData(resultSet);
             }
@@ -49,16 +48,15 @@ public class JdbcTemplate {
     private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         log.debug("execute SQL update [{}]", sql);
 
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
+        return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
+    private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
+                          final PreparedStatementCallback<T> action) {
         validateNull(sql);
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(statement);
             return action.doInPreparedStatement(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
