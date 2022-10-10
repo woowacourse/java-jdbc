@@ -30,7 +30,7 @@ class AppUserServiceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void changePasswordCommit() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new AppUserService(userDao, userHistoryDao);
 
@@ -44,7 +44,7 @@ class AppUserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
+    void changePasswordRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
