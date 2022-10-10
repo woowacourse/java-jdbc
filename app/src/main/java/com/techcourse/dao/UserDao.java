@@ -6,11 +6,11 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.KeyHolder;
-import nextstep.jdbc.ObjectMapper;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final ObjectMapper<User> OBJECT_MAPPER = (ResultSet rs) ->
+    private static final RowMapper<User> OBJECT_MAPPER = (ResultSet rs) ->
             new User(rs.getLong("id"),
                     rs.getString("account"),
                     rs.getString("password"),

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final ObjectMapper<TestUser> OBJECT_MAPPER = (ResultSet rs) ->
+    private static final RowMapper<TestUser> OBJECT_MAPPER = (ResultSet rs) ->
             new TestUser(rs.getLong("id"),
                     rs.getString("account"),
                     rs.getString("password"),

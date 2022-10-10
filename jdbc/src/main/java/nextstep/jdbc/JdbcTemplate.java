@@ -54,16 +54,16 @@ public class JdbcTemplate {
         execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
 
-    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql, Object... args) {
+    public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<ResultSet> sqlExecutor = PreparedStatement::executeQuery;
-        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = sqlResult -> makeObjects(objectMapper, sqlResult);
+        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = sqlResult -> makeObjects(rowMapper, sqlResult);
 
         return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
 
-    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql, Object... args) {
-        List<T> results = query(objectMapper, sql, args);
+    public <T> T queryForObject(RowMapper<T> rowMapper, String sql, Object... args) {
+        List<T> results = query(rowMapper, sql, args);
         if (results.size() != 1) {
             throw new IllegalStateException();
         }
@@ -82,10 +82,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> makeObjects(ObjectMapper<T> objectMapper, ResultSet resultSet) throws SQLException {
+    private <T> List<T> makeObjects(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
         List<T> objects = new ArrayList<>();
         while (resultSet.next()) {
-            objects.add(objectMapper.mapObject(resultSet));
+            objects.add(rowMapper.makeObject(resultSet));
         }
         return objects;
     }
