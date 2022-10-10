@@ -8,14 +8,14 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class AppUserServiceTest {
+class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -28,8 +28,6 @@ class AppUserServiceTest {
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
 
         DatabasePopulatorUtils.init(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
     }
 
     @DisplayName("사용자 비밀번호 변경")
@@ -45,18 +43,26 @@ class AppUserServiceTest {
         assertThat(actual.getPassword()).isEqualTo("newPassword");
     }
 
-    @Disabled
+    @DisplayName("사용자 비밀번호 변경 실패 시 롤백")
     @Test
-    void testTransactionRollback() {
+    void changePasswordRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new AppUserService(userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        final var userService = new TxUserService(transactionManager, appUserService);
+
+        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+        final long userId = userDao.findByAccount("gugu").getId();
 
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, "newPassword", "gugu"));
+                () -> userService.changePassword(userId, "newPassword", "gugu"));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(userId);
 
         assertThat(actual.getPassword()).isNotEqualTo("newPassword");
     }
