@@ -9,10 +9,13 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
+    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -33,7 +36,10 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... args) {
+        log.debug("Execute sql : {}", sql);
+
         Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameters(args, preparedStatement);
             return action.doInPreparedStatement(preparedStatement);
