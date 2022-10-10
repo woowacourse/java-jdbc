@@ -54,14 +54,10 @@ class JdbcTemplateTest {
         @DisplayName("파라미터가 있는 INSERT 쿼리를 처리할 수 있다.")
         void success_insert_parameters() throws SQLException {
             User user = new User("leo", "password");
-            List<Object> values = new ArrayList<>();
-            values.add(user.getAccount());
-            values.add(user.getPassword());
 
             String sql = "insert into users (account, password) values (?, ?)";
-
             when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-            jdbcTemplate.update(sql, values);
+            jdbcTemplate.update(sql, user.getAccount(), user.getPassword());
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
             Mockito.verify(preparedStatement).setObject(2, "password");
@@ -88,6 +84,7 @@ class JdbcTemplateTest {
 
             when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString(1)).thenReturn("leo");
             when(resultSet.getString(2)).thenReturn("password");
             User actual = jdbcTemplate.queryForObject(sql, rowMapper);
@@ -106,9 +103,10 @@ class JdbcTemplateTest {
 
             when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString(1)).thenReturn("leo");
             when(resultSet.getString(2)).thenReturn("password");
-            jdbcTemplate.queryForObject(sql, List.of("leo"), rowMapper);
+            jdbcTemplate.queryForObject(sql, rowMapper, "leo");
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
         }
