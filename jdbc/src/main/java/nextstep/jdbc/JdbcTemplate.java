@@ -34,18 +34,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> {
-            preparedStatementSetter.setValues(pstmt, args);
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
+        List<T> results = query(sql, rowMapper, args);
+        if (results.size() != 1) {
             throw new IncorrectResultSizeDataAccessException();
-        });
+        }
+        return results.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
+            preparedStatementSetter.setValues(pstmt, args);
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
