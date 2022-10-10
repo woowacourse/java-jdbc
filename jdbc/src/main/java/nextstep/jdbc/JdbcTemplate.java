@@ -23,56 +23,53 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            bindParameters(pstmt, parameters);
-            ResultSet rs = pstmt.executeQuery();
+        QueryExecutor<List<T>> queryExecutor = (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                int rowNum = 1;
 
-            log.debug("query : {}", sql);
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs, rowNum));
+                }
 
-            List<T> result = new ArrayList<>();
-            int rowNum = 1;
-
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs, rowNum));
+                return result;
             }
+        };
 
-            rs.close();
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return executeQuery(queryExecutor, sql, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> result = query(sql, rowMapper, parameters);
 
         if (result.isEmpty()) {
-            throw new RuntimeException("쿼리 결과가 존재하지 않습니다.");
+            throw new DataAccessException("쿼리 결과가 존재하지 않습니다.");
         }
 
         if (result.size() > 1) {
-            throw new RuntimeException("쿼리 결과가 2개 이상입니다.");
+            throw new DataAccessException("쿼리 결과가 2개 이상입니다.");
         }
 
         return result.get(0);
     }
 
     public void update(String sql, Object... parameters) {
+        QueryExecutor queryExecutor = (pstmt) -> pstmt.executeUpdate();
+
+        executeQuery(queryExecutor, sql, parameters);
+    }
+
+    private <T> T executeQuery(QueryExecutor<T> queryExecutor, String sql, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            bindParameters(pstmt, parameters);
-            pstmt.executeUpdate();
-
             log.debug("query : {}", sql);
+            bindParameters(pstmt, parameters);
+            return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -81,4 +78,5 @@ public class JdbcTemplate {
             pstmt.setObject(i + 1, parameters[i]);
         }
     }
+
 }

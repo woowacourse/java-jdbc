@@ -5,15 +5,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 public class TestDataSourceConfig {
-    private static javax.sql.DataSource INSTANCE;
+    private static javax.sql.DataSource INSTANCE = createJdbcDataSource();
 
     private TestDataSourceConfig() {
     }
 
     public static javax.sql.DataSource getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = createJdbcDataSource();
-        }
         return INSTANCE;
     }
 
