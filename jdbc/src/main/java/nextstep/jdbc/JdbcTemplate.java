@@ -23,35 +23,35 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
-                     connection.prepareStatement(sql), args)) {
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error("error : {}", e);
-            throw new RuntimeException("해당 sql문을 실행할 수 없습니다.", e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
-                     connection.prepareStatement(sql), args);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-
+        final PreparedStatementCallback<List<T>> callback = preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        } catch (SQLException e) {
-            log.error("error : {}", e);
-            throw new RuntimeException("해당 sql문을 실행할 수 없습니다.", e);
-        }
+        };
+
+        return execute(sql, callback, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> query = query(sql, rowMapper, args);
         return query.get(FIRST_INDEX);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
+                     connection.prepareStatement(sql), args)) {
+            return callback.doInPreparedStatement(preparedStatement);
+        } catch (SQLException e) {
+            log.error("error : {}", e);
+            throw new RuntimeException(e);
+        }
     }
 }
