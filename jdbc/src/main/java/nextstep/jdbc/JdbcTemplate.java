@@ -21,16 +21,59 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Long insert(final String sql, Object... args) {
+    private <T, K> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<K> sqlExecutor, SqlResultProcessor<T, K> sqlResultProcessor,
+                             Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = sqlPreProcessor.preProcess(conn);) {
             setSqlParameters(pstmt, args);
-            pstmt.executeUpdate();
-            return getGeneratedKey(pstmt);
+            K sqlResult = sqlExecutor.execute(pstmt);
+            return sqlResultProcessor.process(sqlResult);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            throw new RuntimeException();
         }
+    }
+
+    public Long insert(final String sql, Object... args) {
+        SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        SqlExecutor<PreparedStatement> sqlExecutor = preparedStatement -> {
+            preparedStatement.executeUpdate();
+            return preparedStatement;
+        };
+        SqlResultProcessor<Long, PreparedStatement> sqlResultProcessor = this::getGeneratedKey;
+
+        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+    }
+
+    public int update(final String sql, Object... args) {
+        SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
+        SqlExecutor<Integer> sqlExecutor = PreparedStatement::executeUpdate;
+        SqlResultProcessor<Integer, Integer> sqlResultProcessor = sqlResult -> sqlResult;
+
+        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+    }
+
+    public <T> List<T> finds(ObjectMapper<T> objectMapper, String sql, Object... args) {
+        SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
+        SqlExecutor<ResultSet> sqlExecutor = PreparedStatement::executeQuery;
+        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = sqlResult -> makeObjects(objectMapper, sqlResult);
+
+        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+    }
+
+    public <T> T find(ObjectMapper<T> objectMapper, String sql, Object... args) {
+        List<T> results = finds(objectMapper, sql, args);
+        if (results.size() != 1) {
+            throw new IllegalStateException();
+        }
+        return results.get(0);
+    }
+
+    public boolean deleteAll(final String sql) {
+        SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
+        SqlExecutor<Boolean> sqlExecutor = PreparedStatement::execute;
+        SqlResultProcessor<Boolean, Boolean> sqlResultProcessor= sqlResult -> sqlResult;
+        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor);
     }
 
     private Long getGeneratedKey(PreparedStatement pstmt) {
@@ -45,61 +88,12 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setSqlParameters(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public <T> List<T> finds(ObjectMapper<T> objectMapper, String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setSqlParameters(pstmt, args);
-            return executeSqlAndMakeObjects(objectMapper, pstmt);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
-        }
-    }
-
-    private <T> List<T> executeSqlAndMakeObjects(ObjectMapper<T> objectMapper, PreparedStatement pstmt) {
-        try (ResultSet resultSet = pstmt.executeQuery()) {
-            return makeObjects(objectMapper, resultSet);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
-        }
-    }
-
     private <T> List<T> makeObjects(ObjectMapper<T> objectMapper, ResultSet resultSet) throws SQLException {
         List<T> objects = new ArrayList<>();
         while (resultSet.next()) {
             objects.add(objectMapper.mapObject(resultSet));
         }
         return objects;
-    }
-
-    public <T> T find(ObjectMapper<T> objectMapper, String sql, Object... args) {
-        List<T> results = finds(objectMapper, sql, args);
-        if (results.size() != 1) {
-            throw new IllegalStateException();
-        }
-        return results.get(0);
-    }
-
-    public void deleteAll(final String sql) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
-        }
     }
 
     private void setSqlParameters(PreparedStatement pstmt, Object... args) throws SQLException {
