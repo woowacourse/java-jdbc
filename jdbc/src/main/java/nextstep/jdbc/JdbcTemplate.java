@@ -28,12 +28,13 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final PreparedStatementCallback<List<T>> callback = preparedStatement -> {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+                return results;
             }
-            return results;
         };
 
         return execute(sql, callback, args);
