@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -48,8 +49,9 @@ public class JdbcTemplate {
     public <T> T usePreparedStatement(final String sql,
                                       final ThrowingFunction<PreparedStatement, T, SQLException> function,
                                       final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             mapParametersToPreparedStatement(preparedStatement, args);
             return function.apply(preparedStatement);
         } catch (final SQLException e) {
