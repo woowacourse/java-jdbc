@@ -1,9 +1,11 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -15,8 +17,8 @@ public class TxUserService implements UserService {
     private final PlatformTransactionManager transactionManager;
     private final UserService userService;
 
-    public TxUserService(PlatformTransactionManager transactionManager, UserService userService) {
-        this.transactionManager = transactionManager;
+    public TxUserService(UserService userService) {
+        this.transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
         this.userService = userService;
     }
 

@@ -12,7 +12,6 @@ import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 class TxUserServiceTest {
 
@@ -33,8 +32,7 @@ class TxUserServiceTest {
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -50,8 +48,7 @@ class TxUserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

@@ -40,10 +40,6 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
     private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
