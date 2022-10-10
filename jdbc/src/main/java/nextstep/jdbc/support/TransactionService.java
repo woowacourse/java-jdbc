@@ -1,24 +1,21 @@
 package nextstep.jdbc.support;
 
-import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public abstract class TransactionService {
 
-    private final DataSource dataSource;
-    private final TransactionDefinition transactionDefinition;
+    private final PlatformTransactionManager transactionManager;
 
-    protected TransactionService(final DataSource dataSource, final TransactionDefinition transactionDefinition) {
-        this.dataSource = dataSource;
-        this.transactionDefinition = transactionDefinition;
+    protected TransactionService(final PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 
     public void runWithTransaction(final Runnable runnable) {
-        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        final TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(
+                new DefaultTransactionDefinition());
         try {
             runnable.run();
             transactionManager.commit(transactionStatus);

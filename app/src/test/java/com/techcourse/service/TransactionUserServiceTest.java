@@ -16,16 +16,20 @@ import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 
 class TransactionUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private AbstractPlatformTransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
+        this.transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -38,7 +42,7 @@ class TransactionUserServiceTest {
         // given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var mockUserDao = new MockUserDao(jdbcTemplate);
-        final UserService userService = new TransactionUserService(new AppUserService(mockUserDao, userHistoryDao));
+        final UserService userService = new TransactionUserService(transactionManager, new AppUserService(mockUserDao, userHistoryDao));
         final User user = new User("corinne", "password", "yoo77hyeon@gmail.com");
 
         // when, then
@@ -52,7 +56,7 @@ class TransactionUserServiceTest {
     void 비밀번호_변경_시_예외가_발생하면_모든_작업이_롤백된다() {
         // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new TransactionUserService(new AppUserService(userDao, userHistoryDao));
+        final UserService userService = new TransactionUserService(transactionManager, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

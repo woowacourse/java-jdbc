@@ -1,16 +1,15 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import nextstep.jdbc.support.TransactionService;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.PlatformTransactionManager;
 
 public class TransactionUserService extends TransactionService implements UserService {
 
     private final UserService userService;
 
-    public TransactionUserService(final UserService userService) {
-        super(DataSourceConfig.getInstance(), new DefaultTransactionDefinition());
+    public TransactionUserService(final PlatformTransactionManager transactionManager, final UserService userService) {
+        super(transactionManager);
         this.userService = userService;
     }
 
