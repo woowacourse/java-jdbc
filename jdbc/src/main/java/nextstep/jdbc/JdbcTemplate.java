@@ -22,15 +22,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(String sql, Object... args) {
+        update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
     private void update(String sql, PreparedStatementSetter pss) {
         execute(sql, preparedStatement -> {
             pss.setValue(preparedStatement);
             return preparedStatement.executeUpdate();
         });
-    }
-
-    public void update(String sql, Object... args) {
-        update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
     private <T> T queryForObject(String sql, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
@@ -42,14 +42,18 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
     private <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) throws
         DataAccessException {
         return queryForObject(sql, pss, new RowMapperResultSetExtractor<>(rowMapper));
 
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     private <T> List<T> query(String sql, ResultSetExtractor<T> rse){
@@ -57,10 +61,6 @@ public class JdbcTemplate {
             ResultSet rs = pstmt.executeQuery();
             return rse.extractList(rs);
         });
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback) {
