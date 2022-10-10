@@ -7,6 +7,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.support.DatabaseCleanUp;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
@@ -82,15 +83,7 @@ class AppUserServiceTest {
 
     @AfterEach
     void setDown() {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        final String userSql = "truncate table users";
-        jdbcTemplate.update(userSql);
-        final String userAlterSql = "alter table users alter column id restart with 1";
-        jdbcTemplate.update(userAlterSql);
-
-        final String historySql = "truncate table user_history";
-        jdbcTemplate.update(historySql);
-        final String historyAlterSql = "alter table user_history alter column id restart with 1";
-        jdbcTemplate.update(historyAlterSql);
+        DatabaseCleanUp.cleanUp(jdbcTemplate, "users");
+        DatabaseCleanUp.cleanUp(jdbcTemplate, "user_history");
     }
 }
