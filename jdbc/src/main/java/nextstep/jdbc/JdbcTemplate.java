@@ -47,8 +47,8 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = PreparedStatementSetter.setParameters(
-                     connection.prepareStatement(sql), args)) {
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            PreparedStatementSetter.setParameters(preparedStatement, args);
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("error : {}", e);
