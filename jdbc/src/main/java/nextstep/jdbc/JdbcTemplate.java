@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -44,7 +45,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStater<T> strategy) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = DataSourceUtils.getConnection(dataSource);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return strategy.doStatement(pstmt);
