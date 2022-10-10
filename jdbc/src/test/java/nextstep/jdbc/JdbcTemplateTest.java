@@ -10,14 +10,12 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<UserObject> OBJECT_ROW_MAPPER =
-            (rs, rowNum) -> new UserObject
-                    (
+    private static final RowMapper<UserObject> OBJECT_ROW_MAPPER = rs -> new UserObject(
                             rs.getLong("id"),
                             rs.getString("account"),
                             rs.getString("password"),
                             rs.getString("email")
-                    );
+    );
 
     private JdbcTemplate jdbcTemplate;
 
@@ -58,7 +56,8 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThat(count).isEqualTo(1),
-                () -> assertThat(users.get(0)).isEqualTo(new UserObject(1L, "rennon", "password123", "rennon@woowa.com"))
+                () -> assertThat(users.get(0)).isEqualTo(
+                        new UserObject(1L, "rennon", "password123", "rennon@woowa.com"))
         );
     }
 
@@ -78,7 +77,8 @@ class JdbcTemplateTest {
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(insertSql, "brorae", "password", "brorae@woowa.com");
 
-        List<UserObject> users = jdbcTemplate.query("select id, account, password, email from users", OBJECT_ROW_MAPPER);
+        List<UserObject> users = jdbcTemplate.query("select id, account, password, email from users",
+                OBJECT_ROW_MAPPER);
 
         assertThat(users).hasSize(1);
     }

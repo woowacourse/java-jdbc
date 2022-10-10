@@ -8,7 +8,7 @@ import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
