@@ -3,10 +3,9 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,16 +25,16 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void init() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
+        given(dataSource.getConnection()).willReturn(connection);
     }
 
     @Test
     void update() throws SQLException {
         // given
         final String sql = "update users set account = gugu, password = pw, email = gugu@woowa.net where id = 1";
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
 
-        // when
+        // given
         jdbcTemplate.update(sql);
 
         // then
@@ -56,10 +55,10 @@ class JdbcTemplateTest {
 
         final ResultSet resultSet = mock(ResultSet.class);
 
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
 
-        // when
+        // given
         final List<String> result = jdbcTemplate.query(sql, classRowMapper);
 
         // then
@@ -81,11 +80,11 @@ class JdbcTemplateTest {
 
         final ResultSet resultSet = mock(ResultSet.class);
 
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, true, false);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(true, true, true, false);
 
-        // when
+        // given
         final List<String> result = jdbcTemplate.query(sql, classRowMapper);
 
         // then
@@ -101,11 +100,11 @@ class JdbcTemplateTest {
 
         final ResultSet resultSet = mock(ResultSet.class);
 
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(true, false);
 
-        // when
+        // given
         final String result = jdbcTemplate.queryForObject(sql, classRowMapper, 1);
 
         // then
@@ -127,11 +126,11 @@ class JdbcTemplateTest {
 
         final ResultSet resultSet = mock(ResultSet.class);
 
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(false);
 
-        // when & then
+        // given & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, classRowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("Empty result");
@@ -145,11 +144,11 @@ class JdbcTemplateTest {
 
         final ResultSet resultSet = mock(ResultSet.class);
 
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, false);
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(true, true, false);
 
-        // when & then
+        // given & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, classRowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("Incorrect result size, expected : 1, actual : 2");
