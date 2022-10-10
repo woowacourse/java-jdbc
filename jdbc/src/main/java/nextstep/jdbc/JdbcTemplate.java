@@ -29,7 +29,7 @@ public class JdbcTemplate {
             pss.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new BadExecuteUpdateException(e.getMessage());
         }
     }
 
@@ -41,7 +41,7 @@ public class JdbcTemplate {
 
     private <T> void validateOneResult(List<T> results) {
         if (results.size() != 1) {
-            throw new DataAccessException();
+            throw new QueryForObjectResultSizeException();
         }
     }
 
@@ -58,7 +58,7 @@ public class JdbcTemplate {
             pss.setValues(preparedStatement);
             return resultsSetMapper.collect(preparedStatement.executeQuery());
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new BadExecuteQueryException(e.getMessage());
         }
     }
 }
