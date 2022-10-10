@@ -27,7 +27,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> queryForList(final String sql, RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
             setParameters(args, pstmt);
             return getResult(pstmt, rowMapper);
