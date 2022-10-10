@@ -1,10 +1,15 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
+import javax.sql.DataSource;
+import nextstep.jdbc.DataAccessException;
 
 public class UserService {
 
@@ -28,7 +33,20 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+
+        DataSource dataSource = DataSourceConfig.getInstance();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw new DataAccessException();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }

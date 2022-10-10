@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
@@ -37,6 +38,16 @@ public class UserDao {
         final Long id = user.getId();
 
         jdbcTemplate.update(sql, account, password, email, id);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final String account = user.getAccount();
+        final String password = user.getPassword();
+        final String email = user.getEmail();
+        final Long id = user.getId();
+
+        jdbcTemplate.update(sql, connection, account, password, email, id);
     }
 
     public List<User> findAll() {
