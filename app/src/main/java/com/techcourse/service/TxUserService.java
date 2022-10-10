@@ -18,15 +18,7 @@ public class TxUserService implements UserService{
 
     @Override
     public User findById(final long id) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try{
-            User user = userService.findById(id);
-            transactionManager.commit(transactionStatus);
-            return user;
-        } catch (Exception exception) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
-        }
+        return userService.findById(id);
     }
 
     @Override
