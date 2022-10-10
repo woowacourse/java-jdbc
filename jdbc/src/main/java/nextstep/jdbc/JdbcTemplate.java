@@ -40,22 +40,8 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, @Nullable Object... args) {
-        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     public DataSource getDataSource() {
         return dataSource;
-    }
-
-    private <T> T executeQuery(final Connection connection, final String sql, final Executor<T> queryExecutor, final Object[] args) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            PreparedStatementSetter.setValues(preparedStatement, args);
-            return queryExecutor.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
     }
 
     private <T> T executeQuery(final String sql, final Executor<T> queryExecutor, final Object[] args) {
