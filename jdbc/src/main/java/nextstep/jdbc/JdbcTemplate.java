@@ -67,8 +67,7 @@ public class JdbcTemplate {
     }
 
     private void setParameters(PreparedStatement preparedStatement, Object[] values) throws SQLException {
-        for (int i = 0; i < values.length; i++) {
-            preparedStatement.setObject(i + 1, values[i]);
-        }
+        PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
+        preparedStatementSetter.setValues(preparedStatement);
     }
 }
