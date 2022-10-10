@@ -9,6 +9,8 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import nextstep.jdbc.support.Assert;
 import nextstep.jdbc.support.DataAccessUtils;
+import nextstep.jdbc.support.PreparedStatementCallback;
+import nextstep.jdbc.support.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,43 +24,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, @Nullable final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            setArguments(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
 
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            ResultSet rs = pstmt.executeQuery();
-            return DataAccessUtils.listResult(rowMapper, rs);
+            setArguments(pstmt, args);
+            return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
+    public int update(final String sql, @Nullable final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-            return DataAccessUtils.objectResult(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, pstmt -> {
+            ResultSet resultSet = pstmt.executeQuery();
+            return DataAccessUtils.objectResult(rowMapper, resultSet);
+        }, args);
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> {
+            final ResultSet resultSet = pstmt.executeQuery();
+            return DataAccessUtils.listResult(rowMapper, resultSet);
+        }, args);
     }
 
     private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
