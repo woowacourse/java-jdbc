@@ -65,4 +65,8 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
