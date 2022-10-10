@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,19 +25,8 @@ public class JdbcTemplate {
         return update(sql, statement -> setParameters(statement, args));
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return update(connection, sql, statement -> setParameters(statement, args));
-    }
-
     public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, statement -> {
-            preparedStatementSetter.setValues(statement);
-            return statement.executeUpdate();
-        });
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        return execute(connection, sql, statement -> {
             preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
         });
@@ -55,22 +45,14 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         log.debug("query : {}", sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            return callback.doInPreparedStatement(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> callback) {
-        log.debug("query : {}", sql);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            closeConnection(connection);
         }
     }
 
@@ -104,5 +86,15 @@ public class JdbcTemplate {
             throw new DataAccessException("해당하는 데이터가 없습니다.");
         }
         return rowMapper.mapRow(resultSet);
+    }
+
+    private void closeConnection(final Connection connection) {
+        try {
+            if (!DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }

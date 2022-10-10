@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import nextstep.jdbc.JdbcTemplate;
 
 public class UserHistoryDao {
@@ -12,11 +11,11 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final String sql = "insert into user_history "
                 + "(user_id, account, password, email, created_at, created_by) "
                 + "values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(connection, sql, (statement) -> {
+        jdbcTemplate.update(sql, (statement) -> {
             statement.setLong(1, userHistory.getUserId());
             statement.setString(2, userHistory.getAccount());
             statement.setString(3, userHistory.getPassword());
