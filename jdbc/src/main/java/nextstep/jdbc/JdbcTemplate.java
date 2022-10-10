@@ -50,7 +50,7 @@ public class JdbcTemplate {
 
     private void setPreparedStatement(final Object[] parameters, final PreparedStatement statement) throws
         SQLException {
-        for (int i = ROW_NUM; i < parameters.length; i++) {
+        for (int i = 0; i < parameters.length; i++) {
             statement.setObject(i + 1, parameters[i]);
         }
     }
