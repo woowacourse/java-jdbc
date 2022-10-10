@@ -3,10 +3,12 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -36,6 +38,12 @@ class UserDaoTest {
     }
 
     @Test
+    void findById_NoResult() {
+        assertThatThrownBy(() -> userDao.findById(10000L))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
@@ -44,8 +52,14 @@ class UserDaoTest {
     }
 
     @Test
+    void findByAccount_NoResult() {
+        assertThatThrownBy(() -> userDao.findByAccount("no"))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
     void insert() {
-        final var account = "insert-gugu";
+        final var account = "gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 

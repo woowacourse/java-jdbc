@@ -3,7 +3,8 @@ package nextstep.jdbc.element;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public interface DataAccessCallBack<T> {
+@FunctionalInterface
+public interface PreparedStatementCallback<T> {
 
     T execute(PreparedStatement statement) throws SQLException;
 }

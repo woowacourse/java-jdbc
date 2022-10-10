@@ -1,17 +1,14 @@
 package nextstep.jdbc;
 
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.element.JdbcExecutor;
-import nextstep.jdbc.element.PreparedStatementCallBack;
-import nextstep.jdbc.element.PreparedStatementCallBackImpl;
+import nextstep.jdbc.element.PreparedStatementSetter;
+import nextstep.jdbc.element.ResultSetCallback;
 import nextstep.jdbc.element.RowMapper;
 
 public class JdbcTemplate {
-
-    private static final PreparedStatementCallBack STATEMENT_CALL_BACK = new PreparedStatementCallBackImpl();
 
     private final JdbcExecutor jdbcExecutor;
 
@@ -20,32 +17,47 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
-            try (final ResultSet rs = statement.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-                return result;
+        return query(sql, getStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
+                             final RowMapper<T> rowMapper) {
+        final ResultSetCallback<List<T>> resultSetCallback = rs -> {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
             }
-        });
+            return result;
+        };
+        return jdbcExecutor.find(sql, statementSetter, resultSetCallback);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
-            try (final ResultSet rs = statement.executeQuery()) {
-                rs.next();
-                return rowMapper.mapRow(rs);
-            }
-        });
+        return queryForObject(sql, getStatementSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter statementSetter,
+                                final RowMapper<T> rowMapper) {
+        final ResultSetCallback<T> resultSetCallback = rs -> {
+            rs.next();
+            return rowMapper.mapRow(rs);
+        };
+        return jdbcExecutor.find(sql, statementSetter, resultSetCallback);
     }
 
     public Integer executeUpdate(final String sql, final Object... args) {
-        return jdbcExecutor.executeOrThrow(sql, (stmt) -> {
-            final var statement = STATEMENT_CALL_BACK.execute(stmt, sql, args);
-            return statement.executeUpdate();
-        });
+        return executeUpdate(sql, getStatementSetter(args));
+    }
+
+    public Integer executeUpdate(final String sql, final PreparedStatementSetter statementSetter) {
+        return jdbcExecutor.update(sql, statementSetter);
+    }
+
+    private PreparedStatementSetter getStatementSetter(Object[] args) {
+        return stmt -> {
+            for (int i = 0; i < args.length; i++) {
+                stmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }

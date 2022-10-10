@@ -2,6 +2,7 @@ package nextstep.jdbc.element;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
@@ -18,10 +19,24 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T executeOrThrow(String sql, DataAccessCallBack<T> dataAccessCallBack) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            return dataAccessCallBack.execute(stmt);
+    public <T> T find(String sql, PreparedStatementSetter statementSetter, ResultSetCallback<T> resultSetCallback) {
+        return executeOrThrow(sql, statementSetter, statement -> {
+            try (final ResultSet rs = statement.executeQuery()) {
+                return resultSetCallback.execute(rs);
+            }
+        });
+    }
+
+    public Integer update(final String sql, final PreparedStatementSetter statementSetter) {
+        return executeOrThrow(sql, statementSetter, PreparedStatement::executeUpdate);
+    }
+
+    private <T> T executeOrThrow(final String sql, final PreparedStatementSetter setter,
+                                 final PreparedStatementCallback<T> statementCallback) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement statement = conn.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return statementCallback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
