@@ -44,6 +44,10 @@ public class JdbcTemplate {
         });
     }
 
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     private <T> T execute(String sql, PreparedStater<T> strategy) {
         try (Connection conn = DataSourceUtils.getConnection(dataSource);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
