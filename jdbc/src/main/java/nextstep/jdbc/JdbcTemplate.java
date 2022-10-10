@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,13 +20,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T, K> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<K> sqlExecutor, SqlResultProcessor<T, K> sqlResultProcessor,
-                             Object... args) {
+    private <T> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = sqlPreProcessor.preProcess(conn);) {
             setSqlParameters(pstmt, args);
-            K sqlResult = sqlExecutor.execute(pstmt);
-            return sqlResultProcessor.process(sqlResult);
+            return sqlExecutor.execute(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException();
@@ -36,13 +33,12 @@ public class JdbcTemplate {
 
     public void update(final String sql, KeyHolder keyHolder, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        SqlExecutor<PreparedStatement> sqlExecutor = preparedStatement -> {
+        SqlExecutor<Long> sqlExecutor = preparedStatement -> {
             preparedStatement.executeUpdate();
-            return preparedStatement;
+            return getGeneratedKey(preparedStatement);
         };
-        SqlResultProcessor<Long, PreparedStatement> sqlResultProcessor = this::getGeneratedKey;
 
-        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, args);
         KeyHose keyHose = new KeyHose();
         keyHose.injectKey(keyHolder, generatedKey);
     }
@@ -50,17 +46,15 @@ public class JdbcTemplate {
     public void update(final String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<Integer> sqlExecutor = PreparedStatement::executeUpdate;
-        SqlResultProcessor<Void, Integer> sqlResultProcessor = sqlResult -> null;
-        execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        execute(sqlPreProcessor, sqlExecutor, args);
     }
 
     public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
         ObjectFactory<T> objectFactory = new ObjectFactory<>(rowMapper);
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
-        SqlExecutor<ResultSet> sqlExecutor = PreparedStatement::executeQuery;
-        SqlResultProcessor<List<T>, ResultSet> sqlResultProcessor = objectFactory::build;
+        SqlExecutor<List<T>> sqlExecutor = preparedStatement -> objectFactory.build(preparedStatement.executeQuery());
 
-        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        return execute(sqlPreProcessor, sqlExecutor, args);
     }
 
     public <T> T queryForObject(RowMapper<T> rowMapper, String sql, Object... args) {
