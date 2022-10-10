@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,8 +20,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        return jdbcExecutor.execute(sql, args, (pstmt) -> {
-            ResultSet rs = pstmt.executeQuery();
+        return jdbcExecutor.execute(sql, args, (preparedStatement) -> {
+            ResultSet rs = preparedStatement.executeQuery();
             return createResultByRowMapper(rowMapper, rs);
         });
     }
