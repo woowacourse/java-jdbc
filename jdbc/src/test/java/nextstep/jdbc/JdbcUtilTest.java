@@ -63,7 +63,6 @@ class JdbcUtilTest {
 			() -> verify(executeCallback).execute(statement),
 			() -> verify(rowMapperCallback).map(any()),
 
-			() -> verify(connection).close(),
 			() -> verify(statement).close(),
 			() -> verify(resultSet, never()).close()
 		);
@@ -94,7 +93,6 @@ class JdbcUtilTest {
 		assertAll(
 			() -> assertThat(result).isEqualTo("result"),
 
-			() -> verify(connection).close(),
 			() -> verify(statement).close(),
 			() -> verify(resultSet).close()
 		);

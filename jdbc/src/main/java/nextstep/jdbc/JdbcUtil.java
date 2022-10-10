@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import nextstep.jdbc.callback.ExecuteCallback;
 import nextstep.jdbc.callback.RowMapperCallback;
@@ -25,8 +26,8 @@ public class JdbcUtil {
 
 	public Object execute(final String sql, final ExecuteCallback executeCallback,
 		final RowMapperCallback rowMapperCallback) {
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql);
+		Connection conn = DataSourceUtils.getConnection(dataSource);
+		try (PreparedStatement pstmt = conn.prepareStatement(sql);
 			 ResultSet rs = executeCallback.execute(pstmt)) {
 			return rowMapperCallback.map(rs);
 		} catch (SQLException e) {
