@@ -1,10 +1,7 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -19,7 +16,6 @@ public class TxUserService implements UserService {
         this.userService = userService;
     }
 
-
     @Override
     public User findById(final long id) {
         return userService.findById(id);
@@ -32,15 +28,13 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        DataSourceTransactionManager txManager = new DataSourceTransactionManager(dataSource);
-        TransactionStatus status = txManager.getTransaction(new DefaultTransactionDefinition());
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
             userService.changePassword(id, newPassword, createBy);
-            txManager.commit(status);
+            transactionManager.commit(status);
         } catch (RuntimeException e) {
-            txManager.rollback(status);
+            transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
     }
