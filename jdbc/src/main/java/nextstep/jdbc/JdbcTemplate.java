@@ -27,18 +27,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
-
-        if (results.isEmpty()) {
-            log.error("데이터가 존재하지 않습니다.");
-            throw new DataAccessException("데이터가 존재하지 않습니다.");
-        }
-
-        if (results.size() > 1) {
-            log.error("result={}", results);
-            throw new DataAccessException("데이터가 2개 이상 존재합니다.");
-        }
-
-        return results.iterator().next();
+        return DataAccessUtils.getSingleResult(results);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
