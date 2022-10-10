@@ -36,7 +36,7 @@ class UserDaoTest {
     @AfterEach
     void refresh() {
         final String sql = "DELETE FROM users";
-        jdbcTemplate.deleteAll(sql);
+        jdbcTemplate.update(sql);
     }
 
     @Test

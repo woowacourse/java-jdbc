@@ -70,13 +70,6 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public boolean deleteAll(final String sql) {
-        SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
-        SqlExecutor<Boolean> sqlExecutor = PreparedStatement::execute;
-        SqlResultProcessor<Boolean, Boolean> sqlResultProcessor= sqlResult -> sqlResult;
-        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor);
-    }
-
     private Long getGeneratedKey(PreparedStatement pstmt) {
         try (ResultSet rs = pstmt.getGeneratedKeys()) {
             if (rs.next()) {
