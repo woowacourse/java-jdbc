@@ -30,6 +30,13 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection connection, final String sql, Object... params) {
+        return doExecute(connection, sql, preparedStatement -> {
+            setParamsToStatement(preparedStatement, params);
+            return preparedStatement.executeUpdate();
+        });
+    }
+
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... params) {
         return doExecute(sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
@@ -80,6 +87,15 @@ public class JdbcTemplate {
 
     private <T> T doExecute(String sql, PreparedStatementCallback<T> callback) {
         try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return callback.doInPreparedStatement(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T doExecute(Connection connection, String sql, PreparedStatementCallback<T> callback) {
+        try (
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
