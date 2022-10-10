@@ -19,31 +19,22 @@ import nextstep.jdbc.JdbcTemplate;
 public class UserDao {
 
 	private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
+	private final JdbcTemplate jdbcTemplate;
 	private final DataSource dataSource;
-	private final InsertJdbcTemplate insertJdbcTemplate;
-	private final UpdateJdbcTemplate updateJdbcTemplate;
 
-	public UserDao(final DataSource dataSource, InsertJdbcTemplate insertJdbcTemplate,
-		UpdateJdbcTemplate updateJdbcTemplate) {
+	public UserDao(final DataSource dataSource, final JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
 		this.dataSource = dataSource;
-		this.insertJdbcTemplate = insertJdbcTemplate;
-		this.updateJdbcTemplate = updateJdbcTemplate;
-	}
-
-	public UserDao(final JdbcTemplate jdbcTemplate, InsertJdbcTemplate insertJdbcTemplate,
-		UpdateJdbcTemplate updateJdbcTemplate) {
-		this.insertJdbcTemplate = insertJdbcTemplate;
-		this.updateJdbcTemplate = updateJdbcTemplate;
-		this.dataSource = null;
 	}
 
 	public void insert(final User user) {
-		insertJdbcTemplate.insert(user);
+		final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+		jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
 	}
 
 	public void update(final User user) {
-		updateJdbcTemplate.update(user);
+		final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+		jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
 	}
 
 	public List<User> findAll() {

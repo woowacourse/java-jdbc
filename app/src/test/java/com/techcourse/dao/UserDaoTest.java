@@ -9,6 +9,8 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
+import nextstep.jdbc.JdbcTemplate;
+
 class UserDaoTest {
 
 	private UserDao userDao;
@@ -17,7 +19,7 @@ class UserDaoTest {
 	void setup() {
 		DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-		userDao = new UserDao(DataSourceConfig.getInstance(), new InsertJdbcTemplate(DataSourceConfig.getInstance()),new UpdateJdbcTemplate(DataSourceConfig.getInstance()));
+		userDao = new UserDao(DataSourceConfig.getInstance(),new JdbcTemplate(DataSourceConfig.getInstance()));
 		final var user = new User("gugu", "password", "hkkang@woowahan.com");
 		userDao.insert(user);
 	}
@@ -25,7 +27,6 @@ class UserDaoTest {
 	@Test
 	void findAll() {
 		final var users = userDao.findAll();
-
 		assertThat(users).isNotEmpty();
 	}
 

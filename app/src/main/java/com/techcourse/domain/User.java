@@ -2,55 +2,58 @@ package com.techcourse.domain;
 
 public class User {
 
-    private Long id;
-    private final String account;
-    private String password;
-    private final String email;
+	private Long id;
+	private String account;
+	private String password;
+	private String email;
 
-    public User(Long id, String account, String password, String email) {
-        this.id = id;
-        this.account = account;
-        this.password = password;
-        this.email = email;
-    }
+	public User(Long id, String account, String password, String email) {
+		this.id = id;
+		this.account = account;
+		this.password = password;
+		this.email = email;
+	}
 
-    public User(String account, String password, String email) {
-        this.account = account;
-        this.password = password;
-        this.email = email;
-    }
+	public User(String account, String password, String email) {
+		this.account = account;
+		this.password = password;
+		this.email = email;
+	}
 
-    public boolean checkPassword(String password) {
-        return this.password.equals(password);
-    }
+	public User() {
+	}
 
-    public void changePassword(String password) {
-        this.password = password;
-    }
+	public boolean checkPassword(String password) {
+		return this.password.equals(password);
+	}
 
-    public String getAccount() {
-        return account;
-    }
+	public void changePassword(String password) {
+		this.password = password;
+	}
 
-    public long getId() {
-        return id;
-    }
+	public String getAccount() {
+		return account;
+	}
 
-    public String getEmail() {
-        return email;
-    }
+	public long getId() {
+		return id;
+	}
 
-    public String getPassword() {
-        return password;
-    }
+	public String getEmail() {
+		return email;
+	}
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", account='" + account + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                '}';
-    }
+	public String getPassword() {
+		return password;
+	}
+
+	@Override
+	public String toString() {
+		return "User{" +
+			"id=" + id +
+			", account='" + account + '\'' +
+			", email='" + email + '\'' +
+			", password='" + password + '\'' +
+			'}';
+	}
 }
