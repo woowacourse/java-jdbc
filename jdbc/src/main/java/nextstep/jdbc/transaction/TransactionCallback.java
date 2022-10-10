@@ -1,7 +1,7 @@
 package nextstep.jdbc.transaction;
 
 @FunctionalInterface
-public interface TransactionCallback {
+public interface TransactionCallback <T> {
 
-	void execute();
+	T execute();
 }

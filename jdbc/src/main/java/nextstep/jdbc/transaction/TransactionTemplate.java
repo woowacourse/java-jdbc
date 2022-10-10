@@ -12,11 +12,24 @@ public class TransactionTemplate {
 		this.transactionManager = transactionManager;
 	}
 
-	public void doInTransaction(TransactionCallback callback) {
+	public void doInTransactionWithNoResult(TransactionCallbackWithNoResult callback) {
 		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
 		try {
 			callback.execute();
 			transactionManager.commit(status);
+		} catch (Exception e) {
+			transactionManager.rollback(status);
+			throw e;
+		}
+	}
+
+
+	public <T> T doInTransaction(TransactionCallback<T> callback) {
+		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+		try {
+			T result = callback.execute();
+			transactionManager.commit(status);
+			return result;
 		} catch (Exception e) {
 			transactionManager.rollback(status);
 			throw e;
