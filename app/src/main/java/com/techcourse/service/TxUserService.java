@@ -6,7 +6,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-public class TxUserService implements UserService{
+public class TxUserService implements UserService {
 
     private final PlatformTransactionManager transactionManager;
     private final UserService userService;
@@ -23,20 +23,13 @@ public class TxUserService implements UserService{
 
     @Override
     public void insert(final User user) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try{
-            userService.insert(user);
-            transactionManager.commit(transactionStatus);
-        } catch (Exception exception) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
-        }
+        userService.insert(user);
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try{
+        try {
             userService.changePassword(id, newPassword, createBy);
             transactionManager.commit(transactionStatus);
         } catch (Exception exception) {
