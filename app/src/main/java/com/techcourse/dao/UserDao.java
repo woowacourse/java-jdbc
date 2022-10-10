@@ -35,20 +35,20 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public List<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, userRowMapper, account);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
     }
 
-    private static final RowMapper<User> userRowMapper = (resultSet, ignored) ->
+    private static final RowMapper<User> USER_ROW_MAPPER = (resultSet, ignored) ->
             new User(
                     resultSet.getLong("id"),
                     resultSet.getString("account"),
