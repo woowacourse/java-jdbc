@@ -20,7 +20,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "schema.sql");
     }
 
     @Test
@@ -29,17 +29,17 @@ class JdbcTemplateTest {
         String sql = "insert into member (name, age) values (?, ?)";
 
         // when & then
-        jdbcTemplate.update(sql, new Object[]{"hello jdbc!", 10});
+        jdbcTemplate.update(sql, "hello jdbc!", 10);
 
         String assertSql = "select * from member where age = 10";
-        Member member = jdbcTemplate.queryForObject(assertSql, null, MEMBER_ROW_MAPPER);
+        Member member = jdbcTemplate.queryForObject(assertSql, MEMBER_ROW_MAPPER);
         assertThat(member.getName()).isEqualTo("hello jdbc!");
     }
 
     @Test
     void query() {
         // given
-        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)", null);
+        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)");
         String sql = "select * from member";
 
         // when
@@ -52,11 +52,11 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() {
         // given
-        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)", null);
+        jdbcTemplate.update("insert into member (name, age) values ('hello', 10)");
 
         // when
         String sql = "select * from member where age = ?";
-        Member member = jdbcTemplate.queryForObject(sql, new Object[]{10}, MEMBER_ROW_MAPPER);
+        Member member = jdbcTemplate.queryForObject(sql, MEMBER_ROW_MAPPER, 10);
 
         // then
         assertThat(member.getName()).isEqualTo("hello");
@@ -64,6 +64,6 @@ class JdbcTemplateTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.update("truncate table member", null);
+        jdbcTemplate.update("drop table member if exists");
     }
 }
