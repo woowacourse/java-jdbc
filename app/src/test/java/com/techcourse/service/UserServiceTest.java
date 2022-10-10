@@ -28,7 +28,8 @@ class UserServiceTest {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
 
         this.userDao = new UserDao(jdbcTemplate);
-        this.userService = new UserService(dataSource, userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        this.userService = new TxUserService(dataSource, appUserService);
 
         DatabasePopulatorUtils.execute(dataSource);
     }
@@ -60,7 +61,8 @@ class UserServiceTest {
         String newPassword = "qqqqq";
 
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(dataSource, userDao, userHistoryDao);
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        this.userService = new TxUserService(dataSource, appUserService);
 
         // when
         assertThrows(DataAccessException.class,
