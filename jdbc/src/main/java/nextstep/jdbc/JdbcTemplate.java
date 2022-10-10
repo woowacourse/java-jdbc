@@ -52,9 +52,28 @@ public class JdbcTemplate {
         return execute(sqlFormat, callback, sqlArguments);
     }
 
+    public void update(final Connection connection, final String sqlFormat, final Object... sqlArguments) {
+        final Callback<Integer> callback = PreparedStatement::executeUpdate;
+        execute(connection, sqlFormat, callback, sqlArguments);
+    }
+
     public void update(final String sqlFormat, final Object... sqlArguments) {
         final Callback<Integer> callback = PreparedStatement::executeUpdate;
         execute(sqlFormat, callback, sqlArguments);
+    }
+
+
+    private <T> T execute(final Connection connection, final String sqlFormat, Callback<T> callback, final Object... sqlArguments) {
+        String sql = generateSql(sqlFormat, sqlArguments);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            return callback.call(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        } catch (Exception e) {
+            throw new IllegalCallerException(e);
+        }
     }
 
     private <T> T execute(final String sqlFormat, Callback<T> callback, final Object... sqlArguments) {
@@ -70,6 +89,7 @@ public class JdbcTemplate {
             throw new IllegalCallerException(e);
         }
     }
+
 
     private String generateSql(final String sqlFormat, final Object[] sqlArguments) {
         String sql = sqlFormat;
