@@ -7,3 +7,9 @@
 ## step2 
 - [x] SQLException은 Checked Exception이다. 커스텀 Exception을 추가해서 사용자는 Unchecked Exception이 되도록 변경 
 - [x] UserDaoTest 격리
+- [ ] setValues를 인터페이스로 분리하기 
+- [ ] JDBCTemplate test 짜기
+
+## step3
+- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과하게 한다. 
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스 분리하기 
