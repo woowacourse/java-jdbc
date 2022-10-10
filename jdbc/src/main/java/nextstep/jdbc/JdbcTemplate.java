@@ -19,7 +19,7 @@ public class JdbcTemplate extends JdbcSupporter{
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final Object...args) {
-        final List<T> results = execute(sql, preparedStatement -> getResult(rowMapper, preparedStatement), args);
+        final List<T> results = query(sql, rowMapper, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
