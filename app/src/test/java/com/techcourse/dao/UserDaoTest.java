@@ -7,6 +7,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +39,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
+    @Disabled
     @Test
     void findByAccount() {
         final String account = "gugu";

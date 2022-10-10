@@ -23,7 +23,7 @@ public class UserDao {
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         try {
-            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+            jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
         } catch (DataAccessException e) {
             log.error(e.getMessage(), e);
         }
@@ -32,7 +32,7 @@ public class UserDao {
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ?";
         try {
-            jdbcTemplate.update(sql, List.of(user.getAccount(), user.getPassword(), user.getEmail()));
+            jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
         } catch (DataAccessException e) {
             log.error(e.getMessage(), e);
         }
@@ -47,13 +47,13 @@ public class UserDao {
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, List.of(id), new UserRowMapper());
+        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, List.of(account), new UserRowMapper());
+        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
     }
 
     private static class UserRowMapper implements RowMapper<User> {
