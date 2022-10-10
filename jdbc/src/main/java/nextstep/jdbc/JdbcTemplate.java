@@ -49,4 +49,8 @@ public class JdbcTemplate {
         final StatementCallback<Integer> statementCallback = PreparedStatement::executeUpdate;
         return execute(sql, statementCallback, objects);
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
