@@ -77,8 +77,9 @@ public class JdbcTemplate {
             return action.doInStatement(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            DataSourceUtils.releaseConnection(connection, dataSource);
             throw new DataAccessException("데이터 접근에 실패했습니다.");
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
