@@ -41,7 +41,6 @@ class JdbcTemplateTest {
     void checkResourceClosed() throws SQLException {
         jdbcTemplate.update("UPDATE users SET password = ? WHERE account = ?", "1234", "gugu");
 
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -50,11 +49,10 @@ class JdbcTemplateTest {
     void insertDataUsingPreparedStatement() throws SQLException {
         given(preparedStatement.executeUpdate()).willReturn(1);
 
-        int result = jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
                 "gugu", "1234", "gugu@email.com");
 
         verify(preparedStatement).executeUpdate();
-        assertThat(result).isOne();
     }
 
     @DisplayName("PreparedStatement을 사용하여 데이터를 find한다.")

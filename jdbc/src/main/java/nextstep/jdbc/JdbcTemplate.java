@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -19,52 +20,33 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
-            preparedStatementSetter.setValues(preparedStatement);
+    public void update(final String sql, final Object... args) {
+        execute(sql, preparedStatement -> {
+            final PreparedStatementSetter<?> statementSetter = setPreparedStatement(args, preparedStatement);
+            statementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            return callback.doStatement(statement);
         } catch (SQLException e) {
             log.error("Execute Query Failed: " + e);
             throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
         }
     }
 
-    private PreparedStatementSetter setPreparedStatement(final Object[] args) {
-        final PreparedStatementSetter preparedStatementSetter = ps -> {
+    private PreparedStatementSetter<?> setPreparedStatement(final Object[] args,
+                                                            final PreparedStatement preparedStatement) {
+        return ps -> {
             for (int idx = 0; idx < args.length; idx++) {
                 ps.setObject(idx + 1, args[idx]);
             }
         };
-        return preparedStatementSetter;
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
-                             final Object... args
-    ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            final PreparedStatementSetter preparedStatementSetter = setPreparedStatement(args);
-            preparedStatementSetter.setValues(preparedStatement);
-            return getResultSetData(preparedStatement, rowMapper);
-        } catch (SQLException e) {
-            log.error("Execute Query Failed: " + e);
-            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
-        }
-    }
-
-    private <T> List<T> getResultSetData(final PreparedStatement preparedStatement,
-                                  final RowMapper<T> rowMapper) throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-            final RowMapperResultSetExtractor<T> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
-            return resultSetExtractor.extractData(resultSet);
-        } catch (SQLException e) {
-            log.error("Execute Query Failed: " + e);
-            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
-        }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
@@ -75,5 +57,29 @@ public class JdbcTemplate {
         }
         return results.iterator()
                 .next();
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final Object... args
+    ) {
+        return execute(sql, preparedStatement -> {
+            final PreparedStatementSetter<?> statementSetter = setPreparedStatement(args, preparedStatement);
+            statementSetter.setValues(preparedStatement);
+            return getResultSetData(preparedStatement, rowMapper);
+        });
+    }
+
+    private <T> List<T> getResultSetData(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            final RowMapperResultSetExtractor<T> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+            return resultSetExtractor.extractData(resultSet);
+        } catch (SQLException e) {
+            log.error("Execute Query Failed: " + e);
+            throw new DataAccessException("Query를 성공적으로 실행하지 못했습니다.");
+        }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
