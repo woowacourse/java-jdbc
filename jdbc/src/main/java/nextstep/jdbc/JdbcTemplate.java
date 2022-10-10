@@ -34,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Long insert(final String sql, Object... args) {
+    public void update(final String sql, KeyHolder keyHolder, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         SqlExecutor<PreparedStatement> sqlExecutor = preparedStatement -> {
             preparedStatement.executeUpdate();
@@ -42,15 +42,16 @@ public class JdbcTemplate {
         };
         SqlResultProcessor<Long, PreparedStatement> sqlResultProcessor = this::getGeneratedKey;
 
-        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        KeyHose keyHose = new KeyHose();
+        keyHose.injectKey(keyHolder, generatedKey);
     }
 
-    public int update(final String sql, Object... args) {
+    public void update(final String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<Integer> sqlExecutor = PreparedStatement::executeUpdate;
-        SqlResultProcessor<Integer, Integer> sqlResultProcessor = sqlResult -> sqlResult;
-
-        return execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
+        SqlResultProcessor<Void, Integer> sqlResultProcessor = sqlResult -> null;
+        execute(sqlPreProcessor, sqlExecutor, sqlResultProcessor, args);
     }
 
     public <T> List<T> finds(ObjectMapper<T> objectMapper, String sql, Object... args) {

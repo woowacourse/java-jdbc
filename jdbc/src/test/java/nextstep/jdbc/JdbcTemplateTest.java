@@ -41,9 +41,10 @@ class JdbcTemplateTest {
     void insert() {
         TestUser user = new TestUser("account", "password", "email");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
-        assertThat(id).isEqualTo(1L);
+        assertThat(keyHolder.getKey()).isEqualTo(1L);
     }
 
     @DisplayName("데이터 하나만 반환하는 find 쿼리를 완성시켜 실행시킨다.")
@@ -51,11 +52,12 @@ class JdbcTemplateTest {
     void find() {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where id = ?";
 
-        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, id);
+        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }
@@ -65,7 +67,8 @@ class JdbcTemplateTest {
     void finds() {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where account = ?";
         List<TestUser> results = jdbcTemplate.finds(OBJECT_MAPPER, sql, user.getAccount());
@@ -81,12 +84,13 @@ class JdbcTemplateTest {
     void update() {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), id);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), keyHolder.getKey());
         sql = "select id, account, password, email from users where id = ?";
-        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, id);
+        TestUser result = jdbcTemplate.find(OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }

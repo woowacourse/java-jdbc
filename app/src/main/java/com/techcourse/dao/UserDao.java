@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.KeyHolder;
 import nextstep.jdbc.ObjectMapper;
 
 public class UserDao {
@@ -27,8 +28,9 @@ public class UserDao {
 
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
-        user.setId(id);
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        user.setId(keyHolder.getKey());
     }
 
     public void update(final User user) {
