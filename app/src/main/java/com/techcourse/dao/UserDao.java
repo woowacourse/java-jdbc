@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -36,6 +37,12 @@ public class UserDao {
         final var sql = "update users set id = ?, account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(
             sql, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set id = ?, account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql,
+            user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
