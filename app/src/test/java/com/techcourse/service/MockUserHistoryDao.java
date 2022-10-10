@@ -17,9 +17,4 @@ public class MockUserHistoryDao extends UserHistoryDao {
     public void log(final UserHistory userHistory) {
         throw new DataAccessException();
     }
-
-    @Override
-    public void log(Connection connection, UserHistory userHistory) {
-        throw new DataAccessException();
-    }
 }

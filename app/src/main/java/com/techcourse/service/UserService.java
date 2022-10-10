@@ -1,9 +1,10 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javax.sql.DataSource;
+
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -17,10 +18,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final PlatformTransactionManager transactionManager;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
@@ -34,14 +37,16 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         final DataSource dataSource = DataSourceConfig.getInstance();
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
+        final var transactionStatus =
+                transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(transactionStatus);
+        } catch (Exception e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
         }
     }
 }
