@@ -44,4 +44,7 @@
   - [x] 스프링에서 제공하는 PlatformTransactionManager 를 통해서 트랜잭션 동기화를 적용한다.
     - [x] 트랜잭션을 위한 Connection을 별도로 보관해두고 DAO에서 호출시 저장된 커넥션을 사용한다.
   - [x] 스프링을 통해서 트랜잭션을 관리하므로 JdbcTemplate 에서는 DataSourceUtils를 통해서 동일한 Connetion 획득
-- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
+- [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
+  - [x] UserService 인터페이스를 도출한다.
+  - [x] 데이터 액세스를 처리하는 AppUserService를 분리한다.
+  - [x] 트랜잭션 처리를 담당하는 TxUserService를 분리하고, AppUserService를 이용하여 서비스 로직을 처리한다.
