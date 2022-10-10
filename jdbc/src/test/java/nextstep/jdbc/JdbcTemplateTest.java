@@ -1,6 +1,8 @@
 package nextstep.jdbc;
 
 import static nextstep.jdbc.Extractor.extractData;
+import static nextstep.jdbc.UserFixture.수달;
+import static nextstep.jdbc.UserFixture.조시;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,10 +56,10 @@ class JdbcTemplateTest {
 
 	@Test
 	void 쿼리를_실행시켜_한_개의_엔티티를_반환한다() throws SQLException {
-		String findAccount = "깜찍_수달";
+		String findAccount = 수달.getAccount();
 		// given
 		Extractor.when(() -> extractData(any(), any()))
-			.thenReturn(Arrays.asList(new User(1L, findAccount, "pw", "sudal@naver.com")));
+			.thenReturn(Arrays.asList(수달));
 
 		final User user = jdbcTemplate.queryForObject(FIND_BY_ACCOUNT, User.class, findAccount);
 
@@ -72,7 +74,7 @@ class JdbcTemplateTest {
 			.thenReturn(Arrays.asList());
 
 		// when, then
-		assertThatThrownBy(() -> jdbcTemplate.queryForObject(FIND_BY_ACCOUNT, User.class,"안깜찍_수달"))
+		assertThatThrownBy(() -> jdbcTemplate.queryForObject(FIND_BY_ACCOUNT, User.class, "안깜찍_수달"))
 			.isInstanceOf(DataAccessException.class)
 			.hasMessage("일치하는 데이터가 없습니다.");
 	}
@@ -81,8 +83,7 @@ class JdbcTemplateTest {
 	void 쿼리를_실행시켜_한_개의_데이터를_찾아오는데_결과가_두_개_이상일_경우_예외가_발생한다() throws SQLException {
 		// given
 		Extractor.when(() -> extractData(any(), any()))
-			.thenReturn(Arrays.asList(new User(1L, "데이터1", "pw", "sudal@naver.com"),
-				new User(2L, "데이터2", "pw", "sudal@naver.com")));
+			.thenReturn(Arrays.asList(수달, 조시));
 
 		// when, then
 		assertThatThrownBy(() -> jdbcTemplate.queryForObject(FIND_BY_ACCOUNT, User.class))
