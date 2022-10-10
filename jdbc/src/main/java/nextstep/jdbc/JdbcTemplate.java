@@ -28,24 +28,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
-            List<T> results = new ArrayList<>();
-            final ResultSet resultSet = setParamsAndExecuteQuery(pstmt, args);
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        });
+        return execute(sql, pstmt -> setParamsAndGetResult(rowMapper, pstmt, args));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
-            final ResultSet resultSet = setParamsAndExecuteQuery(pstmt, args);
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            throw new DataAccessException("잘못된 결과입니다.");
-        });
+        final List<T> results = query(sql, rowMapper, args);
+        return getSingleResult(results);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
@@ -58,9 +46,16 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet setParamsAndExecuteQuery(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private <T> List<T> setParamsAndGetResult(RowMapper<T> rowMapper, PreparedStatement pstmt, Object[] args)
+            throws SQLException {
+        final List<T> results = new ArrayList<>();
         setParameters(pstmt, args);
-        return pstmt.executeQuery();
+        final ResultSet resultSet = pstmt.executeQuery();
+
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... args)
@@ -71,4 +66,13 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T getSingleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("잘못된 결과입니다.");
+        }
+        return results.iterator().next();
+    }
 }
