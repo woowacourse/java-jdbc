@@ -31,5 +31,4 @@ public class AppUserService implements UserService {
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
     }
-
 }
