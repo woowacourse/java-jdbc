@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserHistoryDao {
 
@@ -23,13 +24,13 @@ public class UserHistoryDao {
         this.dataSource = null;
     }
 
-    public void log(final Connection conn, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-//        Connection conn = null;
+        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-//            conn = dataSource.getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -45,12 +46,12 @@ public class UserHistoryDao {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-//            try {
-//                if (pstmt != null) {
-//                    pstmt.close();
-//                }
-//            } catch (SQLException ignored) {}
-//
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
 //            try {
 //                if (conn != null) {
 //                    conn.close();

@@ -19,8 +19,8 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void test() throws SQLException {
+    void test() {
         UserHistory userHistory = new UserHistory(1L, 1L, "asd", "asd", "asd", "asd");
-        userHistoryDao.log(DataSourceConfig.getInstance().getConnection(), userHistory);
+        userHistoryDao.log(userHistory);
     }
 }

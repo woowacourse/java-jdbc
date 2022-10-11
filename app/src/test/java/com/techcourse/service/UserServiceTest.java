@@ -7,13 +7,11 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import java.sql.SQLException;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.DatabasePopulatorUtils;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
@@ -23,24 +21,24 @@ class UserServiceTest {
     private User user;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(DataSourceConfig.getInstance().getConnection(), user);
+        userDao.insert(user);
     }
 
     @AfterEach
-    void refresh() throws SQLException {
-        jdbcTemplate.update(DataSourceConfig.getInstance().getConnection(), "DELETE FROM user_history");
-        jdbcTemplate.update(DataSourceConfig.getInstance().getConnection(),"DELETE FROM users");
+    void refresh() {
+        jdbcTemplate.update("DELETE FROM user_history");
+        jdbcTemplate.update("DELETE FROM users");
     }
 
     @Test
     void testChangePassword() {
-        final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
         final UserService userService = new UserService(userDao, userHistoryDao);
 
         final String newPassword = "qqqqq";
