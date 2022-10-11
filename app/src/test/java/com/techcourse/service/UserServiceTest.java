@@ -13,6 +13,7 @@ import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 class UserServiceTest {
 
@@ -38,8 +39,10 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(transactionManager, appUserService);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
@@ -53,16 +56,20 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final var userService = new TxUserService(transactionManager, appUserService);
 
-        final String newPassword = "newPassword";
-        final String createBy = "gugu";
+        final var newPassword = "newPassword";
+        final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(user.getId(), newPassword, createBy));
 
-        final User actual = userService.findById(user.getId());
+        final var actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
