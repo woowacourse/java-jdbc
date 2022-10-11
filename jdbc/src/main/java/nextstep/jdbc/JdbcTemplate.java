@@ -11,21 +11,15 @@ import nextstep.jdbc.exception.SQLAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final PlatformTransactionManager transactionManager;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.transactionManager = new DataSourceTransactionManager(dataSource);
     }
 
     public void update(String sql, Object... args) {
@@ -41,49 +35,35 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, ExecuteStrategy<T> strategy, Object... args) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
-            T result = strategy.execute(pstmt);
-            transactionManager.commit(transactionStatus);
-            return result;
+            return strategy.execute(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
-            transactionManager.rollback(transactionStatus);
             throw new SQLAccessException();
         }
     }
 
     private <T> T query(String sql, RowMapper<T> rowMapper, Object... args) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
 
             List<T> result = extractResult(rowMapper, pstmt);
-            transactionManager.commit(transactionStatus);
             return result.get(0);
         } catch (SQLException | IndexOutOfBoundsException e) {
             e.printStackTrace();
-            transactionManager.rollback(transactionStatus);
             throw new SQLAccessException();
         }
     }
 
     private <T> List<T> queryList(String sql, RowMapper<T> rowMapper) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            List<T> result = extractResult(rowMapper, pstmt);
-            transactionManager.commit(transactionStatus);
-            return result;
+            return extractResult(rowMapper, pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
-            transactionManager.rollback(transactionStatus);
             throw new SQLAccessException();
         }
     }
