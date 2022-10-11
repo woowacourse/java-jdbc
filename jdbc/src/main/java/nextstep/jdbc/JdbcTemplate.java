@@ -13,6 +13,7 @@ import nextstep.jdbc.support.PreparedStatementCallback;
 import nextstep.jdbc.support.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,22 +27,7 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
-
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            setArguments(pstmt, args);
-            return callback.doInStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallback<T> callback,
-                          final Object... args) {
-        Assert.notNull(sql, "SQL must not be null");
-
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
                 final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
@@ -50,15 +36,13 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     public int update(final String sql, @Nullable final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int update(final Connection connection, final String sql, @Nullable final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {

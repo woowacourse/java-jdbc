@@ -5,12 +5,16 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -29,26 +33,20 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-
         DataSource dataSource = DataSourceConfig.getInstance();
+        final var transactionManager = new DataSourceTransactionManager(dataSource);
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
-        Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            //트랜잭션 시작
-            connection.setAutoCommit(false);
+            final var user = findById(id);
 
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-        } catch (SQLException | DataAccessException e) {
-            try {
-                connection.rollback();
-                throw new DataAccessException(e);
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
+            userDao.update(user);
+            user.changePassword(newPassword);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(transactionStatus);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw e;
         }
     }
 }
