@@ -57,6 +57,5 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-    }
+        assertThat(actual.getPassword()).isNotEqualTo(newPassword); }
 }
