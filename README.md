@@ -7,7 +7,7 @@
 ---
 
 ![Generic badge](https://img.shields.io/badge/Level4-JDBC-green.svg)
-![Generic badge](https://img.shields.io/badge/test-10_passed-blue.svg)
+![Generic badge](https://img.shields.io/badge/test-12_passed-blue.svg)
 ![Generic badge](https://img.shields.io/badge/version-3.0.0-brightgreen.svg)
 
 > 우아한테크코스 웹 백엔드 4기, JDBC 구현하기 저장소입니다.
