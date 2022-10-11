@@ -20,6 +20,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void execute(final Connection connection, final String sql, final Object... params) {
+        final PreparedStatementCreator creator = preparedStatementCreator(params);
+
+        try (PreparedStatement pstmt = creator.create(connection, sql)) {
+            log.debug("query : {}", sql);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public void execute(final String sql, final Object... params) {
         final PreparedStatementCreator creator = preparedStatementCreator(params);
 

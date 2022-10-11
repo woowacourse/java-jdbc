@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -29,6 +30,11 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.execute(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
@@ -47,5 +53,9 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+    }
+
+    public void deleteAll() {
+        jdbcTemplate.execute("delete from users");
     }
 }
