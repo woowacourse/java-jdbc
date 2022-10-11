@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.Proxy;
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
@@ -38,7 +39,11 @@ class UserServiceImplTest {
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         UserService target = new UserServiceImpl(userDao, userHistoryDao);
-        final var userService = new TxUserService(target, transactionManager);
+
+        TxHandler txHandler = new TxHandler(target, transactionManager);
+        UserService userService = (UserService) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                txHandler);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +59,11 @@ class UserServiceImplTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         UserService target = new UserServiceImpl(userDao, userHistoryDao);
-        final var userService = new TxUserService(target, transactionManager);
+
+        TxHandler txHandler = new TxHandler(target, transactionManager);
+        UserService userService = (UserService) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                txHandler);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
