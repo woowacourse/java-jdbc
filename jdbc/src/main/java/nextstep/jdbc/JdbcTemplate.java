@@ -24,17 +24,15 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, pstmt -> updateData(pstmt, args), args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
-        return extractData(rowMapper, resultSet);
+        return execute(sql, pstmt -> getData(rowMapper, pstmt, args), args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
-        List<T> results = extractData(rowMapper, resultSet);
+        List<T> results = execute(sql, pstmt -> getData(rowMapper, pstmt, args), args);
         return getSingleResult(results);
     }
 
@@ -56,17 +54,29 @@ public class JdbcTemplate {
         }
     }
 
+    private int updateData(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        setPreparedStatementData(pstmt, args);
+        return pstmt.executeUpdate();
+    }
+
+    private <T> List<T> getData(final RowMapper<T> rowMapper, final PreparedStatement pstmt, final Object[] args)
+            throws SQLException {
+        setPreparedStatementData(pstmt, args);
+        ResultSet resultSet = pstmt.executeQuery();
+        return extractData(rowMapper, resultSet);
+    }
+
     private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) {
         List<T> result = new ArrayList<>();
-
-        int rowNum = 0;
         try {
+            int rowNum = 0;
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet, rowNum++));
             }
             return result;
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            e.printStackTrace();
+            throw new IllegalArgumentException();
         }
     }
 
