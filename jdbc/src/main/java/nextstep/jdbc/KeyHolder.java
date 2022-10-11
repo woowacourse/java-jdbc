@@ -8,19 +8,20 @@ import java.util.List;
 public class KeyHolder<T> {
 
     private final String[] columnName;
-    private final List<T> ids;
+    private final List<Object> ids;
 
     public KeyHolder(final String... columnName) {
         this.columnName = columnName;
         this.ids = new ArrayList<>();
     }
 
-    public void addKey(T id) {
+    public void addKey(Object id) {
         ids.add(id);
     }
 
+    @SuppressWarnings("unchecked")
     public List<T> getIds() {
-        return Collections.unmodifiableList(ids);
+        return (List<T>) Collections.unmodifiableList(ids);
     }
 
     public String[] getColumnName() {

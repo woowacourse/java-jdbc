@@ -42,7 +42,7 @@ public class UserService {
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
             transactionManager.commit(transaction);
-        } catch (DataAccessException e) {
+        } catch (RuntimeException e) {
             transactionManager.rollback(transaction);
             throw e;
         }
