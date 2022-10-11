@@ -1,29 +1,22 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
+import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
         this.jdbcTemplate = jdbcTemplate;
     }
 
