@@ -18,35 +18,35 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
-            User user = userService.findById(id);
-            transactionManager.commit(transactionStatus);
-            return user;
-        } catch (DataAccessException e) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
-        }
-
+        return invoke(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
+        invokeVoidMethod(() -> userService.insert(user));
+    }
+
+    @Override
+    public void changePassword(final long id, final String newPassword, final String createBy) {
+        invokeVoidMethod(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private <T> T invoke(MethodInvoker<T> methodInvoker) {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.insert(user);
+            T value = methodInvoker.invoke();
             transactionManager.commit(transactionStatus);
+            return value;
         } catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException();
         }
     }
 
-    @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    private void invokeVoidMethod(final Runnable runnable) {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            runnable.run();
             transactionManager.commit(transactionStatus);
         } catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
