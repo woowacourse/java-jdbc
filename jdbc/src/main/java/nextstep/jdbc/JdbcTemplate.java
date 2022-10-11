@@ -76,4 +76,8 @@ public class JdbcTemplate {
             throw new DataAccessException();
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
