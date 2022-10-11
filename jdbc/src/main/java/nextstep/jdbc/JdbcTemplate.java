@@ -35,6 +35,10 @@ public class JdbcTemplate {
         return execute(sql, statement -> getSingleRow(executeQuery(statement, rowMapper)), parameters);
     }
 
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     private <T> T execute(final String sql, final Executor<T> executor, final Object[] parameters) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = PreparedStatementFactory.create(conn, sql, parameters)) {
