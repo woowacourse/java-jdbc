@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,7 @@ class JdbcTemplateTest {
                     rs.getString("email"));
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
@@ -29,49 +32,50 @@ class JdbcTemplateTest {
         jdbcDataSource.setPassword("");
         DatabasePopulatorUtils.execute(jdbcDataSource);
         jdbcTemplate = new JdbcTemplate(jdbcDataSource);
+        this.dataSource = jdbcDataSource;
     }
 
     @AfterEach
-    void refresh() {
-        jdbcTemplate.update("delete from users");
+    void refresh() throws SQLException {
+        jdbcTemplate.update(dataSource.getConnection(), "delete from users");
     }
 
     @DisplayName("insert 쿼리를 완성시켜 실행시킨다.")
     @Test
-    void insert() {
+    void insert() throws SQLException {
         TestUser user = new TestUser("account", "password", "email");
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         KeyHolder keyHolder = new KeyHolder();
-        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(dataSource.getConnection(), sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         assertThat(keyHolder.getKey()).isEqualTo(1L);
     }
 
     @DisplayName("데이터 하나만 반환하는 find 쿼리를 완성시켜 실행시킨다.")
     @Test
-    void find() {
+    void find() throws SQLException {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         KeyHolder keyHolder = new KeyHolder();
-        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(dataSource.getConnection(), sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where id = ?";
 
-        TestUser result = jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, keyHolder.getKey());
+        TestUser result = jdbcTemplate.queryForObject(dataSource.getConnection(), OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }
 
     @DisplayName("데이터를 조회하는 finds 쿼리를 완성시켜 실행시킨다.")
     @Test
-    void finds() {
+    void finds() throws SQLException {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         KeyHolder keyHolder = new KeyHolder();
-        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(dataSource.getConnection(), sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "select id, account, password, email from users where account = ?";
-        List<TestUser> results = jdbcTemplate.query(OBJECT_MAPPER, sql, user.getAccount());
+        List<TestUser> results = jdbcTemplate.query(dataSource.getConnection(), OBJECT_MAPPER, sql, user.getAccount());
 
         assertAll(
                 () -> assertThat(results.size()).isEqualTo(1),
@@ -81,16 +85,16 @@ class JdbcTemplateTest {
 
     @DisplayName("update 쿼리를 완성시켜 실행시킨다.")
     @Test
-    void update() {
+    void update() throws SQLException {
         TestUser user = new TestUser("account", "password", "email");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         KeyHolder keyHolder = new KeyHolder();
-        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(dataSource.getConnection(), sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
 
         sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), keyHolder.getKey());
+        jdbcTemplate.update(dataSource.getConnection(), sql, user.getAccount(), user.getPassword(), user.getEmail(), keyHolder.getKey());
         sql = "select id, account, password, email from users where id = ?";
-        TestUser result = jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, keyHolder.getKey());
+        TestUser result = jdbcTemplate.queryForObject(dataSource.getConnection(), OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
     }

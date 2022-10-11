@@ -7,27 +7,35 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import java.sql.SQLException;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.DatabasePopulatorUtils;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private User user;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(DataSourceConfig.getInstance().getConnection(), user);
+    }
+
+    @AfterEach
+    void refresh() throws SQLException {
+        jdbcTemplate.update(DataSourceConfig.getInstance().getConnection(), "DELETE FROM user_history");
+        jdbcTemplate.update(DataSourceConfig.getInstance().getConnection(),"DELETE FROM users");
     }
 
     @Test
@@ -37,9 +45,9 @@ class UserServiceTest {
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(user.getId(), newPassword, createBy);
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -54,9 +62,9 @@ class UserServiceTest {
         final String createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(user.getId(), newPassword, createBy));
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

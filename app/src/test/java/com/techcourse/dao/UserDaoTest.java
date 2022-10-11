@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import nextstep.jdbc.DatabasePopulatorUtils;
 import nextstep.jdbc.JdbcTemplate;
@@ -29,19 +31,23 @@ class UserDaoTest {
         gugu = new User("gugu", "password", "hkkang@woowahan.com");
         josh = new User("josh", "password", "whgusrms96@gmail.com");
 
-        userDao.insert(gugu);
-        userDao.insert(josh);
+        try (final Connection conn = DataSourceConfig.getInstance().getConnection()) {
+            userDao.insert(conn, gugu);
+            userDao.insert(conn, josh);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterEach
-    void refresh() {
+    void refresh() throws SQLException {
         final String sql = "DELETE FROM users";
-        jdbcTemplate.update(sql);
+        jdbcTemplate.update(DataSourceConfig.getInstance().getConnection(), sql);
     }
 
     @Test
-    void findAll() {
-        final List<User> users = userDao.findAll();
+    void findAll() throws SQLException {
+        final List<User> users = userDao.findAll(DataSourceConfig.getInstance().getConnection());
 
         assertAll(
                 () -> assertThat(users.size()).isEqualTo(2),
@@ -51,16 +57,16 @@ class UserDaoTest {
     }
 
     @Test
-    void findById() {
-        final User user = userDao.findById(gugu.getId());
+    void findById() throws SQLException {
+        final User user = userDao.findById(DataSourceConfig.getInstance().getConnection(), gugu.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findByAccount() {
+    void findByAccount() throws SQLException {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(DataSourceConfig.getInstance().getConnection(), account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -69,23 +75,33 @@ class UserDaoTest {
     void insert() {
         final String account = "insert-gugu";
         final User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
 
-        final User actual = userDao.findById(user.getId());
+        try (Connection conn = DataSourceConfig.getInstance().getConnection()) {
+            userDao.insert(conn, user);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+            final User actual = userDao.findById(conn, user.getId());
+
+            assertThat(actual.getAccount()).isEqualTo(account);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
     }
 
     @Test
     void update() {
         final String newPassword = "password99";
-        final User user = userDao.findById(gugu.getId());
-        user.changePassword(newPassword);
 
-        userDao.update(user);
+        try (Connection conn = DataSourceConfig.getInstance().getConnection()) {
+            final User user = userDao.findById(conn, gugu.getId());
+            user.changePassword(newPassword);
 
-        final User actual = userDao.findById(gugu.getId());
+            userDao.update(conn, user);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+            final User actual = userDao.findById(conn, gugu.getId());
+            assertThat(actual.getPassword()).isEqualTo(newPassword);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
     }
 }

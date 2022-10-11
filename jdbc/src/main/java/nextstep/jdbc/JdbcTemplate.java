@@ -20,9 +20,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = sqlPreProcessor.preProcess(conn)) {
+    private <T> T execute(final Connection conn, SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor,
+                          Object... args) {
+        try (
+//                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = sqlPreProcessor.preProcess(conn)) {
             setSqlParameters(pstmt, args);
             return sqlExecutor.execute(pstmt);
         } catch (SQLException e) {
@@ -31,34 +33,34 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, KeyHolder keyHolder, Object... args) {
+    public void update(final Connection connection, final String sql, KeyHolder keyHolder, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         SqlExecutor<Long> sqlExecutor = preparedStatement -> {
             preparedStatement.executeUpdate();
             return getGeneratedKey(preparedStatement);
         };
 
-        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, args);
+        Long generatedKey = execute(connection, sqlPreProcessor, sqlExecutor, args);
         KeyHose keyHose = new KeyHose();
         keyHose.injectKey(keyHolder, generatedKey);
     }
 
-    public void update(final String sql, Object... args) {
+    public void update(final Connection connection, final String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<Integer> sqlExecutor = PreparedStatement::executeUpdate;
-        execute(sqlPreProcessor, sqlExecutor, args);
+        execute(connection, sqlPreProcessor, sqlExecutor, args);
     }
 
-    public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
+    public <T> List<T> query(final Connection connection, RowMapper<T> rowMapper, String sql, Object... args) {
         ObjectFactory<T> objectFactory = new ObjectFactory<>(rowMapper);
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<List<T>> sqlExecutor = preparedStatement -> objectFactory.build(preparedStatement.executeQuery());
 
-        return execute(sqlPreProcessor, sqlExecutor, args);
+        return execute(connection, sqlPreProcessor, sqlExecutor, args);
     }
 
-    public <T> T queryForObject(RowMapper<T> rowMapper, String sql, Object... args) {
-        List<T> results = query(rowMapper, sql, args);
+    public <T> T queryForObject(final Connection connection, RowMapper<T> rowMapper, String sql, Object... args) {
+        List<T> results = query(connection, rowMapper, sql, args);
         if (results.size() != 1) {
             throw new IllegalStateException();
         }
