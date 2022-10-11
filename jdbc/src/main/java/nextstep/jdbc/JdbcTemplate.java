@@ -15,7 +15,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int FIRST_INDEX = 0;
-    private static final int PARAMETER_INDEX_INCREMENT = 1;
 
     private final DataSource dataSource;
 
@@ -24,29 +23,21 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args)) {
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error("error : {}", e);
-            throw new RuntimeException("해당 sql문을 실행할 수 없습니다.", e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
+        final PreparedStatementExecutor<List<T>> action = preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+                return results;
             }
-            return results;
-        } catch (SQLException e) {
-            log.error("error : {}", e);
-            throw new RuntimeException("해당 sql문을 실행할 수 없습니다.", e);
-        }
+        };
+
+        return execute(sql, action, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -54,16 +45,21 @@ public class JdbcTemplate {
         return query.get(FIRST_INDEX);
     }
 
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> action, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameters(preparedStatement, args);
+            return action.doInPreparedStatement(preparedStatement);
+        } catch (SQLException e) {
+            log.error("error : {}", e);
+            throw new RuntimeException(e);
+        }
     }
 
-    private PreparedStatement createPreparedStatement(final Connection connection, final String sql,
-                                                      final Object... args) throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = FIRST_INDEX; i < args.length; i++) {
-            preparedStatement.setObject(i + PARAMETER_INDEX_INCREMENT, args[i]);
+    private void setParameters(final PreparedStatement statement, final Object... args)
+            throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            statement.setObject(i, args[i - 1]);
         }
-        return preparedStatement;
     }
 }
