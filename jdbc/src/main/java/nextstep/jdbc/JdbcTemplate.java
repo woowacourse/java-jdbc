@@ -34,6 +34,15 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementExecuteStrategy<T> strategy) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            return strategy.execute(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     private void validateSql(final String sql) {
         if (sql == null || sql.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL은 null이거나 빈 값일 수 없습니다.");
@@ -59,6 +68,18 @@ public class JdbcTemplate {
                 });
     }
 
+    public Long insert(final Connection connection, final String sql, final Object... parameters) {
+        validateSql(sql);
+        return execute(
+                connection, sql,
+                preparedStatement -> {
+                    setParameters(preparedStatement, parameters);
+                    log.debug("query : {}", sql);
+                    preparedStatement.executeUpdate();
+                    return getGeneratedKey(preparedStatement);
+                });
+    }
+
     private Long getGeneratedKey(PreparedStatement preparedStatement) throws SQLException {
         final ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
         if (generatedKeys.next()) {
@@ -71,6 +92,17 @@ public class JdbcTemplate {
         validateSql(sql);
         return execute(
                 connection -> connection.prepareStatement(sql),
+                preparedStatement -> {
+                    setParameters(preparedStatement, parameters);
+                    log.debug("query : {}", sql);
+                    return preparedStatement.executeUpdate();
+                });
+    }
+
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        validateSql(sql);
+        return execute(
+                connection, sql,
                 preparedStatement -> {
                     setParameters(preparedStatement, parameters);
                     log.debug("query : {}", sql);

@@ -1,24 +1,23 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private Long guguId;
 
     @BeforeEach
     void setUp() {
@@ -27,7 +26,7 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        guguId = userDao.insert(user);
     }
 
     @Test
@@ -37,9 +36,9 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(guguId, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(guguId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
