@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final JdbcCallback<T> jdbcCallback) {
-        final Connection conn = getConnection();
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
@@ -93,10 +93,6 @@ public class JdbcTemplate {
                 throw new DataAccessException("잘못된 파라미터입니다.");
             }
         }
-    }
-
-    private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
     }
 
     public DataSource getDataSource() {
