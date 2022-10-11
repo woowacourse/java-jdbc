@@ -23,7 +23,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         execute(sql, pstmt -> {
-            setParameters(pstmt, args);
+            PreparedStatementUtil.setValues(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
@@ -52,24 +52,13 @@ public class JdbcTemplate {
     private <T> List<T> setParamsAndGetResult(RowMapper<T> rowMapper, PreparedStatement pstmt, Object[] args)
             throws SQLException {
         final List<T> results = new ArrayList<>();
-        setParameters(pstmt, args);
+        PreparedStatementUtil.setValues(pstmt, args);
         final ResultSet resultSet = pstmt.executeQuery();
 
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
         }
         return results;
-    }
-
-    private void setParameters(final PreparedStatement preparedStatement, final Object... args)
-            throws SQLException {
-        PreparedStatementSetter preparedStatementSetter = (ps, objects) ->
-        {
-            for (int i = 0; i < objects.length; i++) {
-                ps.setObject(i + 1, objects[i]);
-            }
-        };
-        preparedStatementSetter.setValues(preparedStatement, args);
     }
 
     private <T> T getSingleResult(final List<T> results) {
