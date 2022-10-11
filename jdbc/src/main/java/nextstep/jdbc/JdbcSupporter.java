@@ -27,6 +27,8 @@ public class JdbcSupporter {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -34,5 +36,9 @@ public class JdbcSupporter {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    protected DataSource getDataSource() {
+        return this.dataSource;
     }
 }

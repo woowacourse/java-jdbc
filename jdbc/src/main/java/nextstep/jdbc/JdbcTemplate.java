@@ -37,4 +37,8 @@ public class JdbcTemplate extends JdbcSupporter{
         }
         return results;
     }
+
+    public DataSource getDataSource() {
+        return super.getDataSource();
+    }
 }
