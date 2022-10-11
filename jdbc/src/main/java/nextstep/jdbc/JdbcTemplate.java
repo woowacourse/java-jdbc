@@ -23,17 +23,14 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        log.debug("query : {}", sql);
         return execute(sql, new UpdateExecutor(), parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        log.debug("query : {}", sql);
         return forObject(execute(sql, new FindExecutor<>(rowMapper), parameters));
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        log.debug("query : {}", sql);
         return execute(sql, new FindExecutor<>(rowMapper), parameters);
     }
 
@@ -43,6 +40,7 @@ public class JdbcTemplate {
 
 
     private <T> T execute(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
+        log.debug("query : {}", sql);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
