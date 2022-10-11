@@ -84,4 +84,8 @@ public class JdbcTemplate {
     private Connection getConnection() {
         return DataSourceUtils.getConnection(dataSource);
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
