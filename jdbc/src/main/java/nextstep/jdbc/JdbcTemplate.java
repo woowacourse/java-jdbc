@@ -27,13 +27,12 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws SQLException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
         return extractData(rowMapper, resultSet);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args)
-            throws SQLException {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
         List<T> results = extractData(rowMapper, resultSet);
         return getSingleResult(results);
@@ -57,15 +56,18 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) {
         List<T> result = new ArrayList<>();
 
         int rowNum = 0;
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet, rowNum++));
+        try {
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
-
-        return result;
     }
 
     private <T> T getSingleResult(final List<T> result) {
