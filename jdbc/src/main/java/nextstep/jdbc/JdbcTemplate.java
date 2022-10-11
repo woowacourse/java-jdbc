@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final int FIRST_ELEMENT = 0;
 
     private final DataSource dataSource;
 
@@ -21,10 +22,10 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... params) {
         log.debug("query : {}", sql);
+        log.debug("params : {}", params);
         try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)
-        ) {
-            setPstmtParams(pstmt, params);
+             final var pstmt = conn.prepareStatement(sql)) {
+            setStatementParams(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -33,42 +34,32 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(final String sql,
-                          final ThrowingFunction<ResultSet, T, SQLException> rowMapper,
+                          final RowMapper<T> rowMapper,
                           final Object... conditionParams) {
+        final List<T> result = innerQueryAll(sql, rowMapper, conditionParams);
+        final int resultSize = result.size();
 
-        log.debug("query : {}", sql);
-        ResultSet rs = null;
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)
-        ) {
-            setPstmtParams(pstmt, conditionParams);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.apply(rs);
-            }
+        if (resultSize == 0) {
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        } finally {
-            closeResultSet(rs);
+        } else if (resultSize >= 2) {
+            throw new DataAccessException("Expected Result Size One, But Size " + resultSize);
         }
+
+        return result.get(FIRST_ELEMENT);
     }
 
-    public <T> List<T> queryAll(final String sql,
-                                final ThrowingFunction<ResultSet, T, SQLException> userRowMapper) {
+    public <T> List<T> queryAll(final String sql, final RowMapper<T> userRowMapper) {
+        return innerQueryAll(sql, userRowMapper);
+    }
+
+    private <T> List<T> innerQueryAll(final String sql, final RowMapper<T> rowMapper, final Object... conditionParams) {
         log.debug("query : {}", sql);
         ResultSet rs = null;
         try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)
-        ) {
+             final var pstmt = conn.prepareStatement(sql)) {
+            setStatementParams(pstmt, conditionParams);
             rs = pstmt.executeQuery();
-            List<T> resultRows = new ArrayList<>();
-            while (rs.next()) {
-                final T resultRow = userRowMapper.apply(rs);
-                resultRows.add(resultRow);
-            }
-            return resultRows;
+            return loadRows(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -77,8 +68,21 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPstmtParams(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < List.of(params).size(); i++) {
+    private <T> List<T> loadRows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.map(rs));
+        }
+        return result;
+    }
+
+    private void setStatementParams(final PreparedStatement pstmt, final Object... params) throws SQLException {
+        if (params.length == 0) {
+            return;
+        }
+
+        final int paramSize = List.of(params).size();
+        for (int i = 0; i < paramSize; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
     }
