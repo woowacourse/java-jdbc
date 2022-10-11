@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -42,6 +43,16 @@ public class JdbcTemplate {
             PreparedStatementSetter.setParams(statement, args);
             return statement.executeUpdate();
         });
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        try (final var statement = connection.prepareStatement(sql)) {
+            PreparedStatementSetter.setParams(statement, args);
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> statementCallback) {

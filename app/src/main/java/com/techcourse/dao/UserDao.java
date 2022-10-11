@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.Optional;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
@@ -38,6 +39,16 @@ public class UserDao {
         final var id = user.getId();
 
         jdbcTemplate.update(sql, account, password, email, id);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        final var account = user.getAccount();
+        final var password = user.getPassword();
+        final var email = user.getEmail();
+        final var id = user.getId();
+
+        jdbcTemplate.update(connection, sql, account, password, email, id);
     }
 
     public List<User> findAll() {
