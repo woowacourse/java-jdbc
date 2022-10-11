@@ -75,8 +75,4 @@ public class JdbcTemplate {
             preparedStatement.setObject(i + 1, parameters[i]);
         }
     }
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
 }
