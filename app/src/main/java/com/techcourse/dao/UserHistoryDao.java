@@ -1,14 +1,14 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import nextstep.jdbc.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserHistoryDao {
 
@@ -27,7 +27,7 @@ public class UserHistoryDao {
     public void log(final Connection connection, final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pstmt.setLong(1, userHistory.getUserId());
@@ -49,7 +49,7 @@ public class UserHistoryDao {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -69,13 +69,12 @@ public class UserHistoryDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }

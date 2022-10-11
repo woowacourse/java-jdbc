@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
+import nextstep.jdbc.KeyHolder;
 import nextstep.jdbc.RowMapper;
 
 public class UserDao {
@@ -25,14 +26,12 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public Long insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.execute(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        KeyHolder<Long> keyHolder = new KeyHolder<>("id");
+        jdbcTemplate.execute(sql, keyHolder,
+                user.getAccount(), user.getPassword(), user.getEmail());
+        return keyHolder.getIds().get(0);
     }
 
     public void update(final User user) {
