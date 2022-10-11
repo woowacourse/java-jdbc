@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import java.util.function.Supplier;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
@@ -21,21 +22,32 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        return runTransactionalBusiness(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        runTransactionalBusiness(() -> {
+            userService.insert(user);
+            return null;
+        });
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        runTransactionalBusiness(() -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
+    }
+
+    private <T> T runTransactionalBusiness(final Supplier<T> supplier) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            final T result = supplier.get();
             transactionManager.commit(transactionStatus);
+            return result;
         } catch (final DataAccessException |
                        EmptyResultDataAccessException |
                        IncorrectResultSizeDataAccessException |
