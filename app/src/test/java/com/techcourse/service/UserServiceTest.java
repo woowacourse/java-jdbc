@@ -18,17 +18,12 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private UserService userService;
 
     @BeforeEach
     void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
-        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-
-        this.userDao = new UserDao(jdbcTemplate);
-        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        this.userService = new TxUserService(jdbcTemplate, appUserService);
+        userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
     }
@@ -41,6 +36,9 @@ class UserServiceTest {
         userDao.insert(user);
 
         String newPassword = "qqqqq";
+
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = createTxUserService(userHistoryDao);
 
         // when
         userService.changePassword(1L, newPassword, account);
@@ -60,8 +58,7 @@ class UserServiceTest {
         String newPassword = "qqqqq";
 
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService appUserService = new AppUserService(userDao, userHistoryDao);
-        this.userService = new TxUserService(jdbcTemplate, appUserService);
+        UserService userService = createTxUserService(userHistoryDao);
 
         // when
         assertThrows(DataAccessException.class,
@@ -70,5 +67,10 @@ class UserServiceTest {
         // then
         User actual = userService.findById(1L);
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private UserService createTxUserService(final UserHistoryDao userHistoryDao) {
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        return new TxUserService(jdbcTemplate, appUserService);
     }
 }
