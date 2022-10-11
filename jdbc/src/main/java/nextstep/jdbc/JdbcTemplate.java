@@ -13,6 +13,7 @@ import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,17 +27,8 @@ public class JdbcTemplate {
 
     private <T> T execute(final PreparedStatementGenerator generator,
                           final PreparedStatementExecuteStrategy<T> strategy) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = generator.generate(connection)) {
-            return strategy.execute(statement);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection connection, final String sql,
-                          final PreparedStatementExecuteStrategy<T> strategy) {
-        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = generator.generate(connection)) {
             return strategy.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -68,18 +60,6 @@ public class JdbcTemplate {
                 });
     }
 
-    public Long insert(final Connection connection, final String sql, final Object... parameters) {
-        validateSql(sql);
-        return execute(
-                connection, sql,
-                preparedStatement -> {
-                    setParameters(preparedStatement, parameters);
-                    log.debug("query : {}", sql);
-                    preparedStatement.executeUpdate();
-                    return getGeneratedKey(preparedStatement);
-                });
-    }
-
     private Long getGeneratedKey(PreparedStatement preparedStatement) throws SQLException {
         final ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
         if (generatedKeys.next()) {
@@ -92,17 +72,6 @@ public class JdbcTemplate {
         validateSql(sql);
         return execute(
                 connection -> connection.prepareStatement(sql),
-                preparedStatement -> {
-                    setParameters(preparedStatement, parameters);
-                    log.debug("query : {}", sql);
-                    return preparedStatement.executeUpdate();
-                });
-    }
-
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        validateSql(sql);
-        return execute(
-                connection, sql,
                 preparedStatement -> {
                     setParameters(preparedStatement, parameters);
                     log.debug("query : {}", sql);
@@ -141,5 +110,9 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.iterator().next();
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
