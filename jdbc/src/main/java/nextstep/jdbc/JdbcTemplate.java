@@ -48,11 +48,18 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            PreparedStatementSetter.setParameters(preparedStatement, args);
+            setParameters(preparedStatement, args);
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("error : {}", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement statement, final Object... args)
+            throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            statement.setObject(i, args[i - 1]);
         }
     }
 }
