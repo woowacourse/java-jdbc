@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -60,8 +59,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sqlFormat, Callback<T> callback, final Object... sqlArguments) {
-        String sql = generateSql(sqlFormat, sqlArguments);
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+        final String sql = generateSql(sqlFormat, sqlArguments);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return callback.call(preparedStatement);
