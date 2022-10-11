@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -17,7 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class UserServiceImplTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -38,7 +37,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        UserService target = new UserServiceImpl(userDao, userHistoryDao);
+        final var userService = new TxUserService(target, transactionManager);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -53,7 +53,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        UserService target = new UserServiceImpl(userDao, userHistoryDao);
+        final var userService = new TxUserService(target, transactionManager);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
