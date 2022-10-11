@@ -34,6 +34,9 @@ public class JdbcTemplate {
         return execute(new SimplePreparedStatementCreator(sql), ps -> {
             try (ResultSet rs = ps.executeQuery()) {
                 return rse.extractData(rs);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
         });
     }
@@ -43,6 +46,9 @@ public class JdbcTemplate {
             pss.setValues(ps);
             try (ResultSet rs = ps.executeQuery()) {
                 return rse.extractData(rs);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
         });
     }

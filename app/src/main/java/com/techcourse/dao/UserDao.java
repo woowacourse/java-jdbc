@@ -16,10 +16,10 @@ public class UserDao {
     }
 
     private static RowMapper<User> getRowMapper() {
-        return (rs, rowNum) -> new User(rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
+        return (rs, rowNum) -> new User(rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 
     public void insert(final User user) {
