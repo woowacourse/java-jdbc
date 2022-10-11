@@ -35,7 +35,7 @@ public class JdbcTemplate {
      * @return 영향 받은 행의 수를 반환합니다.
      */
     public int command(final String sql, final Object... params) {
-        return execute(sql, null, ((rowMapper, pstmt) -> pstmt.executeUpdate()), params);
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     /**
@@ -49,7 +49,7 @@ public class JdbcTemplate {
      * @see nextstep.jdbc.RowMapper
      */
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, rowMapper, (this::mapRows), params);
+        return execute(sql, pstmt -> mapRows(rowMapper, pstmt), params);
     }
 
     /**
@@ -70,11 +70,10 @@ public class JdbcTemplate {
             throw new DataAccessException(String.format("Expected single result, but %s", results.size()));
         }
 
-        return results.get(FIRST_ELEMENT);
+        return results.iterator().next();
     }
 
-    private <T, R> R execute(final String sql, final RowMapper<T> rowMapper,
-                             final ThrowingBiFunction<T, R> template, final Object... params) {
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... params) {
         try (
                 final var connection = getConnection();
                 final var pstmt = connection.prepareStatement(sql);
@@ -83,7 +82,7 @@ public class JdbcTemplate {
             log.debug("params : {}", params);
             setParams(pstmt, List.of(params));
 
-            return template.apply(rowMapper, pstmt);
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
