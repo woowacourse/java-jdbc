@@ -5,9 +5,9 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
 import nextstep.jdbc.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -20,52 +20,27 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        final Connection connection = generateConnection();
-
-        return userDao.findById(connection, id);
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        final Connection connection = generateConnection();
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-
-        final Connection connection = generateConnection();
+        final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            // 트랜잭션 시작
-            connection.setAutoCommit(false);
-
-            // 비즈니스 로직 처리
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
-            // 트랜잭션 커밋
-            connection.commit();
-        } catch (SQLException e) {
-            // 트랜잭션 롤백
-            // 로직 처리 중에 예외가 발생하면 원자성을 보장하기 위해 롤백한다.
-            rollback(connection);
-            throw new DataAccessException(e);
-        }
-    }
+            transactionManager.commit(transactionStatus);
 
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private Connection generateConnection() {
-        try {
-            return DataSourceConfig.getInstance().getConnection();
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
     }

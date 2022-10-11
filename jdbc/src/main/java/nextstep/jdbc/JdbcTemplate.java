@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -20,23 +21,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection connection, final String sql, final Object... args) {
-        execute(connection, sql, pstmt -> {
+    public void update(final String sql, final Object... args) {
+        execute(sql, pstmt -> {
             setParameters(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
-    public <T> List<T> query(Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(connection, sql, pstmt -> setParamsAndGetResult(rowMapper, pstmt, args));
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
+        return execute(sql, pstmt -> setParamsAndGetResult(rowMapper, pstmt, args));
     }
 
-    public <T> T queryForObject(Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(connection, sql, rowMapper, args);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
         return getSingleResult(results);
     }
 
-    private <T> T execute(Connection connection, final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
+    private <T> T execute(final String sql,
+                          final PreparedStatementCallback<T> preparedStatementCallback) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             return preparedStatementCallback.doPreparedStatement(preparedStatement);
