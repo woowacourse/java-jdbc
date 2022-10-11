@@ -50,8 +50,7 @@ class JdbcTemplateTest {
         assertAll(
             () -> verify(statement).executeUpdate(),
             () -> verify(statement).setObject(1, "update"),
-            () -> verify(statement).close(),
-            () -> verify(connection).close()
+            () -> verify(statement).close()
         );
     }
 
@@ -82,8 +81,7 @@ class JdbcTemplateTest {
             () -> verify(resultSet).getString("password"),
             () -> verify(resultSet).getString("email"),
 
-            () -> verify(statement).close(),
-            () -> verify(connection).close()
+            () -> verify(statement).close()
         );
     }
 }
