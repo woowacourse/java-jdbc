@@ -23,10 +23,6 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -59,5 +55,11 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryOne(sql, USER_ROW_MAPPER, account);
+    }
+
+    public void deleteAll() {
+        final var sql = "delete from users ";
+
+        jdbcTemplate.execute(sql);
     }
 }
