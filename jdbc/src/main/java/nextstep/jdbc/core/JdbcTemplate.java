@@ -10,6 +10,7 @@ import nextstep.dao.DataAccessUtils;
 import nextstep.dao.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,20 +23,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallback<T> sc) {
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            try (PreparedStatement ps = psc.createPreparedStatement(conn)) {
-                T result = sc.doInPreparedStatement(ps);
-                conn.commit();
-                return result;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                conn.rollback();
-                throw new DataAccessException(e);
-            }
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement ps = psc.createPreparedStatement(conn)) {
+            return sc.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
