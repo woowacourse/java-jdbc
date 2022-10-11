@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.techcourse.service.InvalidRequestException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,40 +22,32 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(User user, Connection connection) {
+    public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        try {
-            jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword(), user.getEmail());
-        } catch (DataAccessException e) {
-            log.error(e.getMessage(), e);
-        }
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user, Connection connection) {
+    public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ?";
-        try {
-            jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword(), user.getEmail());
-        } catch (DataAccessException e) {
-            log.error(e.getMessage(), e);
-        }
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public List<User> findAll(Connection connection) {
+    public List<User> findAll() {
         String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, new UserRowMapper(), connection);
+        return jdbcTemplate.query(sql, new UserRowMapper());
     }
 
-    public User findById(Long id, Connection connection) {
+    public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), connection, id);
+        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
     }
 
-    public User findByAccount(String account, Connection connection) {
+    public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), connection, account);
+        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
     }
 
     private static class UserRowMapper implements RowMapper<User> {

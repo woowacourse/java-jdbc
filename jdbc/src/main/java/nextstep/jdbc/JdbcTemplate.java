@@ -7,6 +7,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -18,11 +19,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Connection connection, Object... parameters) throws DataAccessException {
-        return executeUpdate(sql, connection, new ParametersSetter(parameters));
+    public int update(String sql, Object... parameters) throws DataAccessException {
+        return executeUpdate(sql, new ParametersSetter(parameters));
     }
 
-    private int executeUpdate(String sql, Connection connection, PreparedStatementSetter pss) {
+    private int executeUpdate(String sql, PreparedStatementSetter pss) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(preparedStatement);
@@ -32,8 +34,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Connection connection, Object... parameters) throws DataAccessException {
-        List<T> results = query(sql, rowMapper, connection, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        List<T> results = query(sql, rowMapper, parameters);
         validateOneResult(results);
         return results.get(0);
     }
@@ -44,11 +46,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Connection connection, Object... parameters) throws DataAccessException {
-        return executeQuery(sql,  new QueryResults<>(rowMapper), connection, new ParametersSetter(parameters));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+        return executeQuery(sql,  new QueryResults<>(rowMapper), new ParametersSetter(parameters));
     }
 
-    private <T> List<T> executeQuery(String sql, ResultsSetMapper<T> resultsSetMapper, Connection connection, PreparedStatementSetter pss) {
+    private <T> List<T> executeQuery(String sql, ResultsSetMapper<T> resultsSetMapper, PreparedStatementSetter pss) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(preparedStatement);

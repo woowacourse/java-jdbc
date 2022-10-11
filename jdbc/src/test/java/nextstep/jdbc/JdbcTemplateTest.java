@@ -56,7 +56,7 @@ class JdbcTemplateTest {
 
             String sql = "insert into users (account, password) values (?, ?)";
             when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-            jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword());
+            jdbcTemplate.update(sql, user.getAccount(), user.getPassword());
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
             Mockito.verify(preparedStatement).setObject(2, "password");
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString(1)).thenReturn("leo");
             when(resultSet.getString(2)).thenReturn("password");
-            User actual = jdbcTemplate.queryForObject(sql, rowMapper, connection);
+            User actual = jdbcTemplate.queryForObject(sql, rowMapper);
 
             User expected = new User("leo", "password");
             assertThat(actual).usingRecursiveComparison()
@@ -105,7 +105,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString(1)).thenReturn("leo");
             when(resultSet.getString(2)).thenReturn("password");
-            jdbcTemplate.queryForObject(sql, rowMapper, connection, "leo");
+            jdbcTemplate.queryForObject(sql, rowMapper, "leo");
 
             Mockito.verify(preparedStatement).setObject(1, "leo");
         }
@@ -134,7 +134,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(true, true, false);
             when(resultSet.getString(1)).thenReturn("leo", "leo2");
             when(resultSet.getString(2)).thenReturn("password");
-            List<User> users = jdbcTemplate.query(sql, rowMapper, connection);
+            List<User> users = jdbcTemplate.query(sql, rowMapper);
 
             assertThat(users).hasSize(2);
         }

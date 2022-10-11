@@ -4,49 +4,48 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.jdbc.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
     private final UserDao userDao;
-    private final DataSource dataSource;
+    private final DataSourceTransactionManager transactionManager;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, DataSource dataSource, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final DataSource dataSource, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
-        this.dataSource = dataSource;
+        this.transactionManager = new DataSourceTransactionManager(dataSource);
         this.userHistoryDao = userHistoryDao;
     }
 
     public User findById(final long id) {
-        try (Connection connection = dataSource.getConnection()){
-            connection.setAutoCommit(false);
-            return userDao.findById(id, connection);
-        } catch (SQLException e) {
-            throw new InvalidRequestException();
-        }
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        try (Connection connection = dataSource.getConnection()){
-            userDao.insert(user, connection);
-        } catch (SQLException e) {
-            throw new InvalidRequestException();
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userDao.insert(user);
+            transactionManager.commit(status);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(status);
         }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()){
-            connection.setAutoCommit(false);
-            final var user = findById(id);
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(user, connection);
-            userHistoryDao.log(new UserHistory(user, createBy), connection);
-            connection.commit();
-        } catch (SQLException e) {
-            throw new InvalidRequestException();
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(status);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(status);
         }
     }
 }
