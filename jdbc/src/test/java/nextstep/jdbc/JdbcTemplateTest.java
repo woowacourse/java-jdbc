@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import nextstep.support.Crew;
@@ -54,36 +53,12 @@ class JdbcTemplateTest {
     @DisplayName("queryForObject 메서드가 정상적으로 실행되엇는지 확인한다.")
     void queryForObject() {
         jdbcTemplate.update(
-                "INSERT INTO crew (nickname, name, age) VALUES (?, ?, ?)", new Object[]{"seungpang", "seunglae", "20"});
+                "INSERT INTO crew (nickname, name, age) VALUES (?, ?, ?)", "seungpang", "seunglae", "20");
 
         String sql = "SELECT * FROM crew WHERE name = ?";
         final Crew crew = jdbcTemplate.queryForObject(sql, CREW_ROW_MAPPER, "seunglae");
 
         assertThat(crew.getNickname()).isEqualTo("seungpang");
-    }
-
-    @Test
-    @DisplayName("queryForObject의 조회결과가 없으면 예외 발생")
-    void throwExceptionQueryForObjectIsEmpty() {
-        String sql = "SELECT * FROM crew WHERE name = ?";
-
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, CREW_ROW_MAPPER, "seunglae"))
-                .isInstanceOf(DataAccessException.class);
-    }
-
-    @Test
-    @DisplayName("queryForObject의 조회 결과가 1보다 크면 예외 발생")
-    void throwExceptionQueryForObjectIsSizeOver() {
-        jdbcTemplate.update("INSERT INTO crew (nickname, name, age) VALUES (?, ?, ?)",
-                new Object[]{"seungpang", "seunglae", "20"});
-        jdbcTemplate.update("INSERT INTO crew (nickname, name, age) VALUES (?, ?, ?)",
-                new Object[]{"seungpang", "seunglae", "20"});
-
-
-        String sql = "SELECT * FROM crew WHERE name = ?";
-
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, CREW_ROW_MAPPER, "seunglae"))
-                .isInstanceOf(DataAccessException.class);
     }
 
     @AfterEach

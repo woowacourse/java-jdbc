@@ -21,28 +21,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         return execute(PreparedStatement::executeUpdate, sql, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> results = query(sql, rowMapper, args);
-
-        if (results.isEmpty()) {
-            log.error("데이터가 존재하지 않습니다.");
-            throw new DataAccessException("데이터가 존재하지 않습니다.");
-        }
-
-        if (results.size() > 1) {
-            log.error("result={}", results);
-            throw new DataAccessException("데이터가 2개 이상 존재합니다.");
-        }
-
-        return results.iterator().next();
+        return DataAccessUtils.getSingleResult(results);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(preparedStatement -> executeQueryAndMappingList(preparedStatement, rowMapper), sql, args);
+    }
+
+    private <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql,
+                          final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = createStatement(connection, sql, args)) {
+            return preparedStatementCallback.call(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
     }
 
     private <T> List<T> executeQueryAndMappingList(final PreparedStatement preparedStatement,
@@ -51,20 +51,10 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                results.add(rowMapper.map(resultSet));
+                results.add(rowMapper.mapRow(resultSet));
             }
 
             return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = createStatement(connection, sql, args)) {
-            return preparedStatementCallback.call(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
