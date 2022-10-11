@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -28,7 +29,7 @@ public class JdbcTemplate {
                        final Object... sqlArguments) {
         final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
         if (results == null) {
-            return null;
+            throw new EmptyResultDataAccessException(1);
         }
         return results.get(0);
     }
@@ -44,9 +45,10 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 results.add(resultSetWrapper.execute(resultSet));
             }
+            resultSet.close();
 
             if (results.isEmpty()) {
-                return null;
+                throw new EmptyResultDataAccessException(2);
             }
             return results;
         };
