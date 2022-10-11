@@ -10,7 +10,7 @@ public class AppUserService implements UserServiceImp{
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public AppUserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -27,7 +27,7 @@ public class AppUserService implements UserServiceImp{
 
     @Override
     public void changePassword(Long id, String newPassword, String createBy) {
-        final var user = findById(id);
+        User user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));

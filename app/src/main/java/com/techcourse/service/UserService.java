@@ -16,17 +16,17 @@ public class UserService {
     private final DataSourceTransactionManager transactionManager;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, final DataSource dataSource, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, DataSource dataSource, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.transactionManager = new DataSourceTransactionManager(dataSource);
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
+    public User findById(Long id) {
         return userDao.findById(id);
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         userDao.insert(user);
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
@@ -36,7 +36,7 @@ public class UserService {
         }
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    public void changePassword(Long id, String newPassword, String createBy) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             User user = findById(id);

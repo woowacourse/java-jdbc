@@ -1,20 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import com.techcourse.service.InvalidRequestException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
-
-    private static Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
