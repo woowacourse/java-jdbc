@@ -14,11 +14,11 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... parameters) throws DataAccessException {
+    public int update(String sql, Object... parameters) throws DataAccessException {
         return executeUpdate(sql, new ParametersSetter(parameters));
     }
 
@@ -33,7 +33,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
         List<T> results = query(sql, rowMapper, parameters);
         validateOneResult(results);
         return results.get(0);
@@ -45,8 +45,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
-                             final Object... parameters) throws DataAccessException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper,
+                             Object... parameters) throws DataAccessException {
         return executeQuery(sql,  new QueryResults<>(rowMapper), new ParametersSetter(parameters));
     }
 
