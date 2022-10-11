@@ -18,13 +18,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... parameters) throws DataAccessException {
-        return executeUpdate(sql, new ParametersSetter(parameters));
+    public int update(String sql, Connection connection, Object... parameters) throws DataAccessException {
+        return executeUpdate(sql, connection, new ParametersSetter(parameters));
     }
 
-    private int executeUpdate(String sql, PreparedStatementSetter pss) {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private int executeUpdate(String sql, Connection connection, PreparedStatementSetter pss) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
@@ -33,8 +32,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws DataAccessException {
-        List<T> results = query(sql, rowMapper, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Connection connection, Object... parameters) throws DataAccessException {
+        List<T> results = query(sql, rowMapper, connection, parameters);
         validateOneResult(results);
         return results.get(0);
     }
@@ -45,15 +44,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper,
-                             Object... parameters) throws DataAccessException {
-        return executeQuery(sql,  new QueryResults<>(rowMapper), new ParametersSetter(parameters));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Connection connection, Object... parameters) throws DataAccessException {
+        return executeQuery(sql,  new QueryResults<>(rowMapper), connection, new ParametersSetter(parameters));
     }
 
-    private <T> List<T> executeQuery(String sql, ResultsSetMapper<T> resultsSetMapper,
-                                     PreparedStatementSetter pss) {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private <T> List<T> executeQuery(String sql, ResultsSetMapper<T> resultsSetMapper, Connection connection, PreparedStatementSetter pss) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(preparedStatement);
             return resultsSetMapper.collect(preparedStatement.executeQuery());
