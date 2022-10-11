@@ -27,6 +27,8 @@ public class JdbcTemplate {
             return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("커넥션을 가져올 수 없습니다.");
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
