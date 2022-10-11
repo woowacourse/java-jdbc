@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +11,8 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void log(final UserHistory userHistory) {

@@ -40,16 +40,9 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            T result = executor.execute(pstmt);
-            connection.commit();
-            return result;
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
             throw new DataAccessException(e);
         }
     }
@@ -95,5 +88,9 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException("쿼리 실행 결과의 개수가 초과되었습니다.");
         }
         return result.get(0);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
