@@ -1,10 +1,8 @@
 package nextstep.jdbc.support;
 
 import java.util.List;
-import nextstep.jdbc.exception.BlankException;
 import nextstep.jdbc.exception.EmptyResultException;
 import nextstep.jdbc.exception.IncorrectDataSizeException;
-import nextstep.jdbc.exception.NullException;
 
 public class DataAccessUtils {
 
@@ -19,17 +17,5 @@ public class DataAccessUtils {
             throw new IncorrectDataSizeException(RESULT_SIZE_OF_ONE, result.size());
         }
         return result.get(FIRST_INDEX_OF_RESULT);
-    }
-
-    public static <T> void notNull(final T object, final String name) {
-        if (object == null) {
-            throw new NullException(name);
-        }
-    }
-
-    public static void notBlank(final String object, final String name) {
-        if (object == null || object.isBlank()) {
-            throw new BlankException(name);
-        }
     }
 }

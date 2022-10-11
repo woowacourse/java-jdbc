@@ -12,6 +12,7 @@ import nextstep.jdbc.support.ExecuteCallBack;
 import nextstep.jdbc.support.ResultSetExecutor;
 import nextstep.jdbc.support.RowMapper;
 import nextstep.jdbc.support.RowMapperResultSetExecutor;
+import nextstep.jdbc.support.ValidUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        DataAccessUtils.notBlank(sql, "SQL");
+        ValidUtils.notBlank(sql, "SQL");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
@@ -54,8 +55,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        DataAccessUtils.notBlank(sql, "SQL");
-        DataAccessUtils.notNull(rowMapper, "RowMapper");
+        ValidUtils.notBlank(sql, "SQL");
+        ValidUtils.notNull(rowMapper, "RowMapper");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
