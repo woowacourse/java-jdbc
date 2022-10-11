@@ -51,4 +51,8 @@ public class JdbcTemplate {
         List<T> result = query(sql, rowMapper, args);
         return Optional.ofNullable(result.get(FIRST_INDEX));
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
