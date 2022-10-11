@@ -27,7 +27,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final PreparedStatementExecutor<List<T>> callback = preparedStatement -> {
+        final PreparedStatementExecutor<List<T>> action = preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -37,7 +37,7 @@ public class JdbcTemplate {
             }
         };
 
-        return execute(sql, callback, args);
+        return execute(sql, action, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -45,11 +45,11 @@ public class JdbcTemplate {
         return query.get(FIRST_INDEX);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementExecutor<T> callback, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> action, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameters(preparedStatement, args);
-            return callback.doInPreparedStatement(preparedStatement);
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("error : {}", e);
             throw new RuntimeException(e);
