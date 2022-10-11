@@ -96,4 +96,8 @@ public class JdbcTemplate {
         };
         return execute(sql, sqlExecutor, parameters);
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
