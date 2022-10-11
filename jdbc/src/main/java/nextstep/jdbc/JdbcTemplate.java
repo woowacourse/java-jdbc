@@ -15,6 +15,7 @@ import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import nextstep.jdbc.exception.JdbcConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -66,13 +67,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final SqlExecutor<T> executor, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = prepareStatement(conn, sql, parameters)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = prepareStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
 
             return executor.execute(pstmt);
         } catch (final SQLException e) {
             throw new JdbcConnectionException("Fail to get JDBC Connection", e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
