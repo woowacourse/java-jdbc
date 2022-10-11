@@ -2,13 +2,10 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -57,7 +54,6 @@ class JdbcTemplateTest {
         assertThat(expectedRowsUpdated).isEqualTo(actualRowsUpdated);
         verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 
     @Test
@@ -75,7 +71,6 @@ class JdbcTemplateTest {
                 .withCause(sqlException);
         verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 
     @Test
@@ -102,7 +97,6 @@ class JdbcTemplateTest {
         verify(this.preparedStatement).setLong(1, id);
         verify(this.resultSet).close();
         verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 
     @Test
@@ -127,6 +121,5 @@ class JdbcTemplateTest {
 
         verify(this.resultSet).close();
         verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 }

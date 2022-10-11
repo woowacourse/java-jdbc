@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -40,8 +41,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) {
-        try (var conn = dataSource.getConnection();
-             var ps = conn.prepareStatement(sql)) {
+        var conn = DataSourceUtils.getConnection(dataSource);
+        try (var ps = conn.prepareStatement(sql)) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error("Error in executing SQL statement: {}", sql, e);
