@@ -5,11 +5,13 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.jdbc.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -34,41 +36,18 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
+        final var transactionManager = new DataSourceTransactionManager(dataSource);
+        final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
-
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-            conn.commit();
-        } catch (SQLException e) {
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(status);
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
-            rollback(conn, e);
-        } finally {
-            releaseConnection(conn);
-        }
-    }
-
-    private void rollback(Connection conn, Exception e) {
-        try {
-            log.info("rollback");
-            conn.rollback();
-        } catch (SQLException ex) {
-            log.error(e.getMessage(), ex);
-            throw new RuntimeException();
-        }
-    }
-
-    private void releaseConnection(Connection conn) {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException();
+            transactionManager.rollback(status);
+            throw new DataAccessException();
         }
     }
 }

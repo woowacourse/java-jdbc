@@ -55,7 +55,6 @@ class JdbcTemplateTest {
         verify(pstmt).setObject(2, password);
         verify(pstmt).setObject(3, email);
         verify(pstmt).executeUpdate();
-        verify(conn).close();
         verify(pstmt).close();
     }
 
@@ -77,7 +76,6 @@ class JdbcTemplateTest {
 
         // then
         assertThat(user).isNotNull();
-        verify(conn).close();
         verify(pstmt).close();
     }
 
@@ -135,7 +133,6 @@ class JdbcTemplateTest {
 
         // then
         assertThat(users).hasSize(2);
-        verify(conn).close();
         verify(pstmt).close();
     }
 }
