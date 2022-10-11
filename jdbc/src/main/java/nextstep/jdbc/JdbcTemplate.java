@@ -9,7 +9,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataEmptyException;
 import nextstep.jdbc.exception.DataSizeExcessException;
-import nextstep.jdbc.exception.ResultSetCloseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -30,19 +29,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, @NonNull final RowMapper<T> rowMapper, final Object... params) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        ResultSet resultSet = null;
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            prepareStatementSetParamters(pstmt, params);
-
-            resultSet = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
-            return parseResultSet(rowMapper, resultSet, result);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        } finally {
-            closeResultSet(resultSet);
-        }
+        return executeQuery(parseRowMapperExecutor(rowMapper), sql, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -51,10 +38,14 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(final String sql, final Object... params) {
+        return executeQuery(PreparedStatement::executeUpdate, sql, params);
+    }
+
+    private <T> T executeQuery(QueryExecutor<T> executor, String sql, Object... params) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             prepareStatementSetParamters(pstmt, params);
-            return pstmt.executeUpdate();
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -68,22 +59,21 @@ public class JdbcTemplate {
         return pstmt;
     }
 
+    private <T> QueryExecutor<List<T>> parseRowMapperExecutor(final RowMapper<T> rowMapper) {
+        return pstmt -> {
+            try(ResultSet resultSet = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                return parseResultSet(rowMapper, resultSet, result);
+            }
+        };
+    }
+
     private <T> List<T> parseResultSet(final RowMapper<T> rowMapper, final ResultSet resultSet, final List<T> result)
             throws SQLException {
         if (resultSet.next()) {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
-    }
-
-    private void closeResultSet(final ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException ignored) {
-            throw new ResultSetCloseException("result set close 에러");
-        }
     }
 
     private <T> T singleResult(final List<T> values) {
