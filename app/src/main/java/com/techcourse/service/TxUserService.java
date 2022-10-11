@@ -19,12 +19,32 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            User user = userService.findById(id);
+            transactionManager.commit(transactionStatus);
+            return user;
+        }
+        catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
+        }
+
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userService.insert(user);
+            transactionManager.commit(transactionStatus);
+        }
+        catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
+        }
     }
 
     @Override
@@ -34,7 +54,6 @@ public class TxUserService implements UserService {
         try {
             userService.changePassword(id, newPassword, createBy);
             transactionManager.commit(transactionStatus);
-
         }
         catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
