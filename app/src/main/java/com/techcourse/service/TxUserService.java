@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import nextstep.jdbc.DataAccessException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -22,27 +23,23 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        final TransactionStatus transactionStatus = transactionManager.getTransaction(
-                new DefaultTransactionDefinition());
-        try {
-            userService.insert(user);
-            transactionManager.commit(transactionStatus);
-        } catch (RuntimeException e) {
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
+        executeTransaction(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        executeTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void executeTransaction(final Runnable runnable) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            runnable.run();
             transactionManager.commit(transactionStatus);
         } catch (RuntimeException e) {
             transactionManager.rollback(transactionStatus);
-            throw e;
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 }
