@@ -14,24 +14,39 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final PlatformTransactionManager transactionManager;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            final User user = userDao.findById(id);
+            transactionManager.commit(transactionStatus);
+            return user;
+        } catch (Exception exception) {
+            transactionManager.rollback(transactionStatus);
+            throw exception;
+        }
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userDao.insert(user);
+            transactionManager.commit(transactionStatus);
+        } catch (Exception exception) {
+            transactionManager.rollback(transactionStatus);
+            throw exception;
+        }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final PlatformTransactionManager transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
-        final TransactionStatus transactionStatus = transactionManager.getTransaction(
-                new DefaultTransactionDefinition());
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
