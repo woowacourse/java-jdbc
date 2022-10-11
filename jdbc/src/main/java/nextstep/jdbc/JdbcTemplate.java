@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.DataEmptyException;
 import nextstep.jdbc.exception.DataSizeExcessException;
 import nextstep.jdbc.exception.ResultSetCloseException;
