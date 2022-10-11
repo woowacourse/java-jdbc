@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 class UserDaoTest {
 
@@ -51,22 +53,31 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         // then
-        assertThat(user.getAccount())
-                .isEqualTo(account);
+        assertAll(
+                () -> assertThat(user.getAccount()).isEqualTo(account),
+                () -> assertThat(user.getPassword()).isEqualTo(password),
+                () -> assertThat(user.getEmail()).isEqualTo(email)
+        );
     }
 
     @Test
     void insert() {
         // given
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final String account = "insert-alien";
+        final String password = "insert-password";
+        final String email = "insert-alien@woowahan.com";
+        final var user = new User(account, password, email);
 
         // when
-        final var actual = userDao.findById(2L);
+        userDao.insert(user);
 
         // then
-        assertThat(actual.getAccount()).isEqualTo(account);
+        final var actual = userDao.findByAccount(account);
+        assertAll(
+                () -> assertThat(actual.getAccount()).isEqualTo(account),
+                () -> assertThat(actual.getPassword()).isEqualTo(password),
+                () -> assertThat(actual.getEmail()).isEqualTo(email)
+        );
     }
 
     @Test
