@@ -97,4 +97,8 @@ public class JdbcTemplate {
             pstmt.setObject(i + 1, arg);
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
