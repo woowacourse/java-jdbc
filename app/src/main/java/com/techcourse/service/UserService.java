@@ -22,6 +22,7 @@ public class UserService {
 
     public User findById(final long id) {
         try (Connection connection = dataSource.getConnection()){
+            connection.setAutoCommit(false);
             return userDao.findById(id, connection);
         } catch (SQLException e) {
             throw new InvalidRequestException();
@@ -38,10 +39,12 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (Connection connection = dataSource.getConnection()){
+            connection.setAutoCommit(false);
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user, connection);
-            userHistoryDao.log(new UserHistory(user, createBy));
+            userHistoryDao.log(new UserHistory(user, createBy), connection);
+            connection.commit();
         } catch (SQLException e) {
             throw new InvalidRequestException();
         }
