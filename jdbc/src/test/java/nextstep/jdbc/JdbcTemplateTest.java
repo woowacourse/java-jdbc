@@ -1,6 +1,10 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,28 +15,26 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
     private static final RowMapper<String> testRowMapper = resultSet -> "entity";
 
-    private final DataSource dataSource = Mockito.mock(DataSource.class);
-    private final Connection connection = Mockito.mock(Connection.class);
-    private final PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
-    private final ResultSet resultSet = Mockito.mock(ResultSet.class);
-
+    private final DataSource dataSource = mock(DataSource.class);
+    private final Connection connection = mock(Connection.class);
+    private final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    private final ResultSet resultSet = mock(ResultSet.class);
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(this.dataSource);
 
     @BeforeEach
     private void setUp() throws SQLException {
-        Mockito.when(dataSource.getConnection())
+        when(dataSource.getConnection())
                 .thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.any()))
+        when(connection.prepareStatement(any()))
                 .thenReturn(preparedStatement);
-        Mockito.when(preparedStatement.executeQuery())
+        when(preparedStatement.executeQuery())
                 .thenReturn(resultSet);
-        Mockito.when(resultSet.next())
+        when(resultSet.next())
                 .thenReturn(true)
                 .thenReturn(false);
     }
@@ -43,9 +45,9 @@ class JdbcTemplateTest {
         jdbcTemplate.update("sql", "name");
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement("sql");
-        Mockito.verify(preparedStatement).setObject(1, "name");
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement("sql");
+        verify(preparedStatement).setObject(1, "name");
     }
 
     @Test
@@ -54,9 +56,9 @@ class JdbcTemplateTest {
         Optional<String> target = jdbcTemplate.queryForObject("sql", testRowMapper, "name");
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement("sql");
-        Mockito.verify(preparedStatement).setObject(1, "name");
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement("sql");
+        verify(preparedStatement).setObject(1, "name");
         assertThat(target.get()).isEqualTo("entity");
     }
 
@@ -66,8 +68,8 @@ class JdbcTemplateTest {
         List<String> result = jdbcTemplate.query("sql", testRowMapper);
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement("sql");
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement("sql");
         assertThat(result).hasSize(1);
     }
 }
