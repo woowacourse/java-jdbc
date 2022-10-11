@@ -10,7 +10,10 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.SQLAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.util.CollectionUtils;
 
 public class JdbcTemplate {
 
@@ -50,11 +53,21 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             putArguments(pstmt, args);
 
-            List<T> result = extractResult(rowMapper, pstmt);
-            return result.get(0);
+            List<T> results = extractResult(rowMapper, pstmt);
+            validSingleResult(results);
+            return results.get(0);
         } catch (SQLException | IndexOutOfBoundsException e) {
             e.printStackTrace();
             throw new SQLAccessException();
+        }
+    }
+
+    private <T> void validSingleResult(List<T> results) {
+        if (CollectionUtils.isEmpty(results)) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
     }
 
