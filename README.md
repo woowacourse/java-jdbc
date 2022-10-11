@@ -23,3 +23,9 @@
 - [x] `JdbcResourceHandler`는 데이터베이스와 통신하기 위한 자원 관리를 한다.`(Connection, Statement, ResultSet)`
 - [x] `JdbcTemplate`은 `xxxDao`의 Sql 문을 받아 적절하게 쿼리를 실행시키고 ResultSet에서 데이터를 추출한다.
 - [x] `JdbcTemplate`에서 예외가 발생하면 `DataAccessException`을 던진다.
+
+## 3단계 - 트랜잭션 적용하기
+
+### 체크리스트
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.

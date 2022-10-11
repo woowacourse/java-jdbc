@@ -7,7 +7,6 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,16 +23,9 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         DataSource dataSource = DataSourceConfig.getInstance();
         userDao = new UserDao(new JdbcTemplate(dataSource));
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-    }
-
-    @AfterEach
-    void init() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        DataSource dataSource = DataSourceConfig.getInstance();
-        userDao = new UserDao(new JdbcTemplate(dataSource));
-        userDao.deleteAll();
     }
 
     @DisplayName("모든 유저를 조회한다.")

@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcResourceHandler {
 
@@ -19,7 +20,8 @@ public class JdbcResourceHandler {
     }
 
     public Object executeQuery(String sql, JdbcStrategy jdbcStrategy, Object... objects) {
-        try (Connection connection = dataSource.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (
              PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects);
              ResultSet resultSet = preparedStatement.executeQuery()){
             log.info("query : {}", sql);
@@ -31,7 +33,8 @@ public class JdbcResourceHandler {
     }
 
     public void execute(String sql, Object... objects) {
-        try (Connection connection = dataSource.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (
              PreparedStatement preparedStatement = createPreparedStatement(sql, connection, objects)){
             log.info("query : {}", sql);
             preparedStatement.execute();
