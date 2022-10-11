@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import org.springframework.dao.DataAccessException;
 
 @FunctionalInterface
-public interface PreparedStatementCallback<T> {
+public interface PreparedStatementExecutor<T> {
 
     T doInPreparedStatement(final PreparedStatement preparedStatement) throws SQLException, DataAccessException;
 }
