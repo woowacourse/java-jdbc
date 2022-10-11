@@ -29,15 +29,15 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        transactional(() -> userService.insert(user));
+        executeInTransaction(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactional(() -> userService.changePassword(id, newPassword, createBy));
+        executeInTransaction(() -> userService.changePassword(id, newPassword, createBy));
     }
 
-    private void transactional(final TransactionalExecutor executor) {
+    private void executeInTransaction(final TransactionalExecutor executor) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
