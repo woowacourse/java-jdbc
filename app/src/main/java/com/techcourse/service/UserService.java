@@ -27,9 +27,9 @@ public class UserService {
     }
 
     public void insert(final User user) {
+        userDao.insert(user);
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userDao.insert(user);
             transactionManager.commit(status);
         } catch (DataAccessException e) {
             transactionManager.rollback(status);

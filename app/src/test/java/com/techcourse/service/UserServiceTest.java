@@ -12,6 +12,7 @@ import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 class UserServiceTest {
 
@@ -44,14 +45,16 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, DataSourceConfig.getInstance(), userHistoryDao);
+        MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        TxUserService userService = new TxUserService(transactionManager, appUserService);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
+        userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
-
+        User actual = userService.findById(1L);
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }

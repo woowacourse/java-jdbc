@@ -60,4 +60,8 @@ public class JdbcTemplate {
             throw new BadExecuteQueryException(e.getMessage());
         }
     }
+
+    public DataSource getDataSource() {
+        return this.dataSource;
+    }
 }
