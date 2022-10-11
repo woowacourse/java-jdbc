@@ -15,4 +15,15 @@
         - [X] findByAccount()
         - [x] insert()
         - [x] update()
-- [x] UserDAo가 아닌 JdbcTemplate 클래스에서 JDBC 관련 처리 
+- [x] UserDAo가 아닌 JdbcTemplate 클래스에서 JDBC 관련 처리
+
+## 3단계 Trasaction 적용하기
+
+- [ ] 트랜잭션 경계 설정
+- [ ] 트랜잭션 동기화 적용
+- [ ] 트랜잭션 서비스 추상화
+
+### 체크리스트
+
+- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
