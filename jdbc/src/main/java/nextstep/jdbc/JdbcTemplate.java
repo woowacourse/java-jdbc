@@ -1,7 +1,5 @@
 package nextstep.jdbc;
 
-import static nextstep.jdbc.PreparedStatementSetter.setParameter;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,18 +25,32 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        List<T> results = query(sql, rowMapper, parameters);
-        if (results.size() != 1) {
-            throw new IllegalStateException();
-        }
-        return results.get(0);
+        return SingleResultChecker.checkSingleResult(query(sql, rowMapper, parameters));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return (List<T>) execute(sql, ps -> {
-            ResultSet resultSet = ps.executeQuery();
-            return extractResult(resultSet, rowMapper);
-        }, parameters);
+        return execute(sql, ps -> result(ps, re -> extractResult(re, rowMapper)), parameters);
+    }
+
+    private <T> T execute(final String sql, final ExecuteQuery<T> query, final Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            PreparedStatementSetter.setParameter(statement, parameters);
+            return query.executeQuery(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> result(final PreparedStatement preparedStatement, final ResultExtractor<T> resultExtractor) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return resultExtractor.extractResult(resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private <T> List<T> extractResult(final ResultSet results, final RowMapper<T> rowMapper) {
@@ -48,18 +60,6 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(results));
             }
             return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private Object execute(final String sql, final ExecuteQuery<Object> query, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameter(statement, parameters);
-            return query.executeQuery(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
