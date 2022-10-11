@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import javax.sql.DataSource;
+import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -16,8 +16,8 @@ public class TxUserService implements UserService {
     private final PlatformTransactionManager transactionManager;
     private final UserService userService;
 
-    public TxUserService(final DataSource dataSource, final UserService userService) {
-        this.transactionManager = new DataSourceTransactionManager(dataSource);
+    public TxUserService(final JdbcTemplate jdbcTemplate, final UserService userService) {
+        this.transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
         this.userService = userService;
     }
 

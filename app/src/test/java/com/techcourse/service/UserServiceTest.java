@@ -16,20 +16,19 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
-    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        dataSource = DataSourceConfig.getInstance();
+        DataSource dataSource = DataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
 
         this.userDao = new UserDao(jdbcTemplate);
         AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        this.userService = new TxUserService(dataSource, appUserService);
+        this.userService = new TxUserService(jdbcTemplate, appUserService);
 
         DatabasePopulatorUtils.execute(dataSource);
     }
@@ -62,7 +61,7 @@ class UserServiceTest {
 
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         UserService appUserService = new AppUserService(userDao, userHistoryDao);
-        this.userService = new TxUserService(dataSource, appUserService);
+        this.userService = new TxUserService(jdbcTemplate, appUserService);
 
         // when
         assertThrows(DataAccessException.class,

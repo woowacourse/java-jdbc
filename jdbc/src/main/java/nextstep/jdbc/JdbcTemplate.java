@@ -85,4 +85,8 @@ public class JdbcTemplate {
         }
         return Optional.ofNullable(result.get(0));
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
