@@ -36,7 +36,6 @@ class JdbcTemplateTest {
         final String sqlFormat = "select * from user where id=?";
         jdbcTemplate.query(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L);
 
-        verify(mockedConnection).close();
         verify(mockedPreparedStatement).close();
     }
 
@@ -48,7 +47,6 @@ class JdbcTemplateTest {
         final String sqlFormat = "select * from user where id>=?";
         jdbcTemplate.queryForList(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L);
 
-        verify(mockedConnection).close();
         verify(mockedPreparedStatement).close();
     }
 
@@ -60,7 +58,6 @@ class JdbcTemplateTest {
         final String sqlFormat = "insert into users (account) values (?)";
         jdbcTemplate.update(sqlFormat, "account");
 
-        verify(mockedConnection).close();
         verify(mockedPreparedStatement).close();
     }
 }
