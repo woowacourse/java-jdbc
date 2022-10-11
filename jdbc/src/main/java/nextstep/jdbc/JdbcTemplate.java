@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import nextstep.utils.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -27,7 +28,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         });
     }
-    
+
     public <T> List<T> query(final String sql, final RowMapper<T> rse, final Object... parameters) {
         return execute(sql, pstmt -> {
             setParameter(pstmt, parameters);
@@ -41,13 +42,19 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(query(sql, rse, conditions));
     }
 
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         validateSql(sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            final PreparedStatement pstmt = connection.prepareStatement(sql);
             log.debug("query : {}", sql);
             final T result = callback.doPreparedStatement(pstmt);
+            pstmt.close();
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
