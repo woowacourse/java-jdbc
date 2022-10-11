@@ -19,27 +19,32 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T find(String sql, PreparedStatementSetter statementSetter, ResultSetCallback<T> resultSetCallback) {
-        return executeOrThrow(sql, statementSetter, statement -> {
+    public <T> T find(final Connection connection, String sql, PreparedStatementSetter statementSetter,
+                      ResultSetCallback<T> resultSetCallback) {
+        return executeOrThrow(connection, sql, statementSetter, statement -> {
             try (final ResultSet rs = statement.executeQuery()) {
                 return resultSetCallback.execute(rs);
             }
         });
     }
 
-    public Integer update(final String sql, final PreparedStatementSetter statementSetter) {
-        return executeOrThrow(sql, statementSetter, PreparedStatement::executeUpdate);
+    public Integer update(final Connection connection, final String sql,
+                          final PreparedStatementSetter statementSetter) {
+        return executeOrThrow(connection, sql, statementSetter, PreparedStatement::executeUpdate);
     }
 
-    private <T> T executeOrThrow(final String sql, final PreparedStatementSetter setter,
+    private <T> T executeOrThrow(final Connection connection, final String sql, final PreparedStatementSetter setter,
                                  final PreparedStatementCallback<T> statementCallback) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement statement = conn.prepareStatement(sql)) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             return statementCallback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
     }
 }

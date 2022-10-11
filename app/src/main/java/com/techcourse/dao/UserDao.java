@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
@@ -33,6 +34,16 @@ public class UserDao {
         jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void insert(final Connection connection, final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.executeUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ?";
+        jdbcTemplate.executeUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ?";
         jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
@@ -41,7 +52,11 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, rowMapper);
+    }
 
+    public List<User> findAll(final Connection connection) {
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(connection, sql, rowMapper);
     }
 
     public User findById(final Long id) {
@@ -49,8 +64,18 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, rowMapper, id);
+    }
+
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, rowMapper, account);
+    }
+
+    public User findByAccount(final Connection connection, final String account) {
+        final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(connection, sql, rowMapper, account);
     }
 }
