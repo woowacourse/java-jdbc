@@ -8,6 +8,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -45,28 +46,6 @@ public class JdbcTemplate {
         return update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    public int update(final String sql, final Connection connection, final Object... args) {
-        return update(sql, connection, new ArgumentPreparedStatementSetter(args));
-    }
-
-    private int update(final String sql, final Connection connection, final PreparedStatementSetter preparedStatementSetter) {
-        log.debug("execute SQL update [{}]", sql);
-
-        return execute(sql, connection, preparedStatementSetter, PreparedStatement::executeUpdate);
-    }
-
-    private <T> T execute(final String sql, final Connection connection, final PreparedStatementSetter preparedStatementSetter,
-                          final PreparedStatementCallback<T> action) {
-        validateNull(sql);
-        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(statement);
-            return action.doInPreparedStatement(statement);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-
     private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         log.debug("execute SQL update [{}]", sql);
 
@@ -76,8 +55,8 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
                           final PreparedStatementCallback<T> action) {
         validateNull(sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(statement);
             return action.doInPreparedStatement(statement);
         } catch (final SQLException e) {

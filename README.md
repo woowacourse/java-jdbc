@@ -19,5 +19,5 @@
 
 ### 3단계 - Transaction 적용하기
 - [x] 트랜잭션 경계 설정 - userDao와 userHistoryDao가 동일한 Connection 객체를 사용하도록 변경 
-- [ ] 트랜잭션 동기화 적용 - PlatformTransactionManager 인터페이스를 활용하여 DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록 변경
+- [x] 트랜잭션 동기화 적용 - PlatformTransactionManager 인터페이스를 활용하여 DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록 변경
 - [ ] 트랜잭션 서비스 추상화 - 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
