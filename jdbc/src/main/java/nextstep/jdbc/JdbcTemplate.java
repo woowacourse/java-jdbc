@@ -69,4 +69,8 @@ public class JdbcTemplate {
             pstmt.setObject(index++, arg);
         }
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
