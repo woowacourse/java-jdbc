@@ -1,7 +1,5 @@
 package nextstep.jdbc;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -9,7 +7,6 @@ import nextstep.jdbc.element.JdbcExecutor;
 import nextstep.jdbc.element.PreparedStatementSetter;
 import nextstep.jdbc.element.ResultSetCallback;
 import nextstep.jdbc.element.RowMapper;
-import nextstep.jdbc.exception.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -22,15 +19,10 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        return query(getConnection(), sql, getStatementSetter(args), rowMapper);
+        return query(sql, getStatementSetter(args), rowMapper);
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                             final Object... args) {
-        return query(connection, sql, getStatementSetter(args), rowMapper);
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql,
+    public <T> List<T> query(final String sql,
                              final PreparedStatementSetter statementSetter,
                              final RowMapper<T> rowMapper) {
         final ResultSetCallback<List<T>> resultSetCallback = rs -> {
@@ -40,40 +32,31 @@ public class JdbcTemplate {
             }
             return result;
         };
-        return jdbcExecutor.find(connection, sql, statementSetter, resultSetCallback);
+        return jdbcExecutor.find(sql, statementSetter, resultSetCallback);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final Object... args) {
-        return queryForObject(getConnection(), sql, getStatementSetter(args), rowMapper);
+        return queryForObject(sql, getStatementSetter(args), rowMapper);
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return queryForObject(connection, sql, getStatementSetter(args), rowMapper);
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql,
+    public <T> T queryForObject(final String sql,
                                 final PreparedStatementSetter statementSetter,
                                 final RowMapper<T> rowMapper) {
         final ResultSetCallback<T> resultSetCallback = rs -> {
             rs.next();
             return rowMapper.mapRow(rs);
         };
-        return jdbcExecutor.find(connection, sql, statementSetter, resultSetCallback);
+        return jdbcExecutor.find(sql, statementSetter, resultSetCallback);
     }
 
     public Integer executeUpdate(final String sql, final Object... args) {
-        return executeUpdate(getConnection(), sql, getStatementSetter(args));
+        return executeUpdate(sql, getStatementSetter(args));
     }
 
-    public Integer executeUpdate(final Connection connection, final String sql, final Object... args) {
-        return executeUpdate(connection, sql, getStatementSetter(args));
-    }
-
-    public Integer executeUpdate(final Connection connection, final String sql,
+    public Integer executeUpdate(final String sql,
                                  final PreparedStatementSetter statementSetter) {
-        return jdbcExecutor.update(connection, sql, statementSetter);
+        return jdbcExecutor.update(sql, statementSetter);
     }
 
     private PreparedStatementSetter getStatementSetter(Object[] args) {
@@ -82,13 +65,5 @@ public class JdbcTemplate {
                 stmt.setObject(i + 1, args[i]);
             }
         };
-    }
-
-    private Connection getConnection() {
-        try {
-            return jdbcExecutor.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
     }
 }
