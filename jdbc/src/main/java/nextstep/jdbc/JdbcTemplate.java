@@ -11,6 +11,7 @@ import nextstep.jdbc.element.RowMapper;
 public class JdbcTemplate {
 
     private final JdbcExecutor jdbcExecutor;
+    private final DefaultStatementSetter defaultStatementSetter = new DefaultStatementSetter();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.jdbcExecutor = new JdbcExecutor(dataSource);
@@ -19,7 +20,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        return query(sql, getStatementSetter(args), rowMapper);
+        return query(sql, defaultStatementSetter.getSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql,
@@ -37,7 +38,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final Object... args) {
-        return queryForObject(sql, getStatementSetter(args), rowMapper);
+        return queryForObject(sql, defaultStatementSetter.getSetter(args), rowMapper);
     }
 
     public <T> T queryForObject(final String sql,
@@ -51,7 +52,7 @@ public class JdbcTemplate {
     }
 
     public Integer executeUpdate(final String sql, final Object... args) {
-        return executeUpdate(sql, getStatementSetter(args));
+        return executeUpdate(sql, defaultStatementSetter.getSetter(args));
     }
 
     public Integer executeUpdate(final String sql,
@@ -59,11 +60,7 @@ public class JdbcTemplate {
         return jdbcExecutor.update(sql, statementSetter);
     }
 
-    private PreparedStatementSetter getStatementSetter(Object[] args) {
-        return stmt -> {
-            for (int i = 0; i < args.length; i++) {
-                stmt.setObject(i + 1, args[i]);
-            }
-        };
+    public DataSource getDataSource() {
+        return jdbcExecutor.getDataSource();
     }
 }

@@ -48,4 +48,8 @@ public class JdbcExecutor {
     private Connection getConnection() {
         return DataSourceUtils.getConnection(dataSource);
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }

@@ -218,5 +218,9 @@ final var actual=userService.findById(1L);
 ## 체크리스트 👍
 
 - [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
-- [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
+- [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
 - [ ] 로컬 트랜잭션, 글로벌 트랜잭션, JTA 공부하기
+
+## 피드백
+
+- [x] setObject null/wrapper 값 검증
