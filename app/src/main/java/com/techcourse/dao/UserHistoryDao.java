@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
 import java.time.LocalDateTime;
-import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
