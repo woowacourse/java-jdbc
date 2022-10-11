@@ -16,7 +16,6 @@ public class TxUserService implements UserService{
         this.userService = userService;
     }
 
-
     @Override
     public User findById(long id) {
         Executable<User> insert = () -> userService.findById(id);
