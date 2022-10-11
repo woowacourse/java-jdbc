@@ -9,5 +9,5 @@
 자바가 제공하는 기능을 극한으로 활용해 클린 코드를 작성하는 연습을 한다.
 
 ## 3단계 요구사항
-- [ ] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
 - [ ] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
