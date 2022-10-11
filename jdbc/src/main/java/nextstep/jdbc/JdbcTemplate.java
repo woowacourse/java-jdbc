@@ -1,5 +1,7 @@
 package nextstep.jdbc;
 
+import static nextstep.jdbc.PreparedStatementSetter.setParameter;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,7 +35,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return (List<T>) execute(sql, (PreparedStatement ps) -> {
+        return (List<T>) execute(sql, ps -> {
             ResultSet resultSet = ps.executeQuery();
             return extractResult(resultSet, rowMapper);
         }, parameters);
@@ -61,13 +63,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameter(final PreparedStatement statement, final Object... parameters) throws SQLException {
-        int index = 1;
-        for (Object parameter : parameters) {
-            statement.setObject(index++, parameter);
         }
     }
 }
