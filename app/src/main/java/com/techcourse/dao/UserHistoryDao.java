@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import nextstep.jdbc.JdbcTemplate;
 
 public class UserHistoryDao {
