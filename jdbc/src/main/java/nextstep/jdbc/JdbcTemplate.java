@@ -13,6 +13,7 @@ import nextstep.jdbc.exception.DataSizeExcessException;
 import nextstep.jdbc.exception.ResultSetCloseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.lang.NonNull;
 
 public class JdbcTemplate {
@@ -30,9 +31,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, @NonNull final RowMapper<T> rowMapper, final Object... params) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         ResultSet resultSet = null;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             prepareStatementSetParamters(pstmt, params);
 
             resultSet = pstmt.executeQuery();
@@ -51,8 +52,8 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(final String sql, final Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             prepareStatementSetParamters(pstmt, params);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
