@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.stream.IntStream;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class PreparedStatementFactory {
 
@@ -13,7 +14,7 @@ public class PreparedStatementFactory {
 
     public PreparedStatementFactory(final DataSource dataSource, final String sql) {
         try {
-            this.connection = dataSource.getConnection();
+            this.connection = DataSourceUtils.getConnection(dataSource);
             this.preparedStatement = this.connection.prepareStatement(sql);
         } catch (SQLException e) {
             throw new DataAccessException("[ERROR] PreparedStatementFactory", e);
@@ -37,7 +38,6 @@ public class PreparedStatementFactory {
     public void closeResources() {
         try {
             preparedStatement.close();
-            connection.close();
         } catch (SQLException e) {
             throw new DataAccessException("[ERROR] closeResources", e);
         }
