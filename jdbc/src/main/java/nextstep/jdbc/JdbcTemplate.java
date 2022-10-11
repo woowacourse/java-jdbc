@@ -47,9 +47,9 @@ public class JdbcTemplate {
         return result;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(sql, rowMapper, args);
-        return Optional.ofNullable(result.get(FIRST_INDEX));
+        return result.get(FIRST_INDEX);
     }
 
     public DataSource getDataSource() {

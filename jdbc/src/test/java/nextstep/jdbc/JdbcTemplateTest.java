@@ -53,13 +53,13 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         // when
-        Optional<String> target = jdbcTemplate.queryForObject("sql", testRowMapper, "name");
+        String target = jdbcTemplate.queryForObject("sql", testRowMapper, "name");
 
         // then
         verify(dataSource).getConnection();
         verify(connection).prepareStatement("sql");
         verify(preparedStatement).setObject(1, "name");
-        assertThat(target.get()).isEqualTo("entity");
+        assertThat(target).isEqualTo("entity");
     }
 
     @Test
