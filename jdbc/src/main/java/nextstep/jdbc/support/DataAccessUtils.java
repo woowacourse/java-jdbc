@@ -27,7 +27,7 @@ public class DataAccessUtils {
         }
     }
 
-    public static <T> void notBlank(final String object, final String name) {
+    public static void notBlank(final String object, final String name) {
         if (object == null || object.isBlank()) {
             throw new BlankException(name);
         }
