@@ -32,6 +32,15 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(final String sql, final Connection connection, final Object... parameters) {
+        validateSql(sql);
+        query(sql, connection, (PreparedStatement statement) -> {
+            setPreparedStatement(parameters, statement);
+            statement.executeUpdate();
+            return null;
+        });
+    }
+
     public <T> List<T> select(final String sql, final ObjectMapper<T> objectMapper, final Object... parameters) {
         validateSql(sql);
         return queryForList(sql, (PreparedStatement statement) -> {
@@ -61,6 +70,22 @@ public class JdbcTemplate {
             mappedTypes.add(objectMapper.mapObject(resultSet, ROW_NUM));
         }
         return mappedTypes;
+    }
+
+    private <T> void query(final String sql, final Connection connection, final Executable<T> executable) {
+        queryForList(sql, connection, executable);
+    }
+
+    private <T> List<T> queryForList(final String sql, final Connection connection, final Executable<T> executable) {
+        try (
+            final PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            return executable.execute(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private <T> void query(final String sql, final Executable<T> executable) {
