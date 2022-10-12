@@ -4,13 +4,13 @@ public enum TransactionIsolation {
 
     READ_UNCOMMITTED(4);
 
-    private final int index;
+    private final int level;
 
-    TransactionIsolation(final int index) {
-        this.index = index;
+    TransactionIsolation(final int level) {
+        this.level = level;
     }
 
-    public int getIndex() {
-        return index;
+    public int getLevel() {
+        return level;
     }
 }
