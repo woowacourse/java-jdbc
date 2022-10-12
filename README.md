@@ -22,13 +22,15 @@
 
 ### 3단계 - 트랜잭션 적용하기
 
-- [X] 트랜잭션 경계를 설정한다. 
+- [X] 트랜잭션 경계를 설정한다.
+  - [X] 트랜잭션 시작, 커밋, 롤백 시점을 설정한다. 
 - [X] 트랜잭션 동기화를 적용한다. 
-  - 스프링의 TransactionMannager를 이용해 Connection을 받아온다.
+  - [X] 스프링의 TransactionMannager를 이용해 Connection을 받아온다.
 - [X] 트랜잭션 서비스를 추상화한다.
+  - [X] 트랜잭션 서비스(TxUserService)와 애플리케이션 서비스(AppUserService)가 분리되어 있다.
 
 - [X] 트랜잭션 롤백이 적용 되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
-- [X] 트랜잭션 서비스(TxUserService)와 애플리케이션 서비스(AppUserService)가 분리되어 있다. 
+
 
 ## 🧹 JdbcTemplate
 
@@ -52,4 +54,4 @@
 
 ### 템플릿 콜백 패턴
 
-- 템플릿 콜백 패턴을 활용해 update(), query()에서 앞, 뒤의 중복 로직을 제거했다. 
+- 템플릿 콜백 패턴을 활용해 update(), query()에서 앞, 뒤의 중복 로직을 제거했다.
