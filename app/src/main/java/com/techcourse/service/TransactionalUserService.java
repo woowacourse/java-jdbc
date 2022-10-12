@@ -35,10 +35,11 @@ public class TransactionalUserService implements UserService {
         TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             userService.insert(user);
+            transactionManager.commit(transaction);
         } catch (Exception e) {
             transactionManager.rollback(transaction);
+            throw new DataAccessException(e);
         }
-        transactionManager.commit(transaction);
     }
 
     @Override
@@ -46,10 +47,10 @@ public class TransactionalUserService implements UserService {
         TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             userService.changePassword(id, newPassword, createBy);
+            transactionManager.commit(transaction);
         } catch (Exception e) {
             transactionManager.rollback(transaction);
             throw new DataAccessException(e);
         }
-        transactionManager.commit(transaction);
     }
 }
