@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(final String sql, final KeyHolder<?> keyHolder, final Object... params) {
+    public int execute(final String sql, final KeyHolder<?> keyHolder, final Object... args) {
         final var creator = PreparedStatementCreator.from(keyHolder, params);
         final var executor = PreparedStatementExecutor.executeUpdateWithKeyHolder(keyHolder);
         return executeQuery(sql, creator, executor);
