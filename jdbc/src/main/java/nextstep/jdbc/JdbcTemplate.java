@@ -32,6 +32,28 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> T query(final String sql, final Object parameter, final ObjectMapper<T> objectMapper) {
+        validateSql(sql, parameter);
+        return executeQuery(sql, statement -> {
+            statement.setObject(1, parameter);
+
+            log.debug("query : {}", sql);
+            ResultSet resultSet = statement.executeQuery();
+
+            return convertRow(resultSet, objectMapper);
+        });
+    }
+
+    public void update(final String sql, final Object... parameters) {
+        validateSql(sql, parameters);
+        executeQuery(sql, statement -> {
+            setParams(statement, parameters);
+
+            log.debug("query : {}", sql);
+            return statement.executeUpdate();
+        });
+    }
+
     private <T> T executeQuery(final String sql, final Executor<T> executor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -51,33 +73,11 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> T query(final String sql, final Object parameter, final ObjectMapper<T> objectMapper) {
-        validateSql(sql, parameter);
-        return executeQuery(sql, statement -> {
-            statement.setObject(1, parameter);
-
-            log.debug("query : {}", sql);
-            ResultSet resultSet = statement.executeQuery();
-
-            return convertRow(resultSet, objectMapper);
-        });
-    }
-
     private <T> T convertRow(final ResultSet resultSet, final ObjectMapper<T> objectMapper) throws SQLException {
         if (resultSet.next()) {
             return objectMapper.map(resultSet);
         }
         throw new NoSuchDataException("조회 결과가 존재하지 않습니다.");
-    }
-
-    public void update(final String sql, final Object... parameters) {
-        validateSql(sql, parameters);
-        executeQuery(sql, statement -> {
-            setParams(statement, parameters);
-
-            log.debug("query : {}", sql);
-            return statement.executeUpdate();
-        });
     }
 
     private void setParams(final PreparedStatement statement, final Object[] parameters) throws SQLException {
