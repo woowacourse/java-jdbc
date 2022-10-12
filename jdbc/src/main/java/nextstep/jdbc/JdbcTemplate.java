@@ -22,17 +22,19 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final ObjectMapper<T> objectMapper) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            log.debug("query : {}", sql);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                log.debug("query : {}", sql);
 
-            List<T> results = new ArrayList<>();
-            if (resultSet.next()) {
-                T t = objectMapper.map(resultSet);
-                results.add(t);
+                List<T> results = new ArrayList<>();
+                if (resultSet.next()) {
+                    T t = objectMapper.map(resultSet);
+                    results.add(t);
+                }
+                return results;
             }
-            return results;
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
