@@ -22,11 +22,11 @@
 
 ### 3단계 - 트랜잭션 적용하기
 
-- [ ] 트랜잭션 경계를 설정한다. 
+- [X] 트랜잭션 경계를 설정한다. 
 - [ ] 트랜잭션 동기화를 적용한다. 
 - [ ] 트랜잭션 서비스를 추상화한다.
 
-- [ ] 트랜잭션 롤백이 적용 되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [X] 트랜잭션 롤백이 적용 되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
 - [ ] 트랜잭션 서비스(TxUserService)와 애플리케이션 서비스(AppUserService)가 분리되어 있다. 
 
 ## 🧹 JdbcTemplate

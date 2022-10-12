@@ -26,6 +26,27 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        ValidUtils.notBlank(sql, "SQL");
+
+        return executeWithSameConnection(connection, sql, (statement -> {
+            setParameters(args, statement);
+            return statement.executeUpdate();
+        }));
+    }
+
+    private <T> T executeWithSameConnection(final Connection connection, final String sql, final ExecuteCallBack<T> callBack) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            return callBack.action(statement);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new ExecuteException(e);
+        }
+    }
+
     public int update(final String sql, final Object... args) {
         ValidUtils.notBlank(sql, "SQL");
 
