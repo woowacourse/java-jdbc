@@ -6,9 +6,10 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.exception.UserNotFoundException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -33,33 +34,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
+        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(
+                new DefaultTransactionDefinition());
+
         try {
-            connection = dataSource.getConnection();
-
-            connection.setAutoCommit(false);
-
             final User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
-            connection.commit();
-        } catch (final Exception exception) {
-            try {
-                if (connection != null) {
-                    connection.rollback();
-                }
-                throw exception;
-            } catch (final SQLException sqlException) {
-                throw new RuntimeException(sqlException);
-            }
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (final SQLException ignored) {}
+            transactionManager.commit(transactionStatus);
+        } catch (final Exception e) {
+            transactionManager.rollback(transactionStatus);
+            throw e;
         }
     }
 

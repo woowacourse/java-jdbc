@@ -23,7 +23,8 @@
 ### 3단계 - 트랜잭션 적용하기
 
 - [X] 트랜잭션 경계를 설정한다. 
-- [ ] 트랜잭션 동기화를 적용한다. 
+- [X] 트랜잭션 동기화를 적용한다. 
+  - 스프링의 TransactionMannager를 이용해 Connection을 받아온다.
 - [ ] 트랜잭션 서비스를 추상화한다.
 
 - [X] 트랜잭션 롤백이 적용 되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
