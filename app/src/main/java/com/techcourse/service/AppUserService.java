@@ -30,6 +30,6 @@ public class AppUserService implements UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        userHistoryDao.saveLog(new UserHistory(user, createBy));
     }
 }
