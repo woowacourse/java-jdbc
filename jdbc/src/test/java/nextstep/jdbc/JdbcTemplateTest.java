@@ -19,14 +19,13 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
-    private DataSource dataSource;
     private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet resultSet;
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
+        final DataSource dataSource = mock(DataSource.class);
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
