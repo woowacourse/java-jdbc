@@ -18,14 +18,24 @@ public class TxUserService implements UserService {
         this.appUserService = appUserService;
     }
 
+    @Override
     public User findById(final long id) {
         return appUserService.findById(id);
     }
 
+    @Override
     public void insert(final User user) {
-        appUserService.insert(user);
+        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            appUserService.insert(user);
+            transactionManager.commit(status);
+        } catch (Exception e) {
+            transactionManager.rollback(status);
+            throw new DataAccessException();
+        }
     }
 
+    @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
