@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.InvalidDataSizeException;
 import nextstep.jdbc.exception.InvalidSqlException;
 import nextstep.jdbc.exception.NoSuchDataException;
 import org.junit.jupiter.api.DisplayName;
@@ -70,7 +71,7 @@ class JdbcTemplateTest {
 
         when(statement.executeQuery()).thenThrow(new SQLException());
 
-        assertThatThrownBy(() -> jdbcTemplate.query(sql, parameter, objectMapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, parameter, objectMapper))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -87,11 +88,32 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(sql, parameter, objectMapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, parameter, objectMapper))
                 .isInstanceOf(NoSuchDataException.class)
                 .hasMessage("조회 결과가 존재하지 않습니다.");
     }
-    
+
+    @DisplayName("단일 조회 시 결과가 1건 초과라면 예외 발생 ")
+    @Test
+    void queryForObject_moreThanOneResultSet_throwsDataAccessException() throws SQLException {
+        final var sql = "select * from users where id = ?";
+        final var parameter = 1;
+        final ObjectMapper<String> objectMapper = (final ResultSet resultSet) -> resultSet.getString(1);
+
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(sql)).willReturn(statement);
+        given(statement.executeQuery()).willReturn(resultSet);
+
+        when(resultSet.next()).thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
+        when(resultSet.getString(1)).thenReturn("result");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, parameter, objectMapper))
+                .isInstanceOf(InvalidDataSizeException.class)
+                .hasMessage("예상하지 못한 데이터 개수입니다 : 예상 1개, 실제 2개");
+    }
+
     @DisplayName("sql에 필요한 파라미터보다 주어진 파라미터가 많다면 예외 발생")
     @Test
     void moreParametersGiven_thenNeededInSql_throwsDataAccessException() throws SQLException {
