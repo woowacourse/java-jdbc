@@ -1,5 +1,8 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -23,6 +26,30 @@ class ApplicationUserServiceTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @Test
+    void testFindById() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new ApplicationUserService(userDao, userHistoryDao);
+        final TransactionUserService transactionUserService = new TransactionUserService(userService);
+
+        final var actual = transactionUserService.findById(1L);
+
+        assertThat(actual).isEqualTo(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
+    }
+
+    @Test
+    void testInsert() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new ApplicationUserService(userDao, userHistoryDao);
+        final TransactionUserService transactionUserService = new TransactionUserService(userService);
+
+        final User newUser = new User("tiki", "password", "tiki@woowahan.com");
+        transactionUserService.insert(newUser);
+
+        final User actual = transactionUserService.findById(2L);
+        assertThat(actual).isEqualTo(new User(2L, "tiki", "password", "tiki@woowahan.com"));
     }
 
     @Test
