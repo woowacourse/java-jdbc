@@ -4,10 +4,12 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -32,33 +34,27 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
+        TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userDao.insert(user);
+            txManager.commit(tx);
+        } catch (DataAccessException e) {
+            txManager.rollback(tx);
+        }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
+        PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
+        TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
             User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-            conn.commit();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            txManager.commit(tx);
         } catch (DataAccessException e) {
-            try {
-                conn.rollback();
-                throw e;
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        } finally {
-            try {
-                conn.close();
-            } catch (SQLException ignored) {
-            }
+            txManager.rollback(tx);
         }
     }
 }

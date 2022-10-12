@@ -10,6 +10,7 @@ import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.StatementUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -37,13 +38,15 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             StatementUtils.setArguments(pstmt, args);
             return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
