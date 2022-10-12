@@ -10,6 +10,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.InvalidSqlException;
+import nextstep.jdbc.exception.NoSuchDataException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -85,7 +88,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         assertThatThrownBy(() -> jdbcTemplate.query(sql, parameter, objectMapper))
-                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(NoSuchDataException.class)
                 .hasMessage("조회 결과가 존재하지 않습니다.");
     }
     
@@ -98,7 +101,7 @@ class JdbcTemplateTest {
         given(connection.prepareStatement(sql)).willReturn(statement);
 
         assertThatThrownBy(() -> jdbcTemplate.update(sql, "gugu", "gugu@gmail.com", "techcourse"))
-                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(InvalidSqlException.class)
                 .hasMessage("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
     }
 
@@ -111,8 +114,7 @@ class JdbcTemplateTest {
         given(connection.prepareStatement(sql)).willReturn(statement);
 
         assertThatThrownBy(() -> jdbcTemplate.update(sql, "gugu"))
-                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(InvalidSqlException.class)
                 .hasMessage("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
     }
 }
-

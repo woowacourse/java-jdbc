@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.InvalidSqlException;
+import nextstep.jdbc.exception.NoSuchDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +67,7 @@ public class JdbcTemplate {
         if (resultSet.next()) {
             return objectMapper.map(resultSet);
         }
-        throw new DataAccessException("조회 결과가 존재하지 않습니다.");
+        throw new NoSuchDataException("조회 결과가 존재하지 않습니다.");
     }
 
     public void update(final String sql, final Object... parameters) {
@@ -86,7 +89,7 @@ public class JdbcTemplate {
     private void validateSql(final String sql, final Object... parameters) {
         int required = sql.length() - sql.replaceAll("\\?", "").length();
         if (required != parameters.length) {
-            throw new DataAccessException("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
+            throw new InvalidSqlException("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
         }
     }
 }
