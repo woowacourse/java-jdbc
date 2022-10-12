@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,21 +23,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
-        runContext(sql, statement -> {
+    public Integer update(final String sql, final Object... params) {
+        return runContext(sql, statement -> {
             setParams(statement, params);
             return statement.executeUpdate();
         });
     }
 
     private <T> T runContext(final String sql, JdbcAction<T> action) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return action.doAction(statement);
         } catch (SQLException exception) {
             log.warn("SQL Exception alert!!! : {}", exception.getMessage(), exception);
             throw new DataAccessException();
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
