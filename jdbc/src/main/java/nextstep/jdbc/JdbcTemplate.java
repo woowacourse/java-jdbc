@@ -39,14 +39,13 @@ public class JdbcTemplate {
         return executeQuery(sql, statement -> {
             statement.setObject(1, parameter);
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                log.debug("query : {}", sql);
+            ResultSet resultSet = statement.executeQuery();
+            log.debug("query : {}", sql);
 
-                if (resultSet.next()) {
-                    return objectMapper.map(resultSet);
-                }
-                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
+            if (resultSet.next()) {
+                return objectMapper.map(resultSet);
             }
+            throw new DataAccessException("조회 결과가 존재하지 않습니다.");
         });
     }
 
