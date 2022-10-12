@@ -80,4 +80,8 @@ public class JdbcTemplate {
             throw new ExecuteException(e);
         }
     }
+
+    public DataSource getDataSource() {
+        return this.dataSource;
+    }
 }
