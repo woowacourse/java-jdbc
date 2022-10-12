@@ -29,7 +29,7 @@ public class TxUserService implements UserService {
             transactionManager.commit(transactionStatus);
         } catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
+            throw e;
         }
     }
 
