@@ -10,6 +10,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.lang.Nullable;
 
 public class JdbcTemplate {
@@ -77,14 +78,16 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor,
                           final PrepareStatementSetter prepareStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             prepareStatementSetter.setParams(preparedStatement);
             log.debug("query : {}", sql);
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -95,5 +98,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
