@@ -3,11 +3,11 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
-import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.resultset.RowMapper;
+import nextstep.jdbc.core.JdbcTemplate;
+import nextstep.jdbc.exception.EmptyResultException;
+import nextstep.jdbc.support.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 public class UserDao {
 
@@ -49,7 +49,7 @@ public class UserDao {
 
         try {
             return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, id));
-        } catch (final EmptyResultDataAccessException e) {
+        } catch (final EmptyResultException e) {
             return Optional.empty();
         }
     }
@@ -59,7 +59,7 @@ public class UserDao {
 
         try {
             return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, account));
-        } catch (final EmptyResultDataAccessException e) {
+        } catch (final EmptyResultException e) {
             return Optional.empty();
         }
     }

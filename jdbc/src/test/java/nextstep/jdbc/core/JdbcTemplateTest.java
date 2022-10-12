@@ -1,4 +1,4 @@
-package nextstep.jdbc;
+package nextstep.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,39 +15,36 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.EmptyResultException;
 import nextstep.jdbc.exception.IncorrectDataSizeException;
-import nextstep.jdbc.resultset.RowMapper;
+import nextstep.jdbc.support.RowMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private final DataSource dataSource;
-    private final Connection connection;
-    private final PreparedStatement statement;
-    private final ResultSet resultSet;
-    private final JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
+    private Connection connection;
+    private PreparedStatement statement;
+    private ResultSet resultSet;
+    private JdbcTemplate jdbcTemplate;
 
-    public JdbcTemplateTest() {
+    @BeforeEach
+    void setUp() throws SQLException {
         this.dataSource = mock(DataSource.class);
         this.connection = mock(Connection.class);
         this.statement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
-
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
-    @BeforeEach
-    void setUp() throws SQLException {
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(statement);
     }
 
     @DisplayName("update query 수행을 확인한다.")
     @Test
-    void update() throws SQLException {
+    void update() {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final var args = new Object[]{"arg1", 2};
 
         // when
@@ -67,7 +64,7 @@ class JdbcTemplateTest {
     @Test
     void query() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
 
         given(statement.executeQuery()).willReturn(resultSet);
@@ -89,7 +86,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 
@@ -112,7 +109,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_empty() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 
@@ -128,7 +125,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_over() throws SQLException {
         // given
-        final var sql = "";
+        final var sql = "sql";
         final RowMapper<String> rowMapper = (rs) -> "result object";
         final var args = new Object[]{"arg1", 2};
 
