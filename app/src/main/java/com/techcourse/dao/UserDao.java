@@ -1,11 +1,16 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.BeanPropertyRowMapper;
+import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
+import nextstep.jdbc.support.StatementUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +40,18 @@ public class UserDao {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection conn, final User user) {
+        String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            StatementUtils.setArguments(pstmt, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.debug("ERROR CODE: {} SQL STATE: {}", e.getErrorCode(), e.getSQLState());
+            throw new DataAccessException(e);
+        }
     }
 
     public List<User> findAll() {
