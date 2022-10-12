@@ -39,7 +39,7 @@ public class TxUserService implements UserService {
         } catch (RuntimeException e) {
             // 트랜잭션 롤백
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
+            throw new DataAccessException(e);
         }
     }
 }
