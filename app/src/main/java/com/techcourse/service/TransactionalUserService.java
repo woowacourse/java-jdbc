@@ -19,7 +19,15 @@ public class TransactionalUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            User user = userService.findById(id);
+            transactionManager.commit(transaction);
+            return user;
+        } catch (Exception e) {
+            transactionManager.rollback(transaction);
+            throw new DataAccessException();
+        }
     }
 
     @Override
