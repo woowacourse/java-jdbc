@@ -47,7 +47,7 @@ public abstract class JdbcTemplate {
         });
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+    private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
         Connection conn = DataSourceUtils.getConnection(getDataSource());
         try (PreparedStatement statement = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
             ResultSet.CONCUR_UPDATABLE)
