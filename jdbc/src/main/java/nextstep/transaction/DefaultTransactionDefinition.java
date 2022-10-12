@@ -5,8 +5,8 @@ import nextstep.transaction.support.TransactionPropagation;
 
 public class DefaultTransactionDefinition implements TransactionDefinition {
 
-    private TransactionPropagation propagationBehavior;
-    private TransactionIsolation isolationLevel;
+    private final TransactionPropagation propagationBehavior;
+    private final TransactionIsolation isolationLevel;
     private boolean readOnly;
 
     public DefaultTransactionDefinition(final TransactionPropagation propagationBehavior,
