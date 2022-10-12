@@ -5,10 +5,9 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
@@ -29,22 +28,18 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        try (Connection connection = dataSource.getConnection()) {
-            try {
-                connection.setAutoCommit(false);
-                var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(user);
-                userHistoryDao.log(new UserHistory(user, createBy));
-                connection.commit();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                connection.rollback();
-                throw new DataAccessException(e);
-            }
-        } catch (SQLException e) {
+        var dataSource = DataSourceConfig.getInstance();
+        var transactionManager = new DataSourceTransactionManager(dataSource);
+        var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(transactionStatus);
+        } catch (Exception e) {
             e.printStackTrace();
+            transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
     }
