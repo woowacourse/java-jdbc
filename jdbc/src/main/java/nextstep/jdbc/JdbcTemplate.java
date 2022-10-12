@@ -54,10 +54,10 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T executeQuery(final String sql, final Executor<T> executor) {
+    private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            return executor.execute(statement);
+            return queryExecutor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
