@@ -9,10 +9,11 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.ExecuteException;
 import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.ExecuteCallBack;
+import nextstep.jdbc.support.ObjectUtils;
 import nextstep.jdbc.support.ResultSetExecutor;
 import nextstep.jdbc.support.RowMapper;
 import nextstep.jdbc.support.RowMapperResultSetExecutor;
-import nextstep.jdbc.support.ValidUtils;
+import nextstep.jdbc.support.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -28,7 +29,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        ValidUtils.notBlank(sql, "SQL");
+        StringUtils.notBlank(sql, "SQL");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
@@ -58,8 +59,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ValidUtils.notBlank(sql, "SQL");
-        ValidUtils.notNull(rowMapper, "RowMapper");
+        StringUtils.notBlank(sql, "SQL");
+        ObjectUtils.notNull(rowMapper, "RowMapper");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
