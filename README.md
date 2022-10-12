@@ -224,3 +224,4 @@ final var actual=userService.findById(1L);
 ## 피드백
 
 - [x] setObject null/wrapper 값 검증
+- [x] 줄바꿈 수정, 주석 삭제, 기본 생성자 삭제

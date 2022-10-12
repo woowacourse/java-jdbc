@@ -3,7 +3,6 @@ package nextstep.jdbc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +42,6 @@ class JdbcTemplateTest {
         jdbcTemplate.queryForObject(select, mock(RowMapper.class), 1L);
 
         //then
-//        verify(connection).close();
         verify(statement).close();
         verify(resultSet).close();
     }
@@ -65,7 +63,6 @@ class JdbcTemplateTest {
         jdbcTemplate.query(select, mock(RowMapper.class), "hunch");
 
         //then
-//        verify(connection).close();
         verify(statement).close();
         verify(resultSet).close();
     }
@@ -86,7 +83,6 @@ class JdbcTemplateTest {
         Integer integer = jdbcTemplate.executeUpdate(select, mock(RowMapper.class), "hunch");
 
         //then
-//        verify(connection).close();
         assertThat(integer).isEqualTo(5);
         verify(statement).close();
     }
