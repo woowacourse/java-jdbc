@@ -48,17 +48,16 @@ public class JdbcTemplate {
 
     private void prepareStatementSetter(final PreparedStatement preparedStatement, final Object[] args)
             throws SQLException {
-        for (int i = 1; i <= Objects.requireNonNull(args).length; i++) {
+        final Object[] arguments = Objects.requireNonNull(args);
+        for (int i = 1; i <= arguments.length; i++) {
             preparedStatement.setObject(i, args[i - 1]);
         }
     }
 
     private <T> List<T> resultSetMapperQuery(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
-        int rowNum = 0;
         while (rs.next()) {
-            rowNum += 1;
-            final T row = rowMapper.mapToRow(rs, rowNum);
+            final T row = rowMapper.mapToRow(rs);
             results.add(row);
         }
         return results;
@@ -66,10 +65,8 @@ public class JdbcTemplate {
 
     private <T> T resultSetMapperQueryForObject(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
-        int rowNum = 0;
         while (rs.next()) {
-            rowNum += 1;
-            final T row = rowMapper.mapToRow(rs, rowNum);
+            final T row = rowMapper.mapToRow(rs);
             results.add(row);
         }
         if (results.size() > 1) {

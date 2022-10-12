@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private RowMapper<TestUser> rowMapper() {
-        return (rs, rowNum) -> new TestUser(1L);
+        return (rs) -> new TestUser(1L);
     }
 
     @Test
