@@ -1,8 +1,7 @@
-package com.techcourse.service.transaction;
+package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import com.techcourse.service.UserService;
-import com.techcourse.service.transaction.TransactionExecutor;
+import com.techcourse.support.transaction.TransactionExecutor;
 import javax.sql.DataSource;
 
 public class TxUserService implements UserService {

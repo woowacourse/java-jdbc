@@ -1,4 +1,4 @@
-package com.techcourse.service.transaction;
+package com.techcourse.support.transaction;
 
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
