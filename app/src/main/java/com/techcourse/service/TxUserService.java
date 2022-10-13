@@ -17,27 +17,27 @@ public class TxUserService implements UserService {
     private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final PlatformTransactionManager transactionManager;
-    private final AppUserService appUserService;
+    private final UserService userService;
 
     public TxUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
-        this.appUserService = new AppUserService(userDao, userHistoryDao);
+        this.transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        this.userService = new AppUserService(userDao, userHistoryDao);
     }
 
-    public TxUserService(final PlatformTransactionManager transactionManager, final AppUserService appUserService) {
+    public TxUserService(final PlatformTransactionManager transactionManager, final UserService userService) {
         this.transactionManager = transactionManager;
-        this.appUserService = appUserService;
+        this.userService = userService;
     }
 
     public User findById(final long id) {
-        return appUserService.findById(id);
+        return userService.findById(id);
     }
 
     public void insert(final User user) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            appUserService.insert(user);
+            userService.insert(user);
             transactionManager.commit(transactionStatus);
         } catch (final DataAccessException e) {
             log.error(e.getMessage());
@@ -50,7 +50,7 @@ public class TxUserService implements UserService {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            appUserService.changePassword(id, newPassword, createBy);
+            userService.changePassword(id, newPassword, createBy);
             transactionManager.commit(transactionStatus);
         } catch (final DataAccessException e) {
             log.error(e.getMessage());
