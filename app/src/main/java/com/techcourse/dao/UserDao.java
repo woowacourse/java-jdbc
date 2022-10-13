@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.techcourse.support.UserRowMapper;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;

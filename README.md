@@ -19,3 +19,8 @@
 | 예외 처리                                     | ✅          |
 | 트랜잭션 관리                                   | ✅          |
 | Connection, Statement, ResultSet 객체 close | ✅          |
+
+## 3단계 요구사항
+
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
