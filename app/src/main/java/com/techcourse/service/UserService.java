@@ -4,22 +4,23 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Objects;
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final PlatformTransactionManager transactionManager;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
+        this.transactionManager = new DataSourceTransactionManager(dataSource);
     }
 
     public User findById(final long id) {
@@ -31,38 +32,16 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
+        final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactionManager.commit(status);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(status);
             throw new DataAccessException(e);
-        } finally {
-            close(connection);
-        }
-    }
-
-    private static void rollback(final Connection connection) {
-        try {
-            Objects.requireNonNull(connection);
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void close(final Connection connection) {
-        try {
-            Objects.requireNonNull(connection);
-            connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }

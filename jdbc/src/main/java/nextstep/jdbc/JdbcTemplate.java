@@ -10,6 +10,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,30 +23,22 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setObjects(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    public void update(final Connection connection, final String sql, final Object... args) {
-        try {
-            final PreparedStatement pstmt = connection.prepareStatement(sql);
-            setObjects(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         ResultSet resultSet = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setObjects(pstmt, args);
             resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
@@ -56,7 +49,8 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            close(resultSet);
+            closeResultSet(resultSet);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -68,9 +62,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         ResultSet resultSet = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             List<T> results = new ArrayList<>();
             resultSet = pstmt.executeQuery();
             while (resultSet.next()) {
@@ -81,11 +75,12 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            close(resultSet);
+            closeResultSet(resultSet);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    private static void close(final ResultSet resultSet) {
+    private static void closeResultSet(final ResultSet resultSet) {
         try {
             Objects.requireNonNull(resultSet);
             resultSet.close();
