@@ -10,13 +10,13 @@ import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String SQL_FORMAT_ARGUMENT = "[?]";
+    private static final String NO_DATA_IS_ACCESSIBLE = "접근할 수 있는 데이터가 업습니다.";
 
     private final DataSource dataSource;
 
@@ -29,7 +29,7 @@ public class JdbcTemplate {
                        final Object... sqlArguments) {
         final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
         if (results == null) {
-            throw new EmptyResultDataAccessException(1);
+            throw new EmptyResultDataAccessException(NO_DATA_IS_ACCESSIBLE);
         }
         return results.get(0);
     }
@@ -48,7 +48,7 @@ public class JdbcTemplate {
             resultSet.close();
 
             if (results.isEmpty()) {
-                throw new EmptyResultDataAccessException(2);
+                throw new EmptyResultDataAccessException(NO_DATA_IS_ACCESSIBLE);
             }
             return results;
         };
