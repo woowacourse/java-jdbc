@@ -1,6 +1,5 @@
 package nextstep.jdbc;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -15,7 +14,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 @DisplayName("JdbTemplate 은 ")
 class JdbcTemplateTest {
@@ -38,9 +36,8 @@ class JdbcTemplateTest {
         when(mockedPreparedStatement.executeQuery()).thenReturn(mockedResultSet);
         final String sqlFormat = "select * from user where id=?";
 
-
-       assertThatThrownBy(() -> jdbcTemplate.query(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L))
-               .isInstanceOf(IllegalCallerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L))
+                .isInstanceOf(IllegalCallerException.class);
         verify(mockedPreparedStatement).close();
         verify(mockedResultSet).close();
     }
