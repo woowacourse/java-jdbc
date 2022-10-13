@@ -34,7 +34,7 @@ class JdbcTemplateTest {
         final String sql = "update users set account = gugu, password = pw, email = gugu@woowa.net where id = 1";
         given(connection.prepareStatement(sql)).willReturn(preparedStatement);
 
-        // given
+        // when
         jdbcTemplate.update(sql);
 
         // then
@@ -58,7 +58,7 @@ class JdbcTemplateTest {
         given(connection.prepareStatement(sql)).willReturn(preparedStatement);
         given(preparedStatement.executeQuery()).willReturn(resultSet);
 
-        // given
+        // when
         final List<String> result = jdbcTemplate.query(sql, classRowMapper);
 
         // then
@@ -84,7 +84,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(true, true, true, false);
 
-        // given
+        // when
         final List<String> result = jdbcTemplate.query(sql, classRowMapper);
 
         // then
@@ -104,7 +104,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(true, false);
 
-        // given
+        // when
         final String result = jdbcTemplate.queryForObject(sql, classRowMapper, 1);
 
         // then
@@ -130,7 +130,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(false);
 
-        // given & then
+        // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, classRowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("Empty result");
@@ -148,7 +148,7 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(true, true, false);
 
-        // given & then
+        // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, classRowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("Incorrect result size, expected : 1, actual : 2");
