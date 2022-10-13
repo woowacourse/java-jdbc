@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -68,8 +69,8 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> queryForList(final String sql, final Executable<T> executable) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
-            final Connection connection = dataSource.getConnection();
             final PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -77,6 +78,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
