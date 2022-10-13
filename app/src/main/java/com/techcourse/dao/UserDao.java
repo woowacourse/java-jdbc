@@ -52,4 +52,10 @@ public class UserDao {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
+
+    // 테스트 격리를 위한 메소드
+    public void truncate() {
+        String sql = "truncate table users restart identity"; // table을 truncate 한 후 identity도 1로 초기화
+        jdbcTemplate.update(sql);
+    }
 }

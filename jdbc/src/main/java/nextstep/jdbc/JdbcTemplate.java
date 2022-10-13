@@ -9,16 +9,20 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int FIRST_RESULT_INDEX = 0;
 
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     public int update(final String sql, final Object... args) {
@@ -32,7 +36,7 @@ public class JdbcTemplate {
     private <T> List<T> mapToList(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
         List<T> results = new ArrayList<>();
         ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
+        while (rs.next()) {
             T result = rowMapper.run(rs);
             results.add(result);
         }
@@ -42,20 +46,20 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        return results.get(FIRST_RESULT_INDEX);
+        return results.iterator().next();
     }
 
     public <T> T usePreparedStatement(final String sql,
                                       final ThrowingFunction<PreparedStatement, T, SQLException> function,
                                       final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             mapParametersToPreparedStatement(preparedStatement, args);
             return function.apply(preparedStatement);
         } catch (final SQLException e) {
             log.error("error: {}", e);
             throw new DataAccessException(e.getMessage(), e);
-            // TODO: 더 추상화된 예외 메시지를 사용해야함
         }
     }
 
