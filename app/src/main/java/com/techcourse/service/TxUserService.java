@@ -25,8 +25,8 @@ public class TxUserService implements UserService {
     public void insert(final User user) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            transactionManager.commit(status);
             appUserService.insert(user);
+            transactionManager.commit(status);
         } catch (Exception e) {
             transactionManager.rollback(status);
             throw new DataAccessException();
