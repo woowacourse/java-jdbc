@@ -30,7 +30,6 @@ class JdbcTemplateTest {
         this.resultSet = mock(ResultSet.class);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         given(dataSource.getConnection()).willReturn(connection);
-
         given(connection.prepareStatement(anyString())).willReturn(statement);
 
         given(statement.executeQuery()).willReturn(resultSet);
@@ -48,9 +47,11 @@ class JdbcTemplateTest {
 
         // then
         assertAll(
+            () -> verify(dataSource).getConnection(),
             () -> verify(statement).executeUpdate(),
             () -> verify(statement).setObject(1, "update"),
-            () -> verify(statement).close()
+            () -> verify(statement).close(),
+            () -> verify(connection).close()
         );
     }
 
@@ -73,6 +74,7 @@ class JdbcTemplateTest {
 
         // then
         assertAll(
+            () -> verify(dataSource).getConnection(),
             () -> verify(statement).executeQuery(),
             () -> verify(statement).setObject(1, 1L),
 
@@ -81,7 +83,8 @@ class JdbcTemplateTest {
             () -> verify(resultSet).getString("password"),
             () -> verify(resultSet).getString("email"),
 
-            () -> verify(statement).close()
+            () -> verify(statement).close(),
+            () -> verify(connection).close()
         );
     }
 }
