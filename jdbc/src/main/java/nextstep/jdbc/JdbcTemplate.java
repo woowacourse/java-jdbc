@@ -12,6 +12,7 @@ import nextstep.jdbc.core.RowMapperResultSetExtractor;
 import nextstep.jdbc.support.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -66,13 +67,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
+        Connection conn = null;
         try {
+            conn = DataSourceUtils.getConnection(dataSource);
             PreparedStatement ptsmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
             return callback.doInPreparedStatement(ptsmt);
-        } catch (SQLException e) {
+        } catch (SQLException | CannotGetJdbcConnectionException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
