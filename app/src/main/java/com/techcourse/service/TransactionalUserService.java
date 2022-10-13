@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.DataAccessException;
 import nextstep.transaction.DefaultTransactionDefinition;
 import nextstep.transaction.PlatformTransactionManager;
 import nextstep.transaction.TransactionStatus;
@@ -26,7 +25,7 @@ public class TransactionalUserService implements UserService {
             return user;
         } catch (Exception e) {
             transactionManager.rollback(transaction);
-            throw new DataAccessException();
+            throw new IllegalStateException(e);
         }
     }
 
@@ -38,7 +37,7 @@ public class TransactionalUserService implements UserService {
             transactionManager.commit(transaction);
         } catch (Exception e) {
             transactionManager.rollback(transaction);
-            throw new DataAccessException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -50,7 +49,7 @@ public class TransactionalUserService implements UserService {
             transactionManager.commit(transaction);
         } catch (Exception e) {
             transactionManager.rollback(transaction);
-            throw new DataAccessException(e);
+            throw new IllegalStateException(e);
         }
     }
 }
