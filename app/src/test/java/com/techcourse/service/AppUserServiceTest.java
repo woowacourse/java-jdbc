@@ -2,6 +2,13 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -13,6 +20,8 @@ import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 
 class AppUserServiceTest {
 
@@ -62,5 +71,27 @@ class AppUserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void AppUserService_에서_로직_수행중_예외가_발생하면_롤백이_호출된다() {
+        // given
+        final var transactionManager = mock(PlatformTransactionManager.class);
+        final var userService = mock(UserService.class);
+        final var txUserService = new TxUserService(transactionManager, userService);
+        final var transactionStatus = mock(TransactionStatus.class);
+        given(transactionManager.getTransaction(any()))
+                .willReturn(transactionStatus);
+        willThrow(new RuntimeException()).given(userService)
+                .changePassword(anyLong(), anyString(), anyString());
+
+        // when
+        try {
+            txUserService.changePassword(1L, "1", "1");
+        } catch (RuntimeException ignored) {
+        }
+
+        // then
+        verify(transactionManager).rollback(transactionStatus);
     }
 }

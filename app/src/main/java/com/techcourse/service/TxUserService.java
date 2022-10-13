@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import nextstep.jdbc.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -34,7 +33,7 @@ public class TxUserService implements UserService {
         final var status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             userService.changePassword(id, newPassword, createBy);
-        } catch (DataAccessException e) {
+        } catch (RuntimeException e) {
             log.error(e.getMessage(), e);
             transactionManager.rollback(status);
             throw e;
