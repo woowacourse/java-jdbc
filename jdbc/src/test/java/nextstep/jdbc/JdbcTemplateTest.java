@@ -49,7 +49,6 @@ class JdbcTemplateTest {
         verify(pstmt, times(1)).setObject(1, 1L);
         verify(pstmt, times(1)).setObject(2, "kth990303");
         verify(pstmt).close();
-        verify(conn).close();
     }
 
     @Test
@@ -61,7 +60,6 @@ class JdbcTemplateTest {
 
         verify(pstmt, times(1)).executeQuery();
         verify(pstmt).close();
-        verify(conn).close();
     }
 
     @Test
@@ -73,7 +71,6 @@ class JdbcTemplateTest {
 
         verify(pstmt, times(1)).executeQuery();
         verify(pstmt).close();
-        verify(conn).close();
     }
 
     static class User {
