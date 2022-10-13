@@ -14,7 +14,6 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int FIRST_RESULT_INDEX = 0;
 
     private final DataSource dataSource;
 
@@ -47,7 +46,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        return results.get(FIRST_RESULT_INDEX);
+        return results.iterator().next();
     }
 
     public <T> T usePreparedStatement(final String sql,
