@@ -21,49 +21,41 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(final StatementExecutor<T> statementExecutor, final PreparedStatement pstmt) {
-        return statementExecutor.execute(pstmt);
-    }
-
-    public int update(final PreparedStatementSetter pss) {
+    private <T> T execute(final PreparedStatementSetter pss, final StatementExecutor<T> se) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
-
-            return execute(new SimpleStatementExecutor<>(), pstmt);
+            return se.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public int update(final PreparedStatementSetter pss) {
+        return execute(pss, new SimpleStatementExecutor<>());
     }
 
     public int update(final String sql, final Object... args) {
         return update(new SimplePreparedStatementSetter(sql, args));
     }
 
-    public <T> List<T> query(final SimpleResultSetExtractor<T> rse, final PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
-
-            return execute((preparedStatement) -> {
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    return rse.extract(rs);
-                } catch (SQLException e) {
-                    throw new DataAccessException(e);
-                }
-            }, pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public <T> List<T> query(final PreparedStatementSetter pss, final ResultSetExtractor<T> rse) {
+        return execute(pss, (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rse.extract(rs);
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
+            }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return query(new SimpleResultSetExtractor<>(rowMapper),
-                new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
+        return query(new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS),
+                new SimpleResultSetExtractor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> result = query(new SimpleResultSetExtractor<>(rowMapper), new SimplePreparedStatementSetter(sql, args));
+        List<T> result = query(new SimplePreparedStatementSetter(sql, args), new SimpleResultSetExtractor<>(rowMapper));
         return DataAccessUtils.nullableSingleResult(result);
     }
 }
