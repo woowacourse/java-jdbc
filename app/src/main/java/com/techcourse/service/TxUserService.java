@@ -37,7 +37,7 @@ public class TxUserService implements UserService {
         try {
             userService.changePassword(id, newPassword, createBy);
             transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             transactionManager.rollback(transactionStatus);
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
