@@ -31,11 +31,11 @@ public class JdbcTemplate {
         return query(sql, statement -> QueryExecutor.executeQueryForList(rowMapper, statement), params);
     }
 
-    private <T> T query(final String sql, final StatementCallBack<T> strategy, final Object... params) {
+    private <T> T query(final String sql, final StatementCallBack<T> action, final Object... params) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setValues(statement, params);
-            return strategy.apply(statement);
+            return action.apply(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         } finally {
