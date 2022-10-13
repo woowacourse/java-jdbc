@@ -3,6 +3,7 @@ package nextstep.jdbc;
 import nextstep.jdbc.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,13 +71,15 @@ public class JdbcTemplate {
     }
 
     private <R> R execute(final String sql, final PreparedStatementCallback<R> action) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug(QUERY_FORMAT, sql);
             return action.doInStatement(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("데이터 접근에 실패했습니다.");
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -87,5 +90,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new InvalidStatementException();
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
