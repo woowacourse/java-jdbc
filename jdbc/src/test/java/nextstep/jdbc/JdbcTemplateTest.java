@@ -1,5 +1,7 @@
 package nextstep.jdbc;
 
+import static nextstep.jdbc.UserFixture.로마;
+import static nextstep.jdbc.UserFixture.수달;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -27,8 +29,6 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
     private Connection connection;
     private PreparedStatement statement;
-    private DataSourceTransactionManager transactionManager;
-    private TransactionStatus status;
     private DataSource dataSource;
 
     @BeforeEach
@@ -62,8 +62,8 @@ class JdbcTemplateTest {
     @DisplayName("update 메서드는 쿼리를 실행한다.(with TxManager)")
     void update_txManager() {
         // given & when
-        transactionManager = new DataSourceTransactionManager(dataSource);
-        status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+        final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, "account", "password", "email");
@@ -89,18 +89,18 @@ class JdbcTemplateTest {
 
             given(statement.executeQuery()).willReturn(resultSet);
             given(resultSet.next()).willReturn(true, false);
-            given(resultSet.getString("account")).willReturn("roma");
-            given(resultSet.getString("password")).willReturn("1234");
-            given(resultSet.getString("email")).willReturn("roma@service.apply");
+            given(resultSet.getString("account")).willReturn(로마.getAccount());
+            given(resultSet.getString("password")).willReturn(로마.getPassword());
+            given(resultSet.getString("email")).willReturn(로마.getEmail());
 
             // when
             final String sql = "select account, password, email from users where account = ?";
-            final String result = jdbcTemplate.queryForObject(sql, getRowMapper(), "roma");
+            final User result = jdbcTemplate.queryForObject(sql, getRowMapper(), 로마.getAccount());
 
             // then
             assertAll(
-                    () -> assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
-                    () -> verify(statement).setObject(1, "roma"),
+                    () -> assertThat(result).isEqualTo(로마),
+                    () -> verify(statement).setObject(1, 로마.getAccount()),
                     () -> verify(statement).executeQuery(),
                     () -> verify(statement).close(),
                     () -> verify(connection).close(),
@@ -116,9 +116,9 @@ class JdbcTemplateTest {
 
             given(statement.executeQuery()).willReturn(resultSet);
             given(resultSet.next()).willReturn(true, true, false);
-            given(resultSet.getString("account")).willReturn("roma");
-            given(resultSet.getString("password")).willReturn("1234");
-            given(resultSet.getString("email")).willReturn("roma@service.apply");
+            given(resultSet.getString("account")).willReturn(로마.getAccount());
+            given(resultSet.getString("password")).willReturn(로마.getPassword());
+            given(resultSet.getString("email")).willReturn(로마.getEmail());
 
             // when
             final String sql = "select account, password, email from users where account = ?";
@@ -143,9 +143,9 @@ class JdbcTemplateTest {
 
             given(statement.executeQuery()).willReturn(resultSet);
             given(resultSet.next()).willReturn(false);
-            given(resultSet.getString("account")).willReturn("roma");
-            given(resultSet.getString("password")).willReturn("1234");
-            given(resultSet.getString("email")).willReturn("roma@service.apply");
+            given(resultSet.getString("account")).willReturn(로마.getAccount());
+            given(resultSet.getString("password")).willReturn(로마.getPassword());
+            given(resultSet.getString("email")).willReturn(로마.getEmail());
 
             // when
             final String sql = "select account, password, email from users where account = ?";
@@ -161,6 +161,7 @@ class JdbcTemplateTest {
                     () -> verify(resultSet).close()
             );
         }
+
     }
 
     @Test
@@ -171,17 +172,17 @@ class JdbcTemplateTest {
 
         given(statement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(true, true, false);
-        given(resultSet.getString("account")).willReturn("roma", "jason");
-        given(resultSet.getString("password")).willReturn("1234", "4321");
-        given(resultSet.getString("email")).willReturn("roma@service.apply", "jason@service.apply");
+        given(resultSet.getString("account")).willReturn(로마.getAccount(), 수달.getAccount());
+        given(resultSet.getString("password")).willReturn(로마.getPassword(), 수달.getPassword());
+        given(resultSet.getString("email")).willReturn(로마.getEmail(), 수달.getEmail());
 
         // when
         final String sql = "select account, password, email from users";
-        final List<String> result = jdbcTemplate.queryForList(sql, getRowMapper());
+        final List<User> result = jdbcTemplate.queryForList(sql, getRowMapper());
 
         // then
         assertAll(
-                () -> assertThat(result).contains("roma/1234/roma@service.apply", "jason/4321/jason@service.apply"),
+                () -> assertThat(result).contains(로마, 수달),
                 () -> verify(statement).executeQuery(),
                 () -> verify(statement).close(),
                 () -> verify(connection).close(),
@@ -190,8 +191,8 @@ class JdbcTemplateTest {
 
     }
 
-    private RowMapper<String> getRowMapper() {
-        return rs -> String.format("%s/%s/%s",
+    private RowMapper<User> getRowMapper() {
+        return rs -> new User(
                 rs.getString("account"),
                 rs.getString("password"),
                 rs.getString("email")
