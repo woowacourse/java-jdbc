@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -75,7 +76,8 @@ public class JdbcTemplate {
 
     public Long insert(final String sql, Object... params) {
         return execute(connection -> {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            final PreparedStatement preparedStatement =
+                    connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             setPreparedStatementParams(preparedStatement, params);
             return preparedStatement;
         }, new SimpleInsertExecuteStrategy());
