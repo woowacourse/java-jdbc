@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import nextstep.jdbc.DataAccessException;
+import nextstep.jdbc.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -34,23 +35,18 @@ public class TxUserService implements UserService {
     }
 
     public void insert(final User user) {
-        final TransactionStatus transactionStatus = transactionManager.getTransaction(
-                new DefaultTransactionDefinition());
-        try {
-            userService.insert(user);
-            transactionManager.commit(transactionStatus);
-        } catch (final DataAccessException e) {
-            log.error(e.getMessage());
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
+        startTransaction(() -> userService.insert(user));
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        startTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void startTransaction(final Transactional transactional) {
         final TransactionStatus transactionStatus = transactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            transactional.start();
             transactionManager.commit(transactionStatus);
         } catch (final DataAccessException e) {
             log.error(e.getMessage());
