@@ -34,7 +34,7 @@ public class JdbcTemplate {
     private <T> T query(final String sql, final StatementCallBack<T> strategy, final Object... params) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParams(statement, params);
+            setValues(statement, params);
             return strategy.apply(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(final PreparedStatement statement, final Object[] params) throws SQLException {
+    private void setValues(final PreparedStatement statement, final Object[] params) throws SQLException {
         int paramIndex = DEFAULT_PARAM_INDEX;
         for (final Object param : params) {
             statement.setObject(paramIndex++, param);
