@@ -17,7 +17,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 
-class UserServiceTest {
+class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -30,20 +30,6 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-    }
-
-    @Test
-    void testChangePassword() {
-        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new AppUserService(userDao, userHistoryDao);
-
-        String newPassword = "qqqqq";
-        String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
-
-        User actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
