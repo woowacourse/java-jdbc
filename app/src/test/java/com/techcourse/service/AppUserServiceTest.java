@@ -61,8 +61,6 @@ class AppUserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        System.out.println("actual = " + actual);
-
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }
