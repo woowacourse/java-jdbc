@@ -7,8 +7,8 @@
 ---
 
 ![Generic badge](https://img.shields.io/badge/Level4-JDBC-green.svg)
-![Generic badge](https://img.shields.io/badge/test-10_passed-blue.svg)
-![Generic badge](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)
+![Generic badge](https://img.shields.io/badge/test-12_passed-blue.svg)
+![Generic badge](https://img.shields.io/badge/version-3.0.0-brightgreen.svg)
 
 > 우아한테크코스 웹 백엔드 4기, JDBC 구현하기 저장소입니다.
 
@@ -18,6 +18,40 @@
 - 데이터베이스에 대한 이해도를 높인다.
 
 <br>
+
+## 🚀 3단계 - Transaction 적용하기
+
+---
+
+### 미션 설명
+
+- User의 비밀번호를 변경할 수 있는 기능을 추가하자.
+- 해당 기능은 UserService 클래스의 changePassword() 메서드에 구현되어있다.
+- 비밀번호를 변경하면 누가, 언제, 어떤 비밀번호로 바꿨는지 이력을 남겨야 한다.
+- 이력이 있어야 고객센터에서 고객 문의를 대응할 수 있다.
+- 고객의 변경 이력을 확인 할 수 있도록 changePassword() 메서드는 비밀번호 변경과 이력을 남기도록 구현되어 있다.
+
+- 하지만 changePassword() 메서드는 원자성(Atomic)이 보장되지 않는다.
+- 중간에 예외가 발생해서 작업을 완료할 수 없다면 작업을 원래 상태로 되돌려야 한다.
+- 즉, 비밀번호를 바꾸고 이력을 남기는 도중에 에러가 발생하면 원래 비밀번호로 돌려놔야한다.
+- 원자성을 보장하기 위해 트랜잭션을 적용하자.
+
+### 체크리스트
+
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
+
+### 키워드
+
+- 트랜잭션
+- 트랜잭션 동기화
+- 트랜잭션 서비스 추상화
+
+### 학습한 내용
+
+- [JdbcTemplate-Study.md](./JdbcTemplate-Study.md)
+
+<br><br>
 
 ## 🚀 2단계 - 리팩터링 힌트
 

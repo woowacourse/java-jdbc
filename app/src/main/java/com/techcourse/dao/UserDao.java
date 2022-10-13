@@ -16,7 +16,6 @@ public class UserDao {
                     resultSet.getString("email")
             );
 
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
