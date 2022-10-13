@@ -29,7 +29,7 @@ public class TxUserService implements UserService {
         } catch (final RuntimeException e) {
             log.info("transaction rollback!");
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 
@@ -42,7 +42,7 @@ public class TxUserService implements UserService {
         } catch (final RuntimeException e) {
             log.info("transaction rollback!");
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 
@@ -55,7 +55,7 @@ public class TxUserService implements UserService {
         } catch (final RuntimeException e) {
             log.info("transaction rollback!");
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 }
