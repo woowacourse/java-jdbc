@@ -15,14 +15,17 @@ public class AppUserService implements UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
+    @Override
     public User findById(long id) {
         return userDao.findById(id);
     }
 
+    @Override
     public void insert(User user) {
         userDao.insert(user);
     }
 
+    @Override
     public void changePassword(long id, String newPassword, String createBy) {
         User user = findById(id);
         user.changePassword(newPassword);
