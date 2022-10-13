@@ -39,6 +39,7 @@
 - 🖊 <b>구현 목록</b>
     - PlatformTransactionManager를 이용한 트랜잭션 적용
     - UserService 추상화를 통한 트랜잭션 서비스와 애플리케이션 서비스의 분리(데코레이터 패턴 적용)
+    - 템플릿 콜백 패턴을 이용한 트랜잭션 처리 로직 추상화
 - ✅ <b>체크 리스트</b>
     - [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
     - [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
