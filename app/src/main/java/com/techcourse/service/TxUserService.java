@@ -5,6 +5,7 @@ import nextstep.jdbc.exception.DataAccessException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import java.util.function.Supplier;
 
 public class TxUserService implements UserService {
 
@@ -18,17 +19,29 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        return startTransaction(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        startTransaction(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         startTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private <R> R startTransaction(final Supplier<R> supplier) {
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            final R r = supplier.get();
+            transactionManager.commit(transactionStatus);
+            return r;
+        } catch (final DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
+        }
     }
 
     private void startTransaction(final Runnable runnable) {
