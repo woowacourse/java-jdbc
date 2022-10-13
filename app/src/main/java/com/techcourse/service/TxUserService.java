@@ -5,6 +5,7 @@ import nextstep.jdbc.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 public class TxUserService implements UserService {
@@ -21,7 +22,7 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        var transactionStatus = transactionManager.getTransaction(new DefaultTransactionAttribute());
+        var transactionStatus = getTransactionStatus();
         try {
             User foundUser = userService.findById(id);
             transactionManager.commit(transactionStatus);
@@ -35,7 +36,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        var transactionStatus = transactionManager.getTransaction(new DefaultTransactionAttribute());
+        var transactionStatus = getTransactionStatus();
         try {
             userService.insert(user);
             transactionManager.commit(transactionStatus);
@@ -48,7 +49,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        var transactionStatus = transactionManager.getTransaction(new DefaultTransactionAttribute());
+        var transactionStatus = getTransactionStatus();
         try {
             userService.changePassword(id, newPassword, createBy);
             transactionManager.commit(transactionStatus);
@@ -57,5 +58,9 @@ public class TxUserService implements UserService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
+    }
+
+    private TransactionStatus getTransactionStatus() {
+        return transactionManager.getTransaction(new DefaultTransactionAttribute());
     }
 }
