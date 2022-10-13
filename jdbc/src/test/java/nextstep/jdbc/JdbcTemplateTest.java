@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,28 +29,17 @@ class JdbcTemplateTest {
     private PreparedStatement statement;
     private DataSourceTransactionManager transactionManager;
     private TransactionStatus status;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(any())).willReturn(statement);
-        transactionManager = new DataSourceTransactionManager(dataSource);
-        status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-    }
-
-    @AfterEach
-    void tearDown() {
-        transactionManager.rollback(status);
-
-        assertAll(
-                () -> verify(statement).close(),
-                () -> verify(connection).close()
-        );
     }
 
     @Test
@@ -64,7 +52,29 @@ class JdbcTemplateTest {
         // then
         assertAll(
                 () -> verify(statement).setObject(1, "account"),
-                () -> verify(statement).execute()
+                () -> verify(statement).execute(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close()
+        );
+    }
+
+    @Test
+    @DisplayName("update 메서드는 쿼리를 실행한다.(with TxManager)")
+    void update_txManager() {
+        // given & when
+        transactionManager = new DataSourceTransactionManager(dataSource);
+        status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, "account", "password", "email");
+
+        transactionManager.rollback(status);
+        // then
+        assertAll(
+                () -> verify(statement).setObject(1, "account"),
+                () -> verify(statement).execute(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close()
         );
     }
 
@@ -92,6 +102,8 @@ class JdbcTemplateTest {
                     () -> assertThat(result).isEqualTo("roma/1234/roma@service.apply"),
                     () -> verify(statement).setObject(1, "roma"),
                     () -> verify(statement).executeQuery(),
+                    () -> verify(statement).close(),
+                    () -> verify(connection).close(),
                     () -> verify(resultSet).close()
             );
         }
@@ -117,6 +129,8 @@ class JdbcTemplateTest {
                             .isInstanceOf(DataAccessException.class)
                             .hasMessage("more than one result!"),
                     () -> verify(statement).executeQuery(),
+                    () -> verify(statement).close(),
+                    () -> verify(connection).close(),
                     () -> verify(resultSet).close()
             );
         }
@@ -142,6 +156,8 @@ class JdbcTemplateTest {
                             .isInstanceOf(DataAccessException.class)
                             .hasMessage("query result is null"),
                     () -> verify(statement).executeQuery(),
+                    () -> verify(statement).close(),
+                    () -> verify(connection).close(),
                     () -> verify(resultSet).close()
             );
         }
@@ -167,6 +183,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(result).contains("roma/1234/roma@service.apply", "jason/4321/jason@service.apply"),
                 () -> verify(statement).executeQuery(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close(),
                 () -> verify(resultSet).close()
         );
 

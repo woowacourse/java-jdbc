@@ -38,6 +38,8 @@ public class JdbcTemplate {
             return strategy.apply(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
