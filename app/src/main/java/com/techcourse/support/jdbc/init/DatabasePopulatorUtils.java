@@ -15,11 +15,11 @@ public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
-    public static void execute(final DataSource dataSource) {
+    public static void execute(final DataSource dataSource, final String fileName) {
         Connection connection = null;
         Statement statement = null;
         try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource(fileName);
             final var file = new File(url.getFile());
             final var sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
