@@ -47,7 +47,9 @@ public class JdbcTemplate {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             setParameters(pstmt, args);
-            return pstmtSetter.execute(pstmt);
+            final T result = pstmtSetter.execute(pstmt);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            return result;
         } catch (Exception exception) {
             throw new DataAccessException();
         }
