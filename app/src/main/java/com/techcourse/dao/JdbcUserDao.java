@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.List;
 
@@ -41,12 +40,6 @@ public class JdbcUserDao implements UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
-    @Override
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     @Override
