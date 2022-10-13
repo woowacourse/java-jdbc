@@ -12,6 +12,8 @@ import nextstep.jdbc.core.RowMapperResultSetExtractor;
 import nextstep.jdbc.support.DataAccessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -28,6 +30,17 @@ public class JdbcTemplate {
             setArguments(pstmt, args);
             return pstmt.executeUpdate();
         });
+    }
+
+    public void update(Connection connection, String sql, final Object... args) {
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            setArguments(pstmt, args);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.info("jdbcTemplate query:{}", sql);
+            throw new DataAccessException(e);
+        }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -54,14 +67,22 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ptsmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement ptsmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
             return callback.doInPreparedStatement(ptsmt);
-        } catch (SQLException e) {
+        } catch (SQLException | CannotGetJdbcConnectionException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

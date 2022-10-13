@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    static RowMapper<User> userMapper = (rs) -> new User(rs.getLong("id"),
+    private final static RowMapper<User> USER_ROW_MAPPER = (rs) -> new User(rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email"));
@@ -39,18 +39,18 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, email, password from users";
-        return jdbcTemplate.query(sql, userMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, userMapper, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, userMapper, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
