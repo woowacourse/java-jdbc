@@ -1,6 +1,5 @@
-package com.techcourse.service;
+package com.techcourse.service.transaction;
 
-import com.techcourse.domain.User;
 import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -8,32 +7,21 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-public class TxUserService implements UserService {
+public class TransactionExecutor {
 
     private final PlatformTransactionManager transactionManager;
-    private final UserService userService;
 
-    public TxUserService(final DataSource dataSource, final UserService userService) {
+    public TransactionExecutor(final DataSource dataSource) {
         this.transactionManager = new DataSourceTransactionManager(dataSource);
-        this.userService = userService;
     }
 
-    @Override
-    public User findById(final long id) {
-        return userService.findById(id);
-    }
-
-    @Override
-    public void insert(final User user) {
-        userService.insert(user);
-    }
-
-    @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    public <T> T execute(final TransactionCallback<T> callback) {
         final TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            final T result = callback.call();
             transactionManager.commit(transaction);
+
+            return result;
         } catch (Exception exception) {
             transactionManager.rollback(transaction);
             throw new DataAccessException(exception.getMessage());
