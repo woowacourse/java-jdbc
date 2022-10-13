@@ -22,7 +22,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         execute(sql, preparedStatement -> {
-            final PreparedStatementSetter<?> statementSetter = setPreparedStatement(args, preparedStatement);
+            final PreparedStatementSetterImpl statementSetter = new PreparedStatementSetterImpl(args);
             statementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         });
@@ -40,15 +40,6 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatementSetter<?> setPreparedStatement(final Object[] args,
-                                                            final PreparedStatement preparedStatement) {
-        return ps -> {
-            for (int idx = 0; idx < args.length; idx++) {
-                ps.setObject(idx + 1, args[idx]);
-            }
-        };
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
@@ -63,7 +54,7 @@ public class JdbcTemplate {
                              final Object... args
     ) {
         return execute(sql, preparedStatement -> {
-            final PreparedStatementSetter<?> statementSetter = setPreparedStatement(args, preparedStatement);
+            final PreparedStatementSetterImpl statementSetter = new PreparedStatementSetterImpl(args);
             statementSetter.setValues(preparedStatement);
             return getResultSetData(preparedStatement, rowMapper);
         });
