@@ -8,13 +8,12 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import nextstep.jdbc.DataAccessException;
 import nextstep.jdbc.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
-class UserServiceTest {
+class LegacyUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -32,7 +31,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, DataSourceConfig.getInstance(), userHistoryDao);
+        final var userService = new LegacyUserService(userDao, DataSourceConfig.getInstance(), userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";

@@ -5,7 +5,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-public class AppUserService implements UserServiceImp{
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;

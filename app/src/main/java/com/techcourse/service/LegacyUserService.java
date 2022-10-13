@@ -1,42 +1,48 @@
 package com.techcourse.service;
 
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
+import javax.sql.DataSource;
 import nextstep.jdbc.DataAccessException;
-import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-public class TxUserService implements UserService {
+public class LegacyUserService {
 
-    private final PlatformTransactionManager transactionManager;
-    private final UserService userService;
+    private final UserDao userDao;
+    private final DataSourceTransactionManager transactionManager;
+    private final UserHistoryDao userHistoryDao;
 
-    public TxUserService(PlatformTransactionManager transactionManager, UserService userService) {
-        this.transactionManager = transactionManager;
-        this.userService = userService;
+    public LegacyUserService(UserDao userDao, DataSource dataSource, UserHistoryDao userHistoryDao) {
+        this.userDao = userDao;
+        this.transactionManager = new DataSourceTransactionManager(dataSource);
+        this.userHistoryDao = userHistoryDao;
     }
 
-    @Override
     public User findById(Long id) {
-        return userService.findById(id);
+        return userDao.findById(id);
     }
 
-    @Override
     public void insert(User user) {
+        userDao.insert(user);
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.insert(user);
             transactionManager.commit(status);
         } catch (DataAccessException e) {
             transactionManager.rollback(status);
         }
     }
 
-    @Override
     public void changePassword(Long id, String newPassword, String createBy) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            User user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             transactionManager.commit(status);
         } catch (DataAccessException e) {
             transactionManager.rollback(status);
