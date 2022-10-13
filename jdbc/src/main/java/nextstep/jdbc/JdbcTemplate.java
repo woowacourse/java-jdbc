@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.statementSetter.ArgumentPreparedStatementSetter;
@@ -18,7 +19,7 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected abstract DataSource getDataSource();
+    public abstract DataSource getDataSource();
 
     public void update(final String sql, Object... args) {
         ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
@@ -46,10 +47,10 @@ public abstract class JdbcTemplate {
         });
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection conn = getDataSource().getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                 ResultSet.CONCUR_UPDATABLE)
+    private <T> T execute(final String sql, PreparedStatementCallback<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(getDataSource());
+        try (PreparedStatement statement = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
+            ResultSet.CONCUR_UPDATABLE)
         ) {
             log.debug("query : {}", sql);
             return callback.doInStatement(statement);
