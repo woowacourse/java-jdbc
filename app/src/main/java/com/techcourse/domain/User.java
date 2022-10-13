@@ -7,7 +7,7 @@ public class User {
     private String password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public User(Long id, String account, String password, String email) {
         this.id = id;
         this.account = account;
         this.password = password;
