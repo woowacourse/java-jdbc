@@ -7,6 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
+import nextstep.jdbc.exception.InvalidDataSizeException;
+import nextstep.jdbc.exception.InvalidSqlException;
+import nextstep.jdbc.exception.NoSuchDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,67 +25,78 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final ObjectMapper<T> objectMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-
+        return executeQuery(sql, statement -> {
             log.debug("query : {}", sql);
-
-            List<T> results = new ArrayList<>();
-            if (resultSet.next()) {
-                T t = objectMapper.map(resultSet);
-                results.add(t);
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+            return executeStatement(statement, objectMapper);
+        });
     }
 
-    public <T> T query(final String sql, final Object parameter, final ObjectMapper<T> objectMapper) {
+    public <T> T queryForObject(final String sql, final Object parameter, final ObjectMapper<T> objectMapper) {
         validateSql(sql, parameter);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        return executeQuery(sql, statement -> {
             statement.setObject(1, parameter);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                log.debug("query : {}", sql);
-
-                if (resultSet.next()) {
-                    return objectMapper.map(resultSet);
-                }
-                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+            List<T> results = executeStatement(statement, objectMapper);
+            return getSingleResult(results);
+        });
     }
 
     public void update(final String sql, final Object... parameters) {
         validateSql(sql, parameters);
+        executeQuery(sql, statement -> {
+            setParams(statement, parameters);
+            log.debug("query : {}", sql);
+            return statement.executeUpdate();
+        });
+    }
+
+    private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            for (int i = 0; i < parameters.length; i++) {
-                statement.setObject(i + 1, parameters[i]);
-            }
-
-            statement.executeUpdate();
-            log.debug("query : {}", sql);
-
+            return queryExecutor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> List<T> executeStatement(final PreparedStatement statement, final ObjectMapper<T> objectMapper) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            return mappingRows(resultSet, objectMapper);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> List<T> mappingRows(final ResultSet resultSet, final ObjectMapper<T> objectMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            T t = objectMapper.map(resultSet);
+            results.add(t);
+        }
+        return results;
+    }
+
+    private <T> T getSingleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new NoSuchDataException("조회 결과가 존재하지 않습니다.");
+        }
+        if (results.size() > 1) {
+            throw new InvalidDataSizeException(1, results.size());
+        }
+        return results.get(0);
+    }
+
+    private void setParams(final PreparedStatement statement, final Object[] parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            statement.setObject(i + 1, parameters[i]);
         }
     }
 
     private void validateSql(final String sql, final Object... parameters) {
         int required = sql.length() - sql.replaceAll("\\?", "").length();
         if (required != parameters.length) {
-            throw new DataAccessException("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
+            throw new InvalidSqlException("sql문 내의 매개변수와 주어진 매개변수의 수가 다릅니다.");
         }
     }
 }
