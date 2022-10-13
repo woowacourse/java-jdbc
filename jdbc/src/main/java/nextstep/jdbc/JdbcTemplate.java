@@ -10,37 +10,41 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final PreparedStatementSetter preparedStatementSetter = (pstmt, args) -> {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    };
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public void executeUpdate(String sql, Object... args) {
         execute(sql, pstmt -> {
-            setObject(pstmt, args);
+            preparedStatementSetter.setValues(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> {
-            setObject(pstmt, args);
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
+        List<T> results = query(sql, rowMapper, args);
+        if (results.size() != 1) {
             throw new IncorrectResultSizeDataAccessException();
-        });
+        }
+        return results.get(0);
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
+            preparedStatementSetter.setValues(pstmt, args);
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
@@ -52,19 +56,23 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementStrategy<T> strategy) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return strategy.doStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void setObject(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
