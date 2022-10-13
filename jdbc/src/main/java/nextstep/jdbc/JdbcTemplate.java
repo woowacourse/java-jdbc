@@ -2,6 +2,7 @@ package nextstep.jdbc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,7 +28,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> queryForList(final String sql, RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
             setParameters(args, pstmt);
             return getResult(pstmt, rowMapper);
@@ -43,8 +44,12 @@ public class JdbcTemplate {
         });
     }
 
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     private <T> T execute(String sql, PreparedStater<T> strategy) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = DataSourceUtils.getConnection(dataSource);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return strategy.doStatement(pstmt);
