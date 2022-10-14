@@ -18,36 +18,40 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
-        try {
-            return userService.findById(id);
-        } catch (DataAccessException e) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
-        }
+        return executeValueWithTransaction(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
+        executeWithTransaction(() -> userService.insert(user));
+    }
+
+    @Override
+    public void changePassword(final long id, final String newPassword, final String createBy) {
+        executeWithTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void executeWithTransaction(Runnable runnable) {
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.insert(user);
+            runnable.run();
+
+            transactionManager.commit(transactionStatus);
         } catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
     }
 
-    @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    private <T> T executeValueWithTransaction(TxExecutor<T> txExecutor) {
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.changePassword(id, newPassword, createBy);
+            T result = txExecutor.execute();
 
             transactionManager.commit(transactionStatus);
+            return result;
         } catch (DataAccessException e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
