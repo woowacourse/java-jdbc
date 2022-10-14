@@ -23,7 +23,14 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userService.insert(user);
+            transactionManager.commit(transactionStatus);
+        } catch (RuntimeException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException(e);
+        }
     }
 
     @Override
