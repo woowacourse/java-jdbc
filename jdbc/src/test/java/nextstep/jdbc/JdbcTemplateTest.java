@@ -43,7 +43,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(preparedStatement, times(2)).setObject(anyInt(), any()),
                 () -> verify(preparedStatement, times(1)).executeUpdate(),
-                () -> verify(preparedStatement, times(1)).close()
+                () -> verify(preparedStatement, times(1)).close(),
+                () -> verify(connection, times(1)).close()
         );
     }
 
@@ -58,7 +59,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(preparedStatement, times(1)).executeQuery(),
                 () -> verify(resultSet, times(1)).next(),
-                () -> verify(preparedStatement, times(1)).close()
+                () -> verify(preparedStatement, times(1)).close(),
+                () -> verify(connection, times(1)).close()
         );
     }
 
@@ -73,7 +75,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(preparedStatement, times(1)).executeQuery(),
                 () -> verify(resultSet, times(1)).next(),
-                () -> verify(preparedStatement, times(1)).close()
+                () -> verify(preparedStatement, times(1)).close(),
+                () -> verify(connection, times(1)).close()
         );
     }
 }

@@ -40,12 +40,14 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql,
                           final PreparedStatementCallback<T> preparedStatementCallback) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+       final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             return preparedStatementCallback.doPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
