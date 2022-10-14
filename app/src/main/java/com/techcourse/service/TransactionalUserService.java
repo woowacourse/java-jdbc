@@ -10,7 +10,7 @@ import com.techcourse.domain.User;
 public class TransactionalUserService implements UserService {
 
     private final PlatformTransactionManager transactionManager;
-    private final AppUserService userService;
+    private final UserService userService;
 
     public TransactionalUserService(final PlatformTransactionManager transactionManager, final AppUserService userService) {
         this.transactionManager = transactionManager;
