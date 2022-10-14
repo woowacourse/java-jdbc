@@ -23,21 +23,18 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
-            userService.insert(user);
-            transactionManager.commit(status);
-        } catch (DataAccessException e) {
-            transactionManager.rollback(status);
-            throw new DataAccessException(e);
-        }
+        execute(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        execute(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void execute(final TxExecutor executor) {
         final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            userService.changePassword(id, newPassword, createBy);
+            executor.execute();
             transactionManager.commit(status);
         } catch (DataAccessException e) {
             transactionManager.rollback(status);
