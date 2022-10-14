@@ -48,7 +48,6 @@ class JdbcTemplateTest {
         verify(preparedStatement).setObject(2, "password");
         verify(preparedStatement).setObject(3, "hkkang@woowahan.com");
         verify(preparedStatement).executeUpdate();
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -71,7 +70,6 @@ class JdbcTemplateTest {
                 .contains("gugu", "ash");
         verify(resultSet, times(3)).next();
         verify(preparedStatement).executeQuery();
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -88,7 +86,6 @@ class JdbcTemplateTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
         verify(resultSet, times(2)).next();
         verify(preparedStatement).executeQuery();
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 }

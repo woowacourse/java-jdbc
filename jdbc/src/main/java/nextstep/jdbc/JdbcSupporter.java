@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcSupporter {
 
@@ -18,14 +19,16 @@ public class JdbcSupporter {
     }
 
     <T> T execute(final String sql, final JdbcExecutor<T> executor, final Object... args) {
-        log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(statement, args);
+            log.debug("query : {}", sql);
             return executor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -33,5 +36,9 @@ public class JdbcSupporter {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    protected DataSource getDataSource() {
+        return this.dataSource;
     }
 }
