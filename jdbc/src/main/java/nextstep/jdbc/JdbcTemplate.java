@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,45 +20,41 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private <T> T execute(final PreparedStatementSetter pss, final StatementExecutor<T> se) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+            return se.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public int update(final PreparedStatementSetter pss) {
+        return execute(pss, new UpdateStatementExecutor<>());
+    }
+
     public int update(final String sql, final Object... args) {
         return update(new SimplePreparedStatementSetter(sql, args));
     }
 
-    public int update(final PreparedStatementSetter prepareStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatementSetter.setPreparedStatement(conn)) {
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public <T> List<T> query(final PreparedStatementSetter pss, final ResultSetExtractor<T> rse) {
+        return execute(pss, (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rse.extract(rs);
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
+            }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return query(rowMapper, new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS));
-    }
-
-    private <T> List<T> query(final RowMapper<T> rowMapper, final SimplePreparedStatementSetter spss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = spss.setPreparedStatement(conn);
-             ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            if (rs.next()) {
-                T t = rowMapper.mapRow(rs);
-                result.add(t);
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return query(new SimplePreparedStatementSetter(sql, EMPTY_ARGUMENTS),
+                new SimpleResultSetExtractor<>(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> result = query(rowMapper, new SimplePreparedStatementSetter(sql, args));
-        if (result.size() != 1) {
-            throw new RuntimeException();
-        }
-        return result.get(0);
+        List<T> result = query(new SimplePreparedStatementSetter(sql, args), new SimpleResultSetExtractor<>(rowMapper));
+        return DataAccessUtils.nullableSingleResult(result);
     }
 }
