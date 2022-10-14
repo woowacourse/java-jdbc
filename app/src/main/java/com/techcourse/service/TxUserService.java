@@ -18,37 +18,33 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
-            User user = userService.findById(id);
-            transactionManager.commit(transactionStatus);
-            return user;
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
-        }
+        return extracted(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
+        extracted(() -> {
             userService.insert(user);
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException();
-        }
+            return null;
+        });
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
+        extracted(() -> {
             User user = findById(id);
             user.changePassword(newPassword);
             userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
+    }
+
+    private <T> T extracted(final TransactionExecutor<T> transactionExecutor) {
+        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            T result = transactionExecutor.execute();
             transactionManager.commit(transactionStatus);
+            return result;
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException();
