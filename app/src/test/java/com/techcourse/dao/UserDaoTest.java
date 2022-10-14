@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.support.DatabaseCleanUp;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
@@ -12,13 +13,16 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
+    private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
+
         final var user = new User(1L, "gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -73,8 +77,7 @@ class UserDaoTest {
 
     @AfterEach
     void setDown() {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        final String sql = "delete from users";
-        jdbcTemplate.update(sql);
+        DatabaseCleanUp.cleanUp(jdbcTemplate, "users");
+        DatabaseCleanUp.cleanUp(jdbcTemplate, "user_history");
     }
 }

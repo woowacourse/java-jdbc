@@ -7,13 +7,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import nextstep.jdbc.exception.ConnectionOccupationException;
 import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.MultipleRowException;
 import nextstep.jdbc.exception.ParameterSettingException;
 import nextstep.jdbc.support.PreparedStatementExecutor;
 import nextstep.jdbc.support.PreparedStatementSetter;
 import nextstep.jdbc.support.ResultSetExtractor;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -81,20 +81,18 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
                           final PreparedStatementExecutor<T> preparedStatementExecutor) {
-        try (final Connection connection = getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        final Connection connection = getConnection();
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.set(preparedStatement);
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근에 실패하였습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new ConnectionOccupationException();
-        }
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
