@@ -18,5 +18,5 @@
 ## Level 3 - Transaction 적용하
 
 - [x] UserDao, 불필요한 import 제거
-- [ ] Connection에 대한 테스트 실패 수정
+- [x] Connection에 대한 테스트 실패 수정
 - [ ] userService.changePassword() 예외 발생 시 처리 
