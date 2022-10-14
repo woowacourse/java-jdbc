@@ -46,10 +46,10 @@ public class TxUserService implements UserService {
             return result;
         } catch (RuntimeException e) {
             transactionManager.rollback(transaction);
-            throw new DataAccessException(e);
+            throw e;
         } catch (Exception e) {
             transactionManager.commit(transaction);
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 }
