@@ -2,10 +2,6 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 import java.util.function.Supplier;
-import nextstep.jdbc.exception.DataAccessException;
-import nextstep.jdbc.exception.EmptyResultDataAccessException;
-import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
-import nextstep.jdbc.exception.JdbcConnectionException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -48,10 +44,7 @@ public class TxUserService implements UserService {
             final T result = supplier.get();
             transactionManager.commit(transactionStatus);
             return result;
-        } catch (final DataAccessException |
-                       EmptyResultDataAccessException |
-                       IncorrectResultSizeDataAccessException |
-                       JdbcConnectionException exception) {
+        } catch (final RuntimeException exception) {
             transactionManager.rollback(transactionStatus);
             throw exception;
         }
