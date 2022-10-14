@@ -49,6 +49,24 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(final Connection connection, final String sql, final Object... parameters) {
+        validateSql(sql, parameters);
+        executeQuery(connection, sql, statement -> {
+            setParams(statement, parameters);
+            log.debug("query : {}", sql);
+            return statement.executeUpdate();
+        });
+    }
+
+    private <T> T executeQuery(final Connection connection, final String sql, final QueryExecutor<T> queryExecutor) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            return queryExecutor.execute(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
