@@ -7,8 +7,10 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.dao.DataAccessUtils;
+import nextstep.dao.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,12 +23,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallback<T> sc) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = psc.createPreparedStatement(conn)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement ps = psc.createPreparedStatement(conn)) {
             return sc.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -36,7 +40,7 @@ public class JdbcTemplate {
                 return rse.extractData(rs);
             } catch (SQLException e) {
                 log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         });
     }
@@ -48,7 +52,7 @@ public class JdbcTemplate {
                 return rse.extractData(rs);
             } catch (SQLException e) {
                 log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         });
     }
