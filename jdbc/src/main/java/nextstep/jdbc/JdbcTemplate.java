@@ -12,6 +12,7 @@ import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,29 +25,27 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, pstmt -> updateData(pstmt, args), args);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws SQLException {
-        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
-        return extractData(rowMapper, resultSet);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> getData(rowMapper, pstmt, args), args);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args)
-            throws SQLException {
-        ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, args);
-        List<T> results = extractData(rowMapper, resultSet);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = execute(sql, pstmt -> getData(rowMapper, pstmt, args), args);
         return getSingleResult(results);
     }
 
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setPreparedStatementData(pstmt, args);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -57,15 +56,30 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+    private int updateData(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        setPreparedStatementData(pstmt, args);
+        return pstmt.executeUpdate();
+    }
+
+    private <T> List<T> getData(final RowMapper<T> rowMapper, final PreparedStatement pstmt, final Object[] args)
+            throws SQLException {
+        setPreparedStatementData(pstmt, args);
+        ResultSet resultSet = pstmt.executeQuery();
+        return extractData(rowMapper, resultSet);
+    }
+
+    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) {
         List<T> result = new ArrayList<>();
-
-        int rowNum = 0;
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet, rowNum++));
+        try {
+            int rowNum = 0;
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException();
         }
-
-        return result;
     }
 
     private <T> T getSingleResult(final List<T> result) {
@@ -76,5 +90,9 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException("쿼리 실행 결과의 개수가 초과되었습니다.");
         }
         return result.get(0);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
