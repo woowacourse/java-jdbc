@@ -9,14 +9,10 @@ import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataEmptyException;
 import nextstep.jdbc.exception.DataSizeExcessException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.lang.NonNull;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -61,7 +57,7 @@ public class JdbcTemplate {
 
     private <T> QueryExecutor<List<T>> parseRowMapperExecutor(final RowMapper<T> rowMapper) {
         return pstmt -> {
-            try(ResultSet resultSet = pstmt.executeQuery()) {
+            try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 return parseResultSet(rowMapper, resultSet, result);
             }
