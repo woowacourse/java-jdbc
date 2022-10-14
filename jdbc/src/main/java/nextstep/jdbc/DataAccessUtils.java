@@ -1,6 +1,8 @@
 package nextstep.jdbc;
 
 import java.util.List;
+import nextstep.jdbc.exception.InvalidSizeResultException;
+import nextstep.jdbc.exception.NotFoundResultException;
 
 public class DataAccessUtils {
 
@@ -9,10 +11,10 @@ public class DataAccessUtils {
 
     public static <T> T nullableSingleResult(final List<T> results) {
         if (results.isEmpty()) {
-            throw new DataAccessException("Result is empty");
+            throw new NotFoundResultException("Result is empty");
         }
         if (results.size() > 1) {
-            throw new DataAccessException("Result size is not only one");
+            throw new InvalidSizeResultException("Result size is not only one");
         }
         return results.get(0);
     }
