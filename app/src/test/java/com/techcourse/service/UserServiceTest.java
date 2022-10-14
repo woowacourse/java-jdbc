@@ -33,14 +33,14 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new AppUserService(userDao, userHistoryDao);
+        final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final UserService userService = new AppUserService(userDao, userHistoryDao);
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        final String newPassword = "qqqqq";
+        final String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -48,9 +48,9 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new AppUserService(userDao, userHistoryDao);
-        final TxUserService txUserService = new TxUserService(
+        final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final UserService userService = new AppUserService(userDao, userHistoryDao);
+        final UserService txUserService = new TxUserService(
                 new DataSourceTransactionManager(jdbcTemplate.getDataSource()), userService);
 
         final var newPassword = "newPassword";

@@ -2,6 +2,7 @@ package com.techcourse.support.jdbc;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,9 +17,9 @@ public class DatabaseTruncateUtils {
     public static void execute(final DataSource dataSource) {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();) {
-            final var url = DatabaseTruncateUtils.class.getClassLoader().getResource("truncate.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final URL url = DatabaseTruncateUtils.class.getClassLoader().getResource("truncate.sql");
+            final File file = new File(url.getFile());
+            final String sql = Files.readString(file.toPath());
             statement.execute(sql);
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e);
