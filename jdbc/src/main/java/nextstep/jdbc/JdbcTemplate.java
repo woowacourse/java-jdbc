@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return SingleResultChecker.checkSingleResult(query(sql, rowMapper, parameters));
+        List<T> results = query(sql, rowMapper, parameters);
+        SingleResultChecker.checkSingleResult(Collections.singletonList(results));
+        return results.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
