@@ -19,4 +19,4 @@
 
 - [x] UserDao, 불필요한 import 제거
 - [x] Connection에 대한 테스트 실패 수정
-- [ ] userService.changePassword() 예외 발생 시 처리 
+- [x] userService.changePassword() 예외 발생 시 처리 
