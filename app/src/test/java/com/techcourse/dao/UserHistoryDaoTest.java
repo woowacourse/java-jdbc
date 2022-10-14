@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.techcourse.config.DataSourceConfig;
@@ -22,8 +23,8 @@ public class UserHistoryDaoTest {
 
     @Test
     void log() {
-        assertThatCode(() -> userHistoryDao.log(
-                new UserHistory(1L, 1L, "brorae", "password", "brorae@woowa.com", "2022-11-11")))
-                .doesNotThrowAnyException();
+        assertThat(
+                userHistoryDao.log(new UserHistory(1L, 1L, "brorae", "password", "brorae@woowa.com", "2022-11-11"))
+        ).isEqualTo(1);
     }
 }
