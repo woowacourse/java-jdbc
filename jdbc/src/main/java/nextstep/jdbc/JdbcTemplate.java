@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.support.Assert;
 import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.PreparedStatementCallback;
@@ -35,7 +36,7 @@ public class JdbcTemplate {
             return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
