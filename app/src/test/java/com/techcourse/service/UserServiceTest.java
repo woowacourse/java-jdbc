@@ -32,7 +32,9 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new AppUserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        final var userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
