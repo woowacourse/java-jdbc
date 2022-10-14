@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor,
+    private <T> T execute(SqlPreProcessor sqlPreProcessor, SqlExecutor<T> sqlExecutor, String sql,
                           Object... args) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = sqlPreProcessor.preProcess(conn)) {
@@ -29,7 +29,7 @@ public class JdbcTemplate {
             return sqlExecutor.execute(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException();
+            throw new JdbcExecuteException("sql \"" + sql + "\" exception!");
         }
     }
 
@@ -40,7 +40,7 @@ public class JdbcTemplate {
             return getGeneratedKey(preparedStatement);
         };
 
-        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, args);
+        Long generatedKey = execute(sqlPreProcessor, sqlExecutor, sql, args);
         KeyHose keyHose = new KeyHose();
         keyHose.injectKey(keyHolder, generatedKey);
     }
@@ -48,7 +48,7 @@ public class JdbcTemplate {
     public void update(final String sql, Object... args) {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<Integer> sqlExecutor = PreparedStatement::executeUpdate;
-        execute(sqlPreProcessor, sqlExecutor, args);
+        execute(sqlPreProcessor, sqlExecutor, sql, args);
     }
 
     public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
@@ -56,13 +56,13 @@ public class JdbcTemplate {
         SqlPreProcessor sqlPreProcessor = conn -> conn.prepareStatement(sql);
         SqlExecutor<List<T>> sqlExecutor = preparedStatement -> objectFactory.build(preparedStatement.executeQuery());
 
-        return execute(sqlPreProcessor, sqlExecutor, args);
+        return execute(sqlPreProcessor, sqlExecutor, sql, args);
     }
 
     public <T> T queryForObject(RowMapper<T> rowMapper, String sql, Object... args) {
         List<T> results = query(rowMapper, sql, args);
         if (results.size() != 1) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("object size is not one");
         }
         return results.get(0);
     }

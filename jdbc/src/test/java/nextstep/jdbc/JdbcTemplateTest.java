@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.sql.ResultSet;
@@ -79,6 +80,15 @@ class JdbcTemplateTest {
                 () -> assertThat(results.size()).isEqualTo(1),
                 () -> assertThat(results.get(0)).isEqualTo(user)
         );
+    }
+
+    @DisplayName("sql 관련 예외가 터지면 JdbcExecuteException이 발생한다.")
+    @Test
+    void execute_Sql_Exception() {
+        String sql = "insert into abc (account, password, email) values (?, ?, ?)";
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, "account", "password", "email"))
+                .isInstanceOf(JdbcExecuteException.class)
+                .hasMessage("sql \"" + sql + "\" exception!");
     }
 
     @DisplayName("update 쿼리를 완성시켜 실행시킨다.")
