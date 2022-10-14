@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,16 +25,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, Object... params) {
-        return doExecute(sql, preparedStatement -> {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        return doExecute(connection, sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
             return preparedStatement.executeUpdate();
         });
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... params) {
-        return doExecute(sql, preparedStatement -> {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        return doExecute(connection, sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
-            return processMapping(preparedStatement, rowMapper, this::mappingRowToObject);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return mappingRowToObject(resultSet, rowMapper);
+            }
         });
     }
 
@@ -51,9 +56,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... params) {
-        return doExecute(sql, preparedStatement -> {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        return doExecute(connection, sql, preparedStatement -> {
             setParamsToStatement(preparedStatement, params);
-            return processMapping(preparedStatement, rowMapper, this::mappingRowToObjects);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return mappingRowToObjects(resultSet, rowMapper);
+            }
         });
     }
 
@@ -74,20 +82,15 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T doExecute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private <T> T doExecute(Connection connection, String sql, PreparedStatementCallback<T> callback) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private <T, R> R processMapping(PreparedStatement preparedStatement, RowMapper<T> rowMapper, RowMapperCallback<T, R> callback) {
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            return callback.doInRowMapper(resultSet, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

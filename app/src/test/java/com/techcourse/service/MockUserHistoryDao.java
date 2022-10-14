@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import java.sql.Connection;
+
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import nextstep.jdbc.DataAccessException;
