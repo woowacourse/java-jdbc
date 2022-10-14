@@ -106,8 +106,6 @@ public class JdbcTemplate {
             return preparedStatementExecuteStrategy.extract(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
