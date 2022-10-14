@@ -12,6 +12,7 @@ import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.exception.MultipleResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -45,9 +46,9 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
         log.debug("query : {}", sql);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return preparedStatementCallback.doProcess(preparedStatement);
 
         } catch (SQLException e) {
@@ -83,5 +84,9 @@ public class JdbcTemplate {
             throw new MultipleResultException();
         }
         return Optional.ofNullable(result.get(0));
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
