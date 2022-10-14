@@ -13,6 +13,7 @@ import nextstep.jdbc.exception.EmptyResultDataAccessException;
 import nextstep.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,8 +27,8 @@ public class JdbcTemplate {
 
     private <T> T execute(final PreparedStatementGenerator generator,
                           final PreparedStatementExecuteStrategy<T> strategy) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = generator.generate(connection)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = generator.generate(connection)) {
             return strategy.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -109,5 +110,9 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.iterator().next();
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
