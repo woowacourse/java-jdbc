@@ -31,7 +31,7 @@ public class JdbcTemplate {
     }
 
     public int update(final PreparedStatementSetter pss) {
-        return execute(pss, new SimpleStatementExecutor<>());
+        return execute(pss, new UpdateStatementExecutor<>());
     }
 
     public int update(final String sql, final Object... args) {
