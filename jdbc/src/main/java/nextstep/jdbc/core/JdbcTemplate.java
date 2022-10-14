@@ -77,8 +77,9 @@ public class JdbcTemplate {
         try (var preparedStatement = connection.prepareStatement(sql)) {
             return action.doInPreparedStatement(preparedStatement);
         } catch (final SQLException e) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

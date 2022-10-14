@@ -53,6 +53,7 @@ class JdbcTemplateTest {
 
         // then
         verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("update 메서드 실행 시 자원이 정상적으로 해제되는지 확인한다.")
@@ -73,6 +74,7 @@ class JdbcTemplateTest {
 
         // then
         verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("execute 메서드 실행 시 자원이 정상적으로 해제되는지 확인한다.")
@@ -93,6 +95,7 @@ class JdbcTemplateTest {
 
         // then
         verify(preparedStatement).close();
+        verify(connection).close();
     }
 
     @DisplayName("sql문과 RowMapper 구현체를 전달하면 List가 반환된다.")
