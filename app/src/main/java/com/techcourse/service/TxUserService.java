@@ -15,23 +15,23 @@ public class TxUserService implements UserService {
     private final PlatformTransactionManager transactionManager;
     private final UserService userService;
 
-    public TxUserService(PlatformTransactionManager transactionManager, UserService userService) {
+    public TxUserService(final PlatformTransactionManager transactionManager, final UserService userService) {
         this.transactionManager = transactionManager;
         this.userService = userService;
     }
 
     @Override
-    public User findById(long id) {
+    public User findById(final long id) {
         return userService.findById(id);
     }
 
     @Override
-    public void insert(User user) {
-        executeTransaction(()->userService.insert(user));
+    public void insert(final User user) {
+        executeTransaction(() -> userService.insert(user));
     }
 
     @Override
-    public void changePassword(long id, String newPassword, String createBy) {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         executeTransaction(() -> userService.changePassword(id, newPassword, createBy));
     }
 

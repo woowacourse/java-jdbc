@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
