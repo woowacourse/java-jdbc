@@ -28,14 +28,11 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        // start transaction
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try {
             userService.changePassword(id, newPassword, createBy);
-
             transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException();
         }
