@@ -54,6 +54,7 @@ class JdbcTemplateTest {
         assertThat(expectedRowsUpdated).isEqualTo(actualRowsUpdated);
         verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
+        verify(this.connection).close();
     }
 
     @Test
@@ -71,6 +72,7 @@ class JdbcTemplateTest {
                 .withCause(sqlException);
         verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
+        verify(this.connection).close();
     }
 
     @Test
@@ -97,6 +99,7 @@ class JdbcTemplateTest {
         verify(this.preparedStatement).setLong(1, id);
         verify(this.resultSet).close();
         verify(this.preparedStatement).close();
+        verify(this.connection).close();
     }
 
     @Test
@@ -121,5 +124,6 @@ class JdbcTemplateTest {
 
         verify(this.resultSet).close();
         verify(this.preparedStatement).close();
+        verify(this.connection).close();
     }
 }

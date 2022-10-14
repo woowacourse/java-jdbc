@@ -4,10 +4,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -29,7 +28,8 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                          final PreparedStatementSetter pss) {
         return execute(sql, ps -> {
             pss.setValues(ps);
             return getSingleOrEmpty(extractResults(sql, rowMapper, ps));
@@ -41,8 +41,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) {
-        var conn = DataSourceUtils.getConnection(dataSource);
-        try (var ps = conn.prepareStatement(sql)) {
+
+        try (var conn = DataSourceUtils.getConnection(dataSource);
+             var ps = conn.prepareStatement(sql)) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error("Error in executing SQL statement: {}", sql, e);
