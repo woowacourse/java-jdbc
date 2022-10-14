@@ -41,7 +41,7 @@ public class TxUserService implements UserService {
         } catch (DataAccessException e) {
             transactionManager.rollback(status);
             log.error(e.getMessage());
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 }
