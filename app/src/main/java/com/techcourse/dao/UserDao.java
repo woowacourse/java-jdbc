@@ -2,24 +2,26 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
+import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private static final RowMapper<User> userRowMapper = resultSet ->
             new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4)
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email")
             );
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -42,11 +44,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, id));
+        return user.orElseThrow(() -> new RuntimeException("[ERROR] User 가 존재하지 않습니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, userRowMapper, account));
+        return user.orElseThrow(() -> new RuntimeException("[ERROR] User 가 존재하지 않습니다."));
     }
 }

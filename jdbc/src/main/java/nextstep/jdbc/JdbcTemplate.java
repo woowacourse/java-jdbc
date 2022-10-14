@@ -1,19 +1,15 @@
 package nextstep.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Optional;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int FIRST_INDEX = 0;
 
     private final DataSource dataSource;
 
@@ -22,53 +18,41 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(sql, args, connection)) {
-            pstmt.executeUpdate();
+        PreparedStatementFactory psf = new PreparedStatementFactory(dataSource, sql);
+        try {
+            psf.generatePreparedStatement(args).executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("[ERROR] update", e);
+        } finally {
+            psf.closeResources();
         }
     }
 
-    private PreparedStatement generatePreparedStatement(
-            final String sql, final Object[] args, final Connection connection
-    ) throws SQLException {
-        PreparedStatement pstmt = connection.prepareStatement(sql);
-        IntStream.range(0, args.length)
-                .forEach(index -> setObjectToPreparedStatement(args, pstmt, index));
-        return pstmt;
-    }
-
-    private void setObjectToPreparedStatement(final Object[] args, final PreparedStatement pstmt, final int index) {
-        try {
-            pstmt.setObject(index + 1, args[index]);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        PreparedStatementFactory psf = new PreparedStatementFactory(dataSource, sql);
+        try (ResultSet resultSet = psf.generatePreparedStatement(args).executeQuery()) {
+            return rawMapping(rowMapper, resultSet);
         } catch (SQLException e) {
-            throw new DataAccessException("[ERROR] setObjectToPreparedStatement", e);
+            throw new DataAccessException("[ERROR] query", e);
+        } finally {
+            psf.closeResources();
         }
+    }
+
+    private <T> List<T> rawMapping(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapping(resultSet));
+        }
+        return result;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(sql, args, connection);
-             ResultSet rs = pstmt.executeQuery()) {
-            rs.next();
-            return rowMapper.mapping(rs);
-        } catch (SQLException e) {
-            throw new DataAccessException("[ERROR] queryForObject", e);
-        }
+        List<T> result = query(sql, rowMapper, args);
+        return result.get(FIRST_INDEX);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = generatePreparedStatement(sql, new Object[0], connection);
-             ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            if (rs.next()) {
-                result.add(rowMapper.mapping(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new DataAccessException("[ERROR] query", e);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
