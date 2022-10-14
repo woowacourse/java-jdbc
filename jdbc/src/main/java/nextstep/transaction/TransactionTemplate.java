@@ -14,17 +14,6 @@ public class TransactionTemplate {
         this.transactionManager = transactionManager;
     }
 
-    public void executeTransaction(final Runnable runnable) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
-            runnable.run();
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw new DataAccessException("[ERROR] executeTransaction", e);
-        }
-    }
-
     public <T> T executeTransaction(final Supplier<T> supplier) {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {

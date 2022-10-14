@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import java.util.Optional;
 import nextstep.transaction.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -21,11 +22,17 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        transactionTemplate.executeTransaction(() -> appUserService.insert(user));
+        transactionTemplate.executeTransaction(() -> {
+            appUserService.insert(user);
+            return Optional.empty();
+        });
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.executeTransaction(() -> appUserService.changePassword(id, newPassword, createBy));
+        transactionTemplate.executeTransaction(() -> {
+            appUserService.changePassword(id, newPassword, createBy);
+            return Optional.empty();
+        });
     }
 }
