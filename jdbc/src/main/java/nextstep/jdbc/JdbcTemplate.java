@@ -40,14 +40,14 @@ public class JdbcTemplate {
     private <T> T executeQuery(QueryExecutor<T> executor, String sql, Object... params) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            prepareStatementSetParamters(pstmt, params);
+            prepareStatementSetParameters(pstmt, params);
             return executor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement prepareStatementSetParamters(final PreparedStatement pstmt, final Object[] params)
+    private PreparedStatement prepareStatementSetParameters(final PreparedStatement pstmt, final Object[] params)
             throws SQLException {
         for (int i = 1; i <= params.length; i++) {
             pstmt.setObject(i, params[i - 1]);
