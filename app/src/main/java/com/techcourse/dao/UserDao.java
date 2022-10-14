@@ -5,11 +5,12 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.ObjectMapper;
+import nextstep.jdbc.KeyHolder;
+import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final ObjectMapper<User> OBJECT_MAPPER = (ResultSet rs) ->
+    private static final RowMapper<User> OBJECT_MAPPER = (ResultSet rs) ->
             new User(rs.getLong("id"),
                     rs.getString("account"),
                     rs.getString("password"),
@@ -27,8 +28,9 @@ public class UserDao {
 
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Long id = jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
-        user.setId(id);
+        KeyHolder keyHolder = new KeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+        user.setId(keyHolder.getKey());
     }
 
     public void update(final User user) {
@@ -38,16 +40,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.finds(OBJECT_MAPPER, sql);
+        return jdbcTemplate.query(OBJECT_MAPPER, sql);
     }
 
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.find(OBJECT_MAPPER, sql, id);
+        return jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.find(OBJECT_MAPPER, sql, account);
+        return jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, account);
     }
 }

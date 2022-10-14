@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserHistoryDao {
 
@@ -29,7 +30,7 @@ public class UserHistoryDao {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -51,11 +52,11 @@ public class UserHistoryDao {
                 }
             } catch (SQLException ignored) {}
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+//            try {
+//                if (conn != null) {
+//                    conn.close();
+//                }
+//            } catch (SQLException ignored) {}
         }
     }
 }
