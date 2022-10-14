@@ -18,12 +18,26 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        try {
+            return userService.findById(id);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException(e);
+        }
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        try {
+            userService.insert(user);
+        } catch (DataAccessException e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException(e);
+        }
     }
 
     @Override
