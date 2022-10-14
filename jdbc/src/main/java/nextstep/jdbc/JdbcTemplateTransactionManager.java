@@ -6,14 +6,14 @@ import javax.sql.DataSource;
 
 public class JdbcTemplateTransactionManager implements TransactionManager {
 
-    private TransactionSynchronizationManager synchronizationManager;
+    private final TransactionSynchronizationManager synchronizationManager;
 
     public JdbcTemplateTransactionManager(final TransactionSynchronizationManager synchronizationManager) {
         this.synchronizationManager = synchronizationManager;
     }
 
     @Override
-    public void getTransaction(final DataSource dataSource){
+    public void getTransaction(final DataSource dataSource) {
         Connection connection = null;
         try {
             synchronizationManager.clear();
