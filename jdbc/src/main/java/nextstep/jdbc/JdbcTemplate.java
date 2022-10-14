@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 
@@ -42,8 +43,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQueryTemplate(final String sql, final QueryExecutor<T> queryExecutor) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
-            final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -51,6 +52,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -86,5 +89,9 @@ public class JdbcTemplate {
             throw new DataAccessException("조회 결과가 1개 이상입니다.");
         }
         return result.get(0);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
