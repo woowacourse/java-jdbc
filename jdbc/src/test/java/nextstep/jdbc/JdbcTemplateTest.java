@@ -17,17 +17,12 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 class JdbcTemplateTest {
 
     private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
-    private DataSourceTransactionManager transactionManager;
-    private TransactionStatus transactionStatus;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -36,14 +31,10 @@ class JdbcTemplateTest {
         this.statement = mock(PreparedStatement.class);
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(any())).willReturn(statement);
-        this.transactionManager = new DataSourceTransactionManager(dataSource);
-        this.transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
     }
 
     @AfterEach
     void tearDown() {
-        transactionManager.rollback(transactionStatus);
-
         assertAll(
             () -> verify(statement).close(),
             () -> verify(connection).close()
