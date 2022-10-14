@@ -51,7 +51,6 @@ public class TxUserService implements UserService {
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
-            e.printStackTrace();
             throw new DataAccessException();
         }
     }
