@@ -29,6 +29,7 @@ class JdbcTemplateTest {
         DataSource dataSource = mock(DataSource.class);
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
+        given(connection.getAutoCommit()).willReturn(true);
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(preparedStatement.executeQuery(anyString())).willReturn(resultSet);
         jdbcTemplate = new JdbcTemplate(dataSource);

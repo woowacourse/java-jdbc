@@ -15,26 +15,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(final StatementCallback<T> statementCallback, final PreparedStatement pstmt) {
-        return statementCallback.doInStatement(pstmt);
+    private <T> T execute(final StatementCallback<T> statementCallback,
+                          final PreparedStatementSetter preparedStatementSetter) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
+            return statementCallback.doInStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException("query exception", e);
+        } finally {
+            release(connection);
+        }
     }
 
     private <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... objects)
             throws DataAccessException {
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(sql, objects);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
-
-            return execute(preparedStatement -> {
-                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    return resultSetExtractor.extractData(resultSet);
-                } catch (SQLException e) {
-                    throw new DataAccessException("query exception", e);
-                }
-            }, pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException("query exception", e);
-        }
+        return execute(preparedStatement -> {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSetExtractor.extractData(resultSet);
+            } catch (SQLException e) {
+                throw new DataAccessException("query exception", e);
+            }
+        }, preparedStatementSetter);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... objects)
@@ -49,17 +51,20 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... objects) throws DataAccessException {
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(sql, objects);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatementSetter.createPreparedStatement(connection)) {
-            return execute(preparedStatement -> {
-                try {
-                    return pstmt.executeUpdate();
-                } catch (SQLException e) {
-                    throw new DataAccessException("update Error", e);
-                }
-            }, pstmt);
+        return execute(preparedStatement -> {
+            try {
+                return preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new DataAccessException("update Error", e);
+            }
+        }, preparedStatementSetter);
+    }
+
+    private void release(final Connection connection) {
+        try {
+            DataSourceUtils.release(connection, dataSource);
         } catch (SQLException e) {
-            throw new DataAccessException("update exception", e);
+            throw new DataAccessException(e);
         }
     }
 }
