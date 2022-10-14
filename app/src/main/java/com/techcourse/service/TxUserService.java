@@ -22,22 +22,20 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        transact(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        // 트랜잭션 시작
+        transact(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void transact(TransactionExecutor transactionExecutor) {
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try {
-            // 비즈니스 로직 처리
-            userService.changePassword(id, newPassword, createBy);
-
-            // 트랜잭션 커밋
+            transactionExecutor.execute();
             transactionManager.commit(transactionStatus);
         } catch (RuntimeException e) {
-            // 트랜잭션 롤백
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }

@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicInteger;
 import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,5 +82,10 @@ class UserDaoTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
 
+    }
+
+    @Test
+    void tt() {
+        LocalDate max = LocalDate.MAX;
     }
 }

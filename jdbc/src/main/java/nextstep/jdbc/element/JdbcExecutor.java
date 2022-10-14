@@ -36,17 +36,16 @@ public class JdbcExecutor {
 
     private <T> T executeOrThrow(final String sql, final PreparedStatementSetter setter,
                                  final PreparedStatementCallback<T> statementCallback) {
-        try (final PreparedStatement statement = getConnection().prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             return statementCallback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
-    }
-
-    private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
     }
 
     public DataSource getDataSource() {

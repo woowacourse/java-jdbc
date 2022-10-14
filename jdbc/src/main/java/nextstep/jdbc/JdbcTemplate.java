@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.sql.DataSource;
 import nextstep.jdbc.element.JdbcExecutor;
@@ -21,7 +20,6 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        System.out.println("args = " + Arrays.toString(args));
         return query(sql, defaultStatementSetter.getSetter(args), rowMapper);
     }
 
