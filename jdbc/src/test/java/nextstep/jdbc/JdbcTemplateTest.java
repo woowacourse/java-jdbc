@@ -2,7 +2,9 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,24 +14,36 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import nextstep.jdbc.resultset.RowMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
     private DataSource dataSource;
+    private Connection connection;
+    private PreparedStatement statement;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         this.dataSource = mock(DataSource.class);
+        this.connection = mock(Connection.class);
+        this.statement = mock(PreparedStatement.class);
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.prepareStatement(any())).willReturn(statement);
+    }
+
+    @AfterEach
+    void tearDown() {
+        assertAll(
+            () -> verify(statement).close(),
+            () -> verify(connection).close()
+        );
     }
 
     @Test
     void SELECT를_실행했을_때_하나의_객체_결과_값을_도출할_수_있다() throws SQLException {
         // given
-        Connection connection = mock(Connection.class);
-        PreparedStatement statement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
@@ -49,8 +63,6 @@ class JdbcTemplateTest {
         assertAll(
             () -> verify(dataSource).getConnection(),
             () -> verify(connection).prepareStatement(anyString()),
-            () -> verify(connection).close(),
-            () -> verify(statement).close(),
             () -> verify(resultSet).close()
         );
     }
@@ -58,8 +70,6 @@ class JdbcTemplateTest {
     @Test
     void SELECT를_실행했을_때_여러개의_객체_결과_값을_도출할_수_있다() throws SQLException {
         // given
-        Connection connection = mock(Connection.class);
-        PreparedStatement statement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
@@ -79,8 +89,6 @@ class JdbcTemplateTest {
         assertAll(
             () -> verify(dataSource).getConnection(),
             () -> verify(connection).prepareStatement(anyString()),
-            () -> verify(connection).close(),
-            () -> verify(statement).close(),
             () -> verify(resultSet).close()
         );
     }
@@ -88,9 +96,6 @@ class JdbcTemplateTest {
     @Test
     void UPDATE를_실행했을_때_변환_ROW값을_반환할_수_있다() throws SQLException {
         // given
-        Connection connection = mock(Connection.class);
-        PreparedStatement statement = mock(PreparedStatement.class);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeUpdate()).thenReturn(1);
@@ -105,9 +110,7 @@ class JdbcTemplateTest {
         assertAll(
             () -> assertThat(actual).isEqualTo(1),
             () -> verify(dataSource).getConnection(),
-            () -> verify(connection).prepareStatement(anyString()),
-            () -> verify(connection).close(),
-            () -> verify(statement).close()
+            () -> verify(connection).prepareStatement(anyString())
         );
     }
 }

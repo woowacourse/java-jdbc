@@ -1,16 +1,15 @@
 package nextstep.jdbc;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
-import nextstep.jdbc.resultset.ExecuteStrategy;
-import nextstep.jdbc.resultset.PreparedStatementCreator;
-import nextstep.jdbc.resultset.RowMapper;
+import nextstep.jdbc.support.IntConsumerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -30,65 +29,61 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql,
                                 final RowMapper<T> rowMapper,
                                 final Object... args) {
-        return execute(sql, pstmt -> {
-            try (final var resultSet = pstmt.executeQuery()) {
-                List<T> result = mapToObjects(rowMapper, resultSet);
 
-                return result.get(0);
-            } catch (SQLException | IndexOutOfBoundsException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
+        return execute(sql, pstmt -> {
+            List<T> result = mapToObjects(rowMapper, pstmt);
+
+            return DataAccessUtils.nullableSingleResult(result);
         }, args);
     }
 
     public <T> List<T> queryForList(final String sql,
                                     final RowMapper<T> rowMapper,
                                     final Object... args) {
-        return execute(sql, pstmt -> {
-            try (final var resultSet = pstmt.executeQuery()) {
-                List<T> result = mapToObjects(rowMapper, resultSet);
-
-                return result;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
-        }, args);
+        return execute(sql, pstmt -> mapToObjects(rowMapper, pstmt), args);
     }
 
-    private <T> List<T> mapToObjects(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        List<T> result = new ArrayList<>();
-        for (int i = 0; resultSet.next(); i++) {
-            result.add(rowMapper.mapRow(resultSet, i));
+    private <T> List<T> mapToObjects(final RowMapper<T> rowMapper, final PreparedStatement pstmt) {
+        try (final var resultSet = pstmt.executeQuery()) {
+            List<T> result = new ArrayList<>();
+            for (int i = 0; resultSet.next(); i++) {
+                result.add(rowMapper.mapRow(resultSet, i));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new DataAccessException("Query Exception", e);
         }
-
-        return result;
     }
 
     private <T> T execute(final String sql,
-                          final ExecuteStrategy<T> strategy,
+                          final StatementCallBack<T> statement,
                           final Object... args) {
         PreparedStatementCreator statementCreator = preparedStatementCreator(args);
 
-        try (
-            final var connection = dataSource.getConnection();
-            final var preparedStatement = statementCreator.create(connection, sql)) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (final var preparedStatement = statementCreator.create(connection, sql)) {
 
-            return strategy.execute(preparedStatement);
+            return statement.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("Failed to Access DataBase", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private PreparedStatementCreator preparedStatementCreator(final Object... args) {
         return (connection, sql) -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            IntStream.range(0, args.length)
+                .forEach(
+                    IntConsumerWrapper.accept(index -> pstmt.setObject(index + 1, args[index])));
+
             return pstmt;
         };
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
