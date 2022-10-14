@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +61,17 @@ class JdbcTemplateTest {
         TestUser result = jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, keyHolder.getKey());
 
         assertThat(result).isEqualTo(user);
+    }
+
+    @DisplayName("데이터 하나만 반환하는 find 쿼리의 결과가 1개가 아니면 예외가 발생한다.")
+    @Test
+    void find_Exception() {
+        String sql = "select id, account, password, email from users where id = ?";
+        Long invalidId = 9999L;
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(OBJECT_MAPPER, sql, invalidId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("object size is not one");
     }
 
     @DisplayName("데이터를 조회하는 finds 쿼리를 완성시켜 실행시킨다.")
