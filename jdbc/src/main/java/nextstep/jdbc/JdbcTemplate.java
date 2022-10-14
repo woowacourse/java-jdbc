@@ -8,6 +8,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,10 +27,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> result = query(sql, new ArgumentPreparedStatementSetter(args),
                 new RowMapperResultSetExtractor<>(rowMapper));
-
-        if (result.size() > 1) {
-            throw new DataAccessException("Incorrect result size: expected 1, actual " + result.size());
-        }
+        validateSingleResult(result);
         return result.iterator().next();
     }
 
@@ -37,8 +35,7 @@ public class JdbcTemplate {
                         final ResultSetExtractor<T> resultSetExtractor) {
         log.debug("execute SQL query [{}]", sql);
 
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+        return execute(sql, preparedStatementSetter, preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return resultSetExtractor.extractData(resultSet);
             }
@@ -52,22 +49,30 @@ public class JdbcTemplate {
     private int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         log.debug("execute SQL update [{}]", sql);
 
-        return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
+        return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
-        if (sql == null) {
-            throw new IllegalArgumentException("SQL must not be null");
-        }
-
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+    private <T> T execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
+                          final PreparedStatementCallback<T> action) {
+        validateNull(sql);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(statement);
             return action.doInPreparedStatement(statement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private void validateNull(final String sql) {
+        if (sql == null) {
+            throw new IllegalArgumentException("SQL must not be null");
+        }
+    }
+
+    private <T> void validateSingleResult(final List<T> result) {
+        if (result.size() > 1) {
+            throw new DataAccessException("Incorrect result size: expected 1, actual " + result.size());
         }
     }
 }
