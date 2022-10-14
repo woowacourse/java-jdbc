@@ -66,8 +66,8 @@ class JdbcTemplateTest {
 
             // then
             verify(preparedStatement, times(3)).setObject(anyInt(), anyString());
-            verify(preparedStatement, times(1)).close();
-            verify(connection, times(1)).close();
+            verify(preparedStatement).close();
+            verify(connection).close();
         }
     }
 
@@ -95,9 +95,9 @@ class JdbcTemplateTest {
             // then
             assertThat(actual).extracting(User::getAccount)
                     .isEqualTo(account);
-            verify(resultSet, times(1)).last();
-            verify(resultSet, times(1)).first();
-            verify(resultSet, times(1)).getLong(anyString());
+            verify(resultSet).last();
+            verify(resultSet).first();
+            verify(resultSet).getLong(anyString());
             verify(resultSet, times(3)).getString(anyString());
         }
 
@@ -119,7 +119,7 @@ class JdbcTemplateTest {
                     .isInstanceOf(IncorrectResultSizeDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1 but 2");
 
-            verify(resultSet, times(1)).last();
+            verify(resultSet).last();
             verify(resultSet, never()).first();
             verify(resultSet, never()).getLong(anyString());
             verify(resultSet, never()).getString(anyString());
@@ -143,7 +143,7 @@ class JdbcTemplateTest {
                     .isInstanceOf(EmptyResultDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1 but 0");
 
-            verify(resultSet, times(1)).last();
+            verify(resultSet).last();
             verify(resultSet, never()).first();
             verify(resultSet, never()).getLong(anyString());
             verify(resultSet, never()).getString(anyString());
@@ -200,7 +200,7 @@ class JdbcTemplateTest {
             assertThat(actual).isEmpty();
             verify(resultSet, never()).getLong(anyString());
             verify(resultSet, never()).getString(anyString());
-            verify(resultSet, times(1)).next();
+            verify(resultSet).next();
         }
     }
 }
