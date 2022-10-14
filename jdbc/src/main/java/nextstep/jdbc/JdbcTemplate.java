@@ -7,12 +7,14 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import nextstep.jdbc.exception.DataAccessException;
 import nextstep.jdbc.support.Assert;
 import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.PreparedStatementCallback;
 import nextstep.jdbc.support.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,15 +28,17 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         Assert.notNull(sql, "SQL must not be null");
-
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             setArguments(pstmt, args);
             return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -65,5 +69,9 @@ public class JdbcTemplate {
         for (Object arg : args) {
             pstmt.setObject(index++, arg);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

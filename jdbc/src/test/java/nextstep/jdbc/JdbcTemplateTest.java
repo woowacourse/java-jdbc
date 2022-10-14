@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.calls;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.sql.Connection;
@@ -47,15 +48,16 @@ class JdbcTemplateTest {
         int expectedRowsAffected = 1;
 
         given(this.preparedStatement.executeUpdate())
-                .willReturn(expectedRowsAffected);
+            .willReturn(expectedRowsAffected);
 
         //when
         int actualRowsAffected = jdbcTemplate.update(sql);
 
         //then
         assertAll(
-                () -> assertThat(actualRowsAffected).isEqualTo(expectedRowsAffected),
-                () -> verify(this.connection).close()
+            () -> assertThat(actualRowsAffected).isEqualTo(expectedRowsAffected),
+            () -> verify(this.connection).close(),
+            () -> verify(preparedStatement).executeUpdate()
         );
     }
 
@@ -70,8 +72,8 @@ class JdbcTemplateTest {
 
         //then
         assertAll(
-                () -> assertThat(result).isEmpty(),
-                () -> verify(preparedStatement.executeQuery(), calls(1))
+            () -> assertThat(result).isEmpty(),
+            () -> verify(preparedStatement.executeQuery(), calls(1))
         );
     }
 
@@ -87,6 +89,6 @@ class JdbcTemplateTest {
 
         //then
         assertThat(actual).isNotNull();
-        verify(preparedStatement.executeQuery(), calls(1));
+        verify(preparedStatement.executeQuery(), times(1));
     }
 }
