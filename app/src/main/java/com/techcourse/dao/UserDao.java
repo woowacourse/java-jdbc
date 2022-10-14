@@ -54,8 +54,4 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
-
-    public DataSource getDataSource() {
-        return jdbcTemplate.getDataSource();
-    }
 }
