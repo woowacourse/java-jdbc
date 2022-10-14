@@ -5,12 +5,12 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-public class AppUserService implements UserService {
+public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserServiceImpl(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
