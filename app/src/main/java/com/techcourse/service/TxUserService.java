@@ -18,12 +18,29 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        definition.setReadOnly(true);
+        TransactionStatus transactionStatus = transactionManager.getTransaction(definition);
+        try {
+            User user = userService.findById(id);
+            transactionManager.commit(transactionStatus);
+            return user;
+        } catch (Exception exception) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
+        }
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            userService.insert(user);
+            transactionManager.commit(transactionStatus);
+        } catch (Exception exception) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException();
+        }
     }
 
     @Override
