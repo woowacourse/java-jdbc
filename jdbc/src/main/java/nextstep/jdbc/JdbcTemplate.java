@@ -6,15 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -23,33 +18,41 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            setObjects(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> mapRow(pstmt, rowMapper));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return getSingleResult(sql, pstmt -> mapRow(pstmt, rowMapper), args);
+    }
+
+    private <T> T getSingleResult(final String sql, final StatementCallback<List<T>> statement, final Object[] args) {
+        return execute(sql, statement, args).get(0);
+    }
+
+    private <T> List<T> mapRow(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        final List<T> results = new ArrayList<>();
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
+    }
+
+    public <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        ResultSet resultSet = null;
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setObjects(pstmt, args);
-            resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            return null;
+            return callback.doInCallableStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            closeResultSet(resultSet);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
@@ -58,34 +61,6 @@ public class JdbcTemplate {
         int index = 1;
         for (Object arg : args) {
             pstmt.setObject(index++, arg);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        ResultSet resultSet = null;
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            List<T> results = new ArrayList<>();
-            resultSet = pstmt.executeQuery();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResultSet(resultSet);
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
-    }
-
-    private static void closeResultSet(final ResultSet resultSet) {
-        try {
-            Objects.requireNonNull(resultSet);
-            resultSet.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }
