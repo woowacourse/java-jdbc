@@ -22,25 +22,20 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        final var transactionManager = new DataSourceTransactionManager(dataSource);
-        final var transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
-        try {
-            userService.insert(user);
-            transactionManager.commit(transaction);
-        } catch (RuntimeException e) {
-            transactionManager.rollback(transaction);
-            throw e;
-        }
+        executeWithTransaction(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        executeWithTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void executeWithTransaction(final Runnable runnable) {
         final var transactionManager = new DataSourceTransactionManager(dataSource);
         final var transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-            userService.changePassword(id, newPassword, createBy);
+            runnable.run();
             transactionManager.commit(transaction);
         } catch (RuntimeException e) {
             transactionManager.rollback(transaction);
