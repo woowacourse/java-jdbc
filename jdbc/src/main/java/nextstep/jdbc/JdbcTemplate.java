@@ -37,6 +37,14 @@ public class JdbcTemplate {
         return executeQuery(PreparedStatement::executeUpdate, sql, params);
     }
 
+    private PreparedStatement prepareStatementSetParameters(final PreparedStatement pstmt, final Object[] params)
+            throws SQLException {
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
+        }
+        return pstmt;
+    }
+
     private <T> T executeQuery(QueryExecutor<T> executor, String sql, Object... params) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -45,14 +53,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
-    }
-
-    private PreparedStatement prepareStatementSetParameters(final PreparedStatement pstmt, final Object[] params)
-            throws SQLException {
-        for (int i = 1; i <= params.length; i++) {
-            pstmt.setObject(i, params[i - 1]);
-        }
-        return pstmt;
     }
 
     private <T> QueryExecutor<List<T>> parseRowMapperExecutor(final RowMapper<T> rowMapper) {
