@@ -27,3 +27,8 @@
     rs.absolute(rowNum);
     ```
     으로 특정 번째 row로 이동하여 데이터를 받아올 수도 있을 것 같습니다.
+
+## 3단계 체크리스트 
+
+- [x] 트랜잭션 롤백이 적용되어 UserServiceTest 클래스의 testTransactionRollback() 테스트 케이스가 통과한다.
+- [x] 트랜잭션 서비스와 애플리케이션 서비스가 분리되었다.
