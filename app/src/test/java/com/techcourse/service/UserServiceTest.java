@@ -8,13 +8,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.lang.reflect.Proxy;
 import nextstep.jdbc.JdbcTemplate;
 import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
 
 class UserServiceTest {
 
@@ -51,14 +48,7 @@ class UserServiceTest {
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final UserService appUserService = new AppUserService(userDao, userHistoryDao);
 
-        final PlatformTransactionManager transactionManager = new DataSourceTransactionManager(
-                jdbcTemplate.getDataSource());
-
-        final UserService userService = (UserService) Proxy.newProxyInstance(
-                getClass().getClassLoader(),
-                new Class[]{UserService.class},
-                new TxUserServiceHandler(transactionManager, appUserService)
-        );
+        final UserService userService = TxUserServiceHandler.from(jdbcTemplate.getDataSource(), appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
