@@ -1,5 +1,6 @@
 package nextstep.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,10 +35,11 @@ class JdbcTemplateTest {
         final ResultSet mockedResultSet = mock(ResultSet.class);
         when(mockedPreparedStatement.executeQuery()).thenReturn(mockedResultSet);
         final String sqlFormat = "select * from user where id=?";
-        jdbcTemplate.query(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L);
 
-        verify(mockedConnection).close();
+        assertThatThrownBy(() -> jdbcTemplate.query(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L))
+                .isInstanceOf(IllegalCallerException.class);
         verify(mockedPreparedStatement).close();
+        verify(mockedResultSet).close();
     }
 
     @DisplayName("레코드 여러개를 조회할 수 있어야 한다.")
@@ -46,10 +48,12 @@ class JdbcTemplateTest {
         final ResultSet mockedResultSet = mock(ResultSet.class);
         when(mockedPreparedStatement.executeQuery()).thenReturn(mockedResultSet);
         final String sqlFormat = "select * from user where id>=?";
-        jdbcTemplate.queryForList(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L);
 
-        verify(mockedConnection).close();
+        assertThatThrownBy(() -> jdbcTemplate.queryForList(sqlFormat, (resultSet) -> resultSet.getLong("id"), 1L))
+                .isInstanceOf(IllegalCallerException.class);
+
         verify(mockedPreparedStatement).close();
+        verify(mockedResultSet).close();
     }
 
     @DisplayName("레코드 하나를 추가할 수 있어야 한다.")
@@ -60,7 +64,6 @@ class JdbcTemplateTest {
         final String sqlFormat = "insert into users (account) values (?)";
         jdbcTemplate.update(sqlFormat, "account");
 
-        verify(mockedConnection).close();
         verify(mockedPreparedStatement).close();
     }
 }

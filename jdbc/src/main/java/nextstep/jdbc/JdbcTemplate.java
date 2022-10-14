@@ -10,11 +10,13 @@ import javax.sql.DataSource;
 import nextstep.jdbc.util.SqlArgumentConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String SQL_FORMAT_ARGUMENT = "[?]";
+    private static final String NO_DATA_IS_ACCESSIBLE = "접근할 수 있는 데이터가 업습니다.";
 
     private final DataSource dataSource;
 
@@ -27,7 +29,7 @@ public class JdbcTemplate {
                        final Object... sqlArguments) {
         final List<T> results = queryForList(sqlFormat, resultSetWrapper, sqlArguments);
         if (results == null) {
-            return null;
+            throw new EmptyResultDataAccessException(NO_DATA_IS_ACCESSIBLE);
         }
         return results.get(0);
     }
@@ -43,9 +45,10 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 results.add(resultSetWrapper.execute(resultSet));
             }
+            resultSet.close();
 
             if (results.isEmpty()) {
-                return null;
+                throw new EmptyResultDataAccessException(NO_DATA_IS_ACCESSIBLE);
             }
             return results;
         };
@@ -58,9 +61,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sqlFormat, Callback<T> callback, final Object... sqlArguments) {
-        String sql = generateSql(sqlFormat, sqlArguments);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        final String sql = generateSql(sqlFormat, sqlArguments);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return callback.call(preparedStatement);
         } catch (SQLException e) {
@@ -82,5 +85,9 @@ public class JdbcTemplate {
             sql = sql.replaceFirst(SQL_FORMAT_ARGUMENT, expectedData);
         }
         return sql;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
