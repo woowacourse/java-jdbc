@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -27,21 +28,21 @@ public class JdbcTemplate {
         Assert.notNull(sql, "SQL must not be null");
         Assert.notNull(rowMapper, "RowMapper must not be null");
 
-        return execute(sql, (preparedStatement -> {
+        return execute(sql, preparedStatement -> {
             var resultSet = preparedStatement.executeQuery();
             return toRows(rowMapper, resultSet);
-        }));
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
         Assert.notNull(sql, "SQL must not be null");
         Assert.notNull(rowMapper, "RowMapper must not be null");
 
-        return execute(sql, (preparedStatement -> {
+        return execute(sql, preparedStatement -> {
             setParams(preparedStatement, args);
             var resultSet = preparedStatement.executeQuery();
             return DataAccessUtils.singleResult(toRows(rowMapper, resultSet));
-        }));
+        });
     }
 
     private <T> List<T> toRows(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
@@ -72,11 +73,17 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
-        try (var connection = dataSource.getConnection();
-             var preparedStatement = connection.prepareStatement(sql)) {
+        var connection = DataSourceUtils.getConnection(dataSource);
+        try (var preparedStatement = connection.prepareStatement(sql)) {
             return action.doInPreparedStatement(preparedStatement);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
