@@ -42,9 +42,9 @@ class JdbcTemplateTest {
         jdbcTemplate.queryForObject(select, mock(RowMapper.class), 1L);
 
         //then
-        verify(connection).close();
         verify(statement).close();
         verify(resultSet).close();
+        verify(connection).close();
     }
 
     @DisplayName("query 호출 시 결과 반환 후 connection, statement, resultSet이 close된다.")
@@ -64,9 +64,9 @@ class JdbcTemplateTest {
         jdbcTemplate.query(select, mock(RowMapper.class), "hunch");
 
         //then
-        verify(connection).close();
         verify(statement).close();
         verify(resultSet).close();
+        verify(connection).close();
     }
 
     @DisplayName("executeUpdate 호출 시 결과 반환 후 connection, statement이 close된다.")
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
 
         //then
         assertThat(integer).isEqualTo(5);
-        verify(connection).close();
         verify(statement).close();
+        verify(connection).close();
     }
 }

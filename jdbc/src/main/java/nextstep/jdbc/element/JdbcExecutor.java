@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcExecutor {
 
@@ -19,7 +20,8 @@ public class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T find(String sql, PreparedStatementSetter statementSetter, ResultSetCallback<T> resultSetCallback) {
+    public <T> T find(String sql, PreparedStatementSetter statementSetter,
+                      ResultSetCallback<T> resultSetCallback) {
         return executeOrThrow(sql, statementSetter, statement -> {
             try (final ResultSet rs = statement.executeQuery()) {
                 return resultSetCallback.execute(rs);
@@ -27,19 +29,26 @@ public class JdbcExecutor {
         });
     }
 
-    public Integer update(final String sql, final PreparedStatementSetter statementSetter) {
+    public Integer update(final String sql,
+                          final PreparedStatementSetter statementSetter) {
         return executeOrThrow(sql, statementSetter, PreparedStatement::executeUpdate);
     }
 
     private <T> T executeOrThrow(final String sql, final PreparedStatementSetter setter,
                                  final PreparedStatementCallback<T> statementCallback) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement statement = conn.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             return statementCallback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
