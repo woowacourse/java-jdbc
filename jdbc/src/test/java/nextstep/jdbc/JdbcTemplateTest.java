@@ -44,6 +44,7 @@ class JdbcTemplateTest {
         //then
         verify(statement).close();
         verify(resultSet).close();
+        verify(connection).close();
     }
 
     @DisplayName("query 호출 시 결과 반환 후 connection, statement, resultSet이 close된다.")
@@ -65,6 +66,7 @@ class JdbcTemplateTest {
         //then
         verify(statement).close();
         verify(resultSet).close();
+        verify(connection).close();
     }
 
     @DisplayName("executeUpdate 호출 시 결과 반환 후 connection, statement이 close된다.")
@@ -85,5 +87,6 @@ class JdbcTemplateTest {
         //then
         assertThat(integer).isEqualTo(5);
         verify(statement).close();
+        verify(connection).close();
     }
 }

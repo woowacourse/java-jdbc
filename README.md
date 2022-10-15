@@ -225,3 +225,4 @@ final var actual=userService.findById(1L);
 
 - [x] setObject null/wrapper 값 검증
 - [x] 줄바꿈 수정, 주석 삭제, 기본 생성자 삭제
+- [x] connection 연결 관련 코드 추가
