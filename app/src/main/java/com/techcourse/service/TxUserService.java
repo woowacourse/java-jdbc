@@ -32,9 +32,9 @@ public class TxUserService implements UserService {
         );
 
         try {
-            transactionManager.commit(transactionStatus);
             userService.changePassword(id, newPassword, createBy);
-        } catch (final DataAccessException e) {
+            transactionManager.commit(transactionStatus);
+        } catch (final Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
