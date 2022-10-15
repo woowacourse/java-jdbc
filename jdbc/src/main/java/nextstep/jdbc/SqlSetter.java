@@ -5,19 +5,15 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Objects;
 
-public class SqlSetter<T> {
+public class SqlSetter {
 
     private static final Logger log = LoggerFactory.getLogger(SqlSetter.class);
 
-    private final Object[] params;
-
-    public SqlSetter(Object[] params) {
-        this.params = params;
-    }
-
-    public void injectParams(PreparedStatement preparedStatement) {
+    public static void injectParams(PreparedStatement preparedStatement, Object... params) {
         try {
+            Objects.requireNonNull(params);
             for (int i = 0; i < params.length; i++) {
                 preparedStatement.setObject(i + 1, params[i]);
             }

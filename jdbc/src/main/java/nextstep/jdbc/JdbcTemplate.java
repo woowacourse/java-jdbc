@@ -22,9 +22,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> ResultSet executeQuery(SqlSetter<T> sqlSetter, PreparedStatement preparedStatement) {
+    private <T> ResultSet executeQuery(PreparedStatement preparedStatement, Object... params) {
         try {
-            sqlSetter.injectParams(preparedStatement);
+            SqlSetter.injectParams(preparedStatement, params);
             return preparedStatement.executeQuery();
         }
         catch (SQLException e) {
@@ -38,10 +38,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
-        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement psmt = conn.prepareStatement(sql);
-             ResultSet resultSet = executeQuery(sqlSetter, psmt);) {
+             ResultSet resultSet = executeQuery(psmt, params);) {
 
             log.debug("query : {}", sql);
             List<T> results = new ArrayList<>();
@@ -57,10 +56,9 @@ public class JdbcTemplate {
     }
 
     public <T> int nonSelectQuery(String sql, Object... params) {
-        SqlSetter<T> sqlSetter = new SqlSetter<>(params);
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql);){
-            sqlSetter.injectParams(pstmt);
+            SqlSetter.injectParams(pstmt, params);
             log.debug("query : {}", sql);
             return pstmt.executeUpdate();
 
