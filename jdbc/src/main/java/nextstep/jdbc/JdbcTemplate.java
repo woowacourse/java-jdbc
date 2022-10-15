@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,12 +23,13 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         execute(sql, pstmt -> {
-            setParameters(pstmt, args);
+            PreparedStatementUtil.setValues(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
         return execute(sql, pstmt -> setParamsAndGetResult(rowMapper, pstmt, args));
     }
 
@@ -36,37 +38,29 @@ public class JdbcTemplate {
         return getSingleResult(results);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private <T> T execute(final String sql,
+                          final PreparedStatementCallback<T> preparedStatementCallback) {
+       final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             return preparedStatementCallback.doPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private <T> List<T> setParamsAndGetResult(RowMapper<T> rowMapper, PreparedStatement pstmt, Object[] args)
             throws SQLException {
         final List<T> results = new ArrayList<>();
-        setParameters(pstmt, args);
+        PreparedStatementUtil.setValues(pstmt, args);
         final ResultSet resultSet = pstmt.executeQuery();
 
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
         }
         return results;
-    }
-
-    private void setParameters(final PreparedStatement preparedStatement, final Object... args)
-            throws SQLException {
-        PreparedStatementSetter preparedStatementSetter = (ps, objects) ->
-        {
-            for (int i = 0; i < objects.length; i++) {
-                ps.setObject(i + 1, objects[i]);
-            }
-        };
-        preparedStatementSetter.setValues(preparedStatement, args);
     }
 
     private <T> T getSingleResult(final List<T> results) {
@@ -77,5 +71,9 @@ public class JdbcTemplate {
             throw new DataAccessException("잘못된 결과입니다.");
         }
         return results.iterator().next();
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
