@@ -52,7 +52,7 @@ class UserServiceTest {
 		final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);       // 애플리케이션 서비스
 		final var appUserService = new AppUserService(userDao, userHistoryDao);
 		// 트랜잭션 서비스 추상화
-		final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+		final var transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
 		final var userService = new TxUserService(appUserService, transactionManager);
 
 		final var newPassword = "newPassword";

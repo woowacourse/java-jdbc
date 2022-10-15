@@ -50,8 +50,4 @@ public class JdbcTemplate {
 			statement.executeQuery());
 		return execute(sql, statementCallback, objects);
 	}
-
-	public DataSource getDataSource() {
-		return dataSource;
-	}
 }
