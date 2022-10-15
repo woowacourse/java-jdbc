@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -20,70 +21,43 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final Object... params) {
-        final PreparedStatementCreator creator = preparedStatementCreator(params);
+    public int execute(final String sql, final KeyHolder<?> keyHolder, final Object... args) {
+        final var creator = PreparedStatementCreator.from(keyHolder, params);
+        final var executor = PreparedStatementExecutor.executeUpdateWithKeyHolder(keyHolder);
+        return executeQuery(sql, creator, executor);
+    }
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = creator.create(conn, sql)
-        ) {
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public int execute(final String sql, final Object... params) {
+        final var creator = PreparedStatementCreator.from(params);
+        final PreparedStatementExecutor<Integer> executor = PreparedStatement::executeUpdate;
+        return executeQuery(sql, creator, executor);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        final PreparedStatementCreator creator = preparedStatementCreator(params);
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = creator.create(conn, sql);
-             ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
-            return mapToList(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> mapToList(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(rowMapper.map(rs));
-        }
-        return result;
+        final var creator = PreparedStatementCreator.from(params);
+        final var executor = PreparedStatementExecutor.mapToListExecutor(rowMapper);
+        return executeQuery(sql, creator, executor);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        final PreparedStatementCreator creator = preparedStatementCreator(params);
+        final var creator = PreparedStatementCreator.from(params);
+        final var executor = PreparedStatementExecutor.mapToObjectExecutor(rowMapper);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = creator.create(conn, sql);
-             ResultSet rs = pstmt.executeQuery()
-        ) {
+        return executeQuery(sql, creator, executor);
+    }
+
+    private <T> T executeQuery(
+            final String sql, final PreparedStatementCreator creator, final PreparedStatementExecutor<T> executor
+    ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = creator.create(connection, sql)) {
             log.debug("query : {}", sql);
-            return mapToObject(rowMapper, rs);
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
-    }
-
-    private <T> T mapToObject(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        return rs.next() ? rowMapper.map(rs) : null;
-    }
-
-    private PreparedStatementCreator preparedStatementCreator(final Object... params) {
-        return (conn, sql) -> {
-            final PreparedStatement pstmt = conn.prepareStatement(sql);
-            int index = 1;
-            for (Object param : params) {
-                pstmt.setObject(index++, param);
-            }
-            return pstmt;
-        };
     }
 }
