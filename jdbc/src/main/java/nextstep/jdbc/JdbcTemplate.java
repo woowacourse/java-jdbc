@@ -39,11 +39,11 @@ public class JdbcTemplate {
 
     public <T> List<T> selectQuery(String sql, JdbcMapper<T> jdbcMapper, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);
-        try {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement psmt = conn.prepareStatement(sql);
+             ResultSet resultSet = executeQuery(sqlSetter, psmt);) {
+
             log.debug("query : {}", sql);
-            ResultSet resultSet = executeQuery(sqlSetter, pstmt);
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(jdbcMapper.mapRow(resultSet));
@@ -58,14 +58,11 @@ public class JdbcTemplate {
 
     public <T> int nonSelectQuery(String sql, Object... params) {
         SqlSetter<T> sqlSetter = new SqlSetter<>(params);
-
-        try {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);){
             sqlSetter.injectParams(pstmt);
             log.debug("query : {}", sql);
-            int executeCount = pstmt.executeUpdate();
-            return executeCount;
+            return pstmt.executeUpdate();
 
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
