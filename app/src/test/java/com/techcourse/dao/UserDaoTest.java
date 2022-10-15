@@ -7,6 +7,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import nextstep.jdbc.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -77,5 +78,14 @@ class UserDaoTest {
                 () -> assertThat(actual.getAccount()).isEqualTo("gugu"),
                 () -> assertThat(actual.getEmail()).isEqualTo("hkkang@woowahan.com")
         );
+    }
+
+    @AfterEach
+    void truncate() {
+        String truncateQuery = "truncate table users";
+        String alterColumnQuery  = "ALTER TABLE users AUTO_INCREMENT = 1";
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update(truncateQuery);
+        jdbcTemplate.update(alterColumnQuery);
     }
 }

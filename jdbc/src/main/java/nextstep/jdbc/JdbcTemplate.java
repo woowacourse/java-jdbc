@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -16,8 +17,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... objects) {
-        return execute(sql, ps -> {
+    public void update(final String sql, final Object... objects) {
+        execute(sql, ps -> {
             bindPrepareStatement(ps, objects);
             return ps.executeUpdate();
         });
@@ -63,8 +64,12 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            return action.doInPreparedStatement(ps);
+        try {
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            T result = action.doInPreparedStatement(ps);
+            ps.close();
+            return result;
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
