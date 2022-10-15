@@ -16,7 +16,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected final DataSource dataSource;
+    private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -53,6 +53,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
         }
+        finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
     }
 
     public <T> int nonSelectQuery(String sql, Object... params) {
@@ -65,6 +68,9 @@ public class JdbcTemplate {
         } catch (SQLException | DataAccessException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException();
+        }
+        finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }
