@@ -13,9 +13,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private static final JdbcMapper<User> userMapper =
             (resultSet -> new User(
                     resultSet.getLong("id"),
@@ -48,27 +45,19 @@ public class UserDao {
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         List<User> users = this.userJdbcTemplate.selectQuery(sql, userMapper, id);
-        if (users.isEmpty()) {
-            return null;
-        }
-        return users.get(0);
+        return getFirstUser(users);
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         List<User> users = this.userJdbcTemplate.selectQuery(sql, userMapper, account);
-        if (users.isEmpty()) {
-            return null;
-        }
-        return users.get(0);
+        return getFirstUser(users);
     }
 
-    public Connection getConnection() {
-        try {
-            return DataSourceConfig.getInstance().getConnection();
-        }
-        catch (SQLException e) {
+    private User getFirstUser(List<User> users) {
+        if (users.size() != 1) {
             throw new DataAccessException();
         }
+        return users.get(0);
     }
 }
