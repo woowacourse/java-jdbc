@@ -1,4 +1,4 @@
-package com.techcourse.domain;
+package nextstep.jdbc;
 
 public class User {
 
@@ -13,6 +13,7 @@ public class User {
 		this.password = password;
 		this.email = email;
 	}
+
 
 	public User(String account, String password, String email) {
 		this.account = account;

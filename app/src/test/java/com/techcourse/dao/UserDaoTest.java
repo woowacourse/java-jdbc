@@ -1,69 +1,84 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import nextstep.jdbc.DataAccessException;
+import nextstep.jdbc.JdbcTemplate;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+	private static UserDao userDao;
 
-    @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+	@BeforeAll
+	static void setUp() {
+		DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+		userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+		userDao.insert(new User("조시", "password", "조시@바보"));
+	}
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
-    }
+	@Test
+	void findAll() {
+		final var users = userDao.findAll();
+		assertThat(users).isNotEmpty();
+	}
 
-    @Test
-    void findAll() {
-        final var users = userDao.findAll();
+	@Test
+	void findById() {
+		final var user = userDao.findById(1L);
+		assertThat(user.getAccount()).isEqualTo("조시");
+	}
 
-        assertThat(users).isNotEmpty();
-    }
+	@Test
+	void findById_false() {
+		assertThatThrownBy(() -> userDao.findById(100L))
+			.isInstanceOf(DataAccessException.class)
+			.hasMessage("일치하는 데이터가 없습니다.");
+	}
 
-    @Test
-    void findById() {
-        final var user = userDao.findById(1L);
+	@Test
+	void findByAccount() {
+		final var account = "조시";
+		final var user = userDao.findByAccount(account);
+		assertThat(user.getAccount()).isEqualTo(account);
+	}
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
-    }
+	@Test
+	void findByAccount_false() {
+		final var account = "없는 데이터";
+		assertThatThrownBy(() -> userDao.findByAccount(account))
+			.isInstanceOf(DataAccessException.class)
+			.hasMessage("일치하는 데이터가 없습니다.");
+	}
 
-    @Test
-    void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+	@Test
+	void insert() {
+		final var account = "insert-조시";
+		final var user = new User(account, "password", "hkkang@woowahan.com");
+		userDao.insert(user);
 
-        assertThat(user.getAccount()).isEqualTo(account);
-    }
+		final var actual = userDao.findById(2L);
 
-    @Test
-    void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+		assertThat(actual.getAccount()).isEqualTo(account);
+	}
 
-        final var actual = userDao.findById(2L);
+	@Test
+	void update() {
+		final var newPassword = "password99";
+		final var user = userDao.findById(1L);
+		user.changePassword(newPassword);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
-    }
+		userDao.update(user);
 
-    @Test
-    void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+		final var actual = userDao.findById(1L);
 
-        userDao.update(user);
-
-        final var actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
-    }
+		assertThat(actual.getPassword()).isEqualTo(newPassword);
+	}
 }
