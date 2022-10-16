@@ -19,10 +19,11 @@ class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
-        DataSource dataSource = DataSourceConfig.getInstance();
+        this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
@@ -52,7 +53,7 @@ class AppUserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var transactionManager = new DataSourceTransactionManager(jdbcTemplate.getDataSource());
+        final var transactionManager = new DataSourceTransactionManager(dataSource);
         final var userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "newPassword";

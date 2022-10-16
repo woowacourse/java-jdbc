@@ -58,8 +58,4 @@ public class JdbcTemplate {
         List<T> result = query(new SimplePreparedStatementSetter(sql, args), new SimpleResultSetExtractor<>(rowMapper));
         return DataAccessUtils.nullableSingleResult(result);
     }
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
 }
