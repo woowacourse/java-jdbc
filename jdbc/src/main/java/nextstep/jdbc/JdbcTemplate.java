@@ -22,8 +22,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementSetter pss, final StatementExecutor<T> se) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
+        try (Connection conn = DataSourceUtils.getConnection(dataSource);
+             PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
             return se.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
