@@ -18,7 +18,6 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         return userService.findById(id);
     }
 
