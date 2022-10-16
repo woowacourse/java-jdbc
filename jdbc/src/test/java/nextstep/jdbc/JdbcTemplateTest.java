@@ -125,6 +125,29 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("결과 값이 없는 queryForObject는 예외가 발생하고 Checked Exception이 아닌 Unchecked Exception이 반환되도록 한다")
+    void queryForObjectEmptyException() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        final String sql = "select id from user where account = ?";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when, then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper(), "tiki"))
+                .isExactlyInstanceOf(DataAccessException.class);
+    }
+
+    @Test
     @DisplayName("queryForObject 메서드 이후에 resource가 잘 닫히는지 확인")
     void queryForObjectCloseResource() throws SQLException {
         // given

@@ -70,6 +70,9 @@ public class JdbcTemplate {
             final T row = rowMapper.mapToRow(rs);
             results.add(row);
         }
+        if (results.isEmpty()) {
+            throw new DataAccessException("해당 데이터가 존재하지 않습니다.");
+        }
         if (results.size() > 1) {
             throw new DataAccessException("1개보다 많은 값이 존재합니다.");
         }
