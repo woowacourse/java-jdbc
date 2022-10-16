@@ -33,9 +33,7 @@ class AppUserServiceTest {
     void findById() {
         final User actual = appUserService.findById(1L);
 
-        assertThat(actual).usingRecursiveComparison()
-                .ignoringFields("id")
-                .isEqualTo(savedUser);
+        assertThat(actual.getAccount()).isEqualTo(savedUser.getAccount());
     }
 
     @Test
