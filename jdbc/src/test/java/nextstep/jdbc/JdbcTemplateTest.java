@@ -42,7 +42,6 @@ class JdbcTemplateTest {
         String sql = "UPDATE users SET account = ?, password = ?, email = ?";
         int update = jdbcTemplate.update(sql, "dummy", "dummypassword", "dummy@aaa.com");
 
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -65,7 +64,6 @@ class JdbcTemplateTest {
         String sql = "select * from users";
         jdbcTemplate.query(sql, (rs) -> any());
 
-        verify(connection).close();
         verify(preparedStatement).close();
         verify(resultSet).close();
     }

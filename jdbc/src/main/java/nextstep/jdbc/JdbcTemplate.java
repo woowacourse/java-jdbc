@@ -8,6 +8,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,7 +22,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementSetter pss, final StatementExecutor<T> se) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = DataSourceUtils.getConnection(dataSource);
              PreparedStatement pstmt = pss.createPreparedStatement(conn)) {
             return se.execute(pstmt);
         } catch (SQLException e) {
