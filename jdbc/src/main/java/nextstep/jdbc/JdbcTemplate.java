@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.support.DataAccessUtils;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,8 +22,8 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql) throws DataAccessException {
+        final var conn = DataSourceUtils.getConnection(dataSource);
         try(
-                final var conn = dataSource.getConnection();
                 final var pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -35,8 +36,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
         try(
-                final var conn = dataSource.getConnection();
                 final var pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -55,8 +56,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
+        final var conn = DataSourceUtils.getConnection(dataSource);
         try(
-                final var conn = dataSource.getConnection();
                 final var pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -96,5 +97,9 @@ public class JdbcTemplate {
             final var arg = args[i];
             pstmt.setObject(i + 1, arg);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
