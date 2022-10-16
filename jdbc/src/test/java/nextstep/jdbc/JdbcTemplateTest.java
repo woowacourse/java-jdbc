@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private RowMapper<TestUser> rowMapper() {
-        return (rs, rowNum) -> new TestUser(1L);
+        return (rs) -> new TestUser(1L);
     }
 
     @Test
@@ -116,6 +116,29 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, false);
+
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        // when, then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper(), "tiki"))
+                .isExactlyInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    @DisplayName("결과 값이 없는 queryForObject는 예외가 발생하고 Checked Exception이 아닌 Unchecked Exception이 반환되도록 한다")
+    void queryForObjectEmptyException() throws SQLException {
+        // given
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
+
+        final String sql = "select id from user where account = ?";
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
