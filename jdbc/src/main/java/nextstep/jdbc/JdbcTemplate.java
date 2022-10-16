@@ -4,13 +4,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,76 +23,60 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setPreparedStatement(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+    private void update(String sql, PreparedStatementSetter pss) {
+        execute(sql, preparedStatement -> {
+            pss.setValue(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
+    }
 
-            setPreparedStatement(pstmt, args);
+    private <T> T queryForObject(String sql, PreparedStatementSetter pss, ResultSetExtractor<T> rse) {
+
+        return execute(sql, pstmt -> {
+            pss.setValue(pstmt);
             ResultSet rs = pstmt.executeQuery();
+            return rse.extractData(rs);
+        });
+    }
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, 0);
-            }
-            return null;
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
 
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) throws
+        DataAccessException {
+        return queryForObject(sql, pss, new RowMapperResultSetExtractor<>(rowMapper));
+
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+    private <T> List<T> query(String sql, ResultSetExtractor<T> rse){
+        return execute(sql, pstmt -> {
             ResultSet rs = pstmt.executeQuery();
+            return rse.extractList(rs);
+        });
+    }
 
-            return assembleResult(rs, rowMapper);
+    private <T> T execute(String sql, StatementCallback<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
 
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            return callback.doInStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException();
         }
     }
 
-    private <T> List<T> assembleResult(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        int rowNum = 0;
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(rowMapper.mapRow(rs, rowNum));
-            rowNum++;
-        }
-        return result;
-    }
-
-    private void setPreparedStatement(PreparedStatement pstmt, Object... args) throws SQLException {
-
-        int index = 0;
-        for (Object arg : args) {
-            index++;
-            switch (arg.getClass().getName()) {
-                case "String":
-                    pstmt.setString(index, (String)arg);
-                    break;
-                case "Long":
-                    pstmt.setLong(index, (Long)arg);
-                    break;
-                default:
-                    pstmt.setObject(index, arg);
-            }
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

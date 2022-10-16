@@ -9,7 +9,10 @@ import nextstep.jdbc.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> ROW_MAPPER = getMapper();
+    private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(rs.getLong(1),
+        rs.getString(2),
+        rs.getString(3),
+        rs.getString(4));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -17,23 +20,24 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static RowMapper<User> getMapper() {
-        return (rs, rowNum) -> new User(rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4));
-    }
-
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = createQueryForInsert();
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var sql = createQueryForUpdate();
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = ?, password = ?, email = ? where id = ?";
     }
 
     public List<User> findAll() {
@@ -45,7 +49,6 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
-
     }
 
     public User findByAccount(final String account) {
