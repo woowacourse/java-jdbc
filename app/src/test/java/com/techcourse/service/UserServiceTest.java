@@ -10,9 +10,9 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import nextstep.jdbc.JdbcTemplate;
-import nextstep.jdbc.exception.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.TransactionSystemException;
 
 class UserServiceTest {
 
@@ -54,7 +54,7 @@ class UserServiceTest {
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
+        assertThrows(TransactionSystemException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L);

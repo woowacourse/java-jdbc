@@ -13,6 +13,7 @@ import nextstep.jdbc.exception.InvalidSqlException;
 import nextstep.jdbc.exception.NoSuchDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -68,7 +69,7 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(sql)) {
             return queryExecutor.execute(statement);
         } catch (SQLException e) {
