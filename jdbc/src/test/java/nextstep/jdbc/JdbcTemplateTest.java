@@ -20,16 +20,20 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private PreparedStatement statement;
+    private Connection connection;
+    private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
         final DataSource dataSource = mock(DataSource.class);
-        final Connection connection = mock(Connection.class);
+        connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
+        resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
@@ -55,6 +59,8 @@ class JdbcTemplateTest {
                 () -> verify(statement).setString(2, "password"),
                 () -> verify(statement).setString(3, "email"),
                 () -> verify(statement).executeUpdate(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close(),
                 () -> assertThat(effectedRowCount).isEqualTo(1)
         );
     }
@@ -75,6 +81,8 @@ class JdbcTemplateTest {
                 () -> verify(statement).setObject(2, "password"),
                 () -> verify(statement).setObject(3, "email"),
                 () -> verify(statement).executeUpdate(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close(),
                 () -> assertThat(effectedRowCount).isEqualTo(1)
         );
     }
@@ -83,9 +91,6 @@ class JdbcTemplateTest {
     @Test
     void query_RowMapper() throws SQLException {
         //given
-        final ResultSet resultSet = mock(ResultSet.class);
-
-        when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next())
                 .thenReturn(true)
                 .thenReturn(true)
@@ -110,8 +115,13 @@ class JdbcTemplateTest {
         });
 
         //then
-        assertThat(result).containsExactly(
-                "forky/password12/forky@email.com", "boki/password34/boki@email.com");
+        assertAll(
+                () -> verify(resultSet).close(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close(),
+                () -> assertThat(result).containsExactly(
+                        "forky/password12/forky@email.com", "boki/password34/boki@email.com")
+        );
     }
 
     @DisplayName("RowMapper를 통해 데이터를 객체로 조회할 수 있다.")
@@ -136,6 +146,11 @@ class JdbcTemplateTest {
         }, 1L);
 
         //then
-        assertThat(result).isEqualTo("forky/password12/forky@email.com");
+        assertAll(
+                () -> verify(resultSet).close(),
+                () -> verify(statement).close(),
+                () -> verify(connection).close(),
+                () -> assertThat(result).isEqualTo("forky/password12/forky@email.com")
+        );
     }
 }
