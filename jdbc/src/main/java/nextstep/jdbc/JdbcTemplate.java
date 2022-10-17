@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,12 +22,13 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final JdbcCallback<T> jdbcCallback) {
-        try (final Connection conn = getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             return jdbcCallback.call(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("커넥션을 가져올 수 없습니다.");
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -95,11 +97,7 @@ public class JdbcTemplate {
         }
     }
 
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException("DB 커넥트 도중 에러가 발생했습니다.");
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
