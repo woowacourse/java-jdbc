@@ -69,8 +69,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final QueryExecutor<T> queryExecutor) {
-        try (Connection connection = DataSourceUtils.getConnection(dataSource);
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             return queryExecutor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
