@@ -103,15 +103,16 @@ class JdbcTemplateTest {
 
         // when
         jdbcTemplate.find(sql, rowMapper, 1L);
-        
+
         // then
         assertAll(
                 () -> verify(statement).setObject(1, 1L),
                 () -> verify(statement).executeQuery(),
                 () -> verify(resultSet).getLong(anyString()),
                 () -> verify(resultSet, times(3)).getString(anyString()),
+                () -> verify(connection).close(),
                 () -> verify(statement).close(),
-                () -> verify(connection).close()
+                () -> verify(resultSet).close()
         );
     }
 
@@ -140,7 +141,9 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(2)).getString("account"),
                 () -> verify(resultSet, times(2)).getString("password"),
                 () -> verify(resultSet, times(2)).getString("email"),
-                () -> verify(connection).close()
+                () -> verify(connection).close(),
+                () -> verify(statement).close(),
+                () -> verify(resultSet).close()
         );
     }
 
@@ -161,7 +164,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.findSingleResult(sql, rowMapper))
                 .isExactlyInstanceOf(DataAccessException.class);
     }
-    
+
     @Test
     @DisplayName("트랜잭션 상황에서 메서드가 실행될 경우 connection을 닫지 않는다.")
     void notCloseConnectionTransaction() {

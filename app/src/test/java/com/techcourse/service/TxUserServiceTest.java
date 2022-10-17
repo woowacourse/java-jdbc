@@ -34,7 +34,8 @@ class TxUserServiceTest {
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(
+                DataSourceConfig.getInstance());
         final var userService = new TxUserService(new TransactionContext(transactionManager),
                 appUserService);
 
@@ -54,7 +55,8 @@ class TxUserServiceTest {
         // 어플리케이션 서비스
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(DataSourceConfig.getInstance());
+        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(
+                DataSourceConfig.getInstance());
         final var userService = new TxUserService(new TransactionContext(transactionManager),
                 appUserService);
 

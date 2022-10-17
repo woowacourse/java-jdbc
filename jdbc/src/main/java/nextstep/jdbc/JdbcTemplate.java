@@ -23,8 +23,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Integer update(final String sql, final Object... params) {
-        return runContext(sql, statement -> {
+    public void update(final String sql, final Object... params) {
+        runContext(sql, statement -> {
             setParams(statement, params);
             return statement.executeUpdate();
         });
@@ -65,6 +65,7 @@ public class JdbcTemplate {
             final T mappedValue = rowMapper.mapRow(resultSet);
             result.add(mappedValue);
         }
+        resultSet.close();
         return result;
     }
 
