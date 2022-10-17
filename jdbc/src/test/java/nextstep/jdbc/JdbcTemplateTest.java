@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,7 @@ class JdbcTemplateTest {
     @Test
     void insert2() throws SQLException {
         final String sql = "";
+        when(connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)).thenReturn(preparedStatement);
         when(preparedStatement.getGeneratedKeys()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         final Long expectedId = 999L;
@@ -124,12 +126,13 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         final String sql = "";
 
-        jdbcTemplate.update(connection -> connection.prepareStatement(sql));
+        final Integer updateRowCount = jdbcTemplate.update(connection -> connection.prepareStatement(sql));
 
         assertAll(
                 () -> verify(dataSource).getConnection(),
                 () -> verify(connection).prepareStatement(sql),
-                () -> verify(preparedStatement).executeUpdate()
+                () -> verify(preparedStatement).executeUpdate(),
+                () -> assertThat(updateRowCount).isEqualTo(0)
         );
     }
 
@@ -138,13 +141,14 @@ class JdbcTemplateTest {
         final String sql = "";
 
         final String dummyParam = "아 더미 파라미터";
-        jdbcTemplate.update(sql, dummyParam);
+        final Integer updateRowCount = jdbcTemplate.update(sql, dummyParam);
 
         assertAll(
                 () -> verify(dataSource).getConnection(),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(preparedStatement, times(1)).setObject(anyInt(), eq(dummyParam)),
-                () -> verify(preparedStatement).executeUpdate()
+                () -> verify(preparedStatement).executeUpdate(),
+                () -> assertThat(updateRowCount).isEqualTo(0)
         );
     }
 

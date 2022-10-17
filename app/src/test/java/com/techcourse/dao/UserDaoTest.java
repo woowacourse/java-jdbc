@@ -16,13 +16,14 @@ class UserDaoTest {
     private UserDao userDao;
     final DataSource dataSource = DataSourceConfig.getInstance();
     final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    private Long userId;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userId = userDao.insert(user);
     }
 
     @AfterEach
@@ -45,7 +46,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(userId);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -62,9 +63,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final Long newUserId = userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(newUserId);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -72,12 +73,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(userId);
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(userId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

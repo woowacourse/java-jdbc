@@ -4,11 +4,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -65,7 +67,8 @@ public class JdbcTemplate {
         return prepareStatement.executeQuery();
     }
 
-    private void setPreparedStatementParams(final PreparedStatement preparedStatement, final Object[] params) throws SQLException {
+    private void setPreparedStatementParams(final PreparedStatement preparedStatement, final Object[] params)
+            throws SQLException {
         for (int i = 0; i < params.length; i++) {
             preparedStatement.setObject(i + 1, params[i]);
         }
@@ -73,7 +76,8 @@ public class JdbcTemplate {
 
     public Long insert(final String sql, Object... params) {
         return execute(connection -> {
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            final PreparedStatement preparedStatement =
+                    connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             setPreparedStatementParams(preparedStatement, params);
             return preparedStatement;
         }, new SimpleInsertExecuteStrategy());
@@ -97,11 +101,15 @@ public class JdbcTemplate {
 
     private <T> T execute(final PreparedStatementCreator preparedStatementCreator,
                           final PreparedStatementExecuteStrategy<T> preparedStatementExecuteStrategy) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             return preparedStatementExecuteStrategy.extract(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
