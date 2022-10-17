@@ -45,12 +45,23 @@ class JdbcTemplateTest {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    private void verifyAllResourcesClosed() throws Exception {
-        final var callTimes = times(1);
+    @DisplayName("update 메서드 테스트")
+    @Nested
+    class UpdateTest {
 
-        verify(resultSet, callTimes).close();
-        verify(preparedStatement, callTimes).close();
-        verify(connection, callTimes).close();
+        private void update() {
+            jdbcTemplate.update(SQL, ROW_MAPPER);
+        }
+
+        @DisplayName("할당된 모든 자원을 해제한다.")
+        @Test
+        void closeResources() throws Exception {
+            // when
+            update();
+
+            // then
+            verifyResourcesClosed(preparedStatement, connection);
+        }
     }
 
     @DisplayName("query 메서드 테스트")
@@ -68,8 +79,9 @@ class JdbcTemplateTest {
             query();
 
             // then
-            verifyAllResourcesClosed();
+            verifyResourcesClosed(resultSet, preparedStatement, connection);
         }
+
     }
 
     @DisplayName("queryForObject 메서드 테스트")
@@ -84,22 +96,22 @@ class JdbcTemplateTest {
         @Test
         void closeResources() throws Exception {
             // given
-            setResultSize(resultSet, 1);
+            setSizeOfResultSet(1);
 
             // when
             queryForObject();
 
             // then
-            verifyAllResourcesClosed();
+            verifyResourcesClosed(resultSet, preparedStatement, connection);
         }
 
         @DisplayName("쿼리 실행 결과 값이 존재하지 않으면 예외를 발생시킨다.")
         @Test
         void throw_exception_when_result_size_empty() throws SQLException {
             // given
-            setResultSize(resultSet, 0);
+            setSizeOfResultSet(0);
 
-            // when
+            // when & then
             Assertions.assertThatThrownBy(this::queryForObject)
                     .isInstanceOf(EmptyResultDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1, actual " + 0);
@@ -109,20 +121,27 @@ class JdbcTemplateTest {
         @Test
         void throw_exception_when_result_size_greater_than_single() throws SQLException {
             // given
-            setResultSize(resultSet, 2);
+            setSizeOfResultSet(2);
 
-            // when
+            // when & then
             Assertions.assertThatThrownBy(this::queryForObject)
                     .isInstanceOf(IncorrectResultSizeDataAccessException.class)
                     .hasMessage("Incorrect result size: expected 1, actual " + 2);
         }
 
-        private void setResultSize(final ResultSet resultSet, final int size) throws SQLException {
+        private void setSizeOfResultSet(final int size) throws SQLException {
             var call = when(resultSet.next());
             for (int i = 0; i < size; i++) {
                 call = call.thenReturn(true);
             }
             call.thenReturn(false);
+        }
+    }
+
+    private void verifyResourcesClosed(final AutoCloseable... resources) throws Exception {
+        final var callTimes = times(1);
+        for (final var resource : resources) {
+            verify(resource, callTimes).close();
         }
     }
 }
