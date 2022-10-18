@@ -21,9 +21,13 @@ import nextstep.example.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
@@ -38,7 +42,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -99,15 +103,16 @@ class JdbcTemplateTest {
 
         // when
         jdbcTemplate.find(sql, rowMapper, 1L);
-        
+
         // then
         assertAll(
                 () -> verify(statement).setObject(1, 1L),
                 () -> verify(statement).executeQuery(),
                 () -> verify(resultSet).getLong(anyString()),
                 () -> verify(resultSet, times(3)).getString(anyString()),
+                () -> verify(connection).close(),
                 () -> verify(statement).close(),
-                () -> verify(connection).close()
+                () -> verify(resultSet).close()
         );
     }
 
@@ -135,7 +140,10 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(2)).getLong("id"),
                 () -> verify(resultSet, times(2)).getString("account"),
                 () -> verify(resultSet, times(2)).getString("password"),
-                () -> verify(resultSet, times(2)).getString("email")
+                () -> verify(resultSet, times(2)).getString("email"),
+                () -> verify(connection).close(),
+                () -> verify(statement).close(),
+                () -> verify(resultSet).close()
         );
     }
 
@@ -155,5 +163,25 @@ class JdbcTemplateTest {
         // when, then
         assertThatThrownBy(() -> jdbcTemplate.findSingleResult(sql, rowMapper))
                 .isExactlyInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    @DisplayName("트랜잭션 상황에서 메서드가 실행될 경우 connection을 닫지 않는다.")
+    void notCloseConnectionTransaction() {
+        // given
+        final String sql = "delete from users";
+        final DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+        final TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        // when
+        jdbcTemplate.update(sql);
+
+        // then
+        assertAll(
+                () -> verify(statement).executeUpdate(),
+                () -> verify(statement).close(),
+                () -> verify(connection, times(0)).close()
+        );
+        transactionManager.commit(transaction);
     }
 }

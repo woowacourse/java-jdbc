@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -30,13 +31,15 @@ public class JdbcTemplate {
     }
 
     private <T> T runContext(final String sql, JdbcAction<T> action) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return action.doAction(statement);
         } catch (SQLException exception) {
             log.warn("SQL Exception alert!!! : {}", exception.getMessage(), exception);
             throw new DataAccessException();
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -62,6 +65,7 @@ public class JdbcTemplate {
             final T mappedValue = rowMapper.mapRow(resultSet);
             result.add(mappedValue);
         }
+        resultSet.close();
         return result;
     }
 
