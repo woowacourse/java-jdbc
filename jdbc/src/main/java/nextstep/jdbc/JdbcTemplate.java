@@ -1,30 +1,29 @@
 package nextstep.jdbc;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    public static final int FIRST_ELEMENT = 0;
+    private static final int FIRST_ELEMENT = 0;
+    private final TransactionSynchronizationManager synchronizationManager;
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcTemplate(final TransactionSynchronizationManager synchronizationManager) {
+        this.synchronizationManager = synchronizationManager;
     }
 
     public void execute(final String sql, final Object... params) {
         log.debug("query : {}", sql);
         log.debug("params : {}", params);
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        final Connection conn = synchronizationManager.get();
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParams(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -55,8 +54,8 @@ public class JdbcTemplate {
     private <T> List<T> innerQueryAll(final String sql, final RowMapper<T> rowMapper, final Object... conditionParams) {
         log.debug("query : {}", sql);
         ResultSet rs = null;
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        final Connection conn = synchronizationManager.get();
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParams(pstmt, conditionParams);
             rs = pstmt.executeQuery();
             return loadRows(rowMapper, rs);

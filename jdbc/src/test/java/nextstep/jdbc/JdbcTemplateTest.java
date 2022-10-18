@@ -29,6 +29,7 @@ class JdbcTemplateTest {
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
+    private TransactionSynchronizationManager synchronizationManager;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -36,7 +37,8 @@ class JdbcTemplateTest {
         this.dataSource = mock(DataSource.class);
         this.preparedStatement = mock(PreparedStatement.class);
         this.resultSet = mock(ResultSet.class);
-        this.jdbcTemplate = new JdbcTemplate(this.dataSource);
+        this.synchronizationManager = new TransactionSynchronizationManager(this.dataSource);
+        this.jdbcTemplate = new JdbcTemplate(this.synchronizationManager);
 
         given(this.dataSource.getConnection()).willReturn(this.connection);
         given(this.connection.prepareStatement(anyString())).willReturn(this.preparedStatement);
