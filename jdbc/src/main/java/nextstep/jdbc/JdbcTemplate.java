@@ -7,12 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -21,29 +18,42 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setObjects(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet resultSet = pstmt.executeQuery()) {
-            setObjects(pstmt, args);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> mapRow(pstmt, rowMapper));
+    }
 
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return getSingleResult(sql, pstmt -> mapRow(pstmt, rowMapper), args);
+    }
+
+    private <T> T getSingleResult(final String sql, final StatementCallback<List<T>> statement, final Object[] args) {
+        return execute(sql, statement, args).get(0);
+    }
+
+    private <T> List<T> mapRow(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        final List<T> results = new ArrayList<>();
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
-            return null;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+        return results;
+    }
+
+    public <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            setObjects(pstmt, args);
+            return callback.doInCallableStatement(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -51,21 +61,6 @@ public class JdbcTemplate {
         int index = 1;
         for (Object arg : args) {
             pstmt.setObject(index++, arg);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet resultSet = pstmt.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 }
