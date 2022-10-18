@@ -2,13 +2,10 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,8 +39,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("PreparedStatementSetter에 지정된 콜백을 실행하고 자원을 닫는다.")
-    void testPreparedStatementSetterSucceeds() throws Exception {
+    @DisplayName("쿼리를 실행하고 자원을 닫는다.")
+    void testUpdateSucceeds() throws Exception {
         // given
         final var sql = "UPDATE member SET name=? WHERE id = 1";
         final var name = "awesomeo";
@@ -51,33 +48,29 @@ class JdbcTemplateTest {
         given(this.preparedStatement.executeUpdate()).willReturn(expectedRowsUpdated);
 
         // when
-        PreparedStatementSetter pss = ps -> ps.setString(1, name);
+        int actualRowsUpdated = new JdbcTemplate(this.dataSource).update(sql, name);
 
         // then
-        int actualRowsUpdated = new JdbcTemplate(this.dataSource).update(sql, pss);
         assertThat(expectedRowsUpdated).isEqualTo(actualRowsUpdated);
-        verify(this.preparedStatement).setString(1, name);
+        verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
         verify(this.connection).close();
     }
 
     @Test
     @DisplayName("예외 발생시 자원을 닫는다.")
-    void testPreparedStatementSetterFails() throws Exception {
+    void testUpdateFails() throws Exception {
         // given
         final var sql = "UPDATE member SET name=? WHERE id = 1";
         final var name = "Gary";
         var sqlException = new SQLException();
         given(this.preparedStatement.executeUpdate()).willThrow(sqlException);
 
-        // when
-        PreparedStatementSetter pss = ps -> ps.setString(1, name);
-
-        // then
+        // when & then
         assertThatExceptionOfType(DataAccessException.class).isThrownBy(() ->
-                        new JdbcTemplate(this.dataSource).update(sql, pss))
+                        new JdbcTemplate(this.dataSource).update(sql, name))
                 .withCause(sqlException);
-        verify(this.preparedStatement).setString(1, name);
+        verify(this.preparedStatement).setObject(1, name);
         verify(this.preparedStatement).close();
         verify(this.connection).close();
     }
