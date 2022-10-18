@@ -9,12 +9,14 @@ import javax.sql.DataSource;
 import nextstep.jdbc.exception.ExecuteException;
 import nextstep.jdbc.support.DataAccessUtils;
 import nextstep.jdbc.support.ExecuteCallBack;
+import nextstep.jdbc.support.ObjectUtils;
 import nextstep.jdbc.support.ResultSetExecutor;
 import nextstep.jdbc.support.RowMapper;
 import nextstep.jdbc.support.RowMapperResultSetExecutor;
-import nextstep.jdbc.support.ValidUtils;
+import nextstep.jdbc.support.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -27,7 +29,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        ValidUtils.notBlank(sql, "SQL");
+        StringUtils.notBlank(sql, "SQL");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
@@ -36,8 +38,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final ExecuteCallBack<T> callBack) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
@@ -45,6 +47,8 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new ExecuteException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -55,8 +59,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ValidUtils.notBlank(sql, "SQL");
-        ValidUtils.notNull(rowMapper, "RowMapper");
+        StringUtils.notBlank(sql, "SQL");
+        ObjectUtils.notNull(rowMapper, "RowMapper");
 
         return execute(sql, (statement -> {
             setParameters(args, statement);
@@ -76,5 +80,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new ExecuteException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return this.dataSource;
     }
 }
