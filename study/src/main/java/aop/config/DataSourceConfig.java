@@ -14,6 +14,7 @@ public class DataSourceConfig {
     public DataSource dataSource() {
         return new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
+                .setName("test;DB_CLOSE_DELAY=-1;MODE=MYSQL;")
                 .addScript("classpath:schema.sql")
                 .build();
     }
