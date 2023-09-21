@@ -62,4 +62,3 @@ public class UserDao {
         jdbcTemplate.update(sql);
     }
 }
-
