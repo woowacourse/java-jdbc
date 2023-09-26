@@ -6,10 +6,18 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> rowMapper =
+            rs -> new User(
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
+            );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -42,13 +50,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.query(sql, (rs) -> {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email"));
-        });
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(Long id) {
@@ -56,13 +58,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.queryForObject(sql, (rs) -> {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email"));
-        }, id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
@@ -70,13 +66,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        return jdbcTemplate.queryForObject(sql, (rs) -> {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email"));
-        }, account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 
 }
