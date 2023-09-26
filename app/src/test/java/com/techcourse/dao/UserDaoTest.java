@@ -46,23 +46,15 @@ class UserDaoTest {
 
     @Test
     void insert() {
+        // given
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
+        // when
         final var actual = userDao.findById(2L);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
-    }
-
-    @Test
-    void insert2() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert2(user);
-
-        final var actual = userDao.findById(2L);
-
+        // then
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
