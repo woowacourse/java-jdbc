@@ -27,6 +27,10 @@ public class JdbcTemplate {
                 pstmt.setObject(index + 1, args[index]);
             }
             ResultSet rs = pstmt.executeQuery();
+            if (rs.getFetchSize() > 1) {
+                throw new IllegalArgumentException("조회 결과가 1개 이상입니다.");
+            }
+
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
@@ -35,6 +39,20 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+//
+//    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql)
+//        ) {
+//            for (int index = 0; index < args.length; index++) {
+//                pstmt.setObject(index + 1, args[index]);
+//            }
+//            ResultSet rs = pstmt.executeQuery();
+//            return rowMapper.mapRows(rs);
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     public DataSource getDataSource() {
         return dataSource;
