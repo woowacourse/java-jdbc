@@ -64,4 +64,16 @@ public class JdbcTemplate {
     public DataSource getDataSource() {
         return dataSource;
     }
+
+    public void execute(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (int index = 0; index < args.length; index++) {
+                pstmt.setObject(index + 1, args[index]);
+            }
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
