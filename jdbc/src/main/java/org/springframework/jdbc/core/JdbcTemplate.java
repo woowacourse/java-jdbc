@@ -62,7 +62,10 @@ public class JdbcTemplate {
             setPreparedStatement(pstmt, objects);
             final ResultSet rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
-            return mapper.map(rs);
+            if (rs.next()) {
+                return mapper.map(rs);
+            }
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
