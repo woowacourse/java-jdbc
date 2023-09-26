@@ -13,5 +13,5 @@
     - [ ] findByAccount
     - [ ] findById
     - [ ] findAll
-    - [ ] update
-    - [ ] insert
+    - [x] update
+    - [x] insert
