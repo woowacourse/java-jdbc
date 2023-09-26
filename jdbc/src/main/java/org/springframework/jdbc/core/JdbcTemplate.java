@@ -100,7 +100,6 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, Function<ResultSet, T> rowMapper, Object... args) {
-        List<T> result = new ArrayList<>();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -115,9 +114,11 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
+            List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.apply(rs));
             }
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -144,7 +145,6 @@ public class JdbcTemplate {
             }
         }
 
-        return result;
     }
 
     public DataSource getDataSource() {
