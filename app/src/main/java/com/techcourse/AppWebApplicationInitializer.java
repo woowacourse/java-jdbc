@@ -1,13 +1,13 @@
 package com.techcourse;
 
 import jakarta.servlet.ServletContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import web.org.springframework.web.WebApplicationInitializer;
 import webmvc.org.springframework.web.servlet.mvc.DispatcherServlet;
 import webmvc.org.springframework.web.servlet.mvc.asis.ControllerHandlerAdapter;
 import webmvc.org.springframework.web.servlet.mvc.tobe.AnnotationHandlerMapping;
 import webmvc.org.springframework.web.servlet.mvc.tobe.HandlerExecutionHandlerAdapter;
-import web.org.springframework.web.WebApplicationInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AppWebApplicationInitializer implements WebApplicationInitializer {
 

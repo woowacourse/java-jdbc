@@ -1,14 +1,13 @@
 package transaction.stage1.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -18,7 +17,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss)
+            throws DataAccessException {
         try (final var pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
@@ -59,7 +59,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm,
+                                final PreparedStatementSetter pss) {
         final var list = query(connection, sql, rm, pss);
         if (list.isEmpty()) {
             return null;
@@ -67,11 +68,13 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm, final Object... parameters) {
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm,
+                                final Object... parameters) {
         return queryForObject(connection, sql, rm, createPreparedStatementSetter(parameters));
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm,
+                             final PreparedStatementSetter pss) throws DataAccessException {
         try (final var pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);
@@ -92,7 +95,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final Object... parameters) {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm,
+                             final Object... parameters) {
         return query(connection, sql, rm, createPreparedStatementSetter(parameters));
     }
 

@@ -4,9 +4,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import webmvc.org.springframework.web.servlet.ModelAndView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import webmvc.org.springframework.web.servlet.ModelAndView;
 
 public class DispatcherServlet extends HttpServlet {
 
@@ -36,7 +36,8 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException {
+    protected void service(final HttpServletRequest request, final HttpServletResponse response)
+            throws ServletException {
         log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
 
         try {
@@ -54,7 +55,8 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
-    private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    private void render(final ModelAndView modelAndView, final HttpServletRequest request,
+                        final HttpServletResponse response) throws Exception {
         final var view = modelAndView.getView();
         view.render(modelAndView.getModel(), request, response);
     }

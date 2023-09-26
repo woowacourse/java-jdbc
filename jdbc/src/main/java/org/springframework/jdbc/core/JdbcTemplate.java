@@ -1,18 +1,14 @@
 package org.springframework.jdbc.core;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import javax.swing.tree.RowMapper;
-import javax.swing.tree.TreePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +65,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", query);
 
-            for(int i = 0; i < args.length; i++) {
+            for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
             rs = pstmt.executeQuery();
@@ -98,19 +94,22 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -124,7 +123,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", query);
 
-            for(int i = 0; i < args.length; i++) {
+            for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
             rs = pstmt.executeQuery();
@@ -154,19 +153,22 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 }

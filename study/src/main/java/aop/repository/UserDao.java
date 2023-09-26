@@ -1,11 +1,10 @@
 package aop.repository;
 
 import aop.domain.User;
+import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public class UserDao {

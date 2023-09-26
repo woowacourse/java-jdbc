@@ -1,9 +1,8 @@
 package transaction;
 
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Consumer;
 
 public final class ConsumerWrapper {
 
@@ -20,5 +19,6 @@ public final class ConsumerWrapper {
         };
     }
 
-    private ConsumerWrapper() {}
+    private ConsumerWrapper() {
+    }
 }
