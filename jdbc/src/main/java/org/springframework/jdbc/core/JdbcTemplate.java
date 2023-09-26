@@ -24,6 +24,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             log.debug("query : {}", sql);
             for (int i = 0; i < objects.length; i++) {
                 pstmt.setObject(i + 1, objects[i]);
@@ -39,16 +40,14 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+            log.debug("query : {}", sql);
             for (int i = 0; i < objects.length; i++) {
                 pstmt.setObject(i + 1, objects[i]);
             }
-            ResultSet rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
-
+            final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.execute(rs);
             }
-
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -58,16 +57,14 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            final List<T> results = new ArrayList<>();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+             final ResultSet rs = pstmt.executeQuery()) {
 
             log.debug("query : {}", sql);
-            ResultSet rs = pstmt.executeQuery();
+            final List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.execute(rs));
             }
-
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
