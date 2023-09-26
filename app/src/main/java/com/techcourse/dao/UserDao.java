@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +12,13 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = (ResultSet rs) -> {
+        long id = rs.getLong("id");
+        String account = rs.getString("account");
+        String password = rs.getString("password");
+        String email = rs.getString("email");
+        return new User(id, account, password, email);
+    };
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -37,24 +42,17 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
-    private final RowMapper<User> userRowMapper = (ResultSet rs) -> {
-        long id = rs.getLong("id");
-        String account = rs.getString("account");
-        String password = rs.getString("password");
-        String email = rs.getString("email");
-        return new User(id, account, password, email);
-    };
 }
