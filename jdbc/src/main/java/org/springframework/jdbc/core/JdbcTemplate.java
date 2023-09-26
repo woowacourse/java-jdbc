@@ -23,28 +23,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public void update(final String sql, final Object... args) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug(QUERY_FORMAT, sql);
 
-            for (int i = 1; i <= parameters.length; i++) {
-                preparedStatement.setObject(i, parameters[i - 1]);
-            }
+            bindStatementWithArgs(args, preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object id) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            preparedStatement.setObject(1, id);
+            bindStatementWithArgs(args, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug(QUERY_FORMAT, sql);
@@ -61,6 +59,12 @@ public class JdbcTemplate {
             return Optional.empty();
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private void bindStatementWithArgs(Object[] args, PreparedStatement preparedStatement) throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            preparedStatement.setObject(i, args[i - 1]);
         }
     }
 
