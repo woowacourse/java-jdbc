@@ -112,7 +112,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
             List<T> results = new ArrayList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
             return results;
