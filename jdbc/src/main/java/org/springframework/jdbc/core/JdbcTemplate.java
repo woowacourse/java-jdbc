@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Long execute(final String sql, final Object... parameters) {
+    public Long executeUpdate(final String sql, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql,
                 RETURN_GENERATED_KEYS)) {
@@ -49,6 +49,23 @@ public class JdbcTemplate {
     ) throws SQLException {
         for (int index = 1; index <= parameters.length; index++) {
             pstmt.setObject(index, parameters[index - 1]);
+        }
+    }
+
+    public <T> T executeQuery(
+        final String sql,
+        final Mapper<T> mapper,
+        final Object... objects) {
+
+        try (final Connection connection = dataSource.getConnection();
+            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            setPreparedStatement(pstmt, objects);
+            final ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
+            return mapper.map(rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }
