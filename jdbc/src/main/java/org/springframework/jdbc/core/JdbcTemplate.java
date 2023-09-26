@@ -25,9 +25,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int index = 0; index < args.length; index++) {
-                pstmt.setObject(index + 1, args[index]);
-            }
+            bindArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             if (rs.getFetchSize() > 1) {
                 throw new IllegalArgumentException("조회 결과가 1개 이상입니다.");
@@ -43,13 +41,17 @@ public class JdbcTemplate {
         }
     }
 
+    private void bindArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int index = 0; index < args.length; index++) {
+            pstmt.setObject(index + 1, args[index]);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int index = 0; index < args.length; index++) {
-                pstmt.setObject(index + 1, args[index]);
-            }
+            bindArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
 
             List<T> results = new ArrayList<>();
@@ -66,9 +68,7 @@ public class JdbcTemplate {
     public void execute(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int index = 0; index < args.length; index++) {
-                pstmt.setObject(index + 1, args[index]);
-            }
+            bindArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -76,7 +76,4 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
 }
