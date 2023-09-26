@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserDaoImpl;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -18,12 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
-    private UserDao userDao;
+    private UserDaoImpl userDao;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDaoImpl(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");

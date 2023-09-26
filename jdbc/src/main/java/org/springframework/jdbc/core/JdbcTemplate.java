@@ -10,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,20 +78,11 @@ public class JdbcTemplate {
     }
 
     public Connection getConnection() {
-        Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
