@@ -39,8 +39,7 @@ public class JdbcTemplate {
         }
     }
 
-
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object id) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object id) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
@@ -65,13 +64,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql);
                 ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-
             log.debug(QUERY_FORMAT, sql);
 
             List<T> results = new ArrayList<>();
@@ -88,4 +86,3 @@ public class JdbcTemplate {
     }
 
 }
-
