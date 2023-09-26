@@ -9,9 +9,9 @@
     - [ ] JdbcTemplate 구현하기
         - [x] 조회기능 구현
         - [x] 쓰기기능 구현
-- [ ] UserDao를 JdbcTemplate을 사용하도록 리팩터링
-    - [ ] findByAccount
-    - [ ] findById
-    - [ ] findAll
+- [x] UserDao를 JdbcTemplate을 사용하도록 리팩터링
+    - [x] findByAccount
+    - [x] findById
+    - [x] findAll
     - [x] update
     - [x] insert
