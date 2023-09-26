@@ -19,19 +19,20 @@ class UserHistoryDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
-//        userHistoryDao.insert(user);
     }
 
     @Test
     void log() {
         // given
+        final String userHistoryCreatedBy = "royce";
         final var user = new User(1L, "gugu", "password", "hkkang@woowahan.com");
-        final var userHistory = new UserHistory(user, "gugu");
+        final var userHistory = new UserHistory(user, userHistoryCreatedBy);
 
         // when
         userHistoryDao.log(userHistory);
 
         // then
-//        assertThat(actual.getAccount()).isEqualTo(account);
+        final UserHistory actual = userHistoryDao.findLogByUser(user);
+        assertThat(actual.getCreateBy()).isEqualTo(userHistoryCreatedBy);
     }
 }

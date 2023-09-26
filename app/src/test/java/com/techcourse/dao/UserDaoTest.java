@@ -37,6 +37,13 @@ class UserDaoTest {
     }
 
     @Test
+    void findByIdShouldBeNull() {
+        final var nullableUser = userDao.findById(3L);
+
+        assertThat(nullableUser).isNull();
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);

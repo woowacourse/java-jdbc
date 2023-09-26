@@ -2,7 +2,11 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +40,26 @@ public class JdbcTemplate {
         }
     }
 
+    @Nullable
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        log.debug("query : {}", sql);
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setAllArguments(args, preparedStatement);
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
+            if (resultSet.next()) {
+                final T result = rowMapper.mapRow(resultSet);
+                resultSet.close();
+                return result;
+            }
+
+            resultSet.close();
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public DataSource dataSource() {
         return dataSource;
