@@ -10,7 +10,6 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
@@ -30,8 +29,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
-
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
