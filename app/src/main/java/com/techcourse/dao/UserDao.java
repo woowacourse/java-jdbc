@@ -11,8 +11,6 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private final JdbcTemplate jdbcTemplate;
 
     private RowMapper<User> userRowMapper() {
@@ -38,12 +36,15 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        String sql = "select * from users";
+
+        return jdbcTemplate.query(sql, userRowMapper());
     }
 
     public User findById(final Long id) {
@@ -53,7 +54,8 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
     }
 }

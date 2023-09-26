@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -48,6 +50,25 @@ public class JdbcTemplate {
             }
 
             return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            final List<T> results = new ArrayList<>();
+
+            log.debug("query : {}", sql);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                results.add(rowMapper.execute(rs));
+            }
+
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
