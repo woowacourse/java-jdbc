@@ -5,16 +5,20 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate template;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        template = new JdbcTemplate(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -30,8 +34,8 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
-
+        final String sql = "select id, account, password, email from users where id = ?";
+        final User user = template.queryForObject(sql, userRowMapper(), 1L);
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
@@ -65,5 +69,13 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    private RowMapper<User> userRowMapper() {
+        return (rs, rowNum) -> new User(
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        );
     }
 }
