@@ -10,16 +10,13 @@ import java.util.List;
 
 public class UserDao {
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(JdbcTemplate jdbcTemplate) {
-        this.dataSource = jdbcTemplate.getDataSource();
         this.jdbcTemplate = jdbcTemplate;
     }
 
