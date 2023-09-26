@@ -28,10 +28,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            final int argsLength = args.length;
-            for (int i = 0; i < argsLength; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            processPreparedStatementParameter(pstmt, args);
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -40,15 +37,19 @@ public class JdbcTemplate {
         }
     }
 
+    private void processPreparedStatementParameter(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        final int argsLength = args.length;
+        for (int i = 0; i < argsLength; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMaper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            final int argsLength = args.length;
-            for (int i = 0; i < argsLength; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            processPreparedStatementParameter(pstmt, args);
 
             List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -67,32 +68,34 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            final int argsLength = args.length;
-            for (int i = 0; i < argsLength; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            log.debug("query : {}", sql);
+
+            processPreparedStatementParameter(pstmt, args);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-
-                log.debug("query : {}", sql);
 
                 T findObject = null;
                 if (rs.next()) {
                     findObject = rowMapper.mapRow(rs, rs.getRow());
                 }
-                if (findObject == null) {
-                    throw new IncorrectResultSizeDataAccessException(0);
-                }
-                if (rs.next()) {
-                    rs.last();
-                    throw new IncorrectResultSizeDataAccessException(rs.getRow());
-                }
+
+                validateSingleResult(findObject, rs);
 
                 return findObject;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void validateSingleResult(final T findObject, final ResultSet rs) throws SQLException {
+        if (findObject == null) {
+            throw new IncorrectResultSizeDataAccessException(0);
+        }
+        if (rs.next()) {
+            rs.last();
+            throw new IncorrectResultSizeDataAccessException(rs.getRow());
         }
     }
 }
