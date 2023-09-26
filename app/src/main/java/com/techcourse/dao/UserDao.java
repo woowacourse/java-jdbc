@@ -17,13 +17,11 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
-
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = jdbcTemplate.dataSource();
     }
 
     public void insert(final User user) {
@@ -57,6 +55,11 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    public void insert2(final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
