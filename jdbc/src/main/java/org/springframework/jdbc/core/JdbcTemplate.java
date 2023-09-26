@@ -28,6 +28,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             setAllArguments(args, preparedStatement);
             preparedStatement.executeUpdate();
+
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -61,7 +62,23 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource dataSource() {
-        return dataSource;
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        log.debug("query : {}", sql);
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setAllArguments(args, preparedStatement);
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                final T result = rowMapper.mapRow(resultSet);
+                results.add(result);
+            }
+
+            resultSet.close();
+            return results;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

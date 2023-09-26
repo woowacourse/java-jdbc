@@ -31,11 +31,12 @@ public class UserDao {
 
     public void update(final User user) {
         // todo
+
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
