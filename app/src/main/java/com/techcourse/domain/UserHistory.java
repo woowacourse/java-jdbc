@@ -10,9 +10,7 @@ public class UserHistory {
     private final String account;
     private final String password;
     private final String email;
-
     private final LocalDateTime createdAt;
-
     private final String createBy;
 
     public UserHistory(final User user, final String createBy) {
