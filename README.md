@@ -5,4 +5,4 @@
 - [ ] update 쿼리 수정
 - [ ] rowMapper에 대한 고민.. 상수 or 변수 + 컨벤션
 - [ ] @FunctionalInterface의 장점?
-- [ ] getFetchSize() 메서드 X
+- [x] getFetchSize() 메서드 X

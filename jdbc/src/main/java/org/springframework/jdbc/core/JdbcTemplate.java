@@ -27,11 +27,9 @@ public class JdbcTemplate {
         ) {
             bindArguments(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
-            if (rs.getFetchSize() > 1) {
-                throw new IllegalArgumentException("조회 결과가 1개 이상입니다.");
-            }
 
-            if (rs.next()) {
+            if (rs.last()) {
+                validateSingleRow(rs);
                 return rowMapper.mapRow(rs);
             }
             return null;
@@ -44,6 +42,12 @@ public class JdbcTemplate {
     private void bindArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
         for (int index = 0; index < args.length; index++) {
             pstmt.setObject(index + 1, args[index]);
+        }
+    }
+
+    private void validateSingleRow(ResultSet rs) throws SQLException {
+        if (rs.getRow() != 1) {
+            throw new IllegalArgumentException("조회 결과가 2개 이상입니다.");
         }
     }
 
