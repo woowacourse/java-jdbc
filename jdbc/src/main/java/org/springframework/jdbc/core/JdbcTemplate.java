@@ -23,12 +23,9 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
 
             final int argsLength = args.length;
@@ -40,119 +37,62 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMaper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
 
             final int argsLength = args.length;
             for (int i = 0; i < argsLength; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
 
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
             List<T> results = new ArrayList<>();
-            if (rs.next()) {
-                results.add(rowMaper.mapRow(rs, rs.getRow()));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    results.add(rowMaper.mapRow(rs, rs.getRow()));
+                }
             }
 
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final int argsLength = args.length;
             for (int i = 0; i < argsLength; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
 
-            rs = pstmt.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()) {
 
-            log.debug("query : {}", sql);
+                log.debug("query : {}", sql);
 
-            T findObject = null;
-            if (rs.next()) {
-                findObject = rowMapper.mapRow(rs, rs.getRow());
-            }
-            if (findObject == null) {
-                throw new IncorrectResultSizeDataAccessException(0);
-            }
-            if (rs.next()) {
-                rs.last();
-                throw new IncorrectResultSizeDataAccessException(rs.getRow());
-            }
+                T findObject = null;
+                if (rs.next()) {
+                    findObject = rowMapper.mapRow(rs, rs.getRow());
+                }
+                if (findObject == null) {
+                    throw new IncorrectResultSizeDataAccessException(0);
+                }
+                if (rs.next()) {
+                    rs.last();
+                    throw new IncorrectResultSizeDataAccessException(rs.getRow());
+                }
 
-            return findObject;
+                return findObject;
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 }
