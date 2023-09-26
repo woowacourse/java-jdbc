@@ -26,17 +26,31 @@ class Stage1Test {
      * Connection Pooling and Statement Pooling
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
      */
+
+    // 여기서 드는 의문
+    // 미리 만들어둔 커넥션은 재사용이 가능하니,
+    // 미리 만들지 않았을 때는 초기 연결만 느리고,
+    // 데이터베이스 최대 커넥션만큼 다 만들어 졌을 때는
+    // 미리 커넥션을 만들어 둔 것과 비교해서 차이가 있는가?
+    // (나는 없을 것 같다고 생각한다.)
     @Test
     void testJdbcConnectionPool() throws SQLException {
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
-        assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
-        try (final var connection = jdbcConnectionPool.getConnection()) {
-            assertThat(connection.isValid(1)).isTrue();
-            assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
-        }
+        // 커넥션이 미리 만들어져 있지 않음을 검증한다.
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
+        // 커넥션 풀에서 커넥션을 꺼내온다.
+        try (final var connection = jdbcConnectionPool.getConnection()) {
+            // 꺼내온 커넥션이 유효한 커넥션인가?
+            assertThat(connection.isValid(1)).isTrue();
+            // 꺼내온 커넥션이 활성 상태인가?
+            assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
+        }
+        // 커넥션 풀에 활성 상태인 커넥션이 없는가?
+        assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
+
+        // 커넥션 풀 닫기
         jdbcConnectionPool.dispose();
     }
 
@@ -65,6 +79,7 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
