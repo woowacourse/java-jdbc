@@ -22,11 +22,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             bindArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
+            final ResultSet rs = pstmt.executeQuery();
 
             if (rs.last()) {
                 validateSingleRow(rs);
@@ -39,26 +39,26 @@ public class JdbcTemplate {
         }
     }
 
-    private void bindArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void bindArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int index = 0; index < args.length; index++) {
             pstmt.setObject(index + 1, args[index]);
         }
     }
 
-    private void validateSingleRow(ResultSet rs) throws SQLException {
+    private void validateSingleRow(final ResultSet rs) throws SQLException {
         if (rs.getRow() != 1) {
             throw new IllegalArgumentException("조회 결과가 2개 이상입니다.");
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             bindArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
+            final ResultSet rs = pstmt.executeQuery();
 
-            List<T> results = new ArrayList<>();
+            final List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
@@ -69,9 +69,9 @@ public class JdbcTemplate {
         }
     }
 
-    public void execute(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void execute(final String sql, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             bindArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
