@@ -23,7 +23,6 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... params) throws DataAccessException {
         log.debug("query : {}", sql);
-
         execute(sql, new PreparedStatementCreator(), ps -> {
             doSetValue(params, ps);
             ps.execute();
@@ -43,7 +42,7 @@ public class JdbcTemplate {
         ));
     }
 
-    private int updateCount(@Nullable final Integer result) {
+    private int updateCount(@Nullable final Integer result) throws DataAccessException {
         if (result == null) {
             throw new DataAccessException("no update count");
         }
@@ -73,7 +72,7 @@ public class JdbcTemplate {
         ));
     }
 
-    private <T> List<T> results(@Nullable final List<T> results) {
+    private <T> List<T> results(@Nullable final List<T> results) throws DataAccessException {
         if (results == null) {
             throw new DataAccessException("no result");
         }
@@ -91,7 +90,7 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementCreator psc,
             final PreparedStatementCallback<T> action
-    ) {
+    ) throws DataAccessException {
         try (
                 final var conn = getConnection();
                 final var ps = psc.createPreparedStatement(conn, sql)
