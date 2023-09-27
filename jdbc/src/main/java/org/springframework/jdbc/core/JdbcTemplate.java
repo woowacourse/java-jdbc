@@ -23,14 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public void update(final String sql, final Object... conditions) {
         try (
                 final Connection connection = getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 1; i <= parameters.length; i++) {
-                preparedStatement.setObject(i, parameters[i - 1]);
+            for (int i = 1; i <= conditions.length; i++) {
+                preparedStatement.setObject(i, conditions[i - 1]);
             }
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -38,21 +38,21 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object condition) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... conditions) {
         try (
                 final Connection connection = getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            preparedStatement.setObject(1, condition);
-            final ResultSet resultSet = preparedStatement.executeQuery();
             log.debug("query : {}", sql);
+            for (int i = 1; i <= conditions.length; i++) {
+                preparedStatement.setObject(i, conditions[i - 1]);
+            }
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
                 final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
-                resultSet.close();
                 return Optional.ofNullable(result);
             }
-            resultSet.close();
             return Optional.empty();
         } catch (SQLException e) {
             throw new DataAccessException(e);
