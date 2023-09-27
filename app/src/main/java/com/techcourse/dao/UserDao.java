@@ -4,13 +4,13 @@ import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -19,12 +19,11 @@ public class UserDao {
 
     private final DataSource dataSource;
 
+    private final JdbcTemplate jdbcTemplate;
+
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -97,45 +96,14 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "SELECT id, account, password, email FROM users";
 
-        List<User> users = new ArrayList<>();
+        RowMapper<User> userRowMapper = resultSet -> new User(
+                    resultSet.getLong(1),
+                    resultSet.getString(2),
+                    resultSet.getString(3),
+                    resultSet.getString(4)
+            );
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            ResultSet resultSet = pstmt.executeQuery();
-
-            while (resultSet.next()) {
-                User user =  new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4)
-                );
-                users.add(user);
-            }
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
-        return users;
+        return jdbcTemplate.queryForObjectsWithParameter(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
