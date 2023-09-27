@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
              final ResultSet rs = pstmt.executeQuery()
@@ -79,7 +79,6 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = setPreparedStatement(conn, sql, args)
         ) {
-            bindArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
