@@ -12,8 +12,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
+
+    public static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+    );
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
@@ -94,107 +102,23 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "SELECT id, account, password, email FROM users";
-
-        RowMapper<User> userRowMapper = resultSet -> new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4)
-            );
-
-        return jdbcTemplate.queryForObjectsWithParameter(sql, userRowMapper);
+        final String sql = "SELECT id, account, password, email FROM users";
+        return jdbcTemplate.queryForObjectsWithParameter(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
+        Optional<User> user = jdbcTemplate.queryForObjectWithParameter(sql, USER_ROW_MAPPER, id);
 
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return user.orElseThrow(() -> new IllegalArgumentException("해당 아이디로 조회되는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
+        Optional<User> user = jdbcTemplate.queryForObjectWithParameter(sql, USER_ROW_MAPPER, account);
 
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return user.orElseThrow(() -> new IllegalArgumentException("해당 계정으로 조회되는 유저가 없습니다."));
     }
 }
