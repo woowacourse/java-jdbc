@@ -2,11 +2,13 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -27,13 +29,47 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) throws SQLException {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameterIfExist(preparedStatement, parameters);
+            return executeQuery(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) throws SQLException {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameterIfExist(preparedStatement, parameters);
+            return getSingleResult(executeQuery(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper)));
+        }
+    }
+
     private void setParameterIfExist(PreparedStatement preparedStatement, Object[] parameters) throws SQLException {
         if (parameters.length == 0) {
             return;
         }
 
         for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i+1, parameters[i]);
+            preparedStatement.setObject(i + 1, parameters[i]);
         }
+    }
+
+    private <T> T executeQuery(PreparedStatement preparedStatement, ResultSetExtractor<T> resultSetExtractor)
+            throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        return resultSetExtractor.extractData(resultSet);
+    }
+
+    private <T> T getSingleResult(Collection<T> results) throws SQLException {
+        if (results.isEmpty()) {
+            throw new SQLException("일치하는 결과가 존재하지 않습니다.");
+        }
+
+        if (results.size() > 1) {
+            throw new SQLException("결과가 2개 이상 존재합니다.");
+        }
+
+        return results.iterator().next();
     }
 }
