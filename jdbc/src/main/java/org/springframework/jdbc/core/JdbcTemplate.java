@@ -26,10 +26,13 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
              final ResultSet rs = pstmt.executeQuery()
         ) {
+            conn.setReadOnly(true);
+            conn.setAutoCommit(false);
             if (rs.last()) {
                 validateSingleRow(rs);
                 return rowMapper.mapRow(rs);
             }
+            conn.commit();
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -64,10 +67,13 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
              final ResultSet rs = pstmt.executeQuery()
         ) {
+            conn.setReadOnly(true);
+            conn.setAutoCommit(false);
             final List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
+            conn.commit();
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -76,12 +82,22 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = setPreparedStatement(conn, sql, args)
-        ) {
+        Connection conn = null;
+        try {
+            conn = dataSource.getConnection();
+            final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
+            conn.setAutoCommit(false);
             pstmt.executeUpdate();
+            conn.commit();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            try {
+                if (conn != null) {
+                    conn.rollback();
+                }
+            } catch (SQLException ex) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(ex);
+            }
             throw new RuntimeException(e);
         }
     }
