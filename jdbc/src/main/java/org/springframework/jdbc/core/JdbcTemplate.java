@@ -49,7 +49,7 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             setElements(elements, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -70,9 +70,9 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             setElements(elements, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
-            List<T> results = new ArrayList<>();
+            final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
