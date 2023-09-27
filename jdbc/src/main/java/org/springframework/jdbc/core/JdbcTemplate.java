@@ -33,6 +33,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameterIfExist(preparedStatement, parameters);
+            log.info("JDBC QUERY SQL = {}", sql);
             return executeQuery(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper));
         }
     }
@@ -41,15 +42,12 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameterIfExist(preparedStatement, parameters);
+            log.info("JDBC QUERY_FOR_OBJECT SQL = {}", sql);
             return getSingleResult(executeQuery(preparedStatement, new RowMapperResultSetExtractor<>(rowMapper)));
         }
     }
 
     private void setParameterIfExist(PreparedStatement preparedStatement, Object[] parameters) throws SQLException {
-        if (parameters.length == 0) {
-            return;
-        }
-
         for (int i = 0; i < parameters.length; i++) {
             preparedStatement.setObject(i + 1, parameters[i]);
         }
