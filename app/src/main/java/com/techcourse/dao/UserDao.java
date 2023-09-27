@@ -1,13 +1,20 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-    private final UserMapper mapper = new UserMapper();
+    private final RowMapper mapper = (ResultSet rs) ->
+            new User(
+                    rs.getLong(1),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getString(4));
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
