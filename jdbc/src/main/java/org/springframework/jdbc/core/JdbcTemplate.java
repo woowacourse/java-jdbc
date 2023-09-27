@@ -14,8 +14,6 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final int INDEX_OF_OBJECT = 0;
-
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -25,10 +23,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setObjects(args, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
+             final ResultSet resultSet = preparedStatement.executeQuery()) {
 
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
@@ -37,41 +34,44 @@ public class JdbcTemplate {
 
             return results;
         } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setObjects(args, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
+             final ResultSet resultSet = preparedStatement.executeQuery()) {
 
-            List<T> results = new ArrayList<>();
-            if (resultSet.next()) {
-                T result = rowMapper.mapToRow(resultSet);
-                results.add(result);
+            if (!resultSet.next()) {
+                return null;
             }
 
-            return results.get(INDEX_OF_OBJECT);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setObjects(args, preparedStatement);
-            preparedStatement.executeUpdate();
+            return rowMapper.mapToRow(resultSet);
         } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    private void setObjects(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
+    public void update(final String sql, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
+            preparedStatement.executeUpdate();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
+
+        return preparedStatement;
     }
 }
