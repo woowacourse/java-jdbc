@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -37,10 +38,18 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final User newUser = new User("gugu2", "password", "email");
+        userDao.insert(newUser);
+        final var user = userDao.findByAccount(newUser.getAccount());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.getAccount()).isEqualTo(newUser.getAccount());
+    }
+
+    @Test
+    void findByAccountFailByTooManyResults() {
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(("row 갯수가 1보다 많아요."));
     }
 
     @Test
