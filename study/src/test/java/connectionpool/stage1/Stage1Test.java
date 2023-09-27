@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.ConnectionPoolDataSource;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +34,7 @@ class Stage1Test {
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
-            assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
+            assertThat(jdbcConnectionPool.getActiveConnections()).isOne();
         }
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
