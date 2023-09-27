@@ -38,7 +38,7 @@ class UserDaoTest {
     @Test
     void findById() {
         final String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        final User user = template.queryForObject(sql, userRowMapper(), 1L);
+        final User user = template.queryForObject(sql, userRowMapper(), 1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -47,7 +47,7 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "gugu";
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        final var user = template.queryForObject(sql, userRowMapper(), account);
+        final User user = template.queryForObject(sql, userRowMapper(), account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
