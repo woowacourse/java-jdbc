@@ -29,9 +29,7 @@ public class JdbcTemplate {
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 1; i <= conditions.length; i++) {
-                preparedStatement.setObject(i, conditions[i - 1]);
-            }
+            setConditions(preparedStatement, conditions);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -44,9 +42,7 @@ public class JdbcTemplate {
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 1; i <= conditions.length; i++) {
-                preparedStatement.setObject(i, conditions[i - 1]);
-            }
+            setConditions(preparedStatement, conditions);
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
@@ -66,7 +62,6 @@ public class JdbcTemplate {
                 final ResultSet resultSet = preparedStatement.executeQuery()
         ) {
             log.debug("query : {}", sql);
-
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
@@ -83,6 +78,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setConditions(PreparedStatement preparedStatement, Object[] conditions) throws SQLException {
+        for (int i = 1; i <= conditions.length; i++) {
+            preparedStatement.setObject(i, conditions[i - 1]);
         }
     }
 
