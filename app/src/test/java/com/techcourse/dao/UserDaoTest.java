@@ -29,22 +29,25 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final String sql = "select * from users";
+        final String sql = "SELECT id, account, password, email FROM users";
         final List<User> users = template.query(sql, userRowMapper());
+
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final String sql = "select id, account, password, email from users where id = ?";
+        final String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         final User user = template.queryForObject(sql, userRowMapper(), 1L);
+
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
+        final var user = template.queryForObject(sql, userRowMapper(), account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -53,8 +56,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        final String sql1 = "insert into users(account, password, email) values(?, ?, ?)";
-
+        final String sql1 = "INSERT INTO users(account, password, email) VALUES(?, ?, ?)";
         final int updatedRow = template.update(sql1, user.getAccount(), user.getPassword(), user.getEmail());
 
         final var actual = userDao.findById(2L);
@@ -68,7 +70,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        final String sql2 = "update users set password = ? where id = ?";
+        final String sql2 = "UPDATE users SET password = ? WHERE id = ?";
         template.update(sql2, user.getPassword(), user.getId());
         final var actual = userDao.findById(1L);
 
