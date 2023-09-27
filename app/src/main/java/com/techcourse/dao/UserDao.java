@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -38,34 +39,27 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, ((rs, rowNum) ->
-                new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                )));
+        return jdbcTemplate.query(sql, getUserRowMapper());
     }
+
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, id, ((rs, rowNum) ->
-                new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                )));
+        return jdbcTemplate.queryForObject(sql, id, getUserRowMapper());
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, account, ((rs, rowNum) ->
+        return jdbcTemplate.queryForObject(sql, account, getUserRowMapper());
+    }
+
+    private RowMapper<User> getUserRowMapper() {
+        return (rs, rowNum) ->
                 new User(
                         rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email")
-                )));
+                );
     }
 }
