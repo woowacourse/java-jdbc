@@ -40,12 +40,7 @@ public class UserDao {
     for (int i = 0; i < results.size(); i++) {
       final Map<Integer, Object> result = results.get(i);
 
-      users.add(new User(
-          (Long) result.get(1),
-          (String) result.get(2),
-          (String) result.get(3),
-          (String) result.get(4)
-      ));
+      users.add(createUserFrom(result));
     }
 
     return users;
@@ -56,12 +51,7 @@ public class UserDao {
 
     final Map<Integer, Object> result = jdbcTemplate.query(sql, id);
 
-    return new User(
-        (Long) result.get(1),
-        (String) result.get(2),
-        (String) result.get(3),
-        (String) result.get(4)
-    );
+    return createUserFrom(result);
   }
 
   public User findByAccount(final String account) {
@@ -69,6 +59,10 @@ public class UserDao {
 
     final Map<Integer, Object> result = jdbcTemplate.query(sql, account);
 
+    return createUserFrom(result);
+  }
+
+  private User createUserFrom(final Map<Integer, Object> result) {
     return new User(
         (Long) result.get(1),
         (String) result.get(2),
