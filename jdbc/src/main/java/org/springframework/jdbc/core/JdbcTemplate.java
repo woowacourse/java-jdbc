@@ -47,6 +47,35 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(String sql, Object... args) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            setParameter(pstmt, args);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
+    }
+
     private static void setParameter(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i=0; i<args.length; i++) {
             Object value = args[i];
