@@ -26,9 +26,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            for (int i = 1; i < arguments.length + 1; i++) {
-                pstmt.setObject(i, arguments[i - 1]);
-            }
+            setArguments(pstmt, arguments);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,17 +34,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Object argument, RowMapper<T> rowMapper) {
-        ResultSet rs = null;
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setObject(1, argument);
-            rs = pstmt.executeQuery();
-
+            setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return rowMapper.getRow(rs, rs.getRow());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.getRow(rs, rs.getRow());
+                }
             }
             throw new NoSuchElementException();
         } catch (SQLException e) {
@@ -55,19 +51,27 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.getRow(rs, rs.getRow()));
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
-            return results;
+            List<T> results = new ArrayList<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rowMapper.getRow(rs, rs.getRow()));
+                }
+                return results;
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setArguments(PreparedStatement pstmt, Object[] arguments) throws SQLException {
+        for (int i = 1; i < arguments.length + 1; i++) {
+            pstmt.setObject(i, arguments[i - 1]);
         }
     }
 }

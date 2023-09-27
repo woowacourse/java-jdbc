@@ -45,12 +45,12 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, id, getUserRowMapper());
+        return jdbcTemplate.queryForObject(sql,getUserRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, account, getUserRowMapper());
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
     }
 
     private RowMapper<User> getUserRowMapper() {
