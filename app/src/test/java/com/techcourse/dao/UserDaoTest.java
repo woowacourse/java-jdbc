@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -27,8 +29,8 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
-
+        final String sql = "select * from users";
+        final List<User> users = template.query(sql, userRowMapper());
         assertThat(users).isNotEmpty();
     }
 
