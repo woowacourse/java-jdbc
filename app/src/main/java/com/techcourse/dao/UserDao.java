@@ -33,36 +33,7 @@ public class UserDao {
   public void insert(final User user) {
     final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    try {
-      conn = dataSource.getConnection();
-      pstmt = conn.prepareStatement(sql);
-
-      log.debug("query : {}", sql);
-
-      pstmt.setString(1, user.getAccount());
-      pstmt.setString(2, user.getPassword());
-      pstmt.setString(3, user.getEmail());
-      pstmt.executeUpdate();
-    } catch (SQLException e) {
-      log.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        if (pstmt != null) {
-          pstmt.close();
-        }
-      } catch (SQLException ignored) {
-      }
-
-      try {
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ignored) {
-      }
-    }
+    jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
   }
 
   public void update(final User user) {
