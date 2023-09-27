@@ -23,6 +23,7 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
             result.add(rowMapper.mapRow(rs, rowNum));
             rowNum++;
         }
+        rs.close();
         return result;
     }
 }
