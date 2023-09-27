@@ -38,12 +38,15 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select id, account, email, password from users";
+
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -53,7 +56,8 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
