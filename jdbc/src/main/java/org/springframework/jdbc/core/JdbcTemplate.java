@@ -6,10 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate<T> {
 
@@ -93,13 +92,13 @@ public class JdbcTemplate<T> {
     }
 
     private void setParameter(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i=0; i<args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             Object value = args[i];
             if (value instanceof String) {
-                pstmt.setString(i+1, (String) value);
+                pstmt.setString(i + 1, (String) value);
             }
             if (value instanceof Long) {
-                pstmt.setLong(i+1, (Long) value);
+                pstmt.setLong(i + 1, (Long) value);
             }
         }
     }
@@ -122,9 +121,5 @@ public class JdbcTemplate<T> {
                 conn.close();
             }
         } catch (SQLException ignored) {}
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }
