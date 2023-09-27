@@ -22,51 +22,70 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args);
-        ) {
-            log.debug("query : {}", sql);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        log.debug("query : {}", sql);
+        execute(sql, new PreparedStatementExecutor<>() {
+            @Override
+            public Object fetchData(ResultSet resultSet) throws SQLException {
+                return null;
+            }
+
+            @Override
+            public ResultSet fetchResultSet(PreparedStatement preparedStatement) throws SQLException {
+                preparedStatement.execute();
+                return null;
+            }
+        }, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("query : {}", sql);
 
-        return execute(sql, (resultSet) -> {
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
+        return execute(sql, new PreparedStatementExecutor<T>() {
+            @Override
+            public T fetchData(ResultSet resultSet) throws SQLException {
+                if (resultSet.next()) {
+                    return rowMapper.mapRow(resultSet);
+                }
+                return null;
             }
-            return null;
-        }, args);
-    }
 
-    private <T> T execute(String sql, ResultSetExecutor<T> resultSetExecutor, Object... args) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args);
-                ResultSet rs = preparedStatement.executeQuery();
-        ) {
-            return resultSetExecutor.execute(rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            @Override
+            public ResultSet fetchResultSet(PreparedStatement preparedStatement) throws SQLException {
+                return preparedStatement.executeQuery();
+            }
+        }, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("query : {}", sql);
-        return execute(sql, (resultSet) -> {
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
+        return execute(sql, new PreparedStatementExecutor<>() {
+            @Override
+            public List<T> fetchData(ResultSet resultSet) throws SQLException {
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+                return results;
             }
-            return results;
+
+            @Override
+            public ResultSet fetchResultSet(PreparedStatement preparedStatement) throws SQLException {
+                return preparedStatement.executeQuery();
+            }
         }, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args);
+                ResultSet rs = preparedStatementExecutor.fetchResultSet(preparedStatement);
+        ) {
+            return preparedStatementExecutor.fetchData(rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     private PreparedStatement getPreparedStatement(String sql, Connection connection, Object... args) throws SQLException {
