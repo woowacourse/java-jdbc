@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -15,29 +16,27 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final TransactionManager transactionManager;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
-             final ResultSet rs = pstmt.executeQuery()
-        ) {
-            conn.setReadOnly(true);
-            conn.setAutoCommit(false);
-            if (rs.last()) {
-                validateSingleRow(rs);
-                return rowMapper.mapRow(rs);
+        return transactionManager.executeWithReadOnlyTransaction(conn -> {
+            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
+                 final ResultSet rs = pstmt.executeQuery()
+            ) {
+                if (rs.last()) {
+                    validateSingleRow(rs);
+                    return rowMapper.mapRow(rs);
+                }
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
-            conn.commit();
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     private PreparedStatement setPreparedStatement(
@@ -63,43 +62,31 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
-             final ResultSet rs = pstmt.executeQuery()
-        ) {
-            conn.setReadOnly(true);
-            conn.setAutoCommit(false);
-            final List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+        return transactionManager.executeWithReadOnlyTransaction(conn -> {
+            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
+                 final ResultSet rs = pstmt.executeQuery()
+            ) {
+                final List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
-            conn.commit();
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public void execute(final String sql, final Object... args) {
-        Connection conn = null;
-        try {
-            conn = dataSource.getConnection();
-            final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
-            conn.setAutoCommit(false);
-            pstmt.executeUpdate();
-            conn.commit();
-        } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException ex) {
+        transactionManager.executeWithTransaction(conn -> {
+            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
                 log.error(e.getMessage(), e);
-                throw new RuntimeException(ex);
+                throw new RuntimeException(e);
             }
-            throw new RuntimeException(e);
-        }
+        });
     }
 
 }
