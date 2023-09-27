@@ -31,7 +31,7 @@ public class JdbcTemplate {
                 return Optional.empty();
             }
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -47,7 +47,7 @@ public class JdbcTemplate {
             }
 
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -59,7 +59,7 @@ public class JdbcTemplate {
             }
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
