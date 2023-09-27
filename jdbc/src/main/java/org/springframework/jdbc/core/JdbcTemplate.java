@@ -34,17 +34,7 @@ public class JdbcTemplate<T> {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            close(null, pstmt, conn);
         }
     }
 
@@ -69,27 +59,11 @@ public class JdbcTemplate<T> {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            close(rs, pstmt, conn);
         }
     }
 
-    private static void setParameter(PreparedStatement pstmt, Object... args) throws SQLException {
+    private void setParameter(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i=0; i<args.length; i++) {
             Object value = args[i];
             if (value instanceof String) {
@@ -99,6 +73,26 @@ public class JdbcTemplate<T> {
                 pstmt.setLong(i+1, (Long) value);
             }
         }
+    }
+
+    private void close(final ResultSet rs, final PreparedStatement pstmt, final Connection conn) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (SQLException ignored) {}
+
+        try {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+        } catch (SQLException ignored) {}
+
+        try {
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException ignored) {}
     }
 
     public DataSource getDataSource() {
