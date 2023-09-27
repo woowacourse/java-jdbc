@@ -18,5 +18,6 @@ public final class RunnableWrapper {
         };
     }
 
-    private RunnableWrapper() {}
+    private RunnableWrapper() {
+    }
 }

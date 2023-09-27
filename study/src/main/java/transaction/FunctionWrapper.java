@@ -1,9 +1,8 @@
 package transaction;
 
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Function;
 
 public class FunctionWrapper {
 
@@ -20,5 +19,6 @@ public class FunctionWrapper {
         };
     }
 
-    private FunctionWrapper() {}
+    private FunctionWrapper() {
+    }
 }

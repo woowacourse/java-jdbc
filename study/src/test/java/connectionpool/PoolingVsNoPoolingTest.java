@@ -4,6 +4,11 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.util.ClockSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -12,18 +17,10 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
- *
- * network bandwidth capture
- * 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자.
- * $ sudo iftop -i lo0 -nf "host localhost"
+ * <p>
+ * network bandwidth capture 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자. $ sudo iftop -i lo0 -nf "host localhost"
  * windows 사용자라면 wsl2를 사용하거나 다른 모니터링 툴을 찾아보자.
  */
 class PoolingVsNoPoolingTest {
@@ -48,7 +45,8 @@ class PoolingVsNoPoolingTest {
             conn.setAutoCommit(true);
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("DROP TABLE IF EXISTS users;");
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL) ENGINE=INNODB;");
+                stmt.execute(
+                        "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL) ENGINE=INNODB;");
                 stmt.executeUpdate("INSERT INTO users (email) VALUES ('hkkang@woowahan.com')");
                 conn.setAutoCommit(false);
             }

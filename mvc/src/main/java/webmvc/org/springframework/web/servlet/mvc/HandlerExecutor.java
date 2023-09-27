@@ -12,7 +12,8 @@ public class HandlerExecutor {
         this.handlerAdapterRegistry = handlerAdapterRegistry;
     }
 
-    public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response, final Object handler) throws Exception {
+    public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response,
+                               final Object handler) throws Exception {
         final var handlerAdapter = handlerAdapterRegistry.getHandlerAdapter(handler);
         return handlerAdapter.handle(request, response, handler);
     }

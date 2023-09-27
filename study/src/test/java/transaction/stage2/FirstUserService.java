@@ -1,5 +1,10 @@
 package transaction.stage2;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,12 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class FirstUserService {
@@ -66,7 +65,7 @@ public class FirstUserService {
         throw new RuntimeException();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    //    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithSupports() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -77,7 +76,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    //    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithMandatory() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());

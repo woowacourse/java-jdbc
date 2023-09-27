@@ -31,13 +31,13 @@ public class TxUserService implements UserService {
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
-        /* ===== 트랜잭션 영역 ===== */
+            /* ===== 트랜잭션 영역 ===== */
 
-        /* ===== 애플리케이션 영역 ===== */
+            /* ===== 애플리케이션 영역 ===== */
             userService.changePassword(id, newPassword, createBy);
-        /* ===== 애플리케이션 영역 ===== */
+            /* ===== 애플리케이션 영역 ===== */
 
-        /* ===== 트랜잭션 영역 ===== */
+            /* ===== 트랜잭션 영역 ===== */
         } catch (RuntimeException e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
