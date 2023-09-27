@@ -2,56 +2,60 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
+import context.org.springframework.stereotype.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import webmvc.org.springframework.web.servlet.view.JspView;
-import webmvc.org.springframework.web.servlet.ModelAndView;
-import context.org.springframework.stereotype.Controller;
-import web.org.springframework.web.bind.annotation.RequestMapping;
-import web.org.springframework.web.bind.annotation.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import web.org.springframework.web.bind.annotation.GetMapping;
+import web.org.springframework.web.bind.annotation.PostMapping;
+import webmvc.org.springframework.web.servlet.ModelAndView;
+import webmvc.org.springframework.web.servlet.View;
+import webmvc.org.springframework.web.servlet.view.JspView;
 
 @Controller
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
-    @RequestMapping(value = "/login", method = RequestMethod.GET)
-    public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
-        return UserSession.getUserFrom(request.getSession())
+    @GetMapping("/login")
+    public ModelAndView getLoginView(final HttpServletRequest req, final HttpServletResponse res) {
+        final View view = UserSession.getUserFrom(req.getSession())
                 .map(user -> {
                     log.info("logged in {}", user.getAccount());
-                    return redirect("/index.jsp");
+                    return new JspView("redirect:/index.jsp");
                 })
-                .orElse(new ModelAndView(new JspView("/login.jsp")));
+                .orElse(new JspView("/login.jsp"));
+
+        return new ModelAndView(view);
     }
 
-    @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ModelAndView login(final HttpServletRequest request, final HttpServletResponse response) {
-        if (UserSession.isLoggedIn(request.getSession())) {
-            return redirect("/index.jsp");
+    @PostMapping("/login")
+    public ModelAndView login(final HttpServletRequest req, final HttpServletResponse res) {
+        if (UserSession.isLoggedIn(req.getSession())) {
+            final View view = new JspView("redirect:/index.jsp");
+            return new ModelAndView(view);
         }
+        final String account = req.getParameter("account");
+        final View view = generateView(req, account);
+        return new ModelAndView(view);
+    }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
+    private JspView generateView(HttpServletRequest req, String account) {
+        return InMemoryUserRepository.findByAccount(account)
                 .map(user -> {
                     log.info("User : {}", user);
-                    return login(request, user);
+                    return generateLoginView(req, user);
                 })
-                .orElse(redirect("/401.jsp"));
+                .orElse(new JspView("redirect:/401.jsp"));
     }
 
-    private ModelAndView login(final HttpServletRequest request, final User user) {
+    private JspView generateLoginView(final HttpServletRequest request, final User user) {
         if (user.checkPassword(request.getParameter("password"))) {
             final var session = request.getSession();
             session.setAttribute(UserSession.SESSION_KEY, user);
-            return redirect("/index.jsp");
-        } else {
-            return redirect("/401.jsp");
+            return new JspView("redirect:/index.jsp");
         }
-    }
-
-    private ModelAndView redirect(final String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
+        return new JspView("redirect:/401.jsp");
     }
 }

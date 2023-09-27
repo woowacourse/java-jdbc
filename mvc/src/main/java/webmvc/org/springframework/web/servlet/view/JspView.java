@@ -1,13 +1,14 @@
 package webmvc.org.springframework.web.servlet.view;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webmvc.org.springframework.web.servlet.View;
 
+import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 
 public class JspView implements View {
 
@@ -18,23 +19,33 @@ public class JspView implements View {
     private final String viewName;
 
     public JspView(final String viewName) {
-        this.viewName = Objects.requireNonNull(viewName, "viewName is null. 이동할 URL을 입력하세요.");
+        this.viewName = viewName;
     }
 
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        log.debug("ViewName : {}", viewName);
-        if (viewName.startsWith(REDIRECT_PREFIX)) {
-            response.sendRedirect(viewName.substring(REDIRECT_PREFIX.length()));
+    public void render(final Map<String, ?> model, final HttpServletRequest request,
+                       final HttpServletResponse response) throws Exception {
+        if (viewName.startsWith(JspView.REDIRECT_PREFIX)) {
+            response.sendRedirect(viewName.substring(JspView.REDIRECT_PREFIX.length()));
             return;
         }
+        setupAttribute(model, request);
+        forward(request, response);
+    }
 
+    private void setupAttribute(Map<String, ?> model, HttpServletRequest request) {
         model.keySet().forEach(key -> {
             log.debug("attribute name : {}, value : {}", key, model.get(key));
             request.setAttribute(key, model.get(key));
         });
+    }
 
-        final var requestDispatcher = request.getRequestDispatcher(viewName);
-        requestDispatcher.forward(request, response);
+    private void forward(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            final var requestDispatcher = request.getRequestDispatcher(viewName);
+            requestDispatcher.forward(request, response);
+        } catch (ServletException | IOException e) {
+            throw new JspForwardException(e);
+        }
     }
 }
