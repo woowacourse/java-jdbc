@@ -45,9 +45,9 @@ public class UserDao {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.executeQuery(sql, (rs) -> {
             final List<User> users = new ArrayList<>();
-            while (rs.next()) {
+            do {
                 users.add(USER_MAPPER.map(rs));
-            }
+            } while (rs.next());
             return users;
         });
     }

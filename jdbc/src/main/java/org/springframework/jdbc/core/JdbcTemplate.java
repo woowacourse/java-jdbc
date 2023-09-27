@@ -55,8 +55,8 @@ public class JdbcTemplate {
     public <T> T executeQuery(
         final String sql,
         final Mapper<T> mapper,
-        final Object... objects) {
-
+        final Object... objects
+    ) {
         try (final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setPreparedStatement(pstmt, objects);
