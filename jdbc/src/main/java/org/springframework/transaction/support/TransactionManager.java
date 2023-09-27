@@ -19,7 +19,7 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public  <T> T executeWithReadOnlyTransaction(final Function<Connection, T> function) {
+    public <T> T executeWithReadOnlyTransaction(final Function<Connection, T> function) {
         try (final Connection conn = dataSource.getConnection()) {
             conn.setReadOnly(true);
             conn.setAutoCommit(false);
