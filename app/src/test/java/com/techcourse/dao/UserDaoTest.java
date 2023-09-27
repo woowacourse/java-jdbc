@@ -53,7 +53,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final String sql1 = "insert into users(account, password, email) values(?, ?, ?)";
+
+        final int updatedRow = template.update(sql1, user.getAccount(), user.getPassword(), user.getEmail());
 
         final var actual = userDao.findById(2L);
 
@@ -66,15 +68,15 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
-
+        final String sql2 = "update users set password = ? where id = ?";
+        template.update(sql2, user.getPassword(), user.getId());
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     private RowMapper<User> userRowMapper() {
-        return (rs, rowNum) -> new User(
+        return rs -> new User(
                 rs.getString("account"),
                 rs.getString("password"),
                 rs.getString("email")
