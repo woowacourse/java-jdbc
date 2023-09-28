@@ -8,7 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 public class JdbcTemplate {
 
@@ -20,7 +19,7 @@ public class JdbcTemplate {
         this.connectionManager = connectionManager;
     }
 
-    public void executeUpdate(String query, List<Object> parameters) {
+    public void executeUpdate(String query, Object... parameters) {
         try (final Connection connection = connectionManager.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             log.info("query: {}", query);
@@ -31,7 +30,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(String query, List<Object> parameters, RowMapper<T> rowMapper) {
+    public <T> T executeQuery(String query, RowMapper<T> rowMapper, Object... parameters) {
         try (final Connection connection = connectionManager.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(query);
              final ResultSet resultSet = executePreparedStatementQuery(preparedStatement, parameters)) {
@@ -42,15 +41,14 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executePreparedStatementQuery(PreparedStatement preparedStatement, List<Object> parameters)
-            throws SQLException {
+    private ResultSet executePreparedStatementQuery(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
         setParameters(preparedStatement, parameters);
         return preparedStatement.executeQuery();
     }
 
-    private void setParameters(PreparedStatement preparedStatement, List<Object> parameters) throws SQLException {
-        for (int index = 1; index <= parameters.size(); index++) {
-            preparedStatement.setString(index, String.valueOf(parameters.get(index - 1)));
+    private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
+        for (int index = 1; index <= parameters.length; index++) {
+            preparedStatement.setString(index, String.valueOf(parameters[index - 1]));
         }
     }
 
