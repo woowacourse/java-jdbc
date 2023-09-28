@@ -15,7 +15,7 @@ public enum SqlType {
         this.type = type;
     }
 
-    public static SqlType get(final Object value) {
+    static SqlType get(final Object value) {
         return Arrays.stream(values())
                 .filter(sqlType -> sqlType.type.equals(value.getClass()))
                 .findFirst()

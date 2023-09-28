@@ -8,7 +8,7 @@ public class PreparedStatementTypeValue {
     private final SqlType sqlType;
     private final Object object;
 
-    public PreparedStatementTypeValue(final Object object) {
+    PreparedStatementTypeValue(final Object object) {
         this.sqlType = SqlType.get(object);
         this.object = object;
     }
