@@ -65,8 +65,25 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+
+        /**
+         * cachePrepStmts
+         * 캐시가 비활성화된 경우에는 아래 두 설정이 실제로 아무 영향도 끼치지 않아야 합니다. 이 설정은 반드시 true로 설정해야 합니다.
+         */
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+
+        /**
+         * prepStmtCacheSize
+         * 커넥션이 맺어졌을 때, 캐싱할 PreparedStatement의 개수를 정합니다. 기본값은 25이며, 250~500 사이를 추천합니다.
+         * (쿼리를 발송하기 위해 만든 PrepareStatement는 캐싱해두고, 같은 쿼리를 전송할 때 활용할 수 있습니다.)
+         */
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+
+        /**
+         * prepStmtCacheSqlLimit
+         * 캐시할 PreparedStatement의 길이 제한을 둘 수 있습니다. MySQL의 기본값은 256자인데,
+         * ORM등을 사용하는 경우 이 기본값을 넘는 경우가 훨씬 많아지기 때문에 2048자를 추천합니다.
+         */
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         final var dataSource = new HikariDataSource(hikariConfig);
