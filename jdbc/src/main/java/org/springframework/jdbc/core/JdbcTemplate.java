@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.SqlQueryException;
@@ -29,12 +31,30 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(String query, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T executeQueryForObject(String query, RowMapper<T> rowMapper, Object... parameters) {
         try (final Connection connection = connectionManager.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(query);
              final ResultSet resultSet = executePreparedStatementQuery(preparedStatement, parameters)) {
             log.info("query: {}", query);
-            return rowMapper.mapRow(resultSet);
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
+            }
+            return null;
+        } catch (SQLException exception) {
+            throw new SqlQueryException(exception.getMessage(), query);
+        }
+    }
+
+    public <T> List<T> executeQueryForList(String query, RowMapper<T> rowMapper, Object... parameters) {
+        try (final Connection connection = connectionManager.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(query);
+             final ResultSet resultSet = executePreparedStatementQuery(preparedStatement, parameters)) {
+            log.info("query: {}", query);
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
         } catch (SQLException exception) {
             throw new SqlQueryException(exception.getMessage(), query);
         }

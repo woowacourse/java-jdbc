@@ -1,37 +1,19 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> {
-        if (resultSet.next()) {
-            return new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet ->
+            new User(
                     resultSet.getLong(1),
                     resultSet.getString(2),
                     resultSet.getString(3),
                     resultSet.getString(4)
             );
-        }
-        return null;
-    };
-    private static final RowMapper<List<User>> USERS_ROW_MAPPER = resultSet -> {
-        List<User> users = new ArrayList<>();
-        while (resultSet.next()) {
-            users.add(new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4)
-            ));
-        }
-        return users;
-    };
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(JdbcTemplate jdbcTemplate) {
@@ -59,16 +41,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.executeQuery(sql, USERS_ROW_MAPPER);
+        return jdbcTemplate.executeQueryForList(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.executeQuery(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.executeQueryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.executeQuery(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.executeQueryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
