@@ -4,5 +4,5 @@
 - [ ] UserDaoTest 성공하게 만들기
   - [x] findAll()
   - [x] findByAccount()
-  - [ ] update()
+  - [x] update()
 - [ ] JdbcTemplate 으로 중복 제거
