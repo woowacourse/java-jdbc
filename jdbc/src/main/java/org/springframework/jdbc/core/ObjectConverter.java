@@ -35,10 +35,12 @@ public class ObjectConverter {
 
     private static <T> Constructor<?> findAllFieldsConstructor(Class<T> type) {
         List<String> fieldNames = extractFieldNames(type);
-        return Stream.of(type.getDeclaredConstructors())
+        Constructor<?> noAllFieldInitializingConstructor = Stream.of(type.getDeclaredConstructors())
             .filter(constructor -> haveAllField(constructor, fieldNames))
             .findAny()
             .orElseThrow(() -> new ResultSetConvertException("no All Field Initializing Constructor"));
+        noAllFieldInitializingConstructor.setAccessible(true);
+        return noAllFieldInitializingConstructor;
     }
 
     private static boolean haveAllField(Constructor<?> constructor, List<String> fieldNames) {
