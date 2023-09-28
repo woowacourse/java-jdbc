@@ -48,13 +48,13 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.queryForObjectsWithParameter(sql, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Optional<User> user = jdbcTemplate.queryForObjectWithParameter(sql, rowMapper, id);
+        Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, id);
 
         return user.orElseThrow(() -> new IllegalArgumentException("해당 아이디로 조회되는 유저가 없습니다."));
     }
@@ -62,7 +62,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Optional<User> user = jdbcTemplate.queryForObjectWithParameter(sql, rowMapper, account);
+        Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, account);
 
         return user.orElseThrow(() -> new IllegalArgumentException("해당 계정으로 조회되는 유로가 없습니다."));
     }

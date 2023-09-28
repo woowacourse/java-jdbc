@@ -22,9 +22,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> queryForObjectsWithParameter(final String sql,
-                                                    final RowMapper<T> rowMapper,
-                                                    final Object... objects) {
+    public <T> List<T> query(final String sql,
+                             final RowMapper<T> rowMapper,
+                             final Object... objects) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -39,9 +39,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObjectWithParameter(final String sql,
-                                                       final RowMapper<T> rowMapper,
-                                                       final Object... objects) {
+    public <T> Optional<T> querySingleRow(final String sql,
+                                          final RowMapper<T> rowMapper,
+                                          final Object... objects) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
