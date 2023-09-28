@@ -9,6 +9,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 class UserDaoTest {
 
@@ -42,6 +43,18 @@ class UserDaoTest {
         // when & then
         assertThatThrownBy(() -> userDao.findById(0L))
             .isInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void findByAccount_incorrectResultSize() {
+        // given
+        final var user = new User("glen", "password", "glen@fiddich.com");
+        userDao.insert(user);
+        userDao.insert(user);
+
+        // when & then
+        assertThatThrownBy(() -> userDao.findByAccount("glen"))
+            .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
