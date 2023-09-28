@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +69,9 @@ public class JdbcTemplate {
             if (rs.next()) {
                 T result = rowMapper.mapRow(rs);
 
-                // TODO: 2023/09/26 이 부분.. 질문 드리도록 하겠습니다.
-//                if (rs.next()) {
-//                    throw new IllegalArgumentException("Incorrect Result Size ! Result  must be one");
-//                }
+                if (rs.next()) {
+                    throw new IllegalArgumentException("Incorrect Result Size ! Result  must be one");
+                }
 
                 return result;
             }

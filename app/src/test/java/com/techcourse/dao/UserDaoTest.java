@@ -1,22 +1,27 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.util.List;import org.junit.jupiter.api.BeforeEach;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
         userDao = new UserDao(DataSourceConfig.getInstance());
+
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -30,6 +35,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         User user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
