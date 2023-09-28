@@ -8,6 +8,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -30,8 +32,9 @@ public class JdbcTemplate {
                 if (!rs.next()) {
                     return result;
                 }
+                throw new IncorrectResultSizeDataAccessException();
             }
-            throw new DataAccessException("No data is available");
+            throw new EmptyResultDataAccessException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);

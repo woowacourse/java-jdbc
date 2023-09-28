@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 class UserDaoTest {
 
@@ -33,6 +35,13 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findById_emptyResult() {
+        // when & then
+        assertThatThrownBy(() -> userDao.findById(0L))
+            .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
