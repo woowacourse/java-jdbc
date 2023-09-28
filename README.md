@@ -2,7 +2,7 @@
 
 ## 기능 구현 목록
 - [ ] UserDaoTest 성공하게 만들기
-  - [ ] findAll()
+  - [x] findAll()
   - [ ] findByAccount()
   - [ ] update()
 - [ ] JdbcTemplate 으로 중복 제거
