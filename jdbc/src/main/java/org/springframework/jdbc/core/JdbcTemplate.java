@@ -40,7 +40,6 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql);
              final ResultSet rs = getResultSet(pstmt, params)) {
-
             log.debug("query : {}", sql);
 
             final List<T> results = new ArrayList<>();
@@ -58,7 +57,6 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql);
              final ResultSet rs = getResultSet(pstmt, params)) {
-
             log.debug("query : {}", sql);
 
             if (rs.next()) {
