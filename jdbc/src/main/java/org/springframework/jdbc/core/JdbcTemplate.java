@@ -20,14 +20,10 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsFunc) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmtFunc.apply(pstmt);
-            rs = pstmt.executeQuery();
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
             log.debug("query : {}", sql);
             if (rs.next()) {
                 T result = rsFunc.apply(rs);
@@ -39,31 +35,26 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-                // ignore
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-                // ignore
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-                // ignore
-            }
         }
+    }
+
+    public void update(String sql, PreparedStatementFunc pstmtFunc) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmtFunc.apply(pstmt);
+            pstmt.executeUpdate();
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private PreparedStatement applyPreparedStatementFunction(PreparedStatement ps, PreparedStatementFunc psf)
+        throws SQLException {
+        psf.apply(ps);
+        return ps;
     }
 
     public interface PreparedStatementFunc {
