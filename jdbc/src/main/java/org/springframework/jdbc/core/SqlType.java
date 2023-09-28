@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import java.util.Arrays;
+import org.springframework.jdbc.core.JdbcTemplateException.NoSqlTypeException;
 
 public enum SqlType {
 
@@ -19,6 +20,13 @@ public enum SqlType {
         return Arrays.stream(values())
                 .filter(sqlType -> sqlType.type.equals(value.getClass()))
                 .findFirst()
-                .orElseThrow(SqlTypeException::new);
+                .orElseThrow(() -> new NoSqlTypeException("type: " + value.getClass().getSimpleName()));
+    }
+
+    static SqlType get(final Class<?> value) {
+        return Arrays.stream(values())
+                .filter(sqlType -> sqlType.type.equals(value))
+                .findFirst()
+                .orElseThrow(() -> new NoSqlTypeException("type: " + value.getSimpleName()));
     }
 }
