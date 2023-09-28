@@ -50,19 +50,27 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final Map<String, Class<?>> values = new HashMap<>();
-        values.put("id", Long.class);
-        values.put("account", String.class);
-        values.put("password", String.class);
-        values.put("email", String.class);
-
+        final Map<String, Class<?>> userFields = getUserFields();
         final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(id));
-        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(values, User.class);
+        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
         return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
     }
 
+    private Map<String, Class<?>> getUserFields() {
+        return new HashMap<>() {{
+            put("id", Long.class);
+            put("account", String.class);
+            put("password", String.class);
+            put("email", String.class);
+        }};
+    }
+
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        final Map<String, Class<?>> userFields = getUserFields();
+        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(account));
+        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
+        return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
     }
 }
