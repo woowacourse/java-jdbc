@@ -40,7 +40,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -55,7 +56,9 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+
+        final var sql = "select id, account, password, email from users where account = ?";
+        return (User) jdbcTemplate.queryForObject(sql, rowMapper, account)
+                .orElseThrow(() -> new DataAccessException("사용자가 존재하지 않습니다."));
     }
 }
