@@ -25,119 +25,55 @@ public class JdbcTemplate {
     public <T> List<T> queryForObjectsWithParameter(final String sql,
                                                     final RowMapper<T> rowMapper,
                                                     final Object... objects) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
-            List<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rowMapper.mapRow(rs));
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
+             final ResultSet resultSet = preparedStatement.executeQuery()) {
+            final List<T> list = new ArrayList<>();
+            while (resultSet.next()) {
+                list.add(rowMapper.mapRow(resultSet));
             }
             return list;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> Optional<T> queryForObjectWithParameter(final String sql,
                                                        final RowMapper<T> rowMapper,
                                                        final Object... objects) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            rs = pstmt.executeQuery();
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
+             final ResultSet resultSet = preparedStatement.executeQuery()) {
             log.debug("query : {}", sql);
-            List<T> list = new ArrayList<>();
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
+            if (resultSet.next()) {
+                return Optional.of(rowMapper.mapRow(resultSet));
             }
             return Optional.empty();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public void update(final String sql,
                        final Object... objects) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects)) {
+            preparedStatement.executeUpdate();
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
+    }
+
+    private PreparedStatement initializePreparedStatement(final Connection connection,
+                                                          final String sql,
+                                                          final Object[] objects) throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int i = 0; i < objects.length; i++) {
+            preparedStatement.setObject(i + 1, objects[i]);
+        }
+        return preparedStatement;
     }
 }
