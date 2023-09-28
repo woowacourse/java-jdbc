@@ -1,9 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
@@ -28,11 +28,14 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         final String account = user.getAccount();
         final String password = user.getPassword();
         final String email = user.getEmail();
+
+        log.debug("sql={}", sql);
+
         jdbcTemplate.update(sql, account, password, email);
     }
 
@@ -43,16 +46,24 @@ public class UserDao {
         final String password = user.getPassword();
         final String email = user.getEmail();
         final Long id = user.getId();
+
+        log.debug("sql={}", sql);
+
         jdbcTemplate.update(sql, account, password, email, id);
     }
 
     public List<User> findAll() {
         final String sql = "SELECT id, account, password, email FROM users";
+
+        log.debug("sql={}", sql);
+
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final String sql = "select id, account, password, email from users where id = ?";
+
+        log.debug("sql={}", sql);
 
         Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, id);
 
@@ -60,7 +71,9 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        final String sql = "select id, account, password, email from users where account = ?";
+
+        log.debug("sql={}", sql);
 
         Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, account);
 
