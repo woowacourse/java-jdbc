@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +43,30 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsFunc) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            log.debug("query : {}", sql);
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rsFunc.apply(rs));
+            }
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public void update(String sql, PreparedStatementFunc pstmtFunc) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             pstmtFunc.apply(pstmt);
             pstmt.executeUpdate();
-            log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
