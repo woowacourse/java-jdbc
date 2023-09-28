@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.techcourse.support.jdbc.init.ResourceNames;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
@@ -14,7 +16,8 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), ResourceNames.SCHEMA_RESOURCE_NAME);
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), ResourceNames.TRUNCATE_RESOURCE_NAME);
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -30,7 +33,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findAll().get(0);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -57,12 +60,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findAll().get(0);
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findAll().get(0);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
