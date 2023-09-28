@@ -23,6 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            throw new EmptyResultAccessException();
+        }
+        return results.get(0);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -43,17 +51,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new EmptyResultAccessException();
-        }
-        return results.get(0);
-    }
-
     public void update(final String sql, final Object... args) {
         try (Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             PreparedStatementSetter pstSetter = new ArgumentPreparedStatementSetter(args);
