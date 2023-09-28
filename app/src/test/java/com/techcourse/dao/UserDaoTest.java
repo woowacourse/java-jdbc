@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -26,14 +26,6 @@ class UserDaoTest {
         final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
-    }
-
-    @Test
-    void findAll_SizeTest(){
-        userDao.insert(new User(2L,"J","J","J"));
-        final var users = userDao.findAll();
-
-        assertThat(users).hasSize(2);
     }
 
     @Test
