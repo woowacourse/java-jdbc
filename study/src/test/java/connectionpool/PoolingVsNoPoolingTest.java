@@ -68,28 +68,41 @@ class PoolingVsNoPoolingTest {
         connect(dataSource);
         long end = ClockSource.currentTime();
 
-        // 테스트 결과를 확인한다.
+        // 테스트 결과를 확인한다. : Elapsed runtime: 4s615ms
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
     @Test
     void pooling() throws SQLException {
+        // PostgreSQL 에서 제공하는 공식 connections = ((core_count * 2) + effective_spindle_count)을 참고
         final var config = new HikariConfig();
         config.setJdbcUrl(container.getJdbcUrl());
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setMinimumIdle(1);
-        config.setMaximumPoolSize(1);
+        config.setMaximumPoolSize(16); // 내 맥북 코어 개수 *2 함. 이 값만 기본에서 바꿨을 때 755~721ms
         config.setConnectionTimeout(1000);
         config.setAutoCommit(false);
-        config.setReadOnly(false);
+        config.setReadOnly(true); // 이 값만 기본에서 바꿨을 때 745ms
+        // 추가
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+        config.addDataSourceProperty("useLocalSessionState", "true");
+        config.addDataSourceProperty("rewriteBatchedStatements", "true");
+        config.addDataSourceProperty("cacheResultSetMetadata", "true");
+        config.addDataSourceProperty("cacheServerConfiguration", "true");
+        config.addDataSourceProperty("elideSetAutoCommits", "true");
+        config.addDataSourceProperty("maintainTimeStats", "false");
         final var hikariDataSource = new HikariDataSource(config);
 
         long start = ClockSource.currentTime();
         connect(hikariDataSource);
         long end = ClockSource.currentTime();
 
-        // 테스트 결과를 확인한다.
+        // 테스트 결과를 확인한다. 기본 값에 따르면 Elapsed runtime: 772ms, 위 설정값에 따르면 720ms
+        // 근데 오차범위가 너무 큰 것 같다.
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
