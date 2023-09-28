@@ -1,8 +1,7 @@
 package webmvc.org.springframework.web.servlet.mvc.tobe;
 
-import web.org.springframework.web.bind.annotation.RequestMethod;
-
 import java.util.Objects;
+import web.org.springframework.web.bind.annotation.RequestMethod;
 
 public class HandlerKey {
 

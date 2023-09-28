@@ -1,8 +1,7 @@
 package aop.stage1;
 
-import org.springframework.aop.support.StaticMethodMatcherPointcut;
-
 import java.lang.reflect.Method;
+import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 /**
  * 포인트컷(pointcut). 어드바이스를 적용할 조인 포인트를 선별하는 클래스.

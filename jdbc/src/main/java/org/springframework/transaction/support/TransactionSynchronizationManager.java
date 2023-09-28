@@ -1,8 +1,8 @@
 package org.springframework.transaction.support;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 

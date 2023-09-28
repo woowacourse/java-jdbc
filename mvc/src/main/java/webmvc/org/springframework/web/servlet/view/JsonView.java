@@ -4,11 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import web.org.springframework.http.MediaType;
-import webmvc.org.springframework.web.servlet.View;
-
 import java.io.IOException;
 import java.util.Map;
+import web.org.springframework.http.MediaType;
+import webmvc.org.springframework.web.servlet.View;
 
 public class JsonView implements View {
 
