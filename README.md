@@ -5,4 +5,4 @@
 
 - [x] UserDao findAll 구현
 - [x] UserDao update 구현
-- [ ] UserDao findByAccount 구현
+- [x] UserDao findByAccount 구현
