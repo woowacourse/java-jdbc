@@ -36,7 +36,7 @@ class Stage2Test {
         final var hikariPool = getPool((HikariDataSource) dataSource);
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
-        final var threads = new Thread[20];
+        final var threads = new Thread[15];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
         }
@@ -53,7 +53,7 @@ class Stage2Test {
         assertThat(hikariPool.getTotalConnections()).isEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
 
         // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
-        assertThat(hikariDataSource.getPoolName()).isEqualTo("gugu");
+        assertThat(hikariDataSource.getPoolName()).isEqualTo("REO");
     }
 
     // 데이터베이스에 연결만 하는 메서드. 커넥션 풀에 몇 개의 연결이 생기는지 확인하는 용도.
