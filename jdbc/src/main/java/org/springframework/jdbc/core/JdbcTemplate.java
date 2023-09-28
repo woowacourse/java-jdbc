@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -34,7 +36,25 @@ public class JdbcTemplate {
         }
     }
 
-    public Optional<Object> queryForObject(final String sql, final RowMapper rowMapper, final Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+             final ResultSet rs = getResultSet(pstmt, params)) {
+
+            log.debug("query : {}", sql);
+
+            final List<T> results = new ArrayList<>();
+
+            if (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return results;
+        } catch (final SQLException e) {
+            throw new CannotGetJdbcConnectionException(e.getMessage());
+        }
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql);
              final ResultSet rs = getResultSet(pstmt, params)) {
@@ -42,7 +62,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs, 4));
+                return Optional.of(rowMapper.mapRow(rs, rs.getRow()));
             }
             return null;
         } catch (final SQLException e) {

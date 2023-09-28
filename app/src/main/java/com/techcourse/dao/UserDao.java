@@ -45,20 +45,20 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.queryForObject(sql, rowMapper, id)
+        return jdbcTemplate.queryForObject(sql, rowMapper, id)
                 .orElseThrow(() -> new DataAccessException("사용자가 존재하지 않습니다."));
     }
 
     public User findByAccount(final String account) {
 
         final var sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.queryForObject(sql, rowMapper, account)
+        return jdbcTemplate.queryForObject(sql, rowMapper, account)
                 .orElseThrow(() -> new DataAccessException("사용자가 존재하지 않습니다."));
     }
 }
