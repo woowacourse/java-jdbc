@@ -8,7 +8,6 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 public class JdbcTemplate {
@@ -19,16 +18,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public void update(final String sql) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 
     public void update(final String sql, final Object... params) {
@@ -47,12 +36,8 @@ public class JdbcTemplate {
 
     public Optional<Object> queryForObject(final String sql, final RowMapper rowMapper, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setString(i + 1, params[i].toString());
-            }
-            final ResultSet rs = pstmt.executeQuery();
+             final PreparedStatement pstmt = conn.prepareStatement(sql);
+             final ResultSet rs = getResultSet(pstmt, params)) {
 
             log.debug("query : {}", sql);
 
@@ -63,5 +48,12 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             throw new CannotGetJdbcConnectionException(e.getMessage());
         }
+    }
+
+    private ResultSet getResultSet(final PreparedStatement pstmt, final Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setString(i + 1, params[i].toString());
+        }
+        return pstmt.executeQuery();
     }
 }
