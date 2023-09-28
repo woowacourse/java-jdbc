@@ -4,7 +4,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.JdbcTemplate.ResultSetMapper;
+import org.springframework.jdbc.core.ResultSetMapper;
 
 public class UserDao {
 

@@ -108,9 +108,4 @@ public class JdbcTemplate {
 
         void apply(PreparedStatement pst) throws SQLException;
     }
-
-    public interface ResultSetMapper<T> {
-
-        T apply(ResultSet rs) throws SQLException;
-    }
 }
