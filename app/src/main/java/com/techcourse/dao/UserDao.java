@@ -13,11 +13,11 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> rowMapper = (rs, rowNum) -> {
-        long id = rs.getLong("id");
-        String account = rs.getString("account");
-        String password = rs.getString("password");
-        String email = rs.getString("email");
+    private final RowMapper<User> rowMapper = resultSet -> {
+        long id = resultSet.getLong("id");
+        String account = resultSet.getString("account");
+        String password = resultSet.getString("password");
+        String email = resultSet.getString("email");
         return new User(id, account, password, email);
     };
 

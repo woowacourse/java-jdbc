@@ -15,13 +15,10 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
     }
 
     @Override
-    public List<T> extractData(ResultSet rs)
-            throws SQLException, DataAccessException {
+    public List<T> extractData(ResultSet rs) throws SQLException, DataAccessException {
         List<T> result = new ArrayList<>();
-        int rowNum = 0;
         while (rs.next()) {
-            result.add(rowMapper.mapRow(rs, rowNum));
-            rowNum++;
+            result.add(rowMapper.mapRow(rs));
         }
         rs.close();
         return result;
