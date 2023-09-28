@@ -48,7 +48,6 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
-
                 T result = rowMapper.mapRow(rs);
 
                 results.add(result);
