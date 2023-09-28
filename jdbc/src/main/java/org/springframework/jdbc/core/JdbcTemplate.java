@@ -109,4 +109,35 @@ public class JdbcTemplate {
             } catch (SQLException ignored) {}
         }
     }
+
+    public void update(final String sql,
+                       final Object... objects) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+            log.debug("query : {}", sql);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
+    }
 }
