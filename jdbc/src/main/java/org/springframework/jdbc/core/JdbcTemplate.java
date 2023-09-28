@@ -2,10 +2,12 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplateException.SqlException;
 
 public class JdbcTemplate {
 
@@ -18,16 +20,41 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        log.debug("query : {}", sql);
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            log.debug("query : {}", sql);
-
-            preparedStatementSetter.setPreparedStatement(ps);
+            preparedStatementSetter.set(ps);
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SqlException(e.getMessage());
+        }
+    }
+
+    public <T> T find(final String sql,
+                      final PreparedStatementSetter preparedStatementSetter,
+                      final ResultSetGetter<T> rsg) {
+        log.debug("query : {}", sql);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            preparedStatementSetter.set(ps);
+            return getObject(rsg, ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new SqlException(e.getMessage());
+        }
+    }
+
+    private <T> T getObject(ResultSetGetter<T> rsg, PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rsg.getObject(rs);
+            }
+            return null;
         }
     }
 }
