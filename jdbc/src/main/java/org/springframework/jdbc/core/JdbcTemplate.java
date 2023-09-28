@@ -26,13 +26,17 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            int index = 1;
-            for (Object arg : args) {
-                pstmt.setObject(index++, arg);
-            }
+            bind(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void bind(PreparedStatement pstmt, Object[] args) throws SQLException {
+        int index = 1;
+        for (Object arg : args) {
+            pstmt.setObject(index++, arg);
         }
     }
 
@@ -42,11 +46,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            int index = 1;
-            for (Object arg : args) {
-                pstmt.setObject(index++, arg);
-            }
-
+            bind(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -63,11 +63,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            int index = 1;
-            for (Object arg : args) {
-                pstmt.setObject(index++, arg);
-            }
-
+            bind(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
             while (rs.next()) {
