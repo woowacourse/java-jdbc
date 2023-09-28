@@ -3,6 +3,6 @@
 
 ## 요구사항
 
-- [ ] UserDao findAll 구현
+- [x] UserDao findAll 구현
 - [ ] UserDao update 구현
 - [ ] UserDao findByAccount 구현
