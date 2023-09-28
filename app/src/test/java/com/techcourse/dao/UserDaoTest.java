@@ -29,6 +29,14 @@ class UserDaoTest {
     }
 
     @Test
+    void findAll_SizeTest(){
+        userDao.insert(new User(2L,"J","J","J"));
+        final var users = userDao.findAll();
+
+        assertThat(users).hasSize(2);
+    }
+
+    @Test
     void findById() {
         final var user = userDao.findById(1L);
 
