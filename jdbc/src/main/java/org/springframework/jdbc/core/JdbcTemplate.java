@@ -23,14 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsFunc) {
+    public <T> T queryForObject(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsMapper) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
+            logQuery(sql);
             if (rs.next()) {
-                T result = rsFunc.apply(rs);
+                T result = rsMapper.apply(rs);
                 if (!rs.next()) {
                     return result;
                 }
@@ -38,24 +38,49 @@ public class JdbcTemplate {
             }
             throw new EmptyResultDataAccessException();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            logException(e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    public <T> List<T> query(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsFunc) {
+    private void logQuery(String sql) {
+        log.debug("query : {}", sql);
+    }
+
+    private void logException(SQLException e) {
+        log.error(e.getMessage(), e);
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsMapper) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
+            logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(rsFunc.apply(rs));
+                result.add(rsMapper.apply(rs));
             }
             return result;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public <T> List<T> query(String sql, ResultSetMapper<T> rsMapper) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            logQuery(sql);
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rsMapper.apply(rs));
+            }
+            return result;
+        } catch (SQLException e) {
+            logException(e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }
@@ -64,11 +89,11 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
+            logQuery(sql);
             pstmtFunc.apply(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            logException(e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }

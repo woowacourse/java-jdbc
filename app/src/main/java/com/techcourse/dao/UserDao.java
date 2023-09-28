@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -38,40 +40,24 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, ignored -> {
-            // ignore
-        }, rs -> {
-            long userId = rs.getLong(1);
-            String account = rs.getString(2);
-            String password = rs.getString(3);
-            String email = rs.getString(4);
-            return new User(userId, account, password, email);
-        });
+        return jdbcTemplate.query(sql, this::userMapper);
+    }
+
+    private User userMapper(ResultSet rs) throws SQLException {
+        long userId = rs.getLong(1);
+        String userAccount = rs.getString(2);
+        String password = rs.getString(3);
+        String email = rs.getString(4);
+        return new User(userId, userAccount, password, email);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, ps -> {
-            ps.setLong(1, id);
-        }, rs -> {
-            long userId = rs.getLong(1);
-            String account = rs.getString(2);
-            String password = rs.getString(3);
-            String email = rs.getString(4);
-            return new User(userId, account, password, email);
-        });
+        return jdbcTemplate.queryForObject(sql, ps -> ps.setLong(1, id), this::userMapper);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, ps -> {
-            ps.setString(1, account);
-        }, rs -> {
-            long userId = rs.getLong(1);
-            String userAccount = rs.getString(2);
-            String password = rs.getString(3);
-            String email = rs.getString(4);
-            return new User(userId, userAccount, password, email);
-        });
+        return jdbcTemplate.queryForObject(sql, ps -> ps.setString(1, account), this::userMapper);
     }
 }
