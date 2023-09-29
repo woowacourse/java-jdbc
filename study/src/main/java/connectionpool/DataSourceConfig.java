@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 @Configuration
 public class DataSourceConfig {
 
-    public static final int MAXIMUM_POOL_SIZE = 5;
+    public static final int MAXIMUM_POOL_SIZE = 18;
     private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
