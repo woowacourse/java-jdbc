@@ -1,16 +1,13 @@
 package org.springframework.jdbc.core;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class JdbcTemplate extends JdbcTemplateBase {
-
-    private static final Class<Integer> METHOD_FIRST_PARAMETER_TYPE = int.class;
 
     public JdbcTemplate(final DataSource dataSource) {
         super(dataSource);
@@ -73,25 +70,9 @@ public class JdbcTemplate extends JdbcTemplateBase {
         });
     }
 
-    private void setParameters(final Object[] params, final PreparedStatement preparedStatement) {
+    private void setParameters(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < params.length; i++) {
-            invokeSetMethod(preparedStatement, i + 1, params[i]);
-        }
-    }
-
-    public void invokeSetMethod(final PreparedStatement preparedStatement,
-                                final int order,
-                                final Object parameter) {
-        final SupportType type = SupportType.findType(parameter);
-        final String methodName = type.getPreparedStatementMethodName();
-        final Class<? extends PreparedStatement> aClass = preparedStatement.getClass();
-
-        try {
-            final Method method = aClass.getDeclaredMethod(methodName, METHOD_FIRST_PARAMETER_TYPE,
-                type.getClassType());
-            method.invoke(preparedStatement, order, parameter);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            preparedStatement.setObject(i + 1, params[i]);
         }
     }
 }
