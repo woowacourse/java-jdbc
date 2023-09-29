@@ -6,4 +6,4 @@
 - 리팩터링
   - [x] JdbcTemplate 내 리소스 관리 try-with-resources 구문으로 변경
   - [x] JdbcTemplate 내 중복 코드 제거
-  - [ ] Class 타입으로 바로 받을 수 있도록 JdbcTemplate 메서드 추가
+  - [x] Class 타입으로 바로 받을 수 있도록 JdbcTemplate 메서드 추가
