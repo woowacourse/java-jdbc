@@ -77,30 +77,9 @@ public class JdbcTemplate {
         return queryForObject(
                 sql,
                 rs -> {
-                    try {
-                        Constructor<T> constructor = requiredType.getDeclaredConstructor();
-                        constructor.setAccessible(true);
-                        T instance = constructor.newInstance();
-                        constructor.setAccessible(false);
-
-                        Field[] fields = requiredType.getDeclaredFields();
-                        for (int i = 0; i < fields.length; i++) {
-                            Field field = fields[i];
-                            field.setAccessible(true);
-                            field.set(instance, rs.getObject(1 + i));
-                            field.setAccessible(false);
-                        }
-
-                        return instance;
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException(e);
-                    } catch (InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    } catch (InstantiationException e) {
-                        throw new RuntimeException(e);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    }
+                    T instance = createInstance(requiredType);
+                    fillFields(requiredType, rs, instance);
+                    return instance;
                 },
                 params
         );
@@ -141,38 +120,56 @@ public class JdbcTemplate {
         return query(
                 sql,
                 rs -> {
-                    try {
-                        Constructor<T> constructor = requiredType.getDeclaredConstructor();
-                        constructor.setAccessible(true);
-                        T instance = constructor.newInstance();
-                        constructor.setAccessible(false);
-
-                        Field[] fields = requiredType.getDeclaredFields();
-                        for (int i = 0; i < fields.length; i++) {
-                            Field field = fields[i];
-                            field.setAccessible(true);
-                            field.set(instance, rs.getObject(1 + i));
-                            field.setAccessible(false);
-                        }
-
-                        return instance;
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException(e);
-                    } catch (InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    } catch (InstantiationException e) {
-                        throw new RuntimeException(e);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    }
+                    T instance = createInstance(requiredType);
+                    fillFields(requiredType, rs, instance);
+                    return instance;
                 },
                 params
         );
     }
 
-    private void fillParameters(PreparedStatement pstmt, Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(1 + i, params[i]);
+    private void fillParameters(PreparedStatement pstmt, Object[] params) {
+        try {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(1 + i, params[i]);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T createInstance(Class<T> requiredType) {
+        Constructor<T> constructor = null;
+        try {
+            constructor = requiredType.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            T instance = constructor.newInstance();
+            constructor.setAccessible(false);
+            return instance;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void fillFields(Class<T> requiredType, ResultSet rs, T instance) {
+        Field[] fields = requiredType.getDeclaredFields();
+        try {
+            for (int i = 0; i < fields.length; i++) {
+                Field field = fields[i];
+                field.setAccessible(true);
+                field.set(instance, rs.getObject(1 + i));
+                field.setAccessible(false);
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
