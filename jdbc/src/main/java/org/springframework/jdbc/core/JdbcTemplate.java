@@ -27,9 +27,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setPreparedStatement(args, pstmt);
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
@@ -45,9 +43,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setPreparedStatement(args, pstmt);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -92,6 +88,12 @@ public class JdbcTemplate {
                 }
             } catch (final SQLException ignored) {
             }
+        }
+    }
+
+    private void setPreparedStatement(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
