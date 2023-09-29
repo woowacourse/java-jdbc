@@ -29,9 +29,9 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, (String) params[0]);
-            pstmt.setString(2, (String) params[1]);
-            pstmt.setString(3, (String) params[2]);
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(1 + i, params[i]);
+            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
