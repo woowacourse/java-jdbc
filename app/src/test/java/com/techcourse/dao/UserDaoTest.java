@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+
 class UserDaoTest {
 
     private UserDao userDao;
@@ -49,7 +50,7 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccount_resultSizeTwo_fail() {
+    void findByAccount_MultipleResultsForAccount_ExceptionThrown() {
         final var account = "gugu";
         userDao.insert(new User(account, "password", "hkkang@woowahan.com"));
         userDao.insert(new User(account, "password", "hkkang@woowahan.com"));
