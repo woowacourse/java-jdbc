@@ -1,16 +1,19 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setup() {
@@ -21,10 +24,15 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("alter table users alter column id restart with 1");
+    }
+
     @Test
     void findAll() {
         final var users = userDao.findAll();
-
         assertThat(users).isNotEmpty();
     }
 
