@@ -23,11 +23,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            try (final var resultSet = preparedStatement.executeQuery()) {
                 return getResults(rowMapper, resultSet);
             }
 
@@ -47,11 +47,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection connection = requireNonNull(dataSource).getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final var connection = requireNonNull(dataSource).getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            try (final var resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     return rowMapper.mapRow(resultSet);
                 }
@@ -64,8 +64,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final Connection connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
