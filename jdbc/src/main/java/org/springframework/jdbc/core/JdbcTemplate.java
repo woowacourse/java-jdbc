@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -17,17 +18,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getDataSourceConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
     public void update(final String sql, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
@@ -37,17 +32,32 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        ResultSet rs = null;
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
+                if (rs != null) {
+                    rs.close();
                 }
             } catch (final SQLException ignored) {
             }
