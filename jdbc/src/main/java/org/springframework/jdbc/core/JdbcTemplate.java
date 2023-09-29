@@ -3,10 +3,10 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -53,15 +53,58 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType) {
-        return null;
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(1 + i, params[i]);
+            }
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            T result = null;
+            if (rs.next()) {
+                result = rowMapper.map(rs);
+            }
+            if (rs.next()) {
+                throw new IllegalStateException("2개 이상의 결과가 존재합니다!");
+            }
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, @Nullable Object... args) {
-        return null;
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return null;
     }
 }
