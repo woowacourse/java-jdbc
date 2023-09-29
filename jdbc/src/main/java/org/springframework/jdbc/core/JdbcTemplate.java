@@ -22,35 +22,11 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(1 + i, params[i]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeQueryWithoutResult(sql, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        ResultSet rs = null;
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(1 + i, params[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return executeQueryWithResult(sql, params, rs -> {
             T result = null;
             if (rs.next()) {
                 result = rowMapper.map(rs);
@@ -59,6 +35,44 @@ public class JdbcTemplate {
                 throw new IllegalStateException("2개 이상의 결과가 존재합니다!");
             }
             return result;
+        });
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return executeQueryWithResult(sql, params, rs -> {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.map(rs));
+            }
+            return result;
+        });
+    }
+
+    private void executeQueryWithoutResult(String sql, Object[] params) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            fillParameters(params, pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T executeQueryWithResult(String sql, Object[] params, ResultFormatter<T> resultFormatter) {
+        ResultSet rs = null;
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            fillParameters(params, pstmt);
+            rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
+
+            return resultFormatter.format(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -74,36 +88,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        ResultSet rs = null;
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(1 + i, params[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.map(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
+    private void fillParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(1 + i, params[i]);
         }
     }
 }
