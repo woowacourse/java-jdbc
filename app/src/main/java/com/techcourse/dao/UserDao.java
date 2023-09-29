@@ -43,17 +43,11 @@ public class UserDao {
 
 
     public List<User> findAll() {
-        // todo
-        return null;
-    }
-
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final var sql = "select id, account, password, email from users";
 
         final Map<String, Class<?>> userFields = getUserFields();
-        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(id));
         final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
-        return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
+        return jdbcTemplate.findAll(sql, userResultSetGetter);
     }
 
     private Map<String, Class<?>> getUserFields() {
@@ -63,6 +57,15 @@ public class UserDao {
             put("password", String.class);
             put("email", String.class);
         }};
+    }
+
+    public User findById(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        final Map<String, Class<?>> userFields = getUserFields();
+        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(id));
+        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
+        return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
     }
 
     public User findByAccount(final String account) {

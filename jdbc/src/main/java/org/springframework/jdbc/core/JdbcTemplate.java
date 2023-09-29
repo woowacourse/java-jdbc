@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +57,30 @@ public class JdbcTemplate {
                 return rsg.getObject(rs);
             }
             return null;
+        }
+    }
+
+    public <T> List<T> findAll(final String sql,
+                      final ResultSetGetter<T> rsg) {
+        log.debug("query : {}", sql);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            return getObjects(rsg, ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new SqlException(e.getMessage());
+        }
+    }
+
+    private <T> List<T> getObjects(ResultSetGetter<T> rsg, PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                objects.add(rsg.getObject(rs));
+            }
+            return objects;
         }
     }
 }
