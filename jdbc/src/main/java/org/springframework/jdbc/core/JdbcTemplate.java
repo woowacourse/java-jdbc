@@ -23,14 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... conditions) {
+    public Long update(final String sql, final Object... conditions) {
         try (
                 final Connection connection = getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             setConditions(preparedStatement, conditions);
-            preparedStatement.executeUpdate();
+            return (long) preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }

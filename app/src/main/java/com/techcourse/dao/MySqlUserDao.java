@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
+import java.util.Optional;
 
 public class MySqlUserDao implements UserDao {
 
@@ -15,15 +16,15 @@ public class MySqlUserDao implements UserDao {
     }
 
     @Override
-    public void insert(final User user) {
+    public Long insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     @Override
-    public void update(final User user) {
+    public Long update(final User user) {
         final String sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     @Override
@@ -33,17 +34,15 @@ public class MySqlUserDao implements UserDao {
     }
 
     @Override
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id)
-                .orElseThrow(() -> new IllegalArgumentException("id가 " + id + "인 유저를 찾을 수 없습니다."));
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
     }
 
     @Override
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final String sql = "select * from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account)
-                .orElseThrow(() -> new IllegalArgumentException("account가 " + account + "인 유저를 찾을 수 없습니다."));
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
     }
 
     private RowMapper<User> getUserRowMapper() {

@@ -3,17 +3,18 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserDao {
 
-    void insert(final User user);
+    Long insert(final User user);
 
-    void update(final User user);
+    Long update(final User user);
 
     List<User> findAll();
 
-    User findById(final Long id);
+    Optional<User> findById(final Long id);
 
-    User findByAccount(final String account);
+    Optional<User> findByAccount(final String account);
 
 }
