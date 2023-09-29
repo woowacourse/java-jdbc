@@ -40,10 +40,27 @@ public class JdbcTemplate {
     private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
-            final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
+            final T result = rowMapper.mapRow(resultSet);
             results.add(result);
         }
         return results;
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (final Connection connection = requireNonNull(dataSource).getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameters(params, preparedStatement);
+
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return rowMapper.mapRow(resultSet);
+                }
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     public void update(final String sql, final Object... params) {
