@@ -24,9 +24,8 @@ public class JdbcTemplate {
     public void execute(String sql, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters)
         ) {
-            bindParameters(pstmt, parameters);
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
@@ -34,18 +33,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters);
+            ResultSet rs = pstmt.executeQuery()
         ) {
-            ResultSet rs = pstmt.executeQuery();
-            List<T> queryResults = new ArrayList<>();
-            while (rs.next()) {
-                queryResults.add(rowMapper.mapRow(rs));
-            }
+            List<T> results = new ArrayList<>();
+            log.debug("query : {}", sql);
 
-            return queryResults;
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -54,18 +54,24 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters);
+            ResultSet rs = pstmt.executeQuery()
         ) {
-            bindParameters(pstmt, parameters);
-            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
-
             return null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement createPrepareStatement(String sql, Connection conn, Object... parameters)
+        throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        bindParameters(pstmt, parameters);
+        return pstmt;
     }
 
     private void bindParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
