@@ -1,9 +1,16 @@
 package org.springframework.jdbc.core;
 
+import static java.util.Objects.requireNonNull;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -13,5 +20,35 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (final Connection connection = requireNonNull(dataSource, () -> "dataSource가 null입니다.").getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setArgument(params, preparedStatement);
+
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                return getResults(rowMapper, resultSet);
+            }
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setArgument(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            preparedStatement.setObject(i + 1, params[i]);
+        }
+    }
+
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
+            results.add(result);
+        }
+        return results;
     }
 }
