@@ -28,30 +28,13 @@ public class UserDao {
 
 
     public void insert(final User user) {
-        this.jdbcTemplate.context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                PreparedStatement ps = connection.prepareStatement("insert into users (account, password, email) values (?, ?, ?)");
-                ps.setString(1, user.getAccount());
-                ps.setString(2, user.getPassword());
-                ps.setString(3, user.getEmail());
-                return ps;
-            }
-        });
+        jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
+                user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        this.jdbcTemplate.context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                PreparedStatement ps = connection.prepareStatement("update users set account = ?, password = ?, email = ? where id = ?");
-                ps.setString(1, user.getAccount());
-                ps.setString(2, user.getPassword());
-                ps.setString(3, user.getEmail());
-                ps.setLong(4, user.getId());
-                return ps;
-            }
-        });
+        jdbcTemplate.execute("update users set account = ?, password = ?, email = ? where id = ?",
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
