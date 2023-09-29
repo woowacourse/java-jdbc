@@ -11,6 +11,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -108,10 +109,9 @@ public class JdbcTemplate {
                 pstmt.setObject(i, parameter);
                 i++;
             }
-            pstmt.executeUpdate();
-            return 1;
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
-            return 0;
+            throw new DataAccessException();
         }
     }
 }
