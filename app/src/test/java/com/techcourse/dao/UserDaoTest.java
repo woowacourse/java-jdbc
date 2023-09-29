@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class UserDaoTest {
 
@@ -18,7 +19,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gitchan", "password", "gitchan@naver.com");
         userDao.insert(user);
     }
 
@@ -31,32 +32,43 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertAll(
+                () -> assertThat(users).isNotEmpty(),
+                () -> assertThat(users.size()).isEqualTo(1)
+        );
     }
 
     @Test
     void findById() {
-        User user = userDao.findByAccount("gugu");
+        User user = userDao.findByAccount("gitchan");
         User findUser = userDao.findById(user.getId());
 
-        assertThat(findUser.getAccount()).isEqualTo("gugu");
+        assertAll(
+                () -> assertThat(findUser.getAccount()).isEqualTo("gitchan"),
+                () -> assertThat(findUser.getPassword()).isEqualTo("password"),
+                () -> assertThat(findUser.getEmail()).isEqualTo("gitchan@naver.com")
+        );
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var account = "gitchan";
+        final var findUser = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(findUser.getAccount()).isEqualTo("gitchan"),
+                () -> assertThat(findUser.getPassword()).isEqualTo("password"),
+                () -> assertThat(findUser.getEmail()).isEqualTo("gitchan@naver.com")
+        );
     }
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        final var account = "insert-gitchan";
+        final var user = new User(account, "password", "gitchan@naver.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findByAccount(account);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -64,12 +76,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findByAccount("gugu");
+        final var user = userDao.findByAccount("gitchan");
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findByAccount("gugu");
+        final var actual = userDao.findByAccount("gitchan");
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
