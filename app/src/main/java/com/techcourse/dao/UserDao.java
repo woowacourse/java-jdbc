@@ -11,7 +11,7 @@ public class UserDao {
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> userRowMapper = (rs) -> new User(
+    private static final RowMapper<User> userRowMapper = (rs) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
