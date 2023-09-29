@@ -52,6 +52,20 @@ public class JdbcTemplate {
         }, rm);
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
+        List<T> list = context(new PreparedStrategy() {
+            @Override
+            public PreparedStatement createStatement(Connection connection) throws SQLException {
+                return connection.prepareStatement(sql);
+            }
+        }, rm, args);
+
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
+    }
+
     public void context(PreparedStrategy preparedStrategy) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -118,6 +132,52 @@ public class JdbcTemplate {
         try {
             conn = dataSource.getConnection();
             pstmt = preparedStrategy.createStatement(conn);
+            rs = pstmt.executeQuery();
+
+            ArrayList<T> list = new ArrayList<>();
+            while (rs.next()) {
+                list.add(rm.mapRow(rs));
+            }
+            return list;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm, Object[] args) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = preparedStrategy.createStatement(conn);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
             rs = pstmt.executeQuery();
 
             ArrayList<T> list = new ArrayList<>();
