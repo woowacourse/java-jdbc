@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int PARAMETER_INDEX_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -76,7 +77,7 @@ public class JdbcTemplate {
 
     private void bindParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
+            pstmt.setObject(i + PARAMETER_INDEX_OFFSET, parameters[i]);
         }
     }
 }
