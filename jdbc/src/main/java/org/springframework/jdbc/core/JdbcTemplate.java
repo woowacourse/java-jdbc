@@ -26,10 +26,8 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            int setValueIdx = 1;
-            for (Object arg : args) {
-                pstmt.setObject(setValueIdx++, arg);
-            }
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -44,11 +42,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            int setValueIdx = 1;
-            for (Object arg : args) {
-                pstmt.setObject(setValueIdx++, arg);
-            }
-
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
