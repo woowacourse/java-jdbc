@@ -6,4 +6,4 @@
   - [x] findByAccount()
   - [x] findById()
   - [x] update()
-- [] JdbcTemplate 으로 중복 제거
+- [x] JdbcTemplate 으로 중복 제거
