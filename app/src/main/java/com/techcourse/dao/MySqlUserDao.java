@@ -6,11 +6,11 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
 
-public class UserDaoImpl implements UserDao {
+public class MySqlUserDao implements UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDaoImpl(final JdbcTemplate jdbcTemplate) {
+    public MySqlUserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

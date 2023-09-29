@@ -1,16 +1,16 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDaoImpl;
+import com.techcourse.dao.MySqlUserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
 public class UserService {
 
-    private final UserDaoImpl userDao;
+    private final MySqlUserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDaoImpl userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final MySqlUserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
