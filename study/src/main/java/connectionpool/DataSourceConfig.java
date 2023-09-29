@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 @Configuration
 public class DataSourceConfig {
 
-    public static final int MAXIMUM_POOL_SIZE = 5;
+    public static final int MAXIMUM_POOL_SIZE = 10;
     private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
@@ -19,7 +19,7 @@ public class DataSourceConfig {
     @Bean
     public DataSource hikariDataSource() {
         final var hikariConfig = new HikariConfig();
-        hikariConfig.setPoolName("gugu");
+        hikariConfig.setPoolName("REO");
         hikariConfig.setJdbcUrl(H2_URL);
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);

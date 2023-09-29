@@ -24,7 +24,7 @@ class Stage1Test {
      * h2에서 제공하는 JdbcConnectionPool를 다뤄보며 커넥션 풀에 대한 감을 잡아보자.
      *
      * Connection Pooling and Statement Pooling
-     * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
+     * <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html">...</a>
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
@@ -60,19 +60,18 @@ class Stage1Test {
      */
     @Test
     void testHikariCP() {
-        final var hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(H2_URL);
-        hikariConfig.setUsername(USER);
-        hikariConfig.setPassword(PASSWORD);
-        hikariConfig.setMaximumPoolSize(5);
-        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
-        hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
-        hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        final var dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(H2_URL);
+        dataSource.setUsername(USER);
+        dataSource.setPassword(PASSWORD);
+        dataSource.setMaximumPoolSize(15);
+        dataSource.addDataSourceProperty("cachePrepStmts", "true");
+        dataSource.addDataSourceProperty("prepStmtCacheSize", "250");
+        dataSource.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-        final var dataSource = new HikariDataSource(hikariConfig);
         final var properties = dataSource.getDataSourceProperties();
 
-        assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);
+        assertThat(dataSource.getMaximumPoolSize()).isEqualTo(15);
         assertThat(properties.getProperty("cachePrepStmts")).isEqualTo("true");
         assertThat(properties.getProperty("prepStmtCacheSize")).isEqualTo("250");
         assertThat(properties.getProperty("prepStmtCacheSqlLimit")).isEqualTo("2048");
