@@ -1,5 +1,8 @@
 package org.springframework.jdbc.datasource;
 
+import java.sql.ResultSet;
+import java.util.Objects;
+import org.springframework.jdbc.CanNotCloseResultSetException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -32,6 +35,16 @@ public abstract class DataSourceUtils {
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    public static void closeResultSet(ResultSet rs) {
+        if (Objects.nonNull(rs)) {
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                throw new CanNotCloseResultSetException("Failed to close ResultSet");
+            }
         }
     }
 }
