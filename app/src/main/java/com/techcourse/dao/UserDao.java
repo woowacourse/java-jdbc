@@ -33,7 +33,7 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void updatePassword(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
         jdbcTemplate.execute(sql, user.getPassword(), user.getId());
