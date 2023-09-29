@@ -23,9 +23,8 @@ public class JdbcTemplate {
     public void update(String sql, Object... args) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement prepareStatement = conn.prepareStatement(sql)
+            PreparedStatement prepareStatement = setUpPreparedStatement(conn, sql, args)
         ) {
-            setUpPreparedStatement(prepareStatement, args);
             prepareStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,10 +35,9 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement prepareStatement = conn.prepareStatement(sql)
-        ) {
-            setUpPreparedStatement(prepareStatement, args);
+            PreparedStatement prepareStatement = setUpPreparedStatement(conn, sql, args);
             ResultSet resultSet = prepareStatement.executeQuery();
+        ) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
@@ -53,10 +51,9 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
             Connection conn = dataSource.getConnection();
-            PreparedStatement prepareStatement = conn.prepareStatement(sql)
-        ) {
-            setUpPreparedStatement(prepareStatement, args);
+            PreparedStatement prepareStatement = setUpPreparedStatement(conn, sql, args);
             ResultSet resultSet = prepareStatement.executeQuery();
+        ) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
@@ -68,9 +65,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setUpPreparedStatement(PreparedStatement prepareStatement, Object... args) throws SQLException {
+    private PreparedStatement setUpPreparedStatement(Connection conn, String sql, Object... args) throws SQLException {
+        PreparedStatement prepareStatement = conn.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
             prepareStatement.setObject(i + 1, args[i]);
         }
+        return prepareStatement;
     }
 }
