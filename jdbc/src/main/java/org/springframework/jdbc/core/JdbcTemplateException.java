@@ -2,7 +2,7 @@ package org.springframework.jdbc.core;
 
 public abstract class JdbcTemplateException extends RuntimeException {
 
-    protected JdbcTemplateException(String message) {
+    protected JdbcTemplateException(final String message) {
         super(message);
     }
 

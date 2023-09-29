@@ -22,7 +22,7 @@ public class ResultSetGetter<T> {
 
     public T getObject(final ResultSet rs) throws SQLException {
         try {
-            T instance = classForObject.getConstructor().newInstance();
+            final T instance = classForObject.getConstructor().newInstance();
             setField(rs, instance);
             return instance;
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException |
@@ -31,10 +31,10 @@ public class ResultSetGetter<T> {
         }
     }
 
-    private void setField(ResultSet rs, T instance) throws SQLException, NoSuchFieldException, IllegalAccessException {
-        for (Entry<String, SqlType> entry : values.entrySet()) {
-            Object value = getValue(rs, entry.getValue(), entry.getKey());
-            Field field = instance.getClass().getDeclaredField(entry.getKey());
+    private void setField(final ResultSet rs, final T instance) throws SQLException, NoSuchFieldException, IllegalAccessException {
+        for (final Entry<String, SqlType> entry : values.entrySet()) {
+            final Object value = getValue(rs, entry.getValue(), entry.getKey());
+            final Field field = instance.getClass().getDeclaredField(entry.getKey());
             field.setAccessible(true);
             field.set(instance, value);
         }

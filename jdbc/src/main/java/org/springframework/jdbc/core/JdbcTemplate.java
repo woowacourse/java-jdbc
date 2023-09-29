@@ -24,8 +24,8 @@ public class JdbcTemplate {
     public void execute(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         log.debug("query : {}", sql);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.set(ps);
             ps.executeUpdate();
@@ -40,8 +40,8 @@ public class JdbcTemplate {
                       final ResultSetGetter<T> rsg) {
         log.debug("query : {}", sql);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.set(ps);
             return getObject(rsg, ps);
@@ -52,7 +52,7 @@ public class JdbcTemplate {
     }
 
     private <T> T getObject(ResultSetGetter<T> rsg, PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
+        try (final ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return rsg.getObject(rs);
             }
@@ -60,12 +60,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> findAll(final String sql,
-                      final ResultSetGetter<T> rsg) {
+    public <T> List<T> findAll(final String sql, final ResultSetGetter<T> rsg) {
         log.debug("query : {}", sql);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
 
             return getObjects(rsg, ps);
         } catch (SQLException e) {
@@ -74,9 +73,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getObjects(ResultSetGetter<T> rsg, PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<T> objects = new ArrayList<>();
+    private <T> List<T> getObjects(final ResultSetGetter<T> rsg, final PreparedStatement ps) throws SQLException {
+        try (final ResultSet rs = ps.executeQuery()) {
+            final List<T> objects = new ArrayList<>();
             while (rs.next()) {
                 objects.add(rsg.getObject(rs));
             }

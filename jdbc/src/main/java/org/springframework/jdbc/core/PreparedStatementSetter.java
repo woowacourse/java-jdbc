@@ -17,7 +17,7 @@ public class PreparedStatementSetter {
 
     public void set(final PreparedStatement ps) throws SQLException {
         for (int i = 0; i < values.size(); i++) {
-            PreparedStatementTypeValue pstv = values.get(i);
+            final PreparedStatementTypeValue pstv = values.get(i);
             pstv.setPreparedStatement(ps, i+1);
         }
     }
