@@ -5,4 +5,4 @@
   - [x] update()
   - [x] findAll()
   - [x] findByAccount()
-- [ ] 중복 코드는 JdbcTemplate 에 추출하기
+- [x] 중복 코드는 JdbcTemplate 에 추출하기
