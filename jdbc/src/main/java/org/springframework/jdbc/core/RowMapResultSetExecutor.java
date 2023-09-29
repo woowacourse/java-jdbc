@@ -14,8 +14,8 @@ public class RowMapResultSetExecutor<T> implements ResultSetExecutor<List<T>> {
     }
 
     @Override
-    public List<T> extractData(final ResultSet resultSet) throws SQLException {
-        final List<T> results = new ArrayList<>();
+    public List<T> extractData(ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
         }
