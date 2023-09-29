@@ -10,7 +10,7 @@ public class UserRepository {
 
     private final UserDao userDao;
 
-    public UserRepository(final MySqlUserDao userDao) {
+    public UserRepository(final UserDao userDao) {
         this.userDao = userDao;
     }
 

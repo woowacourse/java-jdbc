@@ -12,7 +12,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final MySqlUserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userRepository = new UserRepository(userDao);
         this.userHistoryDao = userHistoryDao;
     }
