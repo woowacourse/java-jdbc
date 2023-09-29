@@ -30,6 +30,8 @@ public class JdbcTemplate {
             for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
                 pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
             }
+
+            log.debug("run sql {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -51,6 +53,8 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 results.add(rowMapper.map(resultSet));
             }
+
+            log.debug("run sql {}", sql);
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -68,6 +72,8 @@ public class JdbcTemplate {
             }
 
             final ResultSet resultSet = pstmt.executeQuery();
+
+            log.debug("run sql {}", sql);
             if (resultSet.next()) {
                 return Optional.of(rowMapper.map(resultSet));
             }
