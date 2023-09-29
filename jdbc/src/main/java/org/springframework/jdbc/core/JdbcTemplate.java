@@ -68,11 +68,11 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            final var list = new ArrayList<T>();
+            final var selectQueryResult = new ArrayList<T>();
             while (rs.next()) {
-                list.add(mapper.get(rs));
+                selectQueryResult.add(mapper.get(rs));
             }
-            return list;
+            return selectQueryResult;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
