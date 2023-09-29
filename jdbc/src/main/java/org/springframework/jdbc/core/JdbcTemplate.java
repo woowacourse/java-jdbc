@@ -13,17 +13,6 @@ public class JdbcTemplate extends JdbcTemplateBase {
         super(dataSource);
     }
 
-    public void simpleExecute(final String sql) {
-        executionBaseWithNonReturn(sql, PreparedStatement::execute);
-    }
-
-    public void simpleExecute(final String sql, Object... params) {
-        executionBaseWithNonReturn(sql, preparedStatement -> {
-            setParameters(params, preparedStatement);
-            preparedStatement.execute();
-        });
-    }
-
     public <T> T executeQueryForObject(final String sql, final ResultSetObjectMapper<T> mapper) {
         return executionBaseWithReturn(sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
@@ -67,6 +56,17 @@ public class JdbcTemplate extends JdbcTemplateBase {
                 objects.add(mapper.map(resultSet));
             }
             return objects;
+        });
+    }
+
+    public void update(final String sql) {
+        executionBaseWithNonReturn(sql, PreparedStatement::executeUpdate);
+    }
+
+    public void update(final String sql, Object... params) {
+        executionBaseWithNonReturn(sql, preparedStatement -> {
+            setParameters(params, preparedStatement);
+            preparedStatement.executeUpdate();
         });
     }
 
