@@ -6,39 +6,32 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
-    private JdbcTemplate template;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        template = new JdbcTemplate(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final String sql = "SELECT id, account, password, email FROM users";
-        final List<User> users = template.query(sql, userRowMapper());
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        final User user = template.queryForObject(sql, userRowMapper(), 1L).orElseThrow();
+        final var user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -46,8 +39,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        final User user = template.queryForObject(sql, userRowMapper(), account).orElseThrow();
+        final var user = userDao.findByAccount(account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -56,10 +48,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        final String sql1 = "INSERT INTO users(account, password, email) VALUES(?, ?, ?)";
-        final int updatedRow = template.update(sql1, user.getAccount(), user.getPassword(), user.getEmail());
+        userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -67,21 +58,13 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        final var user = userDao.findById(1L).orElseThrow();
 
-        final String sql2 = "UPDATE users SET password = ? WHERE id = ?";
-        template.update(sql2, user.getPassword(), user.getId());
-        final var actual = userDao.findById(1L);
+        user.changePassword(newPassword);
+        userDao.update(user);
+
+        final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
-    }
-
-    private RowMapper<User> userRowMapper() {
-        return rs -> new User(
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
     }
 }
