@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -41,6 +42,14 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccountIncorrectColumnSize() {
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .hasMessageContaining("결과가 1개인 줄 알았는데, 2개 나왔서!");
     }
 
     @Test
