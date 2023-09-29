@@ -1,8 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -10,14 +8,15 @@ import java.util.List;
 
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final JdbcTemplate.RowMapper<User> rowMapper = resultSet -> {
+    private static final JdbcTemplate.RowMapper<User> rowMapper = resultSet -> {
         Long id = resultSet.getLong("id");
         String account = resultSet.getString("account");
         String password = resultSet.getString("password");
         String email = resultSet.getString("email");
         return new User(id, account, password, email);
     };
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
