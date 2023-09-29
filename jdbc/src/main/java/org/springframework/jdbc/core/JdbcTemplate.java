@@ -49,6 +49,13 @@ public class JdbcTemplate {
         }
     }
 
+    private PreparedStatement prepareStatementWithBindingQuery(final PreparedStatement preparedStatement, final Object... objects) throws SQLException {
+        for (int i = 0; i < objects.length; i++) {
+            preparedStatement.setObject(i + 1, objects[i]);
+        }
+        return preparedStatement;
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects);
@@ -87,12 +94,5 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    private PreparedStatement prepareStatementWithBindingQuery(final PreparedStatement preparedStatement, final Object... objects) throws SQLException {
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
-        }
-        return preparedStatement;
     }
 }
