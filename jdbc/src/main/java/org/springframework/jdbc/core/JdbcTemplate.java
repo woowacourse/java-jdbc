@@ -46,7 +46,7 @@ public class JdbcTemplate {
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
+                final T result = rowMapper.mapRow(resultSet);
                 return Optional.ofNullable(result);
             }
             return Optional.empty();
@@ -64,7 +64,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         } catch (SQLException e) {
