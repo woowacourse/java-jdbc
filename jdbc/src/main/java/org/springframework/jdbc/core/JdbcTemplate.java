@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         execute(sql, new PreparedStatementExecutor<>() {
             @Override
-            public Object fetchData(ResultSet resultSet) throws SQLException {
+            public Object fetchData(ResultSet resultSet) {
                 return null;
             }
 
@@ -37,10 +38,10 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("query : {}", sql);
 
-        return execute(sql, new PreparedStatementExecutor<T>() {
+        return Optional.ofNullable(execute(sql, new PreparedStatementExecutor<>() {
             @Override
             public T fetchData(ResultSet resultSet) throws SQLException {
                 if (resultSet.next()) {
@@ -53,7 +54,7 @@ public class JdbcTemplate {
             public ResultSet fetchResultSet(PreparedStatement preparedStatement) throws SQLException {
                 return preparedStatement.executeQuery();
             }
-        }, args);
+        }, args));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
