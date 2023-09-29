@@ -76,11 +76,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
         return queryForObject(
                 sql,
-                rs -> {
-                    T instance = createInstance(requiredType);
-                    fillFields(requiredType, rs, instance);
-                    return instance;
-                },
+                mapTo(requiredType),
                 params
         );
     }
@@ -119,11 +115,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, Class<T> requiredType, Object... params) {
         return query(
                 sql,
-                rs -> {
-                    T instance = createInstance(requiredType);
-                    fillFields(requiredType, rs, instance);
-                    return instance;
-                },
+                mapTo(requiredType),
                 params
         );
     }
@@ -136,6 +128,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private <T> RowMapper<T> mapTo(Class<T> requiredType) {
+        return rs -> {
+            T instance = createInstance(requiredType);
+            fillFields(requiredType, rs, instance);
+            return instance;
+        };
     }
 
     private <T> T createInstance(Class<T> requiredType) {
