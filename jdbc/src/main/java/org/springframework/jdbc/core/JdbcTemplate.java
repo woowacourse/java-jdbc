@@ -2,12 +2,13 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.JdbcException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,20 +23,22 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... arguments) {
+    public int update(String sql, Object... arguments) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)
         ) {
             log.debug("query : {}", sql);
 
-            pstmt.executeUpdate();
-        } catch (IllegalArgumentException e) {
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                log.error(e.getMessage(), e);
+                throw new JdbcException("Error create SQL statement: " + sql, e);
+            }
+
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error create SQL statement: " + sql, e);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error executing SQL query: " + sql, e);
+            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
         }
     }
 
@@ -48,18 +51,20 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return Optional.ofNullable(rowMapper.mapRow(rs));
+                return Optional.of(rowMapper.mapRow(rs));
             }
 
             return Optional.empty();
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                log.error(e.getMessage(), e);
+                throw new JdbcException("Error create SQL statement: " + sql, e);
+            }
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error create SQL statement: " + sql, e);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error executing SQL query: " + sql, e);
+            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
         }
     }
+
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         try (
@@ -75,12 +80,13 @@ public class JdbcTemplate {
             }
 
             return result;
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                log.error(e.getMessage(), e);
+                throw new JdbcException("Error create SQL statement: " + sql, e);
+            }
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error create SQL statement: " + sql, e);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Error executing SQL query: " + sql, e);
+            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
         }
     }
 }
