@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.Strategy.*;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,15 +24,12 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = jdbcTemplate.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
+            PreparedStrategy insertStrategy = new InsertStrategy();
+            pstmt = insertStrategy.createStatement(conn);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -58,15 +56,12 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
             conn = jdbcTemplate.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
+            PreparedStrategy updateStrategy = new UpdateStrategy();
+            pstmt = updateStrategy.createStatement(conn);
 
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -94,17 +89,14 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = jdbcTemplate.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            PreparedStrategy findAllStrategy = new FindAllStrategy();
+            pstmt = findAllStrategy.createStatement(conn);
             rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
 
             List<User> users = new ArrayList<>();
             while (rs.next()) {
@@ -143,19 +135,16 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = jdbcTemplate.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            PreparedStrategy findByIdStrategy = new FindByIdStrategy();
+            pstmt = findByIdStrategy.createStatement(conn);
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+            
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
@@ -192,18 +181,15 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = jdbcTemplate.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            PreparedStrategy findByAccountStrategy = new FindByAccountStrategy();
+            pstmt = findByAccountStrategy.createStatement(conn);
             pstmt.setString(1, account);
             rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
 
             if (rs.next()) {
                 return new User(
