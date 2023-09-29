@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,6 +39,38 @@ public class JdbcTemplate {
             }
             return result;
         });
+    }
+
+    public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
+        return queryForObject(sql,
+                rs -> {
+                    try {
+                        Constructor<T> constructor = requiredType.getDeclaredConstructor();
+                        constructor.setAccessible(true);
+
+                        T instance = constructor.newInstance();
+                        Field[] fields = requiredType.getDeclaredFields();
+                        constructor.setAccessible(false);
+
+                        for (int i = 0; i < fields.length; i++) {
+                            Field field = fields[i];
+                            field.setAccessible(true);
+                            field.set(instance, rs.getObject(1 + i));
+                            field.setAccessible(false);
+                        }
+                        return instance;
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException(e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    } catch (InstantiationException e) {
+                        throw new RuntimeException(e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                params
+        );
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
