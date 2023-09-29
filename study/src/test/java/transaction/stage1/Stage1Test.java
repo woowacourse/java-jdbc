@@ -2,6 +2,7 @@ package transaction.stage1;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Statement;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,10 +35,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |           +          |      +
+ * Read Committed   |      -      |           +          |      +
+ * Repeatable Read  |      -      |           -          |      +
+ * Serializable     |      -      |           -          |      -
  */
 class Stage1Test {
 
@@ -58,10 +59,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |       +
+     * Read Committed   |       -
+     * Repeatable Read  |       -
+     * Serializable     |       -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +82,11 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            // final int isolationLevel = Connection.TRANSACTION_NONE;
+            // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+            // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+            // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,10 +116,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |           +
+     * Read Committed   |           +
+     * Repeatable Read  |           -
+     * Serializable     |           -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +135,11 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,10 +182,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |       +
+     * Read Committed   |       +
+     * Repeatable Read  |       +
+     * Serializable     |       -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -186,6 +195,21 @@ class Stage1Test {
                 .withLogConsumer(new Slf4jLogConsumer(log));
         mysql.start();
         setUp(createMySQLDataSource(mysql));
+
+        // 테스트에 사용할 users 테이블을 생성한다.
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(true);
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("DROP TABLE IF EXISTS users;");
+                stmt.execute("CREATE TABLE IF NOT EXISTS users (\n"
+                        + "    id BIGINT AUTO_INCREMENT PRIMARY KEY,\n"
+                        + "    account VARCHAR(100) NOT NULL,\n"
+                        + "    password VARCHAR(100) NOT NULL,\n"
+                        + "    email VARCHAR(100) NOT NULL\n"
+                        + ") ENGINE=INNODB;");
+                conn.setAutoCommit(false);
+            }
+        }
 
         // 테스트 전에 필요한 데이터를 추가한다.
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
@@ -197,7 +221,11 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
