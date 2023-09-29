@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -27,7 +28,7 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-                pstmt.setString(parameterIndex + 1, (String) args[parameterIndex]);
+                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
             }
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -37,13 +38,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-                pstmt.setString(parameterIndex + 1, (String) args[parameterIndex]);
+                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
             }
 
             final ResultSet resultSet = pstmt.executeQuery();
@@ -52,6 +52,26 @@ public class JdbcTemplate {
                 results.add(rowMapper.map(resultSet));
             }
             return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
+                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
+            }
+
+            final ResultSet resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                return Optional.of(rowMapper.map(resultSet));
+            }
+            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
