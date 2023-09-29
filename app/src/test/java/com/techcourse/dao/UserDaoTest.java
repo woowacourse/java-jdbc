@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,10 +23,11 @@ class UserDaoTest {
     @Test
     void findAll() {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        userDao.insert(new User("gugu2", "password2", "hkkang2@woowahan.com"));
 
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(2);
     }
 
     @Test
