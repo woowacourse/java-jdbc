@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,23 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        try (
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            ResultSet rs = pstmt.executeQuery();
+            List<T> queryResults = new ArrayList<>();
+            while (rs.next()) {
+                queryResults.add(rowMapper.mapRow(rs));
+            }
+
+            return queryResults;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
@@ -42,6 +61,7 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
+
             return null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
