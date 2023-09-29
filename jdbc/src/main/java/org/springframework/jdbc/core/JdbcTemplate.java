@@ -57,6 +57,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        validateBindableSql(sql, objects);
+
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
