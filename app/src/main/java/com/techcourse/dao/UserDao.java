@@ -5,7 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -38,17 +38,15 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
-                .orElseThrow(() -> new NoSuchElementException("User 가 존재하지 않습니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
-                .orElseThrow(() -> new NoSuchElementException("User 가 존재하지 않습니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
