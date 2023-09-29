@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -57,6 +58,8 @@ public class JdbcTemplate {
                 result.add(rowMapper.run(resultSet));
             }
 
+            resultSet.close();
+
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -64,8 +67,13 @@ public class JdbcTemplate {
         }
     }
 
+    @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return query(sql, rowMapper, values).get(0);
+        List<T> result = query(sql, rowMapper, values);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
     }
 
     @FunctionalInterface
