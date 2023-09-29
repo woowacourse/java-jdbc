@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -28,9 +29,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
+            setCondtion(params, pstmt);
 
             pstmt.executeUpdate();
         } catch (final SQLException e) {
@@ -60,4 +59,34 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    public <T> Optional<T> queryForObject(final String sql, RowMapper<T> rowMapper, final Object... params) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug("query : {}", sql);
+
+            setCondtion(params, pstmt);
+
+            final ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                T object = rowMapper.mapRow(rs);
+                return Optional.ofNullable(object);
+            }
+
+            return Optional.empty();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setCondtion(final Object[] params, final PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
 }
