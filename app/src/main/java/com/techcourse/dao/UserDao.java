@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
@@ -19,35 +20,30 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        jdbcTemplate.update("update users set account = ?, password = ?, email = ? where id = ?",
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.query("select * from users", (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)));
+        final String sql = "select * from users";
+        return jdbcTemplate.query(sql, getUserRowMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), id);
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+    }
 
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), account);
+    private static RowMapper<User> getUserRowMapper() {
+        return (rs, rowNum) -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 }
