@@ -12,7 +12,7 @@
 - [x] findByAccount_resultSizeTwo_fail() 테스트 메서드명 수정
   - https://dzone.com/articles/7-popular-unit-test-naming
 - [ ] JdbcTemplate에서 null을 반환하기보다 Optional을 반환하도록 수정
-- [ ] JdbcTemplate의 PreparedStatement 생성 책임 분리
+- [x] JdbcTemplate의 PreparedStatement 생성 책임 분리
 - [ ] JdbcTemplate try-catch 중복 제거
 - [ ] queryForObject의 validateSingleRow 개선
 - [ ] JdbcTemplate이 TransactionManager를 가지는 이유 고민

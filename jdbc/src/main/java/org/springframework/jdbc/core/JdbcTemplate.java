@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,6 +15,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator();
     private final TransactionManager transactionManager;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -24,7 +24,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return transactionManager.executeWithReadOnlyTransaction(conn -> {
-            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
+            try (final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args);
                  final ResultSet rs = pstmt.executeQuery()
             ) {
                 if (rs.last()) {
@@ -39,22 +39,6 @@ public class JdbcTemplate {
         });
     }
 
-    private PreparedStatement setPreparedStatement(
-            final Connection connection,
-            final String sql,
-            final Object... args
-    ) throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        bindArguments(preparedStatement, args);
-        return preparedStatement;
-    }
-
-    private void bindArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int index = 0; index < args.length; index++) {
-            pstmt.setObject(index + 1, args[index]);
-        }
-    }
-
     private void validateSingleRow(final ResultSet rs) throws SQLException {
         if (rs.getRow() != 1) {
             throw new IllegalArgumentException("조회 결과가 2개 이상입니다.");
@@ -63,7 +47,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
         return transactionManager.executeWithReadOnlyTransaction(conn -> {
-            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
+            try (final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args);
                  final ResultSet rs = pstmt.executeQuery()
             ) {
                 final List<T> results = new ArrayList<>();
@@ -80,7 +64,7 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... args) {
         transactionManager.executeWithTransaction(conn -> {
-            try (final PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
+            try (final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args)) {
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 log.error(e.getMessage(), e);
