@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -46,8 +47,13 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, resultSet ->
+            new User(resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"))
+        );
     }
 
     public User findById(final Long id) {
