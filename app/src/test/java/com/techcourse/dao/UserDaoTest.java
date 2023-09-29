@@ -1,12 +1,15 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 class UserDaoTest {
 
@@ -36,11 +39,34 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+    void findById_emptyResult() {
+        // when & then
+        assertThatThrownBy(() -> userDao.findById(0L))
+            .isInstanceOf(EmptyResultDataAccessException.class);
+    }
 
-        assertThat(user.getAccount()).isEqualTo(account);
+    @Test
+    void findByAccount_incorrectResultSize() {
+        // given
+        final var user = new User("glen", "password", "glen@fiddich.com");
+        userDao.insert(user);
+        userDao.insert(user);
+
+        // when & then
+        assertThatThrownBy(() -> userDao.findByAccount("glen"))
+            .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+    }
+
+    @Test
+    void findByAccount() {
+        // given
+        final var expect = "new-gugu";
+        final var user = new User(expect, "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
+        final var actual = userDao.findByAccount(expect);
+
+        assertThat(actual.getAccount()).isEqualTo(expect);
     }
 
     @Test
