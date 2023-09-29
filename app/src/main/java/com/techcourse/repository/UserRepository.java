@@ -1,6 +1,5 @@
 package com.techcourse.repository;
 
-import com.techcourse.dao.MySqlUserDao;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 
