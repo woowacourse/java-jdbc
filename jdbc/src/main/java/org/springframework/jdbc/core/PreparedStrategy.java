@@ -1,4 +1,4 @@
-package com.techcourse.dao.Strategy;
+package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

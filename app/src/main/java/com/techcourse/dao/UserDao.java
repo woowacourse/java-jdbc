@@ -1,10 +1,13 @@
 package com.techcourse.dao;
 
-import com.techcourse.dao.Strategy.*;
+import com.techcourse.dao.Strategy.FindAllStrategy;
+import com.techcourse.dao.Strategy.FindByAccountStrategy;
+import com.techcourse.dao.Strategy.FindByIdStrategy;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStrategy;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,69 +26,32 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+
     public void insert(final User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = jdbcTemplate.getConnection();
-            PreparedStrategy insertStrategy = new InsertStrategy();
-            pstmt = insertStrategy.createStatement(conn);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+        this.jdbcTemplate.context(new PreparedStrategy() {
+            @Override
+            public PreparedStatement createStatement(Connection connection) throws SQLException {
+                PreparedStatement ps = connection.prepareStatement("insert into users (account, password, email) values (?, ?, ?)");
+                ps.setString(1, user.getAccount());
+                ps.setString(2, user.getPassword());
+                ps.setString(3, user.getEmail());
+                return ps;
             }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        });
     }
 
     public void update(final User user) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = jdbcTemplate.getConnection();
-            PreparedStrategy updateStrategy = new UpdateStrategy();
-            pstmt = updateStrategy.createStatement(conn);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+        this.jdbcTemplate.context(new PreparedStrategy() {
+            @Override
+            public PreparedStatement createStatement(Connection connection) throws SQLException {
+                PreparedStatement ps = connection.prepareStatement("update users set account = ?, password = ?, email = ? where id = ?");
+                ps.setString(1, user.getAccount());
+                ps.setString(2, user.getPassword());
+                ps.setString(3, user.getEmail());
+                ps.setLong(4, user.getId());
+                return ps;
             }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        });
     }
 
     public List<User> findAll() {
@@ -144,7 +110,7 @@ public class UserDao {
             pstmt = findByIdStrategy.createStatement(conn);
             pstmt.setLong(1, id);
             rs = pstmt.executeQuery();
-            
+
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
