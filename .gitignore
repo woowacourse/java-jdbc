@@ -171,3 +171,5 @@ Temporary Items
 
 tomcat.*
 tomcat.*/**
+
+**/WEB-INF/classes/**
