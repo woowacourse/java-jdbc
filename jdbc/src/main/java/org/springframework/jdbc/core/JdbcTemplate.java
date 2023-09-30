@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.BadGrammarJdbcException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.JdbcException;
 
@@ -9,15 +10,18 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final SqlExceptionTranslator sqlExceptionTranslator = new SqlExceptionTranslator();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -31,14 +35,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             return pstmt.executeUpdate();
-        } catch (Exception e) {
-            if (e instanceof IllegalArgumentException) {
-                log.error(e.getMessage(), e);
-                throw new JdbcException("Error create SQL statement: " + sql, e);
-            }
-
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
+            throw sqlExceptionTranslator.translateException(e);
         }
     }
 
@@ -55,13 +54,9 @@ public class JdbcTemplate {
             }
 
             return Optional.empty();
-        } catch (Exception e) {
-            if (e instanceof IllegalArgumentException) {
-                log.error(e.getMessage(), e);
-                throw new JdbcException("Error create SQL statement: " + sql, e);
-            }
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
+            throw sqlExceptionTranslator.translateException(e);
         }
     }
 
@@ -80,13 +75,41 @@ public class JdbcTemplate {
             }
 
             return result;
-        } catch (Exception e) {
-            if (e instanceof IllegalArgumentException) {
-                log.error(e.getMessage(), e);
-                throw new JdbcException("Error create SQL statement: " + sql, e);
-            }
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("Error execute SQL statement" + sql);
+            throw sqlExceptionTranslator.translateException(e);
+        }
+    }
+
+    private class SqlExceptionTranslator {
+        private final Set<String> BAD_SQL_GRAMMAR_CODES = Set.of(
+                "07",  // Dynamic SQL error
+                "21",  // Cardinality violation
+                "2A",  // Syntax error direct SQL
+                "37",  // Syntax error dynamic SQL
+                "42",  // General SQL syntax error
+                "65"   // Oracle: unknown identifier
+        );
+
+        private final Set<String> DATA_ACCESS_RESOURCE_FAILURE_CODES = Set.of(
+                "08",  // Connection exception
+                "53",  // PostgreSQL: insufficient resources (e.g. disk full)
+                "54",  // PostgreSQL: program limit exceeded (e.g. statement too complex)
+                "57",  // DB2: out-of-memory exception / database not started
+                "58"   // DB2: unexpected system error
+        );
+
+        private RuntimeException translateException(SQLException e) {
+            String sqlState = e.getSQLState();
+            String classCode = sqlState.substring(0, 2);
+            if (DATA_ACCESS_RESOURCE_FAILURE_CODES.contains(classCode)) {
+                throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+            }
+            if (BAD_SQL_GRAMMAR_CODES.contains(classCode)) {
+                throw new BadGrammarJdbcException(e.getMessage(), e);
+            }
+
+            throw new JdbcException(e.getMessage(), e);
         }
     }
 }

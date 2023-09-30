@@ -11,23 +11,10 @@ public class StatementCreator {
     private StatementCreator() {
     }
 
-    public static PreparedStatement createStatement(Connection connection, String sql, Object... arguments) {
-        try {
-            validateArgumentsCount(sql, arguments);
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            setPreparedStatement(preparedStatement, arguments);
-            return preparedStatement;
-        } catch (SQLException e) {
-            throw new IllegalStateException("creating statement - cannot connect database", e);
-        }
-    }
-
-    private static void validateArgumentsCount(String sql, Object[] arguments) {
-        int count = sql.split("\\?", -1).length - 1;
-        if (arguments.length != count) {
-            throw new IllegalArgumentException("parameterIndex does not correspond to a parameter marker in the SQL");
-        }
+    public static PreparedStatement createStatement(Connection connection, String sql, Object... arguments) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        setPreparedStatement(preparedStatement, arguments);
+        return preparedStatement;
     }
 
     private static void setPreparedStatement(PreparedStatement pstmt, Object... arguments) throws SQLException {
