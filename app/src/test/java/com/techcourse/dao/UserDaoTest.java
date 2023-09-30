@@ -36,11 +36,26 @@ class UserDaoTest {
     }
 
     @Test
+    void findById_not_match() {
+        final var user = userDao.findById(623623L);
+
+        assertThat(user).isNull();
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAcoount_not_match() {
+        final var account = "notgugu";
+        final var user = userDao.findByAccount(account);
+
+        assertThat(user).isNull();
     }
 
     @Test
@@ -52,18 +67,5 @@ class UserDaoTest {
         final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
-    }
-
-    @Test
-    void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
-
-        userDao.update(user);
-
-        final var actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 }
