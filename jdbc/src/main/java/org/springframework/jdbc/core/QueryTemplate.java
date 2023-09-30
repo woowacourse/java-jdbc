@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class QueryTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryTemplate.class);
 
     private final DataSource dataSource;
 
