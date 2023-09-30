@@ -99,7 +99,7 @@ public class JdbcTemplate {
                 "58"   // DB2: unexpected system error
         );
 
-        private RuntimeException translateException(SQLException e) {
+        private JdbcException translateException(SQLException e) {
             String sqlState = e.getSQLState();
             String classCode = sqlState.substring(0, 2);
             if (DATA_ACCESS_RESOURCE_FAILURE_CODES.contains(classCode)) {

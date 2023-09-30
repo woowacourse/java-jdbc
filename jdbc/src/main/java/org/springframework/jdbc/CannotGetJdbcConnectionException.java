@@ -2,7 +2,7 @@ package org.springframework.jdbc;
 
 import java.sql.SQLException;
 
-public class CannotGetJdbcConnectionException extends RuntimeException {
+public class CannotGetJdbcConnectionException extends JdbcException {
 
     public CannotGetJdbcConnectionException(String msg) {
         super(msg);
