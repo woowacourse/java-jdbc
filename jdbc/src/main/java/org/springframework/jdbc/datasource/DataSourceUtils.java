@@ -1,11 +1,10 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {

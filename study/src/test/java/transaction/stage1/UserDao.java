@@ -1,11 +1,10 @@
 package transaction.stage1;
 
-import transaction.stage1.jdbc.JdbcTemplate;
-import transaction.stage1.jdbc.RowMapper;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
+import javax.sql.DataSource;
+import transaction.stage1.jdbc.JdbcTemplate;
+import transaction.stage1.jdbc.RowMapper;
 
 public class UserDao {
 
