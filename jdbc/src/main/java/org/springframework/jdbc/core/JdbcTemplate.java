@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -39,16 +40,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
 
             if (!resultSet.next()) {
-                return null;
+                return Optional.empty();
             }
 
-            return rowMapper.mapToRow(resultSet);
+            return Optional.of(rowMapper.mapToRow(resultSet));
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
