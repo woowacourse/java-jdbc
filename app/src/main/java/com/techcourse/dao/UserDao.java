@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ public class UserDao {
         );
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
