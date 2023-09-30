@@ -9,6 +9,8 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.SqlException;
 
 public class JdbcTemplate {
@@ -35,7 +37,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(PreparedStatement ps, Object[] fields) throws SQLException {
+    private void setPreparedStatement(final PreparedStatement ps, final Object[] fields) throws SQLException {
         for (int i = 1; i <= fields.length; i++) {
             ps.setObject(i, fields[i-1]);
         }
@@ -59,11 +61,18 @@ public class JdbcTemplate {
 
     private <T> T getObject(final RowMapper<T> rowMapper, final PreparedStatement ps) throws SQLException {
         try (final ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
+            return executeRowMapper(rowMapper, rs);
         }
-        return null;
+    }
+
+    private <T> T executeRowMapper(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        if (rs.next() && rs.isLast()) {
+            return rowMapper.mapRow(rs);
+        }
+        if (!rs.next()) {
+            throw new NoDataAccessException();
+        }
+        throw new MoreDataAccessException();
     }
 
     public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper) {
@@ -73,14 +82,18 @@ public class JdbcTemplate {
              final PreparedStatement ps = conn.prepareStatement(sql);
              final ResultSet rs = ps.executeQuery()) {
 
-            final List<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs));
-            }
-            return objects;
+            return getObjects(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new SqlException(e.getMessage());
         }
+    }
+
+    private <T> List<T> getObjects(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> objects = new ArrayList<>();
+        while (rs.next()) {
+            objects.add(rowMapper.mapRow(rs));
+        }
+        return objects;
     }
 }
