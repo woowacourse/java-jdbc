@@ -47,15 +47,12 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             setValues(pstmt, values);
-
             ResultSet resultSet = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
 
+            List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.run(resultSet));
             }
-
-            resultSet.close();
 
             return result;
         } catch (SQLException e) {
