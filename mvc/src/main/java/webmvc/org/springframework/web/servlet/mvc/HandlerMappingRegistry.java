@@ -10,12 +10,12 @@ public class HandlerMappingRegistry {
 
     private final List<HandlerMapping> handlerMappings = new ArrayList<>();
 
-    public void addHandlerMapping(final HandlerMapping handlerMapping) {
+    public void addHandlerMapping(HandlerMapping handlerMapping) {
         handlerMapping.initialize();
         handlerMappings.add(handlerMapping);
     }
 
-    public Optional<Object> getHandler(final HttpServletRequest request) {
+    public Optional<Object> getHandler(HttpServletRequest request) {
         return handlerMappings.stream()
                 .map(hm -> hm.getHandler(request))
                 .filter(Objects::nonNull)

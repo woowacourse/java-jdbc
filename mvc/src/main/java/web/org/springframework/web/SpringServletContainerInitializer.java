@@ -14,19 +14,15 @@ import java.util.Set;
 public class SpringServletContainerInitializer implements ServletContainerInitializer {
 
     @Override
-    public void onStartup(Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
-            throws ServletException {
+    public void onStartup(Set<Class<?>> webAppInitializerClasses, ServletContext servletContext) throws ServletException {
+        if (webAppInitializerClasses == null) {
+            return;
+        }
+
         final List<WebApplicationInitializer> initializers = new LinkedList<>();
 
-        if (webAppInitializerClasses != null) {
-            for (Class<?> waiClass : webAppInitializerClasses) {
-                try {
-                    initializers.add((WebApplicationInitializer)
-                            ReflectionUtils.accessibleConstructor(waiClass).newInstance());
-                } catch (Throwable ex) {
-                    throw new ServletException("Failed to instantiate WebApplicationInitializer class", ex);
-                }
-            }
+        for (Class<?> waiClass : webAppInitializerClasses) {
+            addInitializer(initializers, waiClass);
         }
 
         if (initializers.isEmpty()) {
@@ -36,6 +32,14 @@ public class SpringServletContainerInitializer implements ServletContainerInitia
 
         for (WebApplicationInitializer initializer : initializers) {
             initializer.onStartup(servletContext);
+        }
+    }
+
+    private void addInitializer(List<WebApplicationInitializer> initializers, Class<?> waiClass) throws ServletException {
+        try {
+            initializers.add((WebApplicationInitializer) ReflectionUtils.accessibleConstructor(waiClass).newInstance());
+        } catch (Throwable ex) {
+            throw new ServletException("Failed to instantiate WebApplicationInitializer class", ex);
         }
     }
 }

@@ -13,9 +13,7 @@ public abstract class ReflectionUtils {
      * @throws NoSuchMethodException if no such constructor exists
      * @since 5.0
      */
-    public static <T> Constructor<T> accessibleConstructor(Class<T> clazz, Class<?>... parameterTypes)
-            throws NoSuchMethodException {
-
+    public static <T> Constructor<T> accessibleConstructor(Class<T> clazz, Class<?>... parameterTypes) throws NoSuchMethodException {
         Constructor<T> ctor = clazz.getDeclaredConstructor(parameterTypes);
         makeAccessible(ctor);
         return ctor;
@@ -30,9 +28,14 @@ public abstract class ReflectionUtils {
      */
     @SuppressWarnings("deprecation")
     public static void makeAccessible(Constructor<?> ctor) {
-        if ((!Modifier.isPublic(ctor.getModifiers()) ||
-                !Modifier.isPublic(ctor.getDeclaringClass().getModifiers())) && !ctor.isAccessible()) {
+        if (!isConstructorAccessible(ctor)) {
             ctor.setAccessible(true);
         }
+    }
+
+    private static boolean isConstructorAccessible(Constructor<?> ctor) {
+        int modifiers = ctor.getModifiers();
+        int declaringClassModifiers = ctor.getDeclaringClass().getModifiers();
+        return (Modifier.isPublic(modifiers) && Modifier.isPublic(declaringClassModifiers)) || ctor.isAccessible();
     }
 }

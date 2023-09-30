@@ -4,18 +4,21 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import webmvc.org.springframework.web.servlet.ModelAndView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import webmvc.org.springframework.web.servlet.ModelAndView;
+import webmvc.org.springframework.web.servlet.View;
+
+import java.util.Optional;
 
 public class DispatcherServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private final HandlerMappingRegistry handlerMappingRegistry;
-    private final HandlerAdapterRegistry handlerAdapterRegistry;
-    private HandlerExecutor handlerExecutor;
+    private final transient HandlerMappingRegistry handlerMappingRegistry;
+    private final transient HandlerAdapterRegistry handlerAdapterRegistry;
+    private transient HandlerExecutor handlerExecutor;
 
     public DispatcherServlet() {
         handlerMappingRegistry = new HandlerMappingRegistry();
@@ -27,26 +30,26 @@ public class DispatcherServlet extends HttpServlet {
         handlerExecutor = new HandlerExecutor(handlerAdapterRegistry);
     }
 
-    public void addHandlerMapping(final HandlerMapping handlerMapping) {
+    public void addHandlerMapping(HandlerMapping handlerMapping) {
         handlerMappingRegistry.addHandlerMapping(handlerMapping);
     }
 
-    public void addHandlerAdapter(final HandlerAdapter handlerAdapter) {
+    public void addHandlerAdapter(HandlerAdapter handlerAdapter) {
         handlerAdapterRegistry.addHandlerAdapter(handlerAdapter);
     }
 
     @Override
-    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException {
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
 
         try {
-            final var handler = handlerMappingRegistry.getHandler(request);
-            if (!handler.isPresent()) {
+            Optional<Object> handler = handlerMappingRegistry.getHandler(request);
+            if (handler.isEmpty()) {
                 response.setStatus(404);
                 return;
             }
 
-            final var modelAndView = handlerExecutor.handle(request, response, handler.get());
+            ModelAndView modelAndView = handlerExecutor.handle(request, response, handler.get());
             render(modelAndView, request, response);
         } catch (Throwable e) {
             log.error("Exception : {}", e.getMessage(), e);
@@ -54,8 +57,8 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
-    private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        final var view = modelAndView.getView();
+    private void render(ModelAndView modelAndView, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        View view = modelAndView.getView();
         view.render(modelAndView.getModel(), request, response);
     }
 }

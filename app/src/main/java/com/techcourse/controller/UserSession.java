@@ -10,7 +10,7 @@ public class UserSession {
     public static final String SESSION_KEY = "user";
 
     public static Optional<User> getUserFrom(HttpSession session) {
-        final var user = (User) session.getAttribute(SESSION_KEY);
+        User user = (User) session.getAttribute(SESSION_KEY);
         return Optional.ofNullable(user);
     }
 
