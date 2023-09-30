@@ -6,6 +6,8 @@ import java.sql.SQLException;
 
 public class StatementCreator {
 
+    private static final String EMPTY_STRING = "";
+
     private StatementCreator() {
     }
 
@@ -30,11 +32,16 @@ public class StatementCreator {
 
     private static void setPreparedStatement(PreparedStatement pstmt, Object... arguments) throws SQLException {
         for (int argumentIdx = 1; argumentIdx < arguments.length + 1; argumentIdx++) {
-            Object argument = arguments[argumentIdx - 1];
-            if (argument instanceof String) {
-                argument = ((String) argument).replaceAll("[^a-zA-Z0-9-@.]", "");
-            }
+            Object argument = filterArgument(arguments[argumentIdx - 1]);
             pstmt.setObject(argumentIdx, argument);
         }
+    }
+
+    private static Object filterArgument(Object argument) {
+        Object filtered = argument;
+        if (argument instanceof String) {
+            filtered = ((String) argument).replaceAll("[^a-zA-Z0-9-@.]", EMPTY_STRING);
+        }
+        return filtered;
     }
 }
