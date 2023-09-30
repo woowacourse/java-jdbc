@@ -16,10 +16,10 @@ public class ResourceFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceFilter.class);
 
-    private static final List<String> resourcePrefixs = new ArrayList<>();
+    private static final List<String> resourcePrefixes = new ArrayList<>();
 
     static {
-        resourcePrefixs.addAll(Arrays.asList(
+        resourcePrefixes.addAll(Arrays.asList(
                 "/css",
                 "/js",
                 "/assets",
@@ -32,25 +32,25 @@ public class ResourceFilter implements Filter {
     private RequestDispatcher requestDispatcher;
 
     @Override
-    public void init(final FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) throws ServletException {
         this.requestDispatcher = filterConfig.getServletContext().getNamedDispatcher("default");
     }
 
     @Override
-    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        final var req = (HttpServletRequest) request;
-        final var path = req.getRequestURI().substring(req.getContextPath().length());
+        HttpServletRequest req = (HttpServletRequest) request;
+        String path = req.getRequestURI().substring(req.getContextPath().length());
         if (isResourceUrl(path)) {
             log.debug("path : {}", path);
             requestDispatcher.forward(request, response);
-        } else {
-            chain.doFilter(request, response);
+            return;
         }
+        chain.doFilter(request, response);
     }
 
     private boolean isResourceUrl(final String url) {
-        for (String prefix : resourcePrefixs) {
+        for (String prefix : resourcePrefixes) {
             if (url.startsWith(prefix)) {
                 return true;
             }

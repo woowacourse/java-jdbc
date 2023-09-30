@@ -2,13 +2,15 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
-    private static final JdbcTemplate.RowMapper<User> rowMapper = resultSet -> {
+    private static final RowMapper<User> rowMapper = resultSet -> {
         Long id = resultSet.getLong("id");
         String account = resultSet.getString("account");
         String password = resultSet.getString("password");
@@ -40,18 +42,25 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
+
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, rowMapper, id);
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("해당하는 유저가 존재하지 않습니다.");
+        }
+        return user.get();
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, rowMapper, account);
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("해당하는 유저가 존재하지 않습니다.");
+        }
+        return user.get();
     }
 }

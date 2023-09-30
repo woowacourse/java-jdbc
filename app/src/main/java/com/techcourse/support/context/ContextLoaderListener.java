@@ -10,7 +10,7 @@ import jakarta.servlet.annotation.WebListener;
 public class ContextLoaderListener implements ServletContextListener {
 
     @Override
-    public void contextInitialized(final ServletContextEvent sce) {
+    public void contextInitialized(ServletContextEvent sce) {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
     }
 }
