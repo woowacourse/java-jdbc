@@ -20,7 +20,7 @@
 - [ ] JdbcTemplate이 TransactionManager를 가지는 이유 고민
 
 ### 2차
-- [ ] PreparedStatementCreator 테스트 작성
+- [x] PreparedStatementCreator 테스트 작성
 - [x] 람다 괄호 제거
 - [x] queryExecutor 매개변수 final 추가
 - [x] queryExecutor 메서드명 수정
