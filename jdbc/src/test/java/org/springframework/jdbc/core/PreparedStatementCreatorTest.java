@@ -38,7 +38,7 @@ class PreparedStatementCreatorTest {
 
         // then
         assertThat(preparedStatement.getConnection()).isEqualTo(connection);
-        assertThat(parameterMetaData.getParameterCount()).isEqualTo(2);
+        assertThat(parameterMetaData.getParameterCount()).isEqualTo(args.length);
         assertThat(parameterMetaData.getParameterClassName(1)).contains("String");
         assertThat(parameterMetaData.getParameterClassName(2)).contains("Integer");
     }
