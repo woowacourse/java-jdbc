@@ -32,6 +32,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(final String sql, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement ps = createPreparedStatement(connection, sql, args)
+        ) {
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final ResultSetMapper<T> resultSetMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement ps = createPreparedStatement(connection, sql, args);
@@ -40,7 +51,7 @@ public class JdbcTemplate {
             return mapToObject(resultSet, resultSetMapper);
         } catch (SQLException e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
