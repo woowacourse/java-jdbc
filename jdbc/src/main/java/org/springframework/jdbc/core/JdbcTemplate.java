@@ -29,8 +29,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
-            ResultSet resultSet = pstmt.executeQuery();
+        try (ResultSet resultSet = preparedStatementWithParams(sql, params).executeQuery()) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
@@ -42,8 +41,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
-            ResultSet resultSet = pstmt.executeQuery();
+        try (ResultSet resultSet = preparedStatementWithParams(sql, params).executeQuery()) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
