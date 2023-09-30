@@ -18,13 +18,13 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(String sql, QueryExecutor<T> rExecution, Object... parameters) {
+    public <T> T query(String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             settingParameters(pstmt, parameters);
-            return rExecution.execute(pstmt);
+            return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
