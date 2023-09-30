@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -25,6 +26,7 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private static final int INITIAL_PARAMETER_INDEX = 1;
+    private static final char PLACEHOLDER = '?';
 
     private final DataSource dataSource;
 
@@ -58,8 +60,18 @@ public class JdbcTemplate {
     private PreparedStatement createPreparedStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
         log.debug("query: {}", sql);
         final PreparedStatement ps = connection.prepareStatement(sql);
+        validateQueryArgs(sql, args);
         setArgs(ps, args);
         return ps;
+    }
+
+    private void validateQueryArgs(final String sql, final Object[] args) {
+        final long placeholderCount = sql.chars()
+                .filter(ch -> ch == PLACEHOLDER)
+                .count();
+        if (placeholderCount != args.length) {
+            throw new InvalidDataAccessApiUsageException();
+        }
     }
 
     private void setArgs(final PreparedStatement ps, final Object[] args) throws SQLException {
