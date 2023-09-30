@@ -2,30 +2,33 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
+import context.org.springframework.stereotype.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import nextstep.mvc.view.JspView;
-import nextstep.mvc.view.ModelAndView;
-import nextstep.web.annotation.Controller;
-import nextstep.web.annotation.RequestMapping;
-import nextstep.web.support.RequestMethod;
+import web.org.springframework.web.bind.annotation.GetMapping;
+import web.org.springframework.web.bind.annotation.PostMapping;
+import webmvc.org.springframework.web.servlet.ModelAndView;
+import webmvc.org.springframework.web.servlet.View;
+import webmvc.org.springframework.web.servlet.view.JspView;
 
 @Controller
 public class RegisterController {
 
-    @RequestMapping(value = "/register", method = RequestMethod.POST)
-    public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
-        final var user = new User(2,
-                request.getParameter("account"),
-                request.getParameter("password"),
-                request.getParameter("email"));
-        InMemoryUserRepository.save(user);
-
-        return new ModelAndView(new JspView("redirect:/index.jsp"));
+    @GetMapping("/register")
+    public ModelAndView getRegisterView(final HttpServletRequest req, final HttpServletResponse res) {
+        final View view = new JspView("/register.jsp");
+        return new ModelAndView(view);
     }
 
-    @RequestMapping(value = "/register", method = RequestMethod.GET)
-    public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
-        return new ModelAndView(new JspView("/register.jsp"));
+    @PostMapping("/register")
+    public ModelAndView register(final HttpServletRequest req, final HttpServletResponse res) {
+        final var user = new User(2,
+                req.getParameter("account"),
+                req.getParameter("password"),
+                req.getParameter("email"));
+        InMemoryUserRepository.save(user);
+
+        final View view = new JspView("redirect:/index.jsp");
+        return new ModelAndView(view);
     }
 }
