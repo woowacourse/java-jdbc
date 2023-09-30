@@ -50,6 +50,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            return extractData(rowMapper, resultSet);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private <T> List<T> extractData(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
         List<T> results = new ArrayList<>();
         int rowNum = 0;
