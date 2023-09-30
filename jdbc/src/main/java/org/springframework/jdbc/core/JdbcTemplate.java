@@ -24,14 +24,14 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, pstmt -> SingleResult.from(getQueryResult(rowMapper, pstmt)), args);
+        return executeQuery(sql, preparedStatement -> SingleResult.from(getQueryResult(rowMapper, preparedStatement)), args);
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args)
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)
         ) {
-            return executor.execute(pstmt);
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -40,19 +40,19 @@ public class JdbcTemplate {
 
     private <T> List<T> getQueryResult(
             final RowMapper<T> rowMapper,
-            final PreparedStatement pstmt
+            final PreparedStatement preparedStatement
     ) throws SQLException {
-        try (final ResultSet rs = pstmt.executeQuery()) {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             final List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, pstmt -> getQueryResult(rowMapper, pstmt), args);
+        return executeQuery(sql, preparedStatement -> getQueryResult(rowMapper, preparedStatement), args);
     }
 
     public int execute(final String sql, final Object... args) {

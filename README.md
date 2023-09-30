@@ -26,4 +26,4 @@
 - [x] queryExecutor 매개변수 final 추가
 - [x] queryExecutor 메서드명 수정
 - [x] getSingleQueryResult, getMultipleQueryResult 하나의 메서드로 합치고, 검증을 호출부에서 하기
-- [ ] 변수명 약어 사용 X
+- [x] 변수명 약어 사용 X

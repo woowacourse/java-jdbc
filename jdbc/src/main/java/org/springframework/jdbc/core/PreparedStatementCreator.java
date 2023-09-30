@@ -16,9 +16,9 @@ public class PreparedStatementCreator {
         return preparedStatement;
     }
 
-    private void bindArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void bindArguments(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
         for (int index = 0; index < args.length; index++) {
-            pstmt.setObject(index + 1, args[index]);
+            preparedStatement.setObject(index + 1, args[index]);
         }
     }
 }
