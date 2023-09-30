@@ -49,6 +49,30 @@ public class JdbcTemplate {
     }
   }
 
+  public <T> T query(final String sql, RowMapper<T> rowMapper, final Object... values) {
+
+    try (final Connection conn = dataSource.getConnection();
+        final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+      for (int index = 1; index <= values.length; index++) {
+        pstmt.setObject(index, values[index - 1]);
+      }
+
+      final ResultSet resultSet = pstmt.executeQuery();
+
+      final Map<Integer, Object> result = new HashMap<>();
+
+      if (resultSet.next()) {
+        return rowMapper.map(resultSet);
+      }
+    } catch (SQLException e) {
+      log.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
+
+    return null;
+  }
+
   public List<Map<Integer, Object>> queryPlural(final String sql, final Object... values) {
     try (final Connection conn = dataSource.getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql)) {
