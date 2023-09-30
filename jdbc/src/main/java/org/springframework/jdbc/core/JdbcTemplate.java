@@ -24,10 +24,10 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryExecutor(sql, pstmt -> getSingleQueryResult(rowMapper, pstmt), args);
+        return executeQuery(sql, pstmt -> getSingleQueryResult(rowMapper, pstmt), args);
     }
 
-    private <T> T queryExecutor(String sql, SqlExecutor<T> executor, Object... args) {
+    private <T> T executeQuery(String sql, SqlExecutor<T> executor, Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args)
         ) {
@@ -58,7 +58,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        return queryExecutor(sql, pstmt -> getMultipleQueryResult(rowMapper, pstmt), args);
+        return executeQuery(sql, pstmt -> getMultipleQueryResult(rowMapper, pstmt), args);
     }
 
     private <T> List<T> getMultipleQueryResult(
@@ -75,7 +75,7 @@ public class JdbcTemplate {
     }
 
     public int execute(final String sql, final Object... args) {
-        return queryExecutor(sql, PreparedStatement::executeUpdate, args);
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
 }
