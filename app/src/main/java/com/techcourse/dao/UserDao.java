@@ -1,9 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -71,15 +69,6 @@ public class UserDao {
             resultSet.getString(4)
         ),
         account
-    );
-  }
-
-  private User createUserFrom(final Map<Integer, Object> result) {
-    return new User(
-        (Long) result.get(1),
-        (String) result.get(2),
-        (String) result.get(3),
-        (String) result.get(4)
     );
   }
 }
