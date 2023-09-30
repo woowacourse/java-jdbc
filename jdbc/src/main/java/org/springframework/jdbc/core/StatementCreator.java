@@ -6,6 +6,9 @@ import java.sql.SQLException;
 
 public class StatementCreator {
 
+    private StatementCreator() {
+    }
+
     public static PreparedStatement createStatement(Connection connection, String sql, Object... arguments) {
         try {
             validateArgumentsCount(sql, arguments);
@@ -29,7 +32,7 @@ public class StatementCreator {
         for (int argumentIdx = 1; argumentIdx < arguments.length + 1; argumentIdx++) {
             Object argument = arguments[argumentIdx - 1];
             if (argument instanceof String) {
-                argument = ((String) argument).replaceAll("[^a-zA-Z0-9- ]", "");
+                argument = ((String) argument).replaceAll("[^a-zA-Z0-9-@.]", "");
             }
             pstmt.setObject(argumentIdx, argument);
         }

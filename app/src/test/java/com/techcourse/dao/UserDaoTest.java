@@ -52,6 +52,7 @@ class UserDaoTest {
         final var actual = userDao.findById(2L).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.getEmail()).isEqualTo("hkkang@woowahan.com");
     }
 
     @Test
