@@ -22,18 +22,21 @@ public class JdbcTemplate {
 
   public <T> T query(final String sql, RowMapper<T> rowMapper, final Object... values) {
 
-    try (final Connection conn = dataSource.getConnection();
-        final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (
+        final Connection conn = dataSource.getConnection();
+        final PreparedStatement pstmt = conn.prepareStatement(sql)
+    ) {
 
       for (int index = 1; index <= values.length; index++) {
         pstmt.setObject(index, values[index - 1]);
       }
 
-      final ResultSet resultSet = pstmt.executeQuery();
-
-      if (resultSet.next()) {
-        return rowMapper.map(resultSet);
+      try (final ResultSet resultSet = pstmt.executeQuery()) {
+        if (resultSet.next()) {
+          return rowMapper.map(resultSet);
+        }
       }
+
     } catch (SQLException e) {
       log.error(e.getMessage(), e);
       throw new RuntimeException(e);
@@ -42,24 +45,30 @@ public class JdbcTemplate {
     return null;
   }
 
-  public <T> List<T> queryPlural(final String sql, final RowMapper<T> rowMapper,
-      final Object... values) {
-    try (final Connection conn = dataSource.getConnection();
-        final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+  public <T> List<T> queryPlural(
+      final String sql,
+      final RowMapper<T> rowMapper,
+      final Object... values
+  ) {
+    try (
+        final Connection conn = dataSource.getConnection();
+        final PreparedStatement pstmt = conn.prepareStatement(sql)
+    ) {
 
       for (int index = 1; index <= values.length; index++) {
         pstmt.setObject(index, values[index - 1]);
       }
 
-      final ResultSet resultSet = pstmt.executeQuery();
+      try (final ResultSet resultSet = pstmt.executeQuery()) {
+        final List<T> results = new ArrayList<>();
 
-      final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+          results.add(rowMapper.map(resultSet));
+        }
 
-      while (resultSet.next()) {
-        results.add(rowMapper.map(resultSet));
+        return results;
       }
 
-      return results;
     } catch (SQLException e) {
       log.error(e.getMessage(), e);
       throw new RuntimeException(e);
@@ -67,8 +76,10 @@ public class JdbcTemplate {
   }
 
   public void execute(final String sql, final Object... values) {
-    try (final Connection conn = dataSource.getConnection();
-        final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (
+        final Connection conn = dataSource.getConnection();
+        final PreparedStatement pstmt = conn.prepareStatement(sql)
+    ) {
 
       for (int index = 1; index <= values.length; index++) {
         pstmt.setObject(index, values[index - 1]);
