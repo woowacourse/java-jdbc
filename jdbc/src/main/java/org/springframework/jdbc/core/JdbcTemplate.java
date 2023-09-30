@@ -24,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, pstmt -> getSingleQueryResult(rowMapper, pstmt), args);
+        return executeQuery(sql, pstmt -> SingleResult.from(getQueryResult(rowMapper, pstmt)), args);
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
@@ -38,30 +38,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> Optional<T> getSingleQueryResult(
-            final RowMapper<T> rowMapper,
-            final PreparedStatement pstmt
-    ) throws SQLException {
-        try (final ResultSet rs = pstmt.executeQuery()) {
-            if (rs.last()) {
-                validateSingleRow(rs);
-                return Optional.of(rowMapper.mapRow(rs));
-            }
-            return Optional.empty();
-        }
-    }
-
-    private void validateSingleRow(final ResultSet rs) throws SQLException {
-        if (rs.getRow() != 1) {
-            throw new IllegalArgumentException("조회 결과가 2개 이상입니다.");
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, pstmt -> getMultipleQueryResult(rowMapper, pstmt), args);
-    }
-
-    private <T> List<T> getMultipleQueryResult(
+    private <T> List<T> getQueryResult(
             final RowMapper<T> rowMapper,
             final PreparedStatement pstmt
     ) throws SQLException {
@@ -72,6 +49,10 @@ public class JdbcTemplate {
             }
             return results;
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(sql, pstmt -> getQueryResult(rowMapper, pstmt), args);
     }
 
     public int execute(final String sql, final Object... args) {

@@ -18,10 +18,12 @@
 - [x] JdbcTemplate try-catch 중복 제거
 - [x] queryForObject의 validateSingleRow 개선
 - [ ] JdbcTemplate이 TransactionManager를 가지는 이유 고민
+- [ ] UserHistoryDao도 JdbcTemplate 사용하도록 수정
 
 ### 2차
 - [x] PreparedStatementCreator 테스트 작성
 - [x] 람다 괄호 제거
 - [x] queryExecutor 매개변수 final 추가
 - [x] queryExecutor 메서드명 수정
-- [ ] getSingleQueryResult, getMultipleQueryResult 하나의 메서드로 합치고, 검증을 호출부에서 하기
+- [x] getSingleQueryResult, getMultipleQueryResult 하나의 메서드로 합치고, 검증을 호출부에서 하기
+- [ ] 변수명 약어 사용 X
