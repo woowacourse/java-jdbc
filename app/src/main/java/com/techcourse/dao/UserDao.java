@@ -64,9 +64,16 @@ public class UserDao {
   public User findByAccount(final String account) {
     final var sql = "select id, account, password, email from users where account = ?";
 
-    final Map<Integer, Object> result = jdbcTemplate.query(sql, account);
-
-    return createUserFrom(result);
+    return jdbcTemplate.query(
+        sql,
+        resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+        ),
+        account
+    );
   }
 
   private User createUserFrom(final Map<Integer, Object> result) {
