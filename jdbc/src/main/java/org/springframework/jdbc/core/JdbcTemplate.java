@@ -129,7 +129,7 @@ public class JdbcTemplate {
         return constructorTypeNames.equals(columnTypeNames);
     }
 
-    private void closeResultSet(ResultSet resultSet) {
+    private void closeResultSet(final ResultSet resultSet) {
         if (resultSet != null) {
             try {
                 resultSet.close();
