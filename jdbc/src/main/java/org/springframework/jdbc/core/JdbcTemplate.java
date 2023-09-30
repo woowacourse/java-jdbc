@@ -1,6 +1,5 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,13 +20,7 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,13 +29,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
             ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -55,13 +42,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
@@ -72,5 +53,14 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement preparedStatementWithParams(String sql, Object... params) throws SQLException {
+        PreparedStatement pstmt = dataSource.getConnection().prepareStatement(sql);
+        log.debug("query : {}", sql);
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
+        }
+        return pstmt;
     }
 }
