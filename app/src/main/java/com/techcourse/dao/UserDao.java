@@ -33,17 +33,15 @@ public class UserDao {
   public List<User> findAll() {
     final var sql = "select id, account, password, email from users";
 
-    final List<Map<Integer, Object>> results = jdbcTemplate.queryPlural(sql);
-
-    List<User> users = new ArrayList<>();
-
-    for (int i = 0; i < results.size(); i++) {
-      final Map<Integer, Object> result = results.get(i);
-
-      users.add(createUserFrom(result));
-    }
-
-    return users;
+    return jdbcTemplate.queryPlural(
+        sql,
+        resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+        )
+    );
   }
 
   public User findById(final Long id) {

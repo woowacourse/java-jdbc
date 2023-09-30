@@ -104,6 +104,29 @@ public class JdbcTemplate {
     }
   }
 
+  public <T> List<T> queryPlural(final String sql, final RowMapper<T> rowMapper, final Object... values) {
+    try (final Connection conn = dataSource.getConnection();
+        final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+      for (int index = 1; index <= values.length; index++) {
+        pstmt.setObject(index, values[index - 1]);
+      }
+
+      final ResultSet resultSet = pstmt.executeQuery();
+
+      final List<T> results = new ArrayList<>();
+
+      while (resultSet.next()) {
+        results.add(rowMapper.map(resultSet));
+      }
+
+      return results;
+    } catch (SQLException e) {
+      log.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
+  }
+
   public void execute(final String sql, final Object... values) {
     try (final Connection conn = dataSource.getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql)) {
