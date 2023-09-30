@@ -40,13 +40,14 @@ class UserDaoTest {
 
     @Test
     void findById_make_exception_when_no_result() {
-        assertThatThrownBy(() -> userDao.findById(10L))
+        assertThatThrownBy(() -> userDao.findById(100000000L))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
     void findByAccount() {
-        final var account = "hongsil";
+        final var account = "mylove_hongsil";
+        userDao.insert(new User(account, "비밀번호486", "love@with.you"));
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -54,7 +55,8 @@ class UserDaoTest {
 
     @Test
     void findByAccount_make_exception_when_multiple_result() {
-        final var user = new User("hongsil", "486", "gurwns9325@gmail.com");
+        final var user = new User("ditoo", "password", "ditoo@gmail.com");
+        userDao.insert(user);
         userDao.insert(user);
         assertThatThrownBy(() -> userDao.findByAccount(user.getAccount()))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
