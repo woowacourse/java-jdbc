@@ -33,11 +33,13 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(String sql, Class<?> clazz) {
+    public List<Object> query(final String sql, final Class<?> clazz) {
+        ResultSet resultSet = null;
+
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            final ResultSet resultSet = statement.executeQuery();
+            resultSet = statement.executeQuery();
             final List<Object> instances = new ArrayList<>();
 
             while (resultSet.next()) {
@@ -49,17 +51,22 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL exception occurred!");
             throw new RuntimeException(e);
+        } finally {
+            closeResultSet(resultSet);
         }
     }
 
     // TODO: 프록시로 Connection, Statement 획득하는 로직 분리
+
     public Optional<Object> queryForObject(final String sql, final Class<?> clazz, final Object... args) {
+        ResultSet resultSet = null;
+
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
             setParameters(statement, args);
 
-            final ResultSet resultSet = statement.executeQuery();
+            resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
                 final Object instance = instantiateFromResultSet(clazz, resultSet);
@@ -70,10 +77,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL exception occurred!");
             throw new RuntimeException(e);
+        } finally {
+            closeResultSet(resultSet);
         }
     }
 
-    private Object instantiateFromResultSet(Class<?> clazz, ResultSet resultSet) throws SQLException {
+    private Object instantiateFromResultSet(final Class<?> clazz, final ResultSet resultSet) throws SQLException {
         try {
             final List<Object> columns = extractColumns(resultSet);
 
@@ -92,7 +101,7 @@ public class JdbcTemplate {
         }
     }
 
-    private List<Object> extractColumns(ResultSet resultSet) throws SQLException {
+    private List<Object> extractColumns(final ResultSet resultSet) throws SQLException {
         final List<Object> columns = new ArrayList<>();
 
         final ResultSetMetaData metaData = resultSet.getMetaData();
@@ -105,7 +114,7 @@ public class JdbcTemplate {
         return columns;
     }
 
-    private boolean isCompatible(Constructor<?> constructor, List<Object> columns) {
+    private boolean isCompatible(final Constructor<?> constructor, final List<Object> columns) {
         final List<String> constructorTypeNames = Arrays.stream(constructor.getParameterTypes())
                 .map(Class::getSimpleName)
                 .map(String::toLowerCase)
@@ -118,6 +127,17 @@ public class JdbcTemplate {
                 .collect(Collectors.toList());
 
         return constructorTypeNames.equals(columnTypeNames);
+    }
+
+    private void closeResultSet(ResultSet resultSet) {
+        if (resultSet != null) {
+            try {
+                resultSet.close();
+            } catch (SQLException e) {
+                log.error("failed to close ResultSet!");
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void setParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
