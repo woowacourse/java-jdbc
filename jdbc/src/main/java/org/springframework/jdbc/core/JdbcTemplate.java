@@ -22,8 +22,6 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... objects) {
-        validateBindableSql(sql, objects);
-
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects)) {
 
@@ -37,18 +35,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void validateBindableSql(final String sql, final Object... objects) {
-        int count = 0;
-        for (int i = 0; i < sql.length(); i++) {
-            if (sql.charAt(i) == '?') {
-                count++;
-            }
-        }
-        if (count != objects.length) {
-            throw new IllegalArgumentException("Can Not Binding");
-        }
-    }
-
     private PreparedStatement prepareStatementWithBindingQuery(final PreparedStatement preparedStatement, final Object... objects) throws SQLException {
         for (int i = 0; i < objects.length; i++) {
             preparedStatement.setObject(i + 1, objects[i]);
@@ -57,8 +43,6 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        validateBindableSql(sql, objects);
-
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -79,8 +63,6 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        validateBindableSql(sql, objects);
-
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
