@@ -23,14 +23,12 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static final RowMapper<User> userRowMapper = (rs -> {
-        return new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-    });
+    private static final RowMapper<User> userRowMapper = (rs) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
