@@ -24,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryExecutor(sql, (pstmt) -> getSingleQueryResult(rowMapper, pstmt), args);
+        return queryExecutor(sql, pstmt -> getSingleQueryResult(rowMapper, pstmt), args);
     }
 
     private <T> T queryExecutor(String sql, SqlExecutor<T> executor, Object... args) {
@@ -58,7 +58,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        return queryExecutor(sql, (pstmt) -> getMultipleQueryResult(rowMapper, pstmt), args);
+        return queryExecutor(sql, pstmt -> getMultipleQueryResult(rowMapper, pstmt), args);
     }
 
     private <T> List<T> getMultipleQueryResult(
