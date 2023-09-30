@@ -27,7 +27,7 @@ public class JdbcTemplate {
         return executeQuery(sql, pstmt -> getSingleQueryResult(rowMapper, pstmt), args);
     }
 
-    private <T> T executeQuery(String sql, SqlExecutor<T> executor, Object... args) {
+    private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args)
         ) {

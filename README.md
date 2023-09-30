@@ -22,6 +22,6 @@
 ### 2차
 - [ ] PreparedStatementCreator 테스트 작성
 - [x] 람다 괄호 제거
-- [ ] queryExecutor 매개변수 final 추가
+- [x] queryExecutor 매개변수 final 추가
 - [x] queryExecutor 메서드명 수정
 - [ ] getSingleQueryResult, getMultipleQueryResult 하나의 메서드로 합치고, 검증을 호출부에서 하기
