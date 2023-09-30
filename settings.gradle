@@ -1,5 +1,5 @@
 rootProject.name = 'jwp-dashboard-jdbc'
-
 include 'jdbc'
 include 'mvc'
 include 'app'
+include 'study'
