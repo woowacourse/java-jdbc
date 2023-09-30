@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -24,7 +25,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
@@ -38,33 +39,27 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        ));
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
-    public Optional<User> findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+    private final RowMapper<User> rowMapper = rs -> (
+            new User(
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
+            )
+    );
 
-        return jdbcTemplate.queryForObject(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        ), id);
+    public Optional<User> findById(final Long id) {
+        final String sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where users.account = ?";
 
-        return jdbcTemplate.queryForObject(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        ), account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }
