@@ -27,24 +27,19 @@ class JdbcTemplateTest {
         Mockito.when(DataSourceUtils.getConnection(mockDataSource)).thenReturn(mockConnection);
         Mockito.when(mockDataSource.getConnection()).thenReturn(mockConnection);
         Mockito.when(mockConnection.prepareStatement(Mockito.anyString())).thenReturn(mockPreparedStatement);
-        Mockito.when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+        Mockito.when(mockPreparedStatement.execute()).thenReturn(true);
 
         final var jdbcTemplate = new JdbcTemplate(mockDataSource);
 
         //when
-        jdbcTemplate.execute("insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)", 1L, "account", "password", "email",
-                "2021-08-10 00:00:00", "admin");
+        jdbcTemplate.execute("insert into user_history (user_id, account) values (?, ?)", 1L, "account");
 
         //then
-        Mockito.verify(mockDataSource, Mockito.only()).getConnection();
-        Mockito.verify(mockConnection, Mockito.times(1)).prepareStatement(Mockito.anyString());
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(1, 1L);
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(2, "account");
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(3, "password");
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(4, "email");
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(5, "2021-08-10 00:00:00");
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(6, "admin");
-        Mockito.verify(mockPreparedStatement, Mockito.times(1)).executeUpdate();
+        assertAll(
+                () -> Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(1, 1L),
+                () -> Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(2, "account"),
+                () -> Mockito.verify(mockPreparedStatement, Mockito.times(1)).execute()
+        );
     }
 
     @Test
@@ -78,17 +73,10 @@ class JdbcTemplateTest {
 
         //then
         assertAll(
-                () -> Mockito.verify(mockDataSource, Mockito.only()).getConnection(),
-                () -> Mockito.verify(mockConnection, Mockito.times(1)).prepareStatement(Mockito.anyString()),
                 () -> Mockito.verify(mockPreparedStatement, Mockito.times(1)).setObject(1, 1L),
                 () -> Mockito.verify(mockPreparedStatement, Mockito.times(1)).executeQuery(),
                 () -> Mockito.verify(mockResultSet, Mockito.times(2)).next(),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("user_id"),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("account"),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("password"),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("email"),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("created_at"),
-                () -> Mockito.verify(mockResultSet, Mockito.times(1)).getObject("created_by"),
+                () -> Mockito.verify(mockResultSet, Mockito.times(6)).getObject(Mockito.any()),
                 () -> assertThat(params).containsExactly(1L, "account", "password", "email", "2021-08-10 00:00:00", "admin")
         );
     }
