@@ -20,13 +20,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private PreparedStatement setPrepareStatement(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+        return pstmt;
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             ResultSet rs;
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setPrepareStatement(args, pstmt);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
@@ -60,9 +65,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setPrepareStatement(args, pstmt);
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
