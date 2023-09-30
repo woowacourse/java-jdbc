@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +53,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -69,7 +68,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return rowMapper.apply(rs);
+                return rowMapper.map(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -99,7 +98,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -116,7 +115,7 @@ public class JdbcTemplate {
 
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(rowMapper.apply(rs));
+                result.add(rowMapper.map(rs));
             }
             return result;
         } catch (SQLException e) {
@@ -145,9 +144,5 @@ public class JdbcTemplate {
             }
         }
 
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

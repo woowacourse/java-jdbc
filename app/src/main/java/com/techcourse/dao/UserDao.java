@@ -1,15 +1,14 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Function;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final Function<ResultSet, User> ROW_MAPPER = rs -> {
+    private static final RowMapper<User> ROW_MAPPER = rs -> {
         try {
             return new User(
                     rs.getLong("id"),
