@@ -15,15 +15,6 @@ public abstract class JdbcTemplateException extends RuntimeException {
         }
     }
 
-    static class EntityReflectionException extends JdbcTemplateException {
-
-        private static final String CANNOT_REFLECTION_MESSAGE = "엔티티로 변환이 불가능합니다. - ";
-
-        EntityReflectionException(final String cause) {
-            super(CANNOT_REFLECTION_MESSAGE + cause);
-        }
-    }
-
     static class SqlException extends JdbcTemplateException {
 
         public SqlException(final String message) {

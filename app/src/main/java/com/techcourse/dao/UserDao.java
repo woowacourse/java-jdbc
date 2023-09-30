@@ -8,8 +8,6 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.ResultSetGetter;
 
 public class UserDao {
 
@@ -28,52 +26,45 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(
-                List.of(user.getAccount(), user.getPassword(), user.getEmail()));
-        jdbcTemplate.execute(sql, preparedStatementSetter);
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
 
-        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(
-                List.of(user.getAccount(), user.getPassword(), user.getEmail(), user.getId()));
-        jdbcTemplate.execute(sql, preparedStatementSetter);
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        final Map<String, Class<?>> userFields = getUserFields();
-        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
-        return jdbcTemplate.findAll(sql, userResultSetGetter);
-    }
-
-    private Map<String, Class<?>> getUserFields() {
-        return new HashMap<>() {{
-            put("id", Long.class);
-            put("account", String.class);
-            put("password", String.class);
-            put("email", String.class);
-        }};
+        return jdbcTemplate.findAll(sql,
+                (rs) -> new User(rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")));
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final Map<String, Class<?>> userFields = getUserFields();
-        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(id));
-        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
-        return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
+        return jdbcTemplate.find(sql,
+                (rs) -> new User(rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")),
+                id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        final Map<String, Class<?>> userFields = getUserFields();
-        final PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(List.of(account));
-        final ResultSetGetter<User> userResultSetGetter = new ResultSetGetter<>(userFields, User.class);
-        return jdbcTemplate.find(sql, preparedStatementSetter, userResultSetGetter);
+        return jdbcTemplate.find(sql,
+                (rs) -> new User(rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")),
+                account);
     }
 }

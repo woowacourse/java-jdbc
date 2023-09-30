@@ -21,13 +21,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    public void execute(final String sql, final Object... fields) {
         log.debug("query : {}", sql);
 
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            preparedStatementSetter.set(ps);
+            setPreparedStatement(ps, fields);
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -35,51 +35,52 @@ public class JdbcTemplate {
         }
     }
 
+    private void setPreparedStatement(PreparedStatement ps, Object[] fields) throws SQLException {
+        for (int i = 1; i <= fields.length; i++) {
+            ps.setObject(i, fields[i-1]);
+        }
+    }
+
     public <T> T find(final String sql,
-                      final PreparedStatementSetter preparedStatementSetter,
-                      final ResultSetGetter<T> rsg) {
+                      final RowMapper<T> rowMapper,
+                      final Object... fields) {
         log.debug("query : {}", sql);
 
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            preparedStatementSetter.set(ps);
-            return getObject(rsg, ps);
+            setPreparedStatement(ps, fields);
+            return getObject(rowMapper, ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new SqlException(e.getMessage());
         }
     }
 
-    private <T> T getObject(ResultSetGetter<T> rsg, PreparedStatement ps) throws SQLException {
+    private <T> T getObject(final RowMapper<T> rowMapper, final PreparedStatement ps) throws SQLException {
         try (final ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return rsg.getObject(rs);
+                return rowMapper.mapRow(rs);
             }
-            return null;
         }
+        return null;
     }
 
-    public <T> List<T> findAll(final String sql, final ResultSetGetter<T> rsg) {
+    public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
 
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
+             final PreparedStatement ps = conn.prepareStatement(sql);
+             final ResultSet rs = ps.executeQuery()) {
 
-            return getObjects(rsg, ps);
+            final List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                objects.add(rowMapper.mapRow(rs));
+            }
+            return objects;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new SqlException(e.getMessage());
-        }
-    }
-
-    private <T> List<T> getObjects(final ResultSetGetter<T> rsg, final PreparedStatement ps) throws SQLException {
-        try (final ResultSet rs = ps.executeQuery()) {
-            final List<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                objects.add(rsg.getObject(rs));
-            }
-            return objects;
         }
     }
 }
