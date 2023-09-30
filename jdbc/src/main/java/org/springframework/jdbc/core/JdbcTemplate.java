@@ -28,9 +28,7 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setParameters(pstmt, args);
             rs = pstmt.executeQuery();
             final List<T> objects = new ArrayList<>();
             while (rs.next()) {
@@ -55,9 +53,7 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setParameters(pstmt, args);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -80,13 +76,17 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setParameters(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
