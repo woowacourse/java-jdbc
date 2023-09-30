@@ -1,8 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -44,7 +42,7 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, userRowMapper());
+        return jdbcTemplate.queryForObjects(sql, userRowMapper());
     }
 
     public User findById(final Long id) {
