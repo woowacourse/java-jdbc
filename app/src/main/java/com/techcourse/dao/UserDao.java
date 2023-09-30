@@ -29,13 +29,13 @@ public class UserDao {
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, email = ?, password = ? where id = ?";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getEmail(), user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getEmail(), user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
@@ -54,6 +54,12 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+    }
+
+    public void deleteAll() {
+        final var sql = "delete from users";
+
+        jdbcTemplate.update(sql);
     }
 }
 
