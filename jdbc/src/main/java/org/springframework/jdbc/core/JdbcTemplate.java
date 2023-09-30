@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -22,13 +23,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return queryExecutor(sql, (pstmt) -> getSingleQueryResult(rowMapper, pstmt), args);
     }
 
     private <T> T queryExecutor(String sql, SqlExecutor<T> executor, Object... args) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args);
+             final PreparedStatement pstmt = preparedStatementCreator.createPreparedStatement(conn, sql, args)
         ) {
             return executor.execute(pstmt);
         } catch (SQLException e) {
@@ -37,16 +38,16 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getSingleQueryResult(
+    private <T> Optional<T> getSingleQueryResult(
             final RowMapper<T> rowMapper,
             final PreparedStatement pstmt
     ) throws SQLException {
         try (final ResultSet rs = pstmt.executeQuery()) {
             if (rs.last()) {
                 validateSingleRow(rs);
-                return rowMapper.mapRow(rs);
+                return Optional.of(rowMapper.mapRow(rs));
             }
-            return null;
+            return Optional.empty();
         }
     }
 
