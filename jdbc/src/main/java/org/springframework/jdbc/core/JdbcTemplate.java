@@ -30,18 +30,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(final PreparedStatement ps, final Object[] args) throws SQLException {
-        for (int i = 1; i <= args.length; i++) {
-            ps.setObject(i, args[i - 1]);
-        }
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, args);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> results = extractData(rowMapper, resultSet);
+            List<T> results = extractData(rowMapper, preparedStatement);
 
             return results.iterator().next();
         } catch (SQLException e) {
@@ -52,20 +45,28 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            final ResultSet resultSet = preparedStatement.executeQuery();
 
-            return extractData(rowMapper, resultSet);
+            return extractData(rowMapper, preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> extractData(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        int rowNum = 0;
-        while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet, rowNum++));
+    private void setPreparedStatement(final PreparedStatement ps, final Object[] args) throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            ps.setObject(i, args[i - 1]);
         }
-        return results;
+    }
+
+    private <T> List<T> extractData(final RowMapper<T> rowMapper,
+                                    final PreparedStatement preparedStatement) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery();) {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return results;
+        }
     }
 }
