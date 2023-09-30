@@ -7,19 +7,13 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
-import javax.swing.tree.RowMapper;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -39,6 +33,23 @@ public class JdbcTemplate {
              final PreparedStatement ps = createPreparedStatement(connection, sql, args)
         ) {
             return ps.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final ResultSetMapper<T> resultSetMapper) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement ps = connection.prepareStatement(sql);
+             final ResultSet resultSet = ps.executeQuery()
+        ) {
+            log.debug("query: {}", sql);
+            final List<T> results = new ArrayList<>();
+            while(resultSet.next()) {
+                results.add(resultSetMapper.apply(resultSet));
+            }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new DataAccessException(e);

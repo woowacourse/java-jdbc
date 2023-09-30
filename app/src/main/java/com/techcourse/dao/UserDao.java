@@ -2,15 +2,9 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.ResultSetMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -29,7 +23,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
@@ -38,8 +32,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, RESULT_SET_MAPPER);
     }
 
     public User findById(final Long id) {
