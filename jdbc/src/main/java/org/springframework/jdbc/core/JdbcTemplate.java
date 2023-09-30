@@ -16,7 +16,10 @@ public class JdbcTemplate extends JdbcTemplateBase {
     public <T> T executeQueryForObject(final String sql, final ResultSetObjectMapper<T> mapper) {
         return executionBaseWithReturn(sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
-            return mapper.map(resultSet);
+            if (resultSet.next()) {
+                return mapper.map(resultSet);
+            }
+            return null;
         });
     }
 
