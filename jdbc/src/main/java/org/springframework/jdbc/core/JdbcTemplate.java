@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -46,7 +47,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         ResultSet rs = null;
         try (
                 final Connection conn = dataSource.getConnection();
@@ -56,9 +57,9 @@ public class JdbcTemplate {
             setParameters(pstmt, args);
             rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rowMapper.mapRow(rs);
+                return Optional.of(rowMapper.mapRow(rs));
             }
-            return null;
+            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
