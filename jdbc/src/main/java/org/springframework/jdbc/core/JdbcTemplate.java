@@ -53,7 +53,6 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 result.add(rowMapper.run(resultSet));
             }
-
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
