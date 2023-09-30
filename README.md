@@ -18,7 +18,7 @@
 - [x] JdbcTemplate try-catch 중복 제거
 - [x] queryForObject의 validateSingleRow 개선
 - [ ] JdbcTemplate이 TransactionManager를 가지는 이유 고민
-- [ ] UserHistoryDao도 JdbcTemplate 사용하도록 수정
+- [x] UserHistoryDao도 JdbcTemplate 사용하도록 수정
 
 ### 2차
 - [x] PreparedStatementCreator 테스트 작성
