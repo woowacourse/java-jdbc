@@ -1,46 +1,54 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
+
+    private User gugu;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        gugu = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(gugu);
+    }
+
+    @AfterEach
+    void tearDown() {
+        DatabasePopulatorUtils.clear(DataSourceConfig.getInstance());
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
+        final var result = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(result.size()).isOne();
+        assertThat(result.get(0).getAccount()).isEqualTo(gugu.getAccount());
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var result = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(result.getAccount()).isEqualTo(gugu.getAccount());
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var result = userDao.findByAccount(gugu.getAccount());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(result.getAccount()).isEqualTo(gugu.getAccount());
     }
 
     @Test
