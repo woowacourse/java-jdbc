@@ -15,8 +15,6 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private static final ResultSetMapper<User> RESULT_SET_MAPPER = resultSet -> new User(
             resultSet.getLong(1),
             resultSet.getString(2),
@@ -50,7 +48,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final String sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, RESULT_SET_MAPPER, account);
     }
 }
