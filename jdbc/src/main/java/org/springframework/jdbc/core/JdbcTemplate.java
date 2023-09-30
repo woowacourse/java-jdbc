@@ -31,9 +31,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int i = 1; i <= values.length; i++) {
-                pstmt.setObject(i, values[i - 1]);
-            }
+            setValues(pstmt, values);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -48,9 +46,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int i = 1; i <= values.length; i++) {
-                pstmt.setObject(i, values[i - 1]);
-            }
+            setValues(pstmt, values);
 
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
@@ -87,6 +83,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void setValues(PreparedStatement pstmt, Object[] values) throws SQLException {
+        for (int i = 1; i <= values.length; i++) {
+            pstmt.setObject(i, values[i - 1]);
         }
     }
 }
