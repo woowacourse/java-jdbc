@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserDaoWithJdbcTemplate;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -18,12 +18,12 @@ import org.springframework.dao.DataAccessException;
 class UserServiceTest {
 
     private DataSource dataSource;
-    private UserDao userDao;
+    private UserDaoWithJdbcTemplate userDao;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
-        this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.userDao = new UserDaoWithJdbcTemplate(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");

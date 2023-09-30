@@ -1,7 +1,7 @@
 # JDBC 라이브러리 구현하기
 
 2단계에서는 뭘 해야 하지?
-* [ ] SQL문의 매개변수와 값 설정 - ? 말고 namedParameter를 쓸 수 있게 해볼까?
+* [x] SQL문의 매개변수와 값 설정 - ? 말고 namedParameter를 쓸 수 있게 해볼까?
 * [ ] 예외 처리 - UncheckedException으로 바꾸어줄까?
 
 

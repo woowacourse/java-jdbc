@@ -1,23 +1,23 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+class UserDaoWithNamedParameterJdbcTemplateTest {
 
-class UserDaoTest {
-
-    private UserDao userDao;
+    private UserDaoWithNamedParameterJdbcTemplate userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDaoWithNamedParameterJdbcTemplate(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
