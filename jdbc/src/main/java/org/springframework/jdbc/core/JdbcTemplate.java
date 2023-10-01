@@ -61,7 +61,12 @@ public class JdbcTemplate {
         ) {
             log.debug("run sql {}", sql);
             if (resultSet.next()) {
-                return Optional.of(rowMapper.map(resultSet));
+                final T data = rowMapper.map(resultSet);
+                if (resultSet.next()) {
+                    log.error("selected data count is larger than 1");
+                    throw new RuntimeException("selected data count is larger than 1");
+                }
+                return Optional.of(data);
             }
             return Optional.empty();
         } catch (SQLException e) {

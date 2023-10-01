@@ -182,9 +182,10 @@ class JdbcTemplateTest {
             final String sql = "select id, content, num from test_data where num = ?";
 
             // when
-            Optional<TestData> actual = jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1L);
-
             // then
+            Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("selected data count is larger than 1");
         }
 
         @Test
