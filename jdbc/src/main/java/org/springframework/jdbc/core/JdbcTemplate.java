@@ -24,11 +24,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter pstmtFunc, RowMapper<T> rsMapper) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtFunc);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            logQuery(sql);
             if (!rs.next()) {
                 throw new EmptyResultDataAccessException();
             }
@@ -52,11 +52,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rsMapper, Object... parameters) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            logQuery(sql);
             if (!rs.next()) {
                 throw new EmptyResultDataAccessException();
             }
@@ -72,11 +72,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
@@ -89,11 +89,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
@@ -106,11 +106,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
@@ -123,10 +123,10 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            logQuery(sql);
             pstmtSetter.apply(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -136,10 +136,10 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
+        logQuery(sql);
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters)
         ) {
-            logQuery(sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logException(e);
