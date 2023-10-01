@@ -100,6 +100,9 @@ public class JdbcTemplate {
     }
 
     private <T> void validateResultSize(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new ResultEmptyException("result is empty.");
+        }
         if (results.size() > 1) {
             throw new IncorrectResultSizeException(String.format("Incorrect result size : expected - %d, actual - %d", 1, results.size()));
         }
