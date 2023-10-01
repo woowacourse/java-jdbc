@@ -9,6 +9,6 @@
 
 - [x] PrepareStatement 생성하는 부분을 분리한다.
 - [ ] JdbcTemplate의 조회 시 중복을 제거한다.
-- [ ] Optional을 적용한다.
+- [x] Optional을 적용한다.
 - [ ] 단일 조회 시 결과가 2개 이상이라면 예외를 던지도록 수정한다.
 - [ ] UserHistoryDao에 JdbcTemplate을 적용한다.
