@@ -42,7 +42,7 @@ public class NamedParameterJdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Map<String, Object> parameters) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(getOriginalSql(sql));
+                PreparedStatement pstmt = conn.prepareStatement(getOriginalSql(sql), ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
         ) {
             setQueryParameters(sql, pstmt, parameters);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -67,10 +67,12 @@ public class NamedParameterJdbcTemplate {
         }
     }
 
-    private static void verifyResultRowSize(final ResultSet rs, final int rowSize) throws SQLException {
+    private static void verifyResultRowSize(final ResultSet rs, final int expectedRowSize) throws SQLException {
         rs.last();
-        if (rowSize < rs.getRow()) {
-            throw new SQLException(String.format("결과가 1개인 줄 알았는데, %d개 나왔서!", rs.getRow()));
+        final int rowSize = rs.getRow();
+        rs.beforeFirst();
+        if (expectedRowSize != rowSize) {
+            throw new SQLException(String.format("결과가 1개인 줄 알았는데, %d개 나왔서!", rowSize));
             /**
              * 예외 원문 : Incorrect result size: expected 1, actual n
              */
