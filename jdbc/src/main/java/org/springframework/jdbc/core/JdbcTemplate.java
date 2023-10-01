@@ -18,14 +18,18 @@ public class JdbcTemplate {
         this.resultSetTemplate = new ResultSetTemplate();
     }
 
-    public int query(final String sql, final Object... statements) {
+    public int executeQuery(final String sql, final Object... statements) {
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
                 PreparedStatement::executeUpdate
         );
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... statements) {
+    public <T> Optional<T> executeQueryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... statements
+    ) {
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
                 preparedStatement -> resultSetTemplate.resultSetExecute(
@@ -41,7 +45,11 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... statements) {
+    public <T> List<T> executeQueryForList(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... statements
+    ) {
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
                 preparedStatement -> resultSetTemplate.resultSetExecute(
