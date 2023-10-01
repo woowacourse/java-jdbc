@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import org.springframework.jdbc.core.exception.JdbcTemplateException;
+import org.springframework.jdbc.core.exception.PreparedStatementTemplateException;
 
 public class PreparedStatementTemplate {
 
@@ -24,7 +24,7 @@ public class PreparedStatementTemplate {
         ) {
             return executor.execute(preparedStatement);
         } catch (final SQLException e) {
-            throw new JdbcTemplateException(e);
+            throw new PreparedStatementTemplateException(e);
         }
     }
 }
