@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +82,35 @@ class JdbcTemplateTest {
         });
     }
 
+    @Test
+    void queryTest() throws SQLException {
+        //given
+        ResultSet resultSetMock = mock(ResultSet.class);
+        RowMapper<TestUser> rowMapperMock = mock(RowMapper.class);
+
+        given(preparedStatementMock.executeQuery()).willReturn(resultSetMock);
+        given(resultSetMock.next())
+                .willReturn(true)
+                .willReturn(true)
+                .willReturn(false);
+        given(rowMapperMock.mapRow(eq(resultSetMock), anyInt()))
+                .willReturn(new TestUser(1L, "account1", "pwd1", "email1"))
+                .willReturn(new TestUser(2L, "account2", "pwd2", "email2"));
+
+        //when
+        String sql = "select id, account, password, email from user";
+        List<TestUser> results = jdbcTemplate.query(sql, rowMapperMock);
+
+        //then
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(results).hasSize(2);
+            softly.assertThat(results.get(0).id).isEqualTo(1L);
+            softly.assertThat(results.get(1).id).isEqualTo(2L);
+        });
+    }
+
     private static class TestUser {
+
         private Long id;
         private String account;
         private String password;
