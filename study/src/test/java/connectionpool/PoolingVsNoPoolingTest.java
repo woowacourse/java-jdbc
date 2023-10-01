@@ -30,7 +30,7 @@ class PoolingVsNoPoolingTest {
 
     private final Logger log = LoggerFactory.getLogger(PoolingVsNoPoolingTest.class);
 
-    private static final int COUNT = 1000;
+    private static final int COUNT = 10000;
 
     private static MySQLContainer<?> container;
 
@@ -78,9 +78,12 @@ class PoolingVsNoPoolingTest {
         config.setJdbcUrl(container.getJdbcUrl());
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
-        config.setMinimumIdle(1);
-        config.setMaximumPoolSize(1);
+        config.setMinimumIdle(10);
+        config.setMaximumPoolSize(10);
         config.setConnectionTimeout(1000);
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         config.setAutoCommit(false);
         config.setReadOnly(false);
         final var hikariDataSource = new HikariDataSource(config);

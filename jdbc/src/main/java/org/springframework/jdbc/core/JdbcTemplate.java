@@ -24,14 +24,18 @@ public class JdbcTemplate {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.ofNullable(rowMapper.mapRow(rs));
-                }
-                return Optional.empty();
-            }
+            return executeQuery(rowMapper, pstmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private static <T> Optional<T> executeQuery(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                return Optional.ofNullable(rowMapper.mapRow(rs));
+            }
+            return Optional.empty();
         }
     }
 
@@ -51,12 +55,10 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final Object... args) {
+    public int update(final String sql, final PreparedStatementSetter pstmtSetter) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            pstmtSetter.setValues(pstmt);
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
