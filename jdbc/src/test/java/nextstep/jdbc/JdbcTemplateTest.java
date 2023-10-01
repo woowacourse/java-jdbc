@@ -48,4 +48,27 @@ class JdbcTemplateTest {
         verify(preparedStatement).close();
         verify(resultSet).close();
     }
+
+    @DisplayName("queryForObject() 메서드 실행 후에 관련 자원이 close 되는지 확인한다.")
+    @Test
+    void queryForObject_WhetherResourceClosed() throws SQLException {
+        // when
+        jdbcTemplate.queryForObject("select * from users", rs -> null);
+
+        // then
+        verify(connection).close();
+        verify(preparedStatement).close();
+        verify(resultSet).close();
+    }
+
+    @DisplayName("update() 메서드 실행 후에 관련 자원이 close 되는지 확인한다.")
+    @Test
+    void update_WhetherResourceClosed() throws SQLException {
+        // when
+        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)");
+
+        // then
+        verify(connection).close();
+        verify(preparedStatement).close();
+    }
 }
