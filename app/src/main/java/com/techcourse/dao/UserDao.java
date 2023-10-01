@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.exception.UserNotFoundException;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -47,12 +48,14 @@ public class UserDao {
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id)
+                           .orElseThrow(() -> new UserNotFoundException("지정한 id에 대한 User를 찾을 수 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account)
+                           .orElseThrow(() -> new UserNotFoundException("지정한 account에 대한 User를 찾을 수 없습니다."));
     }
 }
