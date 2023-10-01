@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.JdbcException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -76,7 +77,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.update(sql, testData.getContent()))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Parameter \"#2\" is not set; SQL statement:");
         }
 
@@ -90,7 +91,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.update(sql, testData.getContent(), testData.getNum(), "additional-input"))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Invalid value \"3\" for parameter \"parameterIndex\"");
         }
     }
@@ -123,7 +124,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.query(sql, TEST_DATA_ROW_MAPPER))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Parameter \"#1\" is not set; SQL statement:");
         }
 
@@ -136,7 +137,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.query(sql, TEST_DATA_ROW_MAPPER, 1, "additional-data"))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Invalid value \"2\" for parameter \"parameterIndex\"");
         }
     }
@@ -168,7 +169,7 @@ class JdbcTemplateTest {
 
             // when
             Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, -1L))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessage("no data found");
         }
 
@@ -182,7 +183,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1L))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessage("selected data count is larger than 1");
         }
 
@@ -195,7 +196,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Parameter \"#1\" is not set; SQL statement:");
         }
 
@@ -208,7 +209,7 @@ class JdbcTemplateTest {
             // when
             // then
             Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1, "additional-data"))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(JdbcException.class)
                     .hasMessageContaining("Invalid value \"2\" for parameter \"parameterIndex\"");
         }
     }

@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.JdbcException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,7 +31,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -48,7 +49,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -63,15 +64,15 @@ public class JdbcTemplate {
                 final T result = rowMapper.map(resultSet);
                 if (resultSet.next()) {
                     log.error("selected data count is larger than 1");
-                    throw new RuntimeException("selected data count is larger than 1");
+                    throw new JdbcException("selected data count is larger than 1");
                 }
                 return result;
             }
             log.error("no data found");
-            throw new RuntimeException("no data found");
+            throw new JdbcException("no data found");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
