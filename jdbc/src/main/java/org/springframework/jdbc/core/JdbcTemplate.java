@@ -46,7 +46,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = requireNonNull(dataSource).getConnection();
+        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 

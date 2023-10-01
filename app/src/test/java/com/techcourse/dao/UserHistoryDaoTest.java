@@ -17,7 +17,7 @@ class UserHistoryDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
 

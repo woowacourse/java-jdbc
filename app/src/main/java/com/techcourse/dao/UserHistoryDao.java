@@ -10,7 +10,8 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
-    private static final RowMapper<UserHistory> userHistoryRowMapper = resultSet -> new UserHistory(
+
+    private final RowMapper<UserHistory> userHistoryRowMapper = resultSet -> new UserHistory(
             resultSet.getLong("id"),
             resultSet.getLong("user_id"),
             resultSet.getString("account"),
