@@ -38,6 +38,15 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T executeQuery(final Connection connection, final String sql, final SqlExecutor<T> executor, final Object... args) {
+        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private <T> List<T> getQueryResult(
             final RowMapper<T> rowMapper,
             final PreparedStatement preparedStatement
@@ -59,4 +68,7 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int execute(final Connection connection, final String sql, final Object... args) {
+        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
+    }
 }
