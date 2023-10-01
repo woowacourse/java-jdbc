@@ -41,9 +41,8 @@ public class JdbcTemplate {
             ResultSet resultSet = pstmt.executeQuery();
 
             List<T> results = new ArrayList<>();
-            int rowNum = 0;
             while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, rowNum++));
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         } catch (SQLException e) {
