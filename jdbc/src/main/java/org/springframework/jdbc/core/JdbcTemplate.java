@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -23,26 +24,24 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
+             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
+        ) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
-        ) {
+             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()) {
             final List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
             }
             return list;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -56,8 +55,7 @@ public class JdbcTemplate {
             }
             return null;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
