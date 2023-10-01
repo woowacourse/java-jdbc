@@ -28,7 +28,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < params.length; i++) {
-                pstmt.setString(i + 1, params[i].toString());
+                pstmt.setObject(i + 1, params[i]);
             }
             pstmt.executeUpdate();
         } catch (final SQLException e) {
@@ -62,7 +62,7 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return Optional.of(rowMapper.mapRow(rs, rs.getRow()));
             }
-            return null;
+            return Optional.empty();
         } catch (final SQLException e) {
             throw new CannotGetJdbcConnectionException(e.getMessage());
         }
@@ -70,7 +70,7 @@ public class JdbcTemplate {
 
     private ResultSet getResultSet(final PreparedStatement pstmt, final Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
-            pstmt.setString(i + 1, params[i].toString());
+            pstmt.setObject(i + 1, params[i]);
         }
         return pstmt.executeQuery();
     }

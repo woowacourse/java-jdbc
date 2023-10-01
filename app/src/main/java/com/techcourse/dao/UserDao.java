@@ -8,15 +8,14 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    private final RowMapper<User> rowMapper = (rs, rowNum) ->
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) ->
             new User(
                     rs.getLong("id"),
                     rs.getString("account"),
                     rs.getString("password"),
                     rs.getString("email")
             );
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -34,18 +33,18 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, id)
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
                 .orElseThrow(() -> new DataAccessException("사용자가 존재하지 않습니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, account)
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
                 .orElseThrow(() -> new DataAccessException("사용자가 존재하지 않습니다."));
     }
 }
