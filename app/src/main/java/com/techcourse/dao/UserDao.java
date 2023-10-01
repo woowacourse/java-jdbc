@@ -23,20 +23,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        template.update(sql, pstmt -> {
-            pstmt.setObject(1, user.getAccount());
-            pstmt.setObject(2, user.getPassword());
-            pstmt.setObject(3, user.getEmail());
-        });
+        template.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
-        template.update(sql, pstmt -> {
-            pstmt.setObject(1, user.getPassword());
-            pstmt.setObject(2, user.getId());
-        });
+        template.update(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {

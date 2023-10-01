@@ -18,28 +18,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            return executeQuery(rowMapper, pstmt);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.ofNullable(rowMapper.mapRow(rs));
+                }
+                return Optional.empty();
+            }
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private static <T> Optional<T> executeQuery(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
-        try (final ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return Optional.ofNullable(rowMapper.mapRow(rs));
-            }
-            return Optional.empty();
-        }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final List<T> result = new ArrayList<>();
@@ -55,10 +51,12 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final PreparedStatementSetter pstmtSetter) {
+    public int update(final String sql, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmtSetter.setValues(pstmt);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
