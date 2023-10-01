@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,7 +28,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -45,7 +46,7 @@ public class JdbcTemplate {
             return result;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -54,15 +55,15 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args)) {
             ResultSet resultSet = preparedStatement.executeQuery();
             if (!resultSet.next()) {
-                throw new IllegalArgumentException("결과가 존재하지 않습니다.");
+                throw new DataAccessException("결과가 존재하지 않습니다.");
             }
             if (resultSet.isFirst() && !resultSet.isLast()) {
-                throw new IllegalArgumentException("1개 이상의 결과가 존재합니다.");
+                throw new DataAccessException("1개 이상의 결과가 존재합니다.");
             }
             return rowMapper.mapRow(resultSet);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e);
+            throw new DataAccessException(e);
         }
     }
 
