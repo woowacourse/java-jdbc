@@ -10,8 +10,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeException;
+import org.springframework.dao.ResultEmptyException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.jdbc.support.JdbcUtils;
 
 public class JdbcTemplate {
 
@@ -24,30 +24,21 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = connection.prepareStatement(sql);
+        try (final Connection connection = DataSourceUtils.getConnection(dataSource);
+             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setPreparedStatementArguments(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            JdbcUtils.closeStatement(pstmt);
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = connection.prepareStatement(sql);
+        try (final Connection connection = DataSourceUtils.getConnection(dataSource);
+             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             ResultSet resultSet = pstmt.executeQuery();
@@ -58,21 +49,14 @@ public class JdbcTemplate {
 
             return results;
         } catch (SQLException e) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            JdbcUtils.closeStatement(pstmt);
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = connection.prepareStatement(sql);
+        try (final Connection connection = DataSourceUtils.getConnection(dataSource);
+             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setPreparedStatementArguments(pstmt, args);
@@ -84,15 +68,11 @@ public class JdbcTemplate {
             validateResultSize(results);
             return results.get(0);
         } catch (SQLException e) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            JdbcUtils.closeStatement(pstmt);
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
+
     private void setPreparedStatementArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int parameterIndex = 1; parameterIndex <= args.length; parameterIndex++) {
             pstmt.setObject(parameterIndex, args[parameterIndex - 1]);
@@ -104,7 +84,8 @@ public class JdbcTemplate {
             throw new ResultEmptyException("result is empty.");
         }
         if (results.size() > 1) {
-            throw new IncorrectResultSizeException(String.format("Incorrect result size : expected - %d, actual - %d", 1, results.size()));
+            throw new IncorrectResultSizeException(
+                    String.format("Incorrect result size : expected - %d, actual - %d", 1, results.size()));
         }
     }
 
