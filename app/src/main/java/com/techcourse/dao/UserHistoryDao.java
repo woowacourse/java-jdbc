@@ -9,8 +9,6 @@ import java.sql.Connection;
 
 public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
