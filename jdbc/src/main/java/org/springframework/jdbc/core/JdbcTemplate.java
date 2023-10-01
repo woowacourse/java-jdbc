@@ -23,10 +23,7 @@ public class JdbcTemplate {
 
     public void execute(final String sql, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setValues(pstmt, objects);
+             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,11 +33,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
+             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            setValues(pstmt, objects);
-            final ResultSet rs = pstmt.executeQuery();
             final List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
@@ -55,11 +49,8 @@ public class JdbcTemplate {
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
+             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            setValues(pstmt, objects);
-            final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
@@ -68,6 +59,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement preparedStatementAndSetValue(
+            final Connection conn,
+            final String sql,
+            final Object... objects
+    ) throws SQLException {
+        final PreparedStatement pstmt = conn.prepareStatement(sql);
+        log.debug("query : {}", sql);
+        setValues(pstmt, objects);
+        return pstmt;
     }
 
     private void setValues(final PreparedStatement pstmt, Object... objects) throws SQLException {
