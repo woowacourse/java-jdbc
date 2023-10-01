@@ -4,11 +4,11 @@ import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetMapper;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final ResultSetMapper<User> USER_MAPPER = rs -> {
+    private static final RowMapper<User> USER_MAPPER = rs -> {
         long userId = rs.getLong(1);
         String userAccount = rs.getString(2);
         String password = rs.getString(3);

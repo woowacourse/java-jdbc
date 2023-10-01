@@ -23,20 +23,20 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsMapper) {
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtFunc, RowMapper<T> rsMapper) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
+            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtFunc);
             ResultSet rs = pstmt.executeQuery()
         ) {
             logQuery(sql);
+            if (!rs.next()) {
+                throw new EmptyResultDataAccessException();
+            }
+            T result = rsMapper.mapRow(rs);
             if (rs.next()) {
-                T result = rsMapper.apply(rs);
-                if (!rs.next()) {
-                    return result;
-                }
                 throw new IncorrectResultSizeDataAccessException();
             }
-            throw new EmptyResultDataAccessException();
+            return result;
         } catch (SQLException e) {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
@@ -51,15 +51,15 @@ public class JdbcTemplate {
         log.error(e.getMessage(), e);
     }
 
-    public <T> List<T> query(String sql, PreparedStatementFunc pstmtFunc, ResultSetMapper<T> rsMapper) {
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementFunction(conn.prepareStatement(sql), pstmtFunc);
+            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter);
             ResultSet rs = pstmt.executeQuery()
         ) {
             logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(rsMapper.apply(rs));
+                result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {
@@ -68,7 +68,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, ResultSetMapper<T> rsMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
@@ -76,7 +76,7 @@ public class JdbcTemplate {
             logQuery(sql);
             List<T> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(rsMapper.apply(rs));
+                result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {
@@ -85,12 +85,12 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, PreparedStatementFunc pstmtFunc) {
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             logQuery(sql);
-            pstmtFunc.apply(pstmt);
+            pstmtSetter.apply(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logException(e);
@@ -98,14 +98,16 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement applyPreparedStatementFunction(PreparedStatement ps, PreparedStatementFunc psf)
+    private PreparedStatement applyPreparedStatementSetter(PreparedStatement pstmt,
+                                                           PreparedStatementSetter pstmtSetter)
         throws SQLException {
-        psf.apply(ps);
-        return ps;
+        pstmtSetter.apply(pstmt);
+        return pstmt;
     }
 
-    public interface PreparedStatementFunc {
+    @FunctionalInterface
+    public interface PreparedStatementSetter {
 
-        void apply(PreparedStatement pst) throws SQLException;
+        void apply(PreparedStatement pstmt) throws SQLException;
     }
 }
