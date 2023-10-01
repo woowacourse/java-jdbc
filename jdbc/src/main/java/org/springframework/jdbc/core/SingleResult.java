@@ -7,7 +7,7 @@ public class SingleResult {
 
     private static final int RESULT_INDEX = 0;
 
-    public static <T> Optional<T> from(final List<T> results) {
+    public static <T> Optional<T> convert(final List<T> results) {
         validateMultipleResult(results);
         return extractSingleResult(results);
     }

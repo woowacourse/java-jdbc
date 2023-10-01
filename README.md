@@ -30,5 +30,5 @@
 
 ### 3차
 - [x] UserDao ResultSet final 붙이기
-- [ ] SingleResult 정팩메 네이밍 수정
+- [x] SingleResult 정팩메 네이밍 수정
 - [ ] DataSourceConfig EOF

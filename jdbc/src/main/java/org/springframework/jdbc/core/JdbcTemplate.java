@@ -24,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, preparedStatement -> SingleResult.from(getQueryResult(rowMapper, preparedStatement)), args);
+        return executeQuery(sql, preparedStatement -> SingleResult.convert(getQueryResult(rowMapper, preparedStatement)), args);
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.jdbc.core.SingleResult.from;
+import static org.springframework.jdbc.core.SingleResult.convert;
 
 class SingleResultTest {
 
@@ -19,7 +19,7 @@ class SingleResultTest {
         final List<String> results = List.of(expected);
 
         // when
-        final Optional<String> actual = from(results);
+        final Optional<String> actual = convert(results);
 
         // then
         assertThat(actual).isNotEmpty();
@@ -32,7 +32,7 @@ class SingleResultTest {
         final List<String> results = List.of("결과1", "결과2");
 
         // when, then
-        assertThatThrownBy(() -> from(results))
+        assertThatThrownBy(() -> convert(results))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -42,7 +42,7 @@ class SingleResultTest {
         final List<String> results = Collections.emptyList();
 
         // when
-        final Optional<String> actual = from(results);
+        final Optional<String> actual = convert(results);
 
         // then
         assertThat(actual).isEmpty();
