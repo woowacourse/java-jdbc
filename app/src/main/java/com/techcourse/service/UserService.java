@@ -33,11 +33,10 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionTemplate.executeWithTransaction(connection -> {
-            final var user = userDao.findById(connection, id)
-                    .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
+            final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }

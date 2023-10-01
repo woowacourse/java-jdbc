@@ -34,7 +34,7 @@
 - [x] DataSourceConfig EOF
 
 ## 3단계 리뷰
-- [ ] ThreadLocal을 활용한 트랜잭션 동기화(Connection 공유)
+- [x] ThreadLocal을 활용한 트랜잭션 동기화(Connection 공유)
 - [x] jdbc 모듈 내에 접근제어자 수정
 - [x] 콜백 메서드 예외 처리 수정 
   - 콜백 메서드에서는 SQLException이 발생하지 않는다!

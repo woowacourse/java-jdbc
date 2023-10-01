@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,11 +38,6 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
-        jdbcTemplate.execute(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
@@ -52,11 +46,6 @@ public class UserDao {
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-    }
-
-    public Optional<User> findById(final Connection connection, final long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
     }
 
     public Optional<User> findByAccount(final String account) {
