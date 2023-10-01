@@ -13,7 +13,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -152,12 +151,12 @@ class JdbcTemplateTest {
             final String sql = "select id, content, num from test_data where id = ?";
 
             // when
-            Optional<TestData> actual = jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1L);
+            TestData actual = jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, 1L);
 
             // then
             SoftAssertions.assertSoftly(softly -> {
-                softly.assertThat(actual).isPresent();
-                softly.assertThat(actual.get().getContent()).isEqualTo("firstData");
+                softly.assertThat(actual.getContent()).isEqualTo("firstData");
+                softly.assertThat(actual.getNum()).isEqualTo(1);
             });
         }
 
@@ -168,10 +167,9 @@ class JdbcTemplateTest {
             final String sql = "select id, content, num from test_data where id = ?";
 
             // when
-            Optional<TestData> actual = jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, -1L);
-
-            // then
-            assertThat(actual).isEmpty();
+            Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_DATA_ROW_MAPPER, -1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("no data found");
         }
 
         @Test

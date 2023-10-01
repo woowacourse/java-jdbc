@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -53,7 +52,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
@@ -61,14 +60,15 @@ public class JdbcTemplate {
         ) {
             log.debug("run sql {}", sql);
             if (resultSet.next()) {
-                final T data = rowMapper.map(resultSet);
+                final T result = rowMapper.map(resultSet);
                 if (resultSet.next()) {
                     log.error("selected data count is larger than 1");
                     throw new RuntimeException("selected data count is larger than 1");
                 }
-                return Optional.of(data);
+                return result;
             }
-            return Optional.empty();
+            log.error("no data found");
+            throw new RuntimeException("no data found");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
