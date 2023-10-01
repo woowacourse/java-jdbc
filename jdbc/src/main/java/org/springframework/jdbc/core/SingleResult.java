@@ -3,11 +3,11 @@ package org.springframework.jdbc.core;
 import java.util.List;
 import java.util.Optional;
 
-public class SingleResult {
+class SingleResult {
 
     private static final int RESULT_INDEX = 0;
 
-    public static <T> Optional<T> convert(final List<T> results) {
+    static <T> Optional<T> convert(final List<T> results) {
         validateMultipleResult(results);
         return extractSingleResult(results);
     }
