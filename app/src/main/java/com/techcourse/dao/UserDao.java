@@ -6,31 +6,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> rowMapper = rs -> {
+        long id = rs.getLong(1);
+        String account = rs.getString(2);
+        String password = rs.getString(3);
+        String email = rs.getString(4);
+        return new User(id, account, password, email);
+    };
 
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-
-    public static RowMapper<User> rowMapper = new RowMapper<User>() {
-        @Override
-        public User mapRow(ResultSet rs) throws SQLException {
-            long id = rs.getLong(1);
-            String account = rs.getString(2);
-            String password = rs.getString(3);
-            String email = rs.getString(4);
-            return new User(id, account, password, email);
-        }
-    };
-
 
     public void insert(final User user) {
         jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
@@ -54,5 +47,9 @@ public class UserDao {
     public User findByAccount(final String account) {
         return jdbcTemplate.queryForObject("select id, account, password, email from users where account = ?"
                 , rowMapper, account);
+    }
+
+    public void delete() {
+        jdbcTemplate.execute("delete from users");
     }
 }

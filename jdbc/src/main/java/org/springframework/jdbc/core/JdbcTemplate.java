@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -26,79 +27,45 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql) {
-        context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement(sql);
-            }
-        });
+        context(connection -> connection.prepareStatement(sql));
     }
 
     public void execute(String sql, Object... args) {
-        context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement(sql);
-            }
-        }, args);
+        context(connection -> connection.prepareStatement(sql), args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rm) {
-        return context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement(sql);
-            }
-        }, rm);
+        return context(connection -> connection.prepareStatement(sql), rm);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
-        List<T> list = context(new PreparedStrategy() {
-            @Override
-            public PreparedStatement createStatement(Connection connection) throws SQLException {
-                return connection.prepareStatement(sql);
-            }
-        }, rm, args);
+        List<T> list = context(connection -> connection.prepareStatement(sql), rm, args);
 
         if (list.isEmpty()) {
             return null;
         }
+
+        if (list.size() > 1) {
+            throw new DataAccessException("조건에 해당하는 값이 " + list.size() + "개입니다.");
+        }
+
         return list.get(0);
     }
 
     public void context(PreparedStrategy preparedStrategy) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStrategy.createStatement(conn);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public void context(PreparedStrategy preparedStrategy, Object[] args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStrategy.createStatement(conn);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
@@ -108,33 +75,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStrategy.createStatement(conn);
-            rs = pstmt.executeQuery();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStrategy.createStatement(conn);
+             ResultSet rs = pstmt.executeQuery()) {
 
-            ArrayList<T> list = new ArrayList<>();
+            List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rm.mapRow(rs));
             }
@@ -142,73 +91,27 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm, Object[] args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = preparedStrategy.createStatement(conn);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
 
-            rs = pstmt.executeQuery();
-
-            ArrayList<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rm.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(rm.mapRow(rs));
+                }
+                return list;
             }
-            return list;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 }
