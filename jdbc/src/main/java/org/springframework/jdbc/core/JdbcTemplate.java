@@ -15,15 +15,20 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PrepareStatementCreator prepareStatementCreator;
 
     public JdbcTemplate(final DataSource dataSource) {
+        this(dataSource, new PrepareStatementCreator());
+    }
+
+    JdbcTemplate(final DataSource dataSource, final PrepareStatementCreator prepareStatementCreator) {
         this.dataSource = dataSource;
+        this.prepareStatementCreator = prepareStatementCreator;
     }
 
     public void update(final String sql, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(sql, connection, parameters)) {
-            log.debug("query : {}", sql);
+             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters)) {
             for (int i = 0; i < parameters.length; i++) {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
@@ -36,9 +41,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(sql, connection, parameters);
+             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
-            log.debug("query : {}", sql);
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
@@ -49,23 +53,10 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(
-            final String sql,
-            final Connection connection,
-            final Object[] parameters
-    ) throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i + 1, parameters[i]);
-        }
-        return preparedStatement;
-    }
-
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(sql, connection, parameters);
+             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
-            log.debug("query : {}", sql);
             final List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
