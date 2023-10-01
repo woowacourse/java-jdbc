@@ -44,7 +44,7 @@ public class JdbcTemplate {
 
             final List<T> results = new ArrayList<>();
 
-            if (rs.next()) {
+            while (rs.next()) {
                 results.add(rowMapper.mapRow(rs, rs.getRow()));
             }
             return results;
