@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -38,21 +39,20 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        ResultSet rs = null;
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(pstmt);
-            rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, 1);
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
+            List<T> results = extractResultSet(pstmt.executeQuery(), rowMapper);
+
+            if (results.size() == 1) {
+                return results.get(0);
             }
-            return null;
+            throw new IncorrectResultSizeDataAccessException(results.size());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -60,22 +60,23 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        ResultSet rs = null;
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            rs = pstmt.executeQuery();
-
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum++));
-            }
-            return results;
+            return extractResultSet(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private <T> List<T> extractResultSet(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs, rowNum++));
+        }
+        return results;
     }
 }
