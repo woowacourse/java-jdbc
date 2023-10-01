@@ -2,6 +2,8 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.exception.DatabaseResourceException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -31,7 +32,7 @@ public class JdbcTemplate {
             preparedStatement = getPreparedStatement(connection, sql, args);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new IllegalArgumentException("Update Exception");
+            throw new DatabaseResourceException("Timeout or PreparedStatement is already closed", e);
         } finally {
             closeResources(connection, preparedStatement, resultSet);
         }
@@ -46,34 +47,27 @@ public class JdbcTemplate {
             preparedStatement = getPreparedStatement(connection, sql, args);
             resultSet = getResultSet(preparedStatement);
             return getObjects(resultSet, rowMapper);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Find Exception");
         } finally {
             closeResources(connection, preparedStatement, resultSet);
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = getConnection();
-            preparedStatement = getPreparedStatement(connection, sql, args);
-            resultSet = getResultSet(preparedStatement);
-            return getObject(resultSet, rowMapper);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Find Exception");
-        } finally {
-            closeResources(connection, preparedStatement, resultSet);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Data not found.");
         }
+        if (results.size() >= 2) {
+            throw new DataAccessException("More than one data found");
+        }
+        return results.get(0);
     }
 
     private Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw new IllegalArgumentException("Connection cannot be acquired.");
+            throw new DatabaseResourceException("Connection cannot be acquired.", e);
         }
     }
 
@@ -85,7 +79,7 @@ public class JdbcTemplate {
             }
             return preparedStatement;
         } catch (SQLException e) {
-            throw new IllegalArgumentException("PreparedStatement cannot be acquired.");
+            throw new DatabaseResourceException("PreparedStatement cannot be acquired.", e);
         }
     }
 
@@ -93,32 +87,22 @@ public class JdbcTemplate {
         try {
             return preparedStatement.executeQuery();
         } catch (SQLException e) {
-            throw new IllegalArgumentException("ResultSet cannot be acquired.");
+            throw new DatabaseResourceException(
+                    "ResultSet cannot be acquired or PreparedStatement is already closed.", e);
         }
     }
 
     private <T> List<T> getObjects(ResultSet resultSet, RowMapper<T> rowMapper) {
         List<T> results = new ArrayList<>();
-        while (true) {
-            Optional<T> result = getObject(resultSet, rowMapper);
-            if (result.isPresent()) {
-                results.add(result.get());
-                continue;
+        try {
+            while (resultSet.next()) {
+                T result = rowMapper.map(resultSet);
+                results.add(result);
             }
-            break;
+        } catch (SQLException e) {
+            throw new DatabaseResourceException("ResultSet is already closed", e);
         }
         return results;
-    }
-
-    private <T> Optional<T> getObject(ResultSet resultSet, RowMapper<T> rowMapper) {
-        try {
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.map(resultSet));
-            }
-            return Optional.empty();
-        } catch (SQLException e) {
-            throw new IllegalArgumentException("Mapping fail");
-        }
     }
 
     private void closeResources(Connection connection,
