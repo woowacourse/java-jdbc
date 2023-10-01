@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.exception.ResultSetTemplateException;
 
 public class ResultSetTemplate {
 
-    public <T> T resultSetExecute(
+    public <T> T execute(
             final PreparedStatement preparedStatement,
             final ResultSetMapper<T> resultSetMapper
     ) {

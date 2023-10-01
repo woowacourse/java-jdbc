@@ -33,7 +33,7 @@ public class JdbcTemplate {
     ) {
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.resultSetExecute(
+                preparedStatement -> resultSetTemplate.execute(
                         preparedStatement,
                         resultSet -> {
                             if (!resultSet.next()) {
@@ -59,7 +59,7 @@ public class JdbcTemplate {
     ) {
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.resultSetExecute(
+                preparedStatement -> resultSetTemplate.execute(
                         preparedStatement,
                         resultSet -> {
                             final List<T> result = new ArrayList<>();
