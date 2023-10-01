@@ -29,6 +29,6 @@
 - [x] 변수명 약어 사용 X
 
 ### 3차
-- [ ] UserDao ResultSet final 붙이기
+- [x] UserDao ResultSet final 붙이기
 - [ ] SingleResult 정팩메 네이밍 수정
 - [ ] DataSourceConfig EOF
