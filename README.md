@@ -27,3 +27,8 @@
 - [x] queryExecutor 메서드명 수정
 - [x] getSingleQueryResult, getMultipleQueryResult 하나의 메서드로 합치고, 검증을 호출부에서 하기
 - [x] 변수명 약어 사용 X
+
+### 3차
+- [ ] UserDao ResultSet final 붙이기
+- [ ] SingleResult 정팩메 네이밍 수정
+- [ ] DataSourceConfig EOF
