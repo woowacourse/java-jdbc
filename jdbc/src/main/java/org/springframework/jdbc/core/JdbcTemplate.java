@@ -36,15 +36,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet rs = null;
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args);
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
-            setPreparedStatement(args, pstmt);
-            rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
@@ -52,28 +50,19 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (final SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        ResultSet rs = null;
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
-            rs = pstmt.executeQuery();
-
             final List<T> resultSets = new ArrayList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 final T mappedRow = rowMapper.mapRow(rs);
                 resultSets.add(mappedRow);
             }
@@ -81,14 +70,17 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (final SQLException ignored) {
-            }
         }
+    }
+
+    private PreparedStatement processPreparedStatement(
+            final Connection conn,
+            final String sql,
+            final Object... args
+    ) throws SQLException {
+        final PreparedStatement pstmt = conn.prepareStatement(sql);
+        setPreparedStatement(args, pstmt);
+        return pstmt;
     }
 
     private void setPreparedStatement(final Object[] args, final PreparedStatement pstmt) throws SQLException {
