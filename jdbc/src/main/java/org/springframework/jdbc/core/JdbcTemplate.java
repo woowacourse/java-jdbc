@@ -6,10 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -30,7 +30,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -48,7 +48,7 @@ public class JdbcTemplate {
             }
             return results;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -64,7 +64,7 @@ public class JdbcTemplate {
             }
             return null;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
