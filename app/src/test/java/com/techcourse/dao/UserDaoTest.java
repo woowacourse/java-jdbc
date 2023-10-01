@@ -3,9 +3,11 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -44,6 +46,18 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByDuplicateAccount() {
+        final var duplicated = new User("gugu", "password", "junho5336@gmail.com");
+        userDao.insert(duplicated);
+
+        final var account = "gugu";
+
+        assertThatThrownBy(() -> userDao.findByAccount(account))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("1개 이상의 결과가 존재합니다.");
     }
 
     @Test
