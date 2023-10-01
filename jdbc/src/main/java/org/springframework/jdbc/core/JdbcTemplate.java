@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.exception.MultipleDataAccessException;
 
 public class JdbcTemplate {
 
@@ -35,11 +36,17 @@ public class JdbcTemplate {
                 preparedStatement -> resultSetTemplate.resultSetExecute(
                         preparedStatement,
                         resultSet -> {
-                            if (resultSet.next()) {
-                                return Optional.of(rowMapper.mapRow(resultSet));
+                            if (!resultSet.next()) {
+                                return Optional.empty();
                             }
 
-                            return Optional.empty();
+                            final T result = rowMapper.mapRow(resultSet);
+
+                            if (resultSet.next()) {
+                                throw new MultipleDataAccessException("단일 결과가 아닙니다.");
+                            }
+
+                            return Optional.of(result);
                         }
                 )
         );
