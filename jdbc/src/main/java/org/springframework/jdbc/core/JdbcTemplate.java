@@ -72,7 +72,7 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    private void setValues(final PreparedStatement pstmt, Object... objects) throws SQLException {
+    private void setValues(final PreparedStatement pstmt, final Object... objects) throws SQLException {
         for (int i = 0; i < objects.length; i++) {
             pstmt.setObject(i + 1, objects[i]);
         }
