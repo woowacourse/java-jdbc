@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 import org.assertj.core.api.SoftAssertions;
@@ -87,5 +88,18 @@ class JdbcTemplateTest {
 
         // then
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void 복수_조회시_쿼리_결과가_없을_경우_빈_리스트를_반환한다() throws SQLException {
+        // given
+        when(resultSet.next()).thenReturn(false);
+
+        // when
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        List<Member> query = jdbcTemplate.query(sql, memberMapper, "blackcat");
+
+        // then
+        assertThat(query).isEmpty();
     }
 }
