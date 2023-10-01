@@ -6,13 +6,12 @@ import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (final ResultSet rs) -> {
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> {
         final long id = rs.getLong("id");
         final String account = rs.getString("account");
         final String password = rs.getString("password");
