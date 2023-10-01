@@ -23,11 +23,10 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)
         ) {
             log.debug("query : {}", sql);
 
-            setPreparedStatement(args, pstmt);
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
