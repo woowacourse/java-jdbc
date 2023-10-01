@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -61,7 +62,7 @@ class JdbcTemplateTest {
 
         // expect
         assertThatThrownBy(() -> sut.queryForObject(query, TEST_USER_ROW_MAPPER))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasMessage("2개 이상의 결과를 반환할 수 없습니다.");
     }
 
@@ -96,5 +97,4 @@ class JdbcTemplateTest {
         // then
         assertThat(result).hasSize(2);
     }
-
 }

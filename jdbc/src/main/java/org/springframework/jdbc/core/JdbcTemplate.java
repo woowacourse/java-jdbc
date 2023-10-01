@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -41,7 +42,7 @@ public class JdbcTemplate {
             return preparedStatementCallback.execute(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -52,7 +53,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final List<T> results = query(sql, statement -> statementExecutor.execute(statement, rowMapper), parameters);
         if (results.size() > 1) {
-            throw new RuntimeException("2개 이상의 결과를 반환할 수 없습니다.");
+            throw new DataAccessException("2개 이상의 결과를 반환할 수 없습니다.");
         }
         return Optional.ofNullable(results.iterator().next());
     }
