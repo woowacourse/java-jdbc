@@ -2,7 +2,7 @@
 
 2단계에서는 뭘 해야 하지?
 * [x] SQL문의 매개변수와 값 설정 - ? 말고 namedParameter를 쓸 수 있게 해볼까?
-* [ ] 예외 처리 - UncheckedException으로 바꾸어줄까?
+* [x] 예외 처리 - UncheckedException으로 바꾸어줄까?
 
 
 * [ ] 연결 매개변수 설정 - 무슨뜻,,??

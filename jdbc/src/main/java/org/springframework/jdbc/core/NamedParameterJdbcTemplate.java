@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.SQLExceptionTranslator;
 
 public class NamedParameterJdbcTemplate {
 
@@ -34,7 +35,7 @@ public class NamedParameterJdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
         }
     }
 
@@ -62,7 +63,7 @@ public class NamedParameterJdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
         }
     }
 
@@ -94,7 +95,7 @@ public class NamedParameterJdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
         }
     }
 
