@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionContext;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -28,6 +29,13 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
+        if (TransactionContext.isEmpty()) {
+            return executeQueryWithoutTransaction(sql, executor, args);
+        }
+        return executeQueryWithTransaction(sql, executor, args);
+    }
+
+    private <T> T executeQueryWithoutTransaction(final String sql, final SqlExecutor<T> executor, final Object[] args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)
         ) {
@@ -37,6 +45,17 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    private <T> T executeQueryWithTransaction(final String sql, final SqlExecutor<T> executor, final Object... args) {
+        final Connection connection = TransactionContext.get();
+        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private <T> List<T> getQueryResult(
             final RowMapper<T> rowMapper,
@@ -51,38 +70,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args
-    ) {
-        return executeQuery(connection, sql, preparedStatement -> SingleResult.convert(getQueryResult(rowMapper, preparedStatement)), args);
-    }
-
-    private <T> T executeQuery(
-            final Connection connection,
-            final String sql,
-            final SqlExecutor<T> executor,
-            final Object... args
-    ) {
-        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
-            return executor.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
         return executeQuery(sql, preparedStatement -> getQueryResult(rowMapper, preparedStatement), args);
     }
 
     public int execute(final String sql, final Object... args) {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int execute(final Connection connection, final String sql, final Object... args) {
-        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
     }
 }
