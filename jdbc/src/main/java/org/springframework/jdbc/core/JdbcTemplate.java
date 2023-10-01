@@ -2,9 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -16,56 +14,50 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final PrepareStatementCreator prepareStatementCreator;
+    private final StatementCreator statementCreator;
+    private final StatementExecutor statementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this(dataSource, new PrepareStatementCreator());
+        this(dataSource, new StatementCreator(), new StatementExecutor());
     }
 
-    JdbcTemplate(final DataSource dataSource, final PrepareStatementCreator prepareStatementCreator) {
+    private JdbcTemplate(
+            final DataSource dataSource,
+            final StatementCreator statementCreator,
+            final StatementExecutor statementExecutor
+    ) {
         this.dataSource = dataSource;
-        this.prepareStatementCreator = prepareStatementCreator;
+        this.statementCreator = statementCreator;
+        this.statementExecutor = statementExecutor;
+    }
+
+    private <T> T query(
+            final String sql,
+            final PreparedStatementCallback<T> preparedStatementCallback,
+            final Object... parameters
+    ) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = statementCreator.create(connection, sql, parameters)) {
+            return preparedStatementCallback.execute(preparedStatement);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters)) {
-            for (int i = 0; i < parameters.length; i++) {
-                preparedStatement.setObject(i + 1, parameters[i]);
-            }
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        query(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.mapRow(resultSet));
-            }
-            return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        final List<T> results = query(sql, statement -> statementExecutor.execute(statement, rowMapper), parameters);
+        if (results.size() > 1) {
+            throw new RuntimeException("2개 이상의 결과를 반환할 수 없습니다.");
         }
+        return Optional.ofNullable(results.iterator().next());
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = prepareStatementCreator.create(connection, sql, parameters);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-            final List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return query(sql, statement -> statementExecutor.execute(statement, rowMapper), parameters);
     }
 }

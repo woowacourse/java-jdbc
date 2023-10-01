@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-class PrepareStatementCreatorTest {
+class StatementCreatorTest {
 
-    private final PrepareStatementCreator sut = new PrepareStatementCreator();
+    private final StatementCreator sut = new StatementCreator();
 
     @Test
     void 파라미터를_세팅한_PrepareStatement를_생성하여_반환한다() throws SQLException {

@@ -9,18 +9,22 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
+    private User user;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("delete from users");
+        userDao = new UserDao(jdbcTemplate);
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        user = userDao.findByAccount("gugu").orElseThrow();
     }
 
     @Test
@@ -35,22 +39,19 @@ class UserDaoTest {
     @Test
     void findById() {
         // when
-        final Optional<User> user = userDao.findById(1L);
+        final Optional<User> findUser = userDao.findById(user.getId());
 
         // then
-        assertThat(user).isPresent();
+        assertThat(findUser).isPresent();
     }
 
     @Test
     void findByAccount() {
-        // given
-        final String account = "gugu";
-
         // when
-        final Optional<User> user = userDao.findByAccount(account);
+        final Optional<User> findUesr = userDao.findByAccount(user.getAccount());
 
         // then
-        assertThat(user).isPresent();
+        assertThat(findUesr).isPresent();
     }
 
     @Test
@@ -63,22 +64,21 @@ class UserDaoTest {
         userDao.insert(user);
 
         // then
-        final Optional<User> actual = userDao.findById(2L);
-        assertThat(actual).isPresent();
+        assertThat(userDao.findByAccount(account)).isPresent();
     }
 
     @Test
     void update() {
         // given
         final String newPassword = "password99";
-        final User user = userDao.findById(1L).orElseThrow();
-        user.changePassword(newPassword);
+        final User findUser = userDao.findById(user.getId()).orElseThrow();
+        findUser.changePassword(newPassword);
 
         // when
-        userDao.update(user);
+        userDao.update(findUser);
 
         // then
-        final User actual = userDao.findById(1L).orElseThrow();
+        final User actual = userDao.findById(user.getId()).orElseThrow();
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 }
