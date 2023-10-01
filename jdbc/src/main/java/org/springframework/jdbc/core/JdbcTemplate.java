@@ -38,14 +38,13 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args)
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
+                final ResultSet resultSet = pstmt.executeQuery()
         ) {
-            final ResultSet resultSet = pstmt.executeQuery();
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.map(resultSet));
             }
-
             log.debug("run sql {}", sql);
             return results;
         } catch (SQLException e) {
@@ -57,10 +56,9 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args)
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
+                final ResultSet resultSet = pstmt.executeQuery()
         ) {
-            final ResultSet resultSet = pstmt.executeQuery();
-
             log.debug("run sql {}", sql);
             if (resultSet.next()) {
                 return Optional.of(rowMapper.map(resultSet));
