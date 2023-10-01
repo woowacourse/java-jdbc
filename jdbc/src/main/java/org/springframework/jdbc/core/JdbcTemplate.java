@@ -34,7 +34,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()) {
+             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
+        ) {
             final List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
