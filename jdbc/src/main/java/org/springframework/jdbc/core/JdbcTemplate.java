@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String DATA_SOURCE_NULL_EXCEPTION_MESSAGE = "dataSource가 null입니다.";
 
     private final DataSource dataSource;
 
@@ -22,7 +23,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
+        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
@@ -46,7 +47,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
+        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
@@ -64,7 +65,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, "dataSource가 null입니다.").getConnection();
+        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
             preparedStatement.executeUpdate();
