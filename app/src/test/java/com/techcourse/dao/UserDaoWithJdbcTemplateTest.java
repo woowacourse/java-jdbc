@@ -3,8 +3,12 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.Map;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.NamedParameterJdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,12 +16,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserDaoWithJdbcTemplateTest {
 
     private UserDaoWithJdbcTemplate userDao;
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDaoWithJdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDaoWithJdbcTemplate(dataSource);
+        namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -31,7 +38,8 @@ class UserDaoWithJdbcTemplateTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final long savedUserId = userDao.findAll().get(0).getId();
+        final var user = userDao.findById(savedUserId);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -39,6 +47,7 @@ class UserDaoWithJdbcTemplateTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
+
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -66,13 +75,20 @@ class UserDaoWithJdbcTemplateTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final long savedUserId = userDao.findAll().get(0).getId();
+
+        final var user = userDao.findById(savedUserId);
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(savedUserId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @AfterEach
+    void reset() {
+        namedParameterJdbcTemplate.update("truncate table users", Map.of());
     }
 }
