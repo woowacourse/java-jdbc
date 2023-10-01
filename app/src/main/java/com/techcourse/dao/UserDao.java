@@ -42,12 +42,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select * from users where id = ?";
 
-        return (User) jdbcTemplate.query(rowMapper, sql, id);
+        return jdbcTemplate.query(rowMapper, sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select * from users where account = ?";
 
-        return (User) jdbcTemplate.query(rowMapper, sql, account);
+        return jdbcTemplate.query(rowMapper, sql, account);
     }
 }
