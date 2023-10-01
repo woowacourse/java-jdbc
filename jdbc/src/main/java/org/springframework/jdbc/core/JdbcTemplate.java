@@ -10,70 +10,53 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator();
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            bindArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.getFetchSize() > 1) {
-                throw new IllegalArgumentException("조회 결과가 1개 이상입니다.");
-            }
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return executeQuery(sql, preparedStatement -> SingleResult.from(getQueryResult(rowMapper, preparedStatement)), args);
+    }
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
+    private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)
+        ) {
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private void bindArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int index = 0; index < args.length; index++) {
-            pstmt.setObject(index + 1, args[index]);
-        }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            bindArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
-
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+    private <T> List<T> getQueryResult(
+            final RowMapper<T> rowMapper,
+            final PreparedStatement preparedStatement
+    ) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 
-    public void execute(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            bindArguments(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(sql, preparedStatement -> getQueryResult(rowMapper, preparedStatement), args);
+    }
+
+    public int execute(final String sql, final Object... args) {
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
 }
