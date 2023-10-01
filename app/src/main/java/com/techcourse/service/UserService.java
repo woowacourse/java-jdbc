@@ -5,21 +5,21 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final TransactionTemplate transactionTemplate;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = DataSourceConfig.getInstance();
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     public User findById(final long id) {
@@ -34,36 +34,9 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
+        transactionTemplate.executeWithTransaction(connection -> {
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (SQLException e) {
-            if (connection != null) {
-                rollback(connection);
-            }
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    private void rollback(final Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
+        });
     }
 }
