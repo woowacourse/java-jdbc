@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.ResultSet;
@@ -42,16 +43,12 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final Object[] parameters = {id};
-
-        return jdbcTemplate.queryForObject(sql, rawMapper(), parameters);
+        return jdbcTemplate.queryForObject(sql, rawMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final Object[] parameters = {account};
-
-        return jdbcTemplate.queryForObject(sql, rawMapper(), parameters);
+        return jdbcTemplate.queryForObject(sql, rawMapper(), account);
     }
 
     public Function<ResultSet, User> rawMapper() {
@@ -65,7 +62,7 @@ public class UserDao {
                         resultSet.getString(4)
                 );
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         });
     }
@@ -85,7 +82,7 @@ public class UserDao {
                 }
                 return users;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         });
     }
