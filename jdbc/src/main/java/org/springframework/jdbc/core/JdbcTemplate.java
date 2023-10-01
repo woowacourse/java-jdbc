@@ -51,6 +51,26 @@ public class JdbcTemplate {
         log.error(e.getMessage(), e);
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rsMapper, Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            logQuery(sql);
+            if (!rs.next()) {
+                throw new EmptyResultDataAccessException();
+            }
+            T result = rsMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new IncorrectResultSizeDataAccessException();
+            }
+            return result;
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter);
@@ -85,6 +105,23 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            logQuery(sql);
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -98,10 +135,30 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(String sql, Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters)
+        ) {
+            logQuery(sql);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     private PreparedStatement applyPreparedStatementSetter(PreparedStatement pstmt,
                                                            PreparedStatementSetter pstmtSetter)
         throws SQLException {
         pstmtSetter.apply(pstmt);
+        return pstmt;
+    }
+
+    private PreparedStatement applyPreparedStatementParameters(PreparedStatement pstmt, Object[] parameters)
+        throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
+        }
         return pstmt;
     }
 
