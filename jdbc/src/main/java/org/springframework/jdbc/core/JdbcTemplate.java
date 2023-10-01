@@ -51,16 +51,13 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, preparedStatement -> getQueryResult(rowMapper, preparedStatement), args);
-    }
-
-    public int execute(final String sql, final Object... args) {
-        return executeQuery(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int execute(final Connection connection, final String sql, final Object... args) {
-        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
+    public <T> Optional<T> queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return executeQuery(connection, sql, preparedStatement -> SingleResult.convert(getQueryResult(rowMapper, preparedStatement)), args);
     }
 
     private <T> T executeQuery(
@@ -75,5 +72,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
+        return executeQuery(sql, preparedStatement -> getQueryResult(rowMapper, preparedStatement), args);
+    }
+
+    public int execute(final String sql, final Object... args) {
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public int execute(final Connection connection, final String sql, final Object... args) {
+        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
     }
 }
