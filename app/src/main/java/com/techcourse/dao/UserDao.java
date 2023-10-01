@@ -9,8 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = resultSet -> {
+    private static final RowMapper<User> userRowMapper = resultSet -> {
         final Long id = resultSet.getLong("id");
         final String account = resultSet.getString("account");
         final String password = resultSet.getString("password");
@@ -18,6 +17,8 @@ public class UserDao {
 
         return new User(id, account, password, email);
     };
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
