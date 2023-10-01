@@ -17,7 +17,7 @@ class SQLExceptionTranslatorTest {
         try {
             throw new SQLTimeoutException();
         } catch (SQLException e) {
-            SQLExceptionTranslator.translate(e);
+            throw SQLExceptionTranslator.translate(e);
         }
     }
 }
