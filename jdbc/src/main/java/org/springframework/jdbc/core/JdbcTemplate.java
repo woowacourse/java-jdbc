@@ -10,6 +10,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.IncorrectRowSizeException;
+import org.springframework.jdbc.RowNotFoundException;
 
 public class JdbcTemplate {
 
@@ -59,13 +61,23 @@ public class JdbcTemplate {
             ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
+            return getSingleObject(rowMapper, rs);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T getSingleObject(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        if (!rs.next()) {
+            throw new RowNotFoundException();
+        }
+
+        T result = rowMapper.mapRow(rs);
+        if (rs.next()) {
+            throw new IncorrectRowSizeException();
+        }
+
+        return result;
     }
 
     private PreparedStatement createPrepareStatement(String sql, Connection conn, Object... parameters)
