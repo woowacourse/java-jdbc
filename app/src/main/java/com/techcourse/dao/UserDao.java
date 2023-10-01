@@ -86,7 +86,9 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, userMapper, account).orElseThrow(
+                () -> new RuntimeException(account + "에 해당하는 유저를 찾을 수 없습니다.")
+        );
     }
 }
