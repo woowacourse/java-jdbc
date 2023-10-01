@@ -23,41 +23,35 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, parameters);
-        ) {
-            return preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, parameters);
-        ) {
+        return execute(sql, preparedStatement -> {
             final List<T> result = new ArrayList<>();
             final ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, parameters);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, parameters);
-        ) {
+        return execute(sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
             return Optional.empty();
+        }, parameters);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, parameters);
+        ) {
+            return callback.callback(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
