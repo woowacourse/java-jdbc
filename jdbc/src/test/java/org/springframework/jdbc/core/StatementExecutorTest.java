@@ -4,12 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.springframework.jdbc.core.TestUser.TEST_USER_ROW_MAPPER;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
@@ -30,38 +30,9 @@ class StatementExecutorTest {
         given(resultSet.getString(any(Integer.class))).willReturn("hello", "world");
 
         // when
-        final List<User> result = sut.execute(preparedStatement, set -> new User(set.getString(1)));
+        final List<TestUser> result = sut.execute(preparedStatement, TEST_USER_ROW_MAPPER);
 
         // then
-        assertThat(result).containsExactly(new User("hello"), new User("world"));
-    }
-
-    static class User {
-        private final String name;
-
-        public User(final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final User user = (User) o;
-            return Objects.equals(name, user.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name);
-        }
+        assertThat(result).containsExactly(new TestUser("hello"), new TestUser("world"));
     }
 }

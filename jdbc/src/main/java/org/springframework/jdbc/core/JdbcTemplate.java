@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this(dataSource, new StatementCreator(), new StatementExecutor());
     }
 
-    private JdbcTemplate(
+    JdbcTemplate(
             final DataSource dataSource,
             final StatementCreator statementCreator,
             final StatementExecutor statementExecutor

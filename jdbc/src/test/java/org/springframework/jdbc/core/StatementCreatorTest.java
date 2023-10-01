@@ -23,7 +23,7 @@ class StatementCreatorTest {
     void 파라미터를_세팅한_PrepareStatement를_생성하여_반환한다() throws SQLException {
         // given
         final Connection connection = mock(Connection.class);
-        final String sql = "select * from woowacourse where name = ? and course = ?;";
+        final String sql = "select * from woowacourse where name = ? and course = ?";
         final Object[] parameters = {"호이", "backend"};
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
         given(connection.prepareStatement(any(String.class)))
