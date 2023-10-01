@@ -2,7 +2,8 @@ package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.dao.UserDaoJdbc;
+import com.techcourse.dao.UserHistoryDaoJdbc;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDaoJdbc(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -30,7 +31,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDaoJdbc(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
