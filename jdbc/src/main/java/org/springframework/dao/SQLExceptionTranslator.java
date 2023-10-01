@@ -54,7 +54,18 @@ public class SQLExceptionTranslator {
     }
 
     public static DataAccessException translate(SQLException sqlException) {
-        final Class<? extends DataAccessException> dataAccessException = exceptions.get(sqlException.getClass());
+        Class<? extends DataAccessException> dataAccessException = null;
+        for (Class<? extends SQLException> exception : exceptions.keySet()) {
+            if (exception.isAssignableFrom(sqlException.getClass())) {
+                dataAccessException = exceptions.get(exception);
+                break;
+            }
+        }
+
+        if (dataAccessException == null) {
+            throw new DataAccessException(sqlException);
+        }
+
         try {
             final Constructor<? extends DataAccessException> constructor = dataAccessException.getDeclaredConstructor(Throwable.class);
             return constructor.newInstance(sqlException);
