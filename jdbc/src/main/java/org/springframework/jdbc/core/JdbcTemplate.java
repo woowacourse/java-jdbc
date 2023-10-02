@@ -13,7 +13,6 @@ import org.springframework.dao.EmptyDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
-    // TODO: 2023-10-02 모든 Exception은 UnChekcedException으로 바꾸기
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -61,7 +60,7 @@ public class JdbcTemplate {
     private <T> List<T> mapMultipleResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+            results.add(rowMapper.mapRow(resultSet));
         }
 
         return results;

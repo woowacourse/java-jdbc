@@ -9,8 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    // TODO: 2023-10-02 count 변수 사용처 확인 -> 한 번 출력해보기
-    private static final RowMapper<User> ROW_MAPPER = (rs, count) ->
+    private static final RowMapper<User> ROW_MAPPER = rs ->
         new User(
             rs.getLong("id"),
             rs.getString("account"),
