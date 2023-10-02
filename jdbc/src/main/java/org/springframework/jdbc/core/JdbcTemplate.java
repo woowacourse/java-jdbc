@@ -42,21 +42,34 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... parameters) {
+    public <T> List<T> query(
+            String sql, 
+            Function<ResultSet, T> rowMapper, 
+            Object... parameters
+    ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersInPreparedStatement(preparedStatement, parameters);
-            List<T> result = new ArrayList<>();
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                result.add(rowMapper.apply(resultSet));
-            }
-            return result;
+            return getQueryResult(rowMapper, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private <T> List<T> getQueryResult(
+            Function<ResultSet, T> rowMapper,
+            PreparedStatement preparedStatement
+    ) throws SQLException {
+        List<T> result = new ArrayList<>();
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        while (resultSet.next()) {
+            result.add(rowMapper.apply(resultSet));
+        }
+
+        return result;
     }
 
 }

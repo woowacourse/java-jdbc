@@ -13,6 +13,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final String INVALID_SINGLE_INQUIRY_MESSAGE = "조회 결과가 올바르지 않습니다.";
+
     private static final Function<ResultSet, User> rowMapper =
             resultSet -> {
                 try {
@@ -27,15 +29,13 @@ public class UserDao {
                 }
             };
 
-    private DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
+    public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
-        this.dataSource = dataSource;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -67,10 +67,7 @@ public class UserDao {
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         List<User> user = jdbcTemplate.query(sql, rowMapper, id);
-
-        if (user.size() != 1) {
-            throw new RuntimeException("조회 결과가 단일이 아닙니다.");
-        }
+        validateSingleInquiry(user);
 
         return user.get(0);
     }
@@ -78,12 +75,18 @@ public class UserDao {
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         List<User> user = jdbcTemplate.query(sql, rowMapper, account);
-
-        if (user.size() != 1) {
-            throw new RuntimeException("조회 결과가 단일이 아닙니다.");
-        }
+        validateSingleInquiry(user);
 
         return user.get(0);
+    }
+
+    private void validateSingleInquiry(final List<User> user) {
+        if (user.size() == 1) {
+            return;
+        }
+
+        log.error("error {}", INVALID_SINGLE_INQUIRY_MESSAGE);
+        throw new RuntimeException(INVALID_SINGLE_INQUIRY_MESSAGE);
     }
 
 }
