@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class UserDao {
 
@@ -39,18 +38,18 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.selectAll(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id)
+        return jdbcTemplate.selectForObject(sql, userRowMapper, id)
                 .orElseThrow();
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account)
+        return jdbcTemplate.selectForObject(sql, userRowMapper, account)
                 .orElseThrow();
     }
 }

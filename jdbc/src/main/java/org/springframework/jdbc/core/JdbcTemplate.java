@@ -4,11 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class JdbcTemplate {
 
@@ -33,7 +30,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> selectAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, args);
@@ -51,7 +48,7 @@ public class JdbcTemplate {
     }
 
     // TODO: 프록시로 Connection, Statement 획득하는 로직 분리
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> selectForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, args);
