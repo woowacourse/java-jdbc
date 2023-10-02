@@ -2,7 +2,9 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,21 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, objects);
             preparedStatement.executeUpdate();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setPreparedStatement(preparedStatement, objects);
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(rowMapper.mapToRow(resultSet));
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
