@@ -39,18 +39,18 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql);
-                final ResultSet rs = pstmt.executeQuery();
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
             final List<T> results = new ArrayList<>();
 
             while (rs.next()) {
-                T object = rowMapper.mapRow(rs);
+                final T object = rowMapper.mapRow(rs);
                 results.add(object);
             }
 
@@ -61,16 +61,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
-                final ResultSet rs = pstmt.executeQuery();
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
             while (rs.next()) {
-                T object = rowMapper.mapRow(rs);
+                final T object = rowMapper.mapRow(rs);
                 return Optional.ofNullable(object);
             }
 
