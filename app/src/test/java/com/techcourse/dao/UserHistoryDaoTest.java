@@ -31,7 +31,7 @@ class UserHistoryDaoTest {
         userHistoryDao.log(userHistory);
 
         // then
-        final UserHistory actual = userHistoryDao.findLogByUser(user);
+        final UserHistory actual = userHistoryDao.findLogByUser(user).get();
         assertThat(actual.getCreateBy()).isEqualTo(createdBy);
     }
 }

@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -26,7 +27,7 @@ public class JdbcTemplate {
         executePreparedStatement(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return executePreparedStatement(sql, preparedStatement -> {
             final ResultSet rs = preparedStatement.executeQuery();
             return extractSingleResult(rowMapper, rs);
@@ -40,11 +41,11 @@ public class JdbcTemplate {
         },objects);
     }
 
-    private static <T> T extractSingleResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private static <T> Optional<T> extractSingleResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         if (rs.next()) {
-            return rowMapper.execute(rs);
+            return Optional.of(rowMapper.execute(rs));
         }
-        return null;
+        return Optional.empty();
     }
 
     private static <T> List<T> extractListResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {

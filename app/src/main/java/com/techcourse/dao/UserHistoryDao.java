@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.util.Optional;
 
 public class UserHistoryDao {
 
@@ -45,7 +46,7 @@ public class UserHistoryDao {
                 userHistory.getCreateBy());
     }
 
-    public UserHistory findLogByUser(final User user) {
+    public Optional<UserHistory> findLogByUser(final User user) {
         final var sql = "select id, user_id, account, password, email, created_by from user_history where user_id = ?";
         return jdbcTemplate.queryForObject(sql, userHistoryRowMapper(), user.getId());
     }
