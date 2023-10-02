@@ -51,14 +51,14 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
-            return mapResultToList(rowMapper, rs);
+            return mapResultToList(rs, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> mapResultToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> mapResultToList(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
 
         while (rs.next()) {
@@ -75,14 +75,14 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
-            return mapResultToObject(rowMapper, rs);
+            return mapResultToObject(rs, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T mapResultToObject(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> T mapResultToObject(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         if (rs.next()) {
             T result = rowMapper.mapRow(rs);
 
