@@ -36,6 +36,17 @@ public class JdbcTemplate {
         }
     }
 
+    public void execute(Connection conn, String sql, Object... parameters) {
+        try (
+            PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters)
+        ) {
+            pstmt.executeUpdate();
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();

@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,13 @@ public class UserHistoryDao {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.execute(sql,
             userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
-            userHistory.getEmail(), userHistory.getCreateBy(), userHistory.getCreateBy());
+            userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+    }
+
+    public void log(final UserHistory userHistory, Connection connection) {
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.execute(connection, sql,
+            userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
+            userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
     }
 }
