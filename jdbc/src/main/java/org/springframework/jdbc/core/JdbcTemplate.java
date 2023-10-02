@@ -9,8 +9,11 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
+    // TODO: 2023-10-02 모든 Exception은 UnChekcedException으로 바꾸기
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -48,20 +51,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        final List<T> results = query(sql, rowMapper, args);
 
-            setParamsToPreparedStatement(pstmt, args);
-
-            final ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, resultSet.getRow());
-            }
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
+        if (results.isEmpty()) {
+            throw new EmptyDataAccessException();
+        }
+
+        return results.get(0);
     }
 
     public int update(final String sql, final Object... args) {
