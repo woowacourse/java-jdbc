@@ -24,7 +24,7 @@ public class TransactionTemplate {
             connection = dataSource.getConnection();
             TransactionContext.set(connection);
             connection.setAutoCommit(false);
-            transactionCallback.execute(connection);
+            transactionCallback.execute();
             connection.commit();
         } catch (final RuntimeException e) {
             if (connection != null) {

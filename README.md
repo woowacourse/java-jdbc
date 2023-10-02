@@ -40,7 +40,7 @@
   - 콜백 메서드에서는 SQLException이 발생하지 않는다!
 
 ### 2차
-- [ ] TransactionCallback의 Connection 제거
+- [x] TransactionCallback의 Connection 제거
 - [ ] 여러 검증에 대해서는 assertAll 또는 SoftAssertions 활용
 - [ ] TransactionTemplate 테스트 코드 작성
 - [ ] 공유자원 Singleton vs static
