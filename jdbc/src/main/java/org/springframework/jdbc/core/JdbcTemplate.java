@@ -10,6 +10,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -29,7 +30,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -46,7 +47,7 @@ public class JdbcTemplate {
             return result;
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -62,7 +63,7 @@ public class JdbcTemplate {
             return Optional.empty();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
