@@ -62,18 +62,27 @@ public class JdbcTemplate {
             log.debug("run sql {}", sql);
             if (resultSet.next()) {
                 final T result = rowMapper.map(resultSet);
-                if (resultSet.next()) {
-                    log.error("selected data count is larger than 1");
-                    throw new JdbcException("selected data count is larger than 1");
-                }
+                validateIsOnlyResult(resultSet);
                 return result;
             }
-            log.error("no data found");
-            throw new JdbcException("no data found");
+            logAndThrowNoDataFoundException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException(e);
         }
+        return null;
+    }
+
+    private void validateIsOnlyResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            log.error("selected data count is larger than 1");
+            throw new JdbcException("selected data count is larger than 1");
+        }
+    }
+
+    private static void logAndThrowNoDataFoundException() {
+        log.error("no data found");
+        throw new JdbcException("no data found");
     }
 
     private PreparedStatement getPrepareStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
