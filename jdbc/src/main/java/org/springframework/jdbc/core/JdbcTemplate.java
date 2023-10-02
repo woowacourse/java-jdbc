@@ -34,8 +34,8 @@ public class JdbcTemplate {
         }
     }
 
-    private static void setSQLParameter(final Object parameter, final int parameterIndex,
-                                        final PreparedStatement pstmt)
+    private void setSQLParameter(final Object parameter, final int parameterIndex,
+                                 final PreparedStatement pstmt)
             throws SQLException {
         if (parameter instanceof String) {
             pstmt.setString(parameterIndex, (String) parameter);
