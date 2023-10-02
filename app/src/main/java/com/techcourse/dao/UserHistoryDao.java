@@ -44,6 +44,6 @@ public class UserHistoryDao {
     public UserHistory findLogByUser(final User user) {
         log.debug("User history id : {}", user.getId());
         final var sql = "select * from user_history where user_id = ?";
-        return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, user.getId());
+        return jdbcTemplate.executeQueryForObject(sql, userHistoryRowMapper, user.getId());
     }
 }
