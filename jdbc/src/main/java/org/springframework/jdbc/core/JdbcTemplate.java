@@ -26,9 +26,26 @@ public class JdbcTemplate {
     }
 
     public void update(final String query, final Object... columns) {
+        executeUpdate(query, columns);
+    }
+
+    public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... columns) {
+        return executeQuery(query, rowMapper, columns);
+    }
+
+    public <T> Optional<T> queryForObject(final String query, final RowMapper<T> rowMapper, final Object... columns) {
+        final List<T> result = executeQuery(query, rowMapper, columns);
+        validateSize(result);
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.get(FIRST_INDEX_OF_RESULT));
+    }
+
+    private void executeUpdate(final String query, final Object[] columns) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns)
+                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
         ) {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
@@ -37,31 +54,13 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... columns) {
+    private <T> List<T> executeQuery(final String query, final RowMapper<T> rowMapper, final Object... columns) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
             return getResult(rowMapper, rs);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> Optional<T> queryForObject(final String query, final RowMapper<T> rowMapper, final Object... columns) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
-                final ResultSet rs = pstmt.executeQuery()
-        ) {
-            final List<T> result = getResult(rowMapper, rs);
-            validateSize(result);
-            if (result.isEmpty()) {
-                return Optional.empty();
-            }
-            return Optional.of(result.get(FIRST_INDEX_OF_RESULT));
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
