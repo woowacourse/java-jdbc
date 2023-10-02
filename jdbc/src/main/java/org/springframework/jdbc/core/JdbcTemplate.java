@@ -36,15 +36,17 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
+        return executeInternal(sql, pstmt -> queryMultipleResults(pstmt, rowMapper), args);
+    }
+
+    private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
+        try (
+            final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             setParamsToPreparedStatement(pstmt, args);
 
-            final ResultSet resultSet = pstmt.executeQuery();
-
-            return mapMultipleResults(resultSet, rowMapper);
+            return executor.run(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -54,6 +56,16 @@ public class JdbcTemplate {
         throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> List<T> queryMultipleResults(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        try {
+            final ResultSet resultSet = pstmt.executeQuery();
+
+            return mapMultipleResults(resultSet, rowMapper);
+        } catch (SQLException e) {
+            throw new RuntimeException();
         }
     }
 
@@ -67,12 +79,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        return executeInternal(sql, pstmt -> executeUpdate(pstmt), args);
+    }
 
-            setParamsToPreparedStatement(pstmt, args);
-
+    private int executeUpdate(final PreparedStatement pstmt) {
+        try {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -80,12 +91,6 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        executeInternal(sql, pstmt -> executeUpdate(pstmt));
     }
 }
