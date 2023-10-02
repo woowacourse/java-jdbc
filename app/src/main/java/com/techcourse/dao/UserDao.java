@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final RowMapper<User> USER_MAPPER = (resultSet) -> new User(
+    private static final RowMapper<User> USER_MAPPER = resultSet -> new User(
             resultSet.getLong(1),
             resultSet.getString(2),
             resultSet.getString(3),
@@ -42,14 +40,12 @@ public class UserDao {
 
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final User user = jdbcTemplate.queryForObject(sql, USER_MAPPER, id);
-        return Optional.of(user);
+        return jdbcTemplate.queryForObject(sql, USER_MAPPER, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final User user = jdbcTemplate.queryForObject(sql, USER_MAPPER, account);
-        return Optional.of(user);
+        return jdbcTemplate.queryForObject(sql, USER_MAPPER, account);
     }
 
     public List<User> findAll() {

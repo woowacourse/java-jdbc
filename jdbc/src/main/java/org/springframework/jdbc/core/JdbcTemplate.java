@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -48,25 +50,25 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = getPreparedStatement(sql, connection, parameters);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
             log.debug("query : {}", sql);
             if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
+                return Optional.ofNullable(rowMapper.mapRow(resultSet));
             }
+            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
-        return null;
     }
 
     private PreparedStatement getPreparedStatement(
             final String sql,
             final Connection connection,
-            final Object[] parameters
+            final Object... parameters
     ) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int index = 0; index < parameters.length; index++) {
