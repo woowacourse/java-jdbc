@@ -40,9 +40,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = getQueryPstmtForObject(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
             List<T> results = new ArrayList<>();
