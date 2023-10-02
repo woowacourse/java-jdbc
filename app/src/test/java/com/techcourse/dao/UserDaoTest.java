@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +23,7 @@ class UserDaoTest {
     }
 
     @AfterEach
-    void tearDown() throws SQLException {
+    void tearDown() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
@@ -83,7 +82,7 @@ class UserDaoTest {
         findUser.changePassword(newPassword);
         userDao.update(findUser);
 
-        final var actual = userDao.findByAccount("gugu");
+        User actual = userDao.findByAccount("gugu");
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
