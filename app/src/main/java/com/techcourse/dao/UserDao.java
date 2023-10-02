@@ -1,11 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -52,42 +47,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select * from users";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        List<User> users = new ArrayList<>();
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                User user = new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                );
-                users.add(user);
-            }
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (final SQLException ignored) {
-            }
-        }
-        return users;
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
