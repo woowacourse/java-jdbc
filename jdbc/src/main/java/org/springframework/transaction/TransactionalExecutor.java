@@ -14,24 +14,38 @@ public class TransactionalExecutor {
     }
 
     public void execute(TransactionTask transactionTask) {
-        Connection con = null;
+        Connection con = getTransactionalConnection();
         try {
-            con = dataSource.getConnection();
-            con.setAutoCommit(false);
             transactionTask.execute(con);
-            con.commit();
-        } catch (SQLException e) {
-            throw new DataAccessException();
+        } catch (Exception e) {
+            rollback(con);
+            throw e;
         } finally {
-            if (con != null) {
-                rollback(con);
-            }
+            commitAndClose(con);
         }
     }
 
-    private void rollback(Connection con) {
+    private Connection getTransactionalConnection() {
+        try {
+            Connection con = dataSource.getConnection();
+            con.setAutoCommit(false);
+            return con;
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(Connection con)  {
         try {
             con.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void commitAndClose(Connection con) {
+        try {
+            con.commit();
             con.close();
         } catch (SQLException e) {
             throw new DataAccessException(e);
