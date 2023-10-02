@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
@@ -58,7 +59,7 @@ public class JdbcTemplate {
             try (final var resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     log.info("JDBC QUERY_FOR_OBJECT SQL = {}", sql);
-                    return rowMapper.mapRow(resultSet);
+                    return Optional.of(rowMapper.mapRow(resultSet));
                 }
             }
         } catch (SQLException e) {
