@@ -40,7 +40,7 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)
         ) {
             return executor.execute(preparedStatement);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -50,7 +50,7 @@ public class JdbcTemplate {
         final Connection connection = TransactionContext.get();
         try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
             return executor.execute(preparedStatement);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }

@@ -46,4 +46,4 @@
 - [ ] 공유자원 Singleton vs static
 - [ ] JdbcTemplate 테스트 작성
 - [ ] JdbcTemplate의 executeQuery 중복 제거
-- [ ] TransactionTemplate catch 절 final
+- [x] TransactionTemplate catch 절 final

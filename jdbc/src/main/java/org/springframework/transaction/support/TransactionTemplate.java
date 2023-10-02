@@ -26,12 +26,12 @@ public class TransactionTemplate {
             connection.setAutoCommit(false);
             transactionCallback.execute(connection);
             connection.commit();
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             if (connection != null) {
                 rollback(connection);
             }
             throw e;
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             if (connection != null) {
                 rollback(connection);
             }
@@ -42,7 +42,7 @@ public class TransactionTemplate {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -51,7 +51,7 @@ public class TransactionTemplate {
     private void rollback(final Connection conn) {
         try {
             conn.rollback();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
