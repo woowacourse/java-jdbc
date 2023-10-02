@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,23 +26,27 @@ class JdbcTemplateTest {
     private DataSource dataSource;
     @Mock
     private PreparedStatement preparedStatement;
+    @Mock
+    private ResultSet rs;
     @InjectMocks
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setup(){
+    void setup() {
         MockitoAnnotations.openMocks(this);
     }
+
     @Test
     @DisplayName("try문에서 메서드 호출을 통해 변수를 초기화 해도 객체를 사용 후 반환한다.")
     void tryWithResourcesTest() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+        when(preparedStatement.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(false);
+        jdbcTemplate.query("Test Sql", null);
 
-        jdbcTemplate.update("Test Sql");
-
-        verify(preparedStatement,times(1)).close();
+        verify(preparedStatement, times(1)).close();
         verify(connection, times(1)).close();
+        verify(rs, times(1)).close();
     }
 }
