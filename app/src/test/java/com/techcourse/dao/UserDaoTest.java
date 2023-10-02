@@ -26,7 +26,7 @@ class UserDaoTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.execute("truncate table users restart identity");
+        jdbcTemplate.update("truncate table users restart identity");
     }
 
     @Test
