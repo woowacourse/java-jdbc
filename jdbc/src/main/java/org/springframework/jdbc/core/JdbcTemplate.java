@@ -3,6 +3,8 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.RowMapper;
+import org.springframework.exception.EmptyResultException;
+import org.springframework.exception.WrongResultSizeException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -13,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
+
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -36,41 +40,15 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
-        for (int i = 1; i <= parameters.length; i++) {
-            pstmt.setObject(i, parameters[i - 1]);
-        }
-    }
-
-    public <T> T query(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
+    public <T> List<T> query(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setParameters(pstmt, parameters);
-            rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public <T> List<T> queries(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
             setParameters(pstmt, parameters);
-            rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
+            rs = pstmt.executeQuery();
 
             List<T> results = new ArrayList<>();
             while (rs.next()) {
@@ -80,6 +58,28 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+        for (int i = 1; i <= parameters.length; i++) {
+            pstmt.setObject(i, parameters[i - 1]);
+        }
+    }
+
+    public <T> T queryForObject(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
+        final List<T> result = query(rowMapper, sql, parameters);
+
+        validateResult(result);
+        return result.get(0);
+    }
+
+    private static <T> void validateResult(final List<T> result) {
+        if (result.size() > SINGLE_RESULT_SIZE) {
+            throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + result.size());
+        }
+        if (result.isEmpty()) {
+            throw new EmptyResultException("Result is Empty");
         }
     }
 }
