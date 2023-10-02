@@ -11,6 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
@@ -58,7 +59,10 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-        assertThat(actual.getPassword()).isEqualTo(oldPassword);
+        assertAll(
+                () -> assertThat(actual.getPassword()).isNotEqualTo(newPassword),
+                () -> assertThat(actual.getPassword()).isEqualTo(oldPassword)
+        );
+
     }
 }

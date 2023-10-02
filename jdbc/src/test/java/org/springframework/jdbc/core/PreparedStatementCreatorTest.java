@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class PreparedStatementCreatorTest {
 
@@ -37,9 +38,11 @@ class PreparedStatementCreatorTest {
         final ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
 
         // then
-        assertThat(preparedStatement.getConnection()).isEqualTo(connection);
-        assertThat(parameterMetaData.getParameterCount()).isEqualTo(args.length);
-        assertThat(parameterMetaData.getParameterClassName(1)).contains("String");
-        assertThat(parameterMetaData.getParameterClassName(2)).contains("Integer");
+        assertAll(
+                () -> assertThat(preparedStatement.getConnection()).isEqualTo(connection),
+                () -> assertThat(parameterMetaData.getParameterCount()).isEqualTo(args.length),
+                () -> assertThat(parameterMetaData.getParameterClassName(1)).contains("String"),
+                () -> assertThat(parameterMetaData.getParameterClassName(2)).contains("Integer")
+        );
     }
 }

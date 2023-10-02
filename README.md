@@ -41,7 +41,7 @@
 
 ### 2차
 - [x] TransactionCallback의 Connection 제거
-- [ ] 여러 검증에 대해서는 assertAll 또는 SoftAssertions 활용
+- [x] 여러 검증에 대해서는 assertAll 또는 SoftAssertions 활용
 - [ ] TransactionTemplate 테스트 코드 작성
 - [ ] 공유자원 Singleton vs static
 - [ ] JdbcTemplate 테스트 작성
