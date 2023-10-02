@@ -28,7 +28,7 @@ public class JdbcTemplate {
             setElements(elements, preparedStatement);
 
             preparedStatement.executeUpdate();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -55,7 +55,7 @@ public class JdbcTemplate {
                 return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -77,7 +77,7 @@ public class JdbcTemplate {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
