@@ -31,10 +31,10 @@ public class JdbcTemplate {
         pstmt.setObject(index, values[index - 1]);
       }
 
-      try (final ResultSet resultSet = pstmt.executeQuery()) {
-        if (resultSet.next()) {
-          return rowMapper.map(resultSet);
-        }
+      final ResultSet resultSet = pstmt.executeQuery();
+
+      if (resultSet.next()) {
+        return rowMapper.map(resultSet);
       }
 
     } catch (SQLException e) {
@@ -59,16 +59,14 @@ public class JdbcTemplate {
         pstmt.setObject(index, values[index - 1]);
       }
 
-      try (final ResultSet resultSet = pstmt.executeQuery()) {
-        final List<T> results = new ArrayList<>();
+      final ResultSet resultSet = pstmt.executeQuery();
+      final List<T> results = new ArrayList<>();
 
-        while (resultSet.next()) {
-          results.add(rowMapper.map(resultSet));
-        }
-
-        return results;
+      while (resultSet.next()) {
+        results.add(rowMapper.map(resultSet));
       }
 
+      return results;
     } catch (SQLException e) {
       log.error(e.getMessage(), e);
       throw new RuntimeException(e);
