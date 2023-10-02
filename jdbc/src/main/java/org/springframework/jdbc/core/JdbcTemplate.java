@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -36,7 +37,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -56,7 +57,7 @@ public class JdbcTemplate {
             final List<T> results = getResults(rowMapper, pstmt);
 
             if (results.size() > 1) {
-                throw new IllegalArgumentException("row 갯수가 1보다 많아요.");
+                throw new SQLException("row 갯수가 1보다 많아요.");
             }
 
             if (results.isEmpty()) {
@@ -65,7 +66,8 @@ public class JdbcTemplate {
 
             return results.get(FIRST_RESULT);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -77,7 +79,8 @@ public class JdbcTemplate {
             }
             return results;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -91,7 +94,7 @@ public class JdbcTemplate {
             return getResults(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
