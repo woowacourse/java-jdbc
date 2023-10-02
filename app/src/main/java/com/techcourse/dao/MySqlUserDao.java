@@ -24,13 +24,13 @@ public class MySqlUserDao implements UserDao {
     }
 
     @Override
-    public Long insert(final User user) {
+    public Integer insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
         return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     @Override
-    public Long update(final User user) {
+    public Integer update(final User user) {
         final String sql = "update users set account=?, password=?, email=? where id=?";
         return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }

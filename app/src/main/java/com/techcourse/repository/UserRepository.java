@@ -13,11 +13,11 @@ public class UserRepository {
         this.userDao = userDao;
     }
 
-    public Long save(final User user) {
+    public Integer save(final User user) {
         return userDao.insert(user);
     }
 
-    public Long update(final User user) {
+    public Integer update(final User user) {
         return userDao.update(user);
     }
 
