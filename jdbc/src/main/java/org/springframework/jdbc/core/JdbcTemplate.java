@@ -33,61 +33,37 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        ResultSet resultSet = null;
-
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setParameters(statement, args);
+            final ResultSet resultSet = statement.executeQuery();
 
-            resultSet = statement.executeQuery();
             final List<T> results = new ArrayList<>();
-
             while (resultSet.next()) {
                 results.add(rowMapper.map(resultSet));
             }
             return results;
-
         } catch (SQLException e) {
             log.error("SQL exception occurred!");
             throw new RuntimeException(e);
-        } finally {
-            closeResultSet(resultSet);
         }
     }
 
     // TODO: 프록시로 Connection, Statement 획득하는 로직 분리
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = null;
-
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-
             setParameters(statement, args);
-
-            resultSet = statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
                 return Optional.of(rowMapper.map(resultSet));
             }
             return Optional.empty();
-
         } catch (SQLException e) {
             log.error("SQL exception occurred!");
             throw new RuntimeException(e);
-        } finally {
-            closeResultSet(resultSet);
-        }
-    }
-
-    private void closeResultSet(final ResultSet resultSet) {
-        if (resultSet != null) {
-            try {
-                resultSet.close();
-            } catch (SQLException e) {
-                log.error("failed to close ResultSet!");
-                throw new RuntimeException(e);
-            }
         }
     }
 
