@@ -16,6 +16,7 @@ import java.util.Optional;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int VALID_RESULT_COUNT = 1;
 
     private final DataSource dataSource;
 
@@ -50,16 +51,11 @@ public class JdbcTemplate {
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
-            if (result.isEmpty()) {
-                throw new DataAccessException("조회하려는 레코드가 존재하지 않습니다.");
-            }
-            if (result.size() >= 2) {
-                throw new DataAccessException("조회하려는 레코드는 2개 이상일 수 없습니다.");
-            }
+            validateResultSetSize(result);
             return Optional.of(result.get(0));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -67,6 +63,15 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = conn.prepareStatement(sql);
         setSqlParameter(obj, pstmt);
         return pstmt;
+    }
+
+    private <T> void validateResultSetSize(List<T> result) {
+        if (result.isEmpty()) {
+            throw new DataAccessException("조회하려는 레코드가 존재하지 않습니다.");
+        }
+        if (result.size() > VALID_RESULT_COUNT) {
+            throw new DataAccessException("조회하려는 레코드는 2개 이상일 수 없습니다.");
+        }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
@@ -82,7 +87,7 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
