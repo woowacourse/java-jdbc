@@ -7,38 +7,28 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
     public void update(final String sql, final Object... args) {
-        try(final Connection conn = dataSource.getConnection();
-            final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setAllArguments(args, preparedStatement);
-            preparedStatement.executeUpdate();
-
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setAllArguments(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
+        preparedStatementExecutor.execute(conn -> {
+            final PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            setAllArguments(preparedStatement, args);
+            return preparedStatement;
+        });
     }
 
     @Nullable
@@ -46,7 +36,7 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setAllArguments(args, preparedStatement);
+            setAllArguments(preparedStatement, args);
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
@@ -66,7 +56,7 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setAllArguments(args, preparedStatement);
+            setAllArguments(preparedStatement, args);
             final ResultSet resultSet = preparedStatement.executeQuery();
 
             final List<T> results = new ArrayList<>();
@@ -79,6 +69,15 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setAllArguments(
+            final PreparedStatement preparedStatement,
+            final Object... args
+    ) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 }
