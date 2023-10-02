@@ -7,7 +7,6 @@ import org.springframework.exception.EmptyResultException;
 import org.springframework.exception.WrongResultSizeException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,51 +19,49 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        preparedStatementExecutor.execute(
+                generatePreparedStatement(sql, parameters),
+                PreparedStatement::executeUpdate
+        );
     }
 
-    public <T> List<T> query(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    private PreparedStatementGenerator generatePreparedStatement(final String sql, final Object... parameters) {
+        return connection -> {
             log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-
-            rs = pstmt.executeQuery();
-
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            setParameters(preparedStatement, parameters);
+            return preparedStatement;
+        };
     }
 
     private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
         for (int i = 1; i <= parameters.length; i++) {
             pstmt.setObject(i, parameters[i - 1]);
         }
+    }
+
+    public <T> List<T> query(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
+        return preparedStatementExecutor.execute(
+                generatePreparedStatement(sql, parameters),
+                preparedStatement -> findQueryResults(rowMapper, preparedStatement)
+        );
+    }
+
+    private <T> List<T> findQueryResults(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
+        final ResultSet rs = pstmt.executeQuery();
+
+        final List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
     }
 
     public <T> T queryForObject(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
