@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.exception.EmptyResultException;
 
 class UserDaoTest {
 
@@ -48,6 +50,13 @@ class UserDaoTest {
         User findUser = userDao.findById(1L);
 
         assertThat(findUser.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdFailWhenResultIsEmpty() {
+        assertThatThrownBy(() -> userDao.findById(-1L))
+                .isInstanceOf(EmptyResultException.class)
+                .hasMessage("일치하는 결과가 존재하지 않습니다.");
     }
 
     @Test
