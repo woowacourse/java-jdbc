@@ -64,8 +64,8 @@ public class UserDao {
         return jdbcTemplate.query(sql, rowMapper);
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+    public User findById(Long id) {
+        String sql = "select id, account, password, email from users where id = ?";
         List<User> user = jdbcTemplate.query(sql, rowMapper, id);
 
         if (user.size() != 1) {
@@ -75,8 +75,15 @@ public class UserDao {
         return user.get(0);
     }
 
-    public User findByAccount(final String account) {
-        // todo
-        return null;
+    public User findByAccount(String account) {
+        String sql = "select id, account, password, email from users where account = ?";
+        List<User> user = jdbcTemplate.query(sql, rowMapper, account);
+
+        if (user.size() != 1) {
+            throw new RuntimeException("조회 결과가 단일이 아닙니다.");
+        }
+
+        return user.get(0);
     }
+
 }
