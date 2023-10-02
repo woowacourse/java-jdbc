@@ -19,7 +19,7 @@ public class PreparedStatementExecutor {
     ) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(conn)) {
-            return preparedStatementCaller.execute(preparedStatement);
+            return preparedStatementCaller.call(preparedStatement);
         } catch (final SQLException e) {
             throw new RuntimeException(e);
         }
