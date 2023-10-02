@@ -14,11 +14,9 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
     private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
