@@ -17,12 +17,10 @@ public class JdbcTemplate {
 
     private static Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-    private final TransactionManager connectionManager;
+    private final TransactionManager transactionManager;
 
     public JdbcTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.connectionManager = new TransactionManager(dataSource);
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
     public int update(String sql, Object... args) {
@@ -42,7 +40,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... args) {
-        Connection connection = connectionManager.getConnection();
+        Connection connection = transactionManager.getConnection();
         try (
                 PreparedStatement statement = getPreparedStatement(sql, connection, args);
         ) {
