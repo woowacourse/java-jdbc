@@ -25,15 +25,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
+    public int update(String sql, Object... args) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args)) {
 
             log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-            preparedStatement.executeUpdate();
+
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -41,19 +39,16 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-
-            ResultSet resultSet = preparedStatement.executeQuery();
 
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
+
             return results;
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -68,6 +63,16 @@ public class JdbcTemplate {
         if (results.size() > MAX_RESULT_SIZE) {
             throw new IncorrectResultSizeException("적합한 ResultSize를 초과했습니다.");
         }
+
         return results.iterator().next();
+    }
+
+    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object[] args) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
+        }
+
+        return preparedStatement;
     }
 }
