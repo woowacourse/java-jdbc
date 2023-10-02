@@ -30,30 +30,25 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return executePreparedStatement(sql, preparedStatement -> {
             final ResultSet rs = preparedStatement.executeQuery();
-            return extractSingleResult(rowMapper, rs);
+            Optional<T> object = Optional.empty();
+            if (rs.next()) {
+                object = Optional.of(rowMapper.execute(rs));
+            }
+            rs.close();
+            return object;
         }, objects);
     }
 
     public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return executePreparedStatement(sql, preparedStatement -> {
             final ResultSet rs = preparedStatement.executeQuery();
-            return extractListResult(rowMapper, rs);
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.execute(rs));
+            }
+            rs.close();
+            return results;
         },objects);
-    }
-
-    private static <T> Optional<T> extractSingleResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            return Optional.of(rowMapper.execute(rs));
-        }
-        return Optional.empty();
-    }
-
-    private static <T> List<T> extractListResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        final List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.execute(rs));
-        }
-        return results;
     }
 
     private <T> T executePreparedStatement(final String sql, PreparedStatementExecutor<T> preparedStatementExecutor,
