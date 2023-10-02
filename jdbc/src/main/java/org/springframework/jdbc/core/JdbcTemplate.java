@@ -79,9 +79,10 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setParams(pstmt, params);
 
             final ResultSet rs = pstmt.executeQuery();
 
