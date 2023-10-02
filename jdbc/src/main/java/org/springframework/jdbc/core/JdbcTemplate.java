@@ -1,6 +1,5 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,48 +27,26 @@ public class JdbcTemplate {
             final PreparedStatement preparedStatement = conn.prepareStatement(sql);
             setAllArguments(preparedStatement, args);
             return preparedStatement;
-        });
+        }, PreparedStatement::executeUpdate);
     }
 
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        List<T> results = preparedStatementExecutor.execute(conn -> {
+            final PreparedStatement preparedStatement = conn.prepareStatement(sql);
             setAllArguments(preparedStatement, args);
-            final ResultSet resultSet = preparedStatement.executeQuery();
+            return preparedStatement;
+        }, preparedStatement -> mappingQueryResult(preparedStatement, rowMapper));
 
-            if (resultSet.next()) {
-                final T result = rowMapper.mapRow(resultSet);
-                resultSet.close();
-                return result;
-            }
-
-            resultSet.close();
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        return preparedStatementExecutor.execute(conn -> {
+            final PreparedStatement preparedStatement = conn.prepareStatement(sql);
             setAllArguments(preparedStatement, args);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                final T result = rowMapper.mapRow(resultSet);
-                results.add(result);
-            }
-
-            resultSet.close();
-            return results;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+            return preparedStatement;
+        }, preparedStatement -> mappingQueryResult(preparedStatement, rowMapper));
     }
 
     private void setAllArguments(
@@ -79,5 +56,18 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
+    }
+
+    private <T> List<T> mappingQueryResult(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        final ResultSet resultSet = preparedStatement.executeQuery();
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        resultSet.close();
+        return results;
     }
 }

@@ -13,12 +13,13 @@ public class PreparedStatementExecutor {
         this.dataSource = dataSource;
     }
 
-    public void execute(
-            final PreparedStatementCreator preparedStatementCreator
+    public <T> T execute(
+            final PreparedStatementCreator preparedStatementCreator,
+            final PreparedStatementCaller<T> preparedStatementCaller
     ) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(conn)) {
-            preparedStatement.executeUpdate();
+            return preparedStatementCaller.execute(preparedStatement);
         } catch (final SQLException e) {
             throw new RuntimeException(e);
         }
