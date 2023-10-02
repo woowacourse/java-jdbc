@@ -45,17 +45,17 @@ public class JdbcTemplate {
         }
     }
 
+    private ResultSet executeQuery(final PreparedStatement preparedStatement, final Object[] parameters)
+            throws SQLException {
+        setParameters(preparedStatement, parameters);
+        return preparedStatement.executeQuery();
+    }
+
     private void setParameters(final PreparedStatement preparedStatement, final Object[] parameters)
             throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             preparedStatement.setObject(i + 1, parameters[i]);
         }
-    }
-
-    private ResultSet executeQuery(final PreparedStatement preparedStatement, final Object[] parameters)
-            throws SQLException {
-        setParameters(preparedStatement, parameters);
-        return preparedStatement.executeQuery();
     }
 
     private <T> List<T> mapResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
