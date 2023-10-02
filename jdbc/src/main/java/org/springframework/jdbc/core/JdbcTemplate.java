@@ -9,15 +9,15 @@ import java.util.Optional;
 
 public class JdbcTemplate {
 
-    private final QueryAgent queryAgent;
+    private final StatementAgent statementAgent;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.queryAgent = new QueryAgent(dataSource);
+        this.statementAgent = new StatementAgent(dataSource);
     }
 
     public int update(final String sql, final Object... args) {
-        QueryCallback<Integer> callback = PreparedStatement::executeUpdate;
-        return queryAgent.service(sql, callback, args);
+        StatementCallback<Integer> callback = PreparedStatement::executeUpdate;
+        return statementAgent.service(sql, callback, args);
     }
 
     public <T> Optional<T> selectForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -35,7 +35,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> selectAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        QueryCallback<List<T>> callback = preparedStatement -> {
+        StatementCallback<List<T>> callback = preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             final List<T> results = new ArrayList<>();
@@ -45,6 +45,6 @@ public class JdbcTemplate {
             return results;
         };
 
-        return queryAgent.service(sql, callback, args);
+        return statementAgent.service(sql, callback, args);
     }
 }
