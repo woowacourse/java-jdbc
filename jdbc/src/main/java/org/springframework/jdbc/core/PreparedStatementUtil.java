@@ -8,9 +8,8 @@ import java.sql.SQLException;
 public class PreparedStatementUtil {
 
     public static PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... conditions) {
-        try (
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
+        try {
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
             setConditions(preparedStatement, conditions);
             return preparedStatement;
         } catch (SQLException e) {
@@ -26,7 +25,7 @@ public class PreparedStatementUtil {
 
     public static ResultSet getResultSet(final PreparedStatement preparedStatement) {
         try {
-            return preparedStatement.getResultSet();
+            return preparedStatement.executeQuery();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

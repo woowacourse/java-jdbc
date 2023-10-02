@@ -30,11 +30,11 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... conditions) {
-        return Optional.of(getResult(preparedStatement -> getRowByQuery(preparedStatement, rowMapper), sql, conditions));
+        return Optional.ofNullable(getResult(preparedStatement -> getRowByQuery(preparedStatement, rowMapper), sql, conditions));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return singletonList(getResult(preparedStatement -> getRowByQuery(preparedStatement, rowMapper), sql, null));
+        return singletonList(getResult(preparedStatement -> getRowByQuery(preparedStatement, rowMapper), sql));
     }
 
     private <T> T getRowByQuery(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
