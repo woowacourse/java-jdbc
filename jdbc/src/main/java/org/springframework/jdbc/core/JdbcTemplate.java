@@ -29,9 +29,10 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+            setParams(pstmt, params);
+
             log.debug(LOG_FORMAT, sql);
 
-            setParams(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -50,33 +51,34 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParams(pstmt, params);
-            final ResultSet rs = pstmt.executeQuery();
-
             log.debug(LOG_FORMAT, sql);
 
-            final List<T> results = getResults(rowMapper, rs);
+            final List<T> results = getResults(rowMapper, pstmt);
 
-            if(results.size() > 1) {
+            if (results.size() > 1) {
                 throw new IllegalArgumentException("row 갯수가 1보다 많아요.");
             }
 
-            if(results.isEmpty()) {
+            if (results.isEmpty()) {
                 return null;
             }
 
             return results.get(FIRST_RESULT);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        final List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final PreparedStatement pstmt) {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-        return results;
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -84,11 +86,9 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, params);
 
-            final ResultSet rs = pstmt.executeQuery();
-
             log.debug(LOG_FORMAT, sql);
 
-            return getResults(rowMapper, rs);
+            return getResults(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
