@@ -39,9 +39,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, userRowMapper).stream()
-                .map(User.class::cast)
-                .collect(Collectors.toList());
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
