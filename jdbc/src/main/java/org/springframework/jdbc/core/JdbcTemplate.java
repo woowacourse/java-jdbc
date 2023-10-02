@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
@@ -48,7 +49,7 @@ public class JdbcTemplate {
 
             return executor.run(pstmt);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -65,7 +66,7 @@ public class JdbcTemplate {
 
             return mapMultipleResults(resultSet, rowMapper);
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new DataAccessException(e);
         }
     }
 
@@ -86,7 +87,7 @@ public class JdbcTemplate {
         try {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
