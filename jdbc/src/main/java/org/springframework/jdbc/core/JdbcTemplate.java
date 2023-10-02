@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import static java.util.Objects.requireNonNull;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,11 +11,11 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.exception.DataSourceNotFoundException;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final String DATA_SOURCE_NULL_EXCEPTION_MESSAGE = "dataSource가 null입니다.";
 
     private final DataSource dataSource;
 
@@ -23,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
+        try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
@@ -34,6 +35,9 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } catch (NullPointerException e) {
+            log.error(e.getMessage(), e);
+            throw new DataSourceNotFoundException(e.getMessage(), e);
         }
     }
 
@@ -47,7 +51,7 @@ public class JdbcTemplate {
     }
 
     public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
+        try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
@@ -60,12 +64,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } catch (NullPointerException e) {
+            log.error(e.getMessage(), e);
+            throw new DataSourceNotFoundException(e.getMessage(), e);
         }
         return null;
     }
 
     public void update(final String sql, final Object... params) {
-        try (final var connection = requireNonNull(dataSource, DATA_SOURCE_NULL_EXCEPTION_MESSAGE).getConnection();
+        try (final var connection = getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(params, preparedStatement);
             preparedStatement.executeUpdate();
@@ -73,7 +80,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } catch (NullPointerException e) {
+            log.error(e.getMessage(), e);
+            throw new DataSourceNotFoundException(e.getMessage(), e);
         }
+    }
+
+    private Connection getConnection() throws SQLException {
+        return requireNonNull(dataSource, "DataSource가 null입니다.").getConnection();
     }
 
     private void setParameters(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {
