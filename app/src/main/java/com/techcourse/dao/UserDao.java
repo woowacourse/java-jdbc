@@ -52,7 +52,7 @@ public class UserDao {
         sql,
         USER_ROW_MAPPER,
         id
-    );
+    ).orElseThrow(() -> new IllegalArgumentException("해당 값이 존재하지 않습니다."));
   }
 
   public User findByAccount(final String account) {
@@ -62,6 +62,6 @@ public class UserDao {
         sql,
         USER_ROW_MAPPER,
         account
-    );
+    ).orElseThrow(() -> new IllegalArgumentException("해당 값이 존재하지 않습니다."));
   }
 }
