@@ -1,5 +1,5 @@
 package org.springframework.jdbc;
 
-public class IncorrectRowSizeException extends RuntimeException{
+public class IncorrectRowSizeException extends RuntimeException {
 
 }
