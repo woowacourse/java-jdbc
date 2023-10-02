@@ -8,6 +8,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -54,7 +55,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -64,9 +65,9 @@ public class JdbcTemplate {
             }
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
+                return Optional.of(rowMapper.mapRow(rs, rs.getRow()));
             }
-            return null;
+            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

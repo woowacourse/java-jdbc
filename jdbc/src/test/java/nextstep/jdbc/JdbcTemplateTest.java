@@ -45,7 +45,7 @@ class JdbcTemplateTest {
 
         //when
         jdbcTemplate.update(updateSql, newAccount, 1L);
-        final User user = jdbcTemplate.queryForObject(querySql, USER_ROW_MAPPER, 1L);
+        final User user = jdbcTemplate.queryForObject(querySql, USER_ROW_MAPPER, 1L).get();
 
         //then
         assertThat(user.getAccount()).isEqualTo(newAccount);
@@ -59,7 +59,7 @@ class JdbcTemplateTest {
         final String sql = "select id, account, password, email from users where id = ?";
 
         //when
-        final User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, 2L);
+        final User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, 2L).get();
 
         //then
         assertThat(user.getAccount()).isEqualTo(account);
