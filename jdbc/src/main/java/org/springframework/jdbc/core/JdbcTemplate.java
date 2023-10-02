@@ -22,9 +22,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String query, final Object... columns) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setParameters(pstmt, columns);
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns)
+        ) {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
@@ -32,10 +33,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String query, final RowMapper<T> rowMapper) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(query)) {
-            final ResultSet rs = pstmt.executeQuery();
+    public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... columns) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
+                final ResultSet rs = pstmt.executeQuery()
+        ) {
             final List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.map(rs));
@@ -48,10 +51,11 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String query, final RowMapper<T> rowMapper, final Object... columns) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(query)) {
-            setParameters(pstmt, columns);
-            final ResultSet rs = pstmt.executeQuery();
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
+                final ResultSet rs = pstmt.executeQuery()
+        ) {
             if (rs.next()) {
                 return Optional.of(rowMapper.map(rs));
             }
@@ -60,6 +64,13 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement getPreparedstatement(final Connection conn, final String query, final Object[] columns)
+            throws SQLException {
+        final PreparedStatement preparedStatement = conn.prepareStatement(query);
+        setParameters(preparedStatement, columns);
+        return preparedStatement;
     }
 
     private void setParameters(final PreparedStatement pstmt, final Object[] columns) throws SQLException {
