@@ -1,16 +1,17 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.exception.EmptyResultException;
 
 class UserDaoTest {
 
@@ -24,7 +25,7 @@ class UserDaoTest {
     }
 
     @AfterEach
-    void tearDown() throws SQLException {
+    void tearDown() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
@@ -49,6 +50,13 @@ class UserDaoTest {
         User findUser = userDao.findById(1L);
 
         assertThat(findUser.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdFailWhenResultIsEmpty() {
+        assertThatThrownBy(() -> userDao.findById(-1L))
+                .isInstanceOf(EmptyResultException.class)
+                .hasMessage("일치하는 결과가 존재하지 않습니다.");
     }
 
     @Test
@@ -83,7 +91,7 @@ class UserDaoTest {
         findUser.changePassword(newPassword);
         userDao.update(findUser);
 
-        final var actual = userDao.findByAccount("gugu");
+        User actual = userDao.findByAccount("gugu");
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
