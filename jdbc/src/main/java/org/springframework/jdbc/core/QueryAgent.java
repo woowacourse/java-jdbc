@@ -27,7 +27,7 @@ public class QueryAgent {
 
         } catch (SQLException e) {
             log.error("query agent service failed.");
-            throw new RuntimeException(e);
+            throw new QueryAgentServiceFailedException(e);
         }
     }
 
