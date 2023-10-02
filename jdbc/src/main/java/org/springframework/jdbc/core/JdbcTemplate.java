@@ -51,19 +51,23 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
-            List<T> results = new ArrayList<>();
-
-            while (rs.next()) {
-                T result = rowMapper.mapRow(rs);
-
-                results.add(result);
-            }
-
-            return results;
+            return mapResultToList(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> mapResultToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> results = new ArrayList<>();
+
+        while (rs.next()) {
+            T result = rowMapper.mapRow(rs);
+
+            results.add(result);
+        }
+
+        return results;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -71,22 +75,26 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
-            if (rs.next()) {
-                T result = rowMapper.mapRow(rs);
-
-                validateMultipleResults(rs);
-
-                return result;
-            }
-
-            throw new DataAccessException("Incorrect Result Size ! Result is null");
+            return mapResultToObject(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void validateMultipleResults(ResultSet rs) throws SQLException {
+    private <T> T mapResultToObject(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            T result = rowMapper.mapRow(rs);
+
+            validateSingleResult(rs);
+
+            return result;
+        }
+
+        throw new DataAccessException("Incorrect Result Size ! Result is null");
+    }
+
+    private void validateSingleResult(ResultSet rs) throws SQLException {
         if (rs.next()) {
             throw new DataAccessException("Incorrect Result Size ! Result  must be one");
         }
