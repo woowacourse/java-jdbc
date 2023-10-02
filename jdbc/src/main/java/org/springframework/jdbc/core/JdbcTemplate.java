@@ -46,7 +46,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
              final ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
-            List<T> result = new ArrayList<>();
+            final List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
@@ -75,7 +75,7 @@ public class JdbcTemplate {
              final ResultSet rs = pstmt.executeQuery()) {
 
             log.debug("query : {}", sql);
-            List<T> result = new ArrayList<>();
+            final List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
