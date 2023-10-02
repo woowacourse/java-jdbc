@@ -11,10 +11,13 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.exception.InvalidDataSizeException;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int FIRST_INDEX_OF_RESULT = 0;
+    private static final int MIN_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -40,11 +43,7 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
-            final List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.map(rs));
-            }
-            return result;
+            return getResult(rowMapper, rs);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -57,10 +56,12 @@ public class JdbcTemplate {
                 final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
-            if (rs.next()) {
-                return Optional.of(rowMapper.map(rs));
+            final List<T> result = getResult(rowMapper, rs);
+            validateSize(result);
+            if (result.isEmpty()) {
+                return Optional.empty();
             }
-            return Optional.empty();
+            return Optional.of(result.get(FIRST_INDEX_OF_RESULT));
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -77,6 +78,20 @@ public class JdbcTemplate {
     private void setParameters(final PreparedStatement pstmt, final Object[] columns) throws SQLException {
         for (int i = 0; i < columns.length; i++) {
             pstmt.setObject(i + 1, columns[i]);
+        }
+    }
+
+    private <T> List<T> getResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.map(rs));
+        }
+        return result;
+    }
+
+    private <T> void validateSize(final List<T> result) {
+        if (result.size() > MIN_RESULT_SIZE) {
+            throw new InvalidDataSizeException("결과가 1건 이상 조회되었습니다.");
         }
     }
 }
