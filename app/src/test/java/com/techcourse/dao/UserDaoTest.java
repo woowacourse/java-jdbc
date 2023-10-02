@@ -1,13 +1,17 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
@@ -72,4 +76,37 @@ class UserDaoTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
+
+    @Test
+    @DisplayName("단일 조회시, 결과가 2개 이상이면 예외가 발생한다.")
+    void findByAccount_FailByMultipleResults() {
+        //given
+        User findUser = userDao.findByAccount("gugu");
+        assertThat(findUser).isNotNull();
+
+        User duplicateUser = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(duplicateUser);
+
+        //when then
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Incorrect Result Size ! Result  must be one");
+    }
+
+    @Test
+    @DisplayName("단일 조회시, 결과가 없을 경우 예외가 발생한다.")
+    void findById_FailByNotExistingResult(){
+        //given
+        List<User> users = userDao.findAll();
+
+        assertThat(users).extractingResultOf("getId")
+                .isNotEmpty()
+                .doesNotContain(99L);
+
+        //when then
+        assertThatThrownBy(() -> userDao.findById(99L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Incorrect Result Size ! Result is null");
+    }
+
 }
