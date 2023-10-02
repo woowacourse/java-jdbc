@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
@@ -37,31 +38,26 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, rs -> new User(
+        return jdbcTemplate.query(sql, getUserRowMapper());
+    }
+
+    private static RowMapper<User> getUserRowMapper() {
+        return rs -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
-                rs.getString(4)));
+                rs.getString(4));
     }
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), id);
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, rs -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        ), account);
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
     }
 }
