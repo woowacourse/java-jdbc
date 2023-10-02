@@ -33,20 +33,19 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(final String sql, final Class<?> clazz) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         ResultSet resultSet = null;
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
 
             resultSet = statement.executeQuery();
-            final List<Object> instances = new ArrayList<>();
+            final List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                final Object instance = instantiateFromResultSet(clazz, resultSet);
-                instances.add(instance);
+                results.add(rowMapper.map(resultSet));
             }
-            return instances;
+            return results;
 
         } catch (SQLException e) {
             log.error("SQL exception occurred!");
@@ -58,7 +57,7 @@ public class JdbcTemplate {
 
     // TODO: 프록시로 Connection, Statement 획득하는 로직 분리
 
-    public Optional<Object> queryForObject(final String sql, final Class<?> clazz, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         ResultSet resultSet = null;
 
         try (final Connection connection = dataSource.getConnection();
@@ -69,8 +68,7 @@ public class JdbcTemplate {
             resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
-                final Object instance = instantiateFromResultSet(clazz, resultSet);
-                return Optional.of(instance);
+                return Optional.of(rowMapper.map(resultSet));
             }
             return Optional.empty();
 
@@ -80,53 +78,6 @@ public class JdbcTemplate {
         } finally {
             closeResultSet(resultSet);
         }
-    }
-
-    private Object instantiateFromResultSet(final Class<?> clazz, final ResultSet resultSet) throws SQLException {
-        try {
-            final List<Object> columns = extractColumns(resultSet);
-
-            final Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-            final Constructor<?> compatibleConstructor = Arrays.stream(constructors)
-                    .filter(constructor -> isCompatible(constructor, columns))
-                    .findFirst()
-                    .orElseThrow();
-
-            return compatibleConstructor.newInstance(columns.toArray());
-
-        } catch (InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            log.error("Reflection exception occurred!");
-            throw new RuntimeException(e);
-        }
-    }
-
-    private List<Object> extractColumns(final ResultSet resultSet) throws SQLException {
-        final List<Object> columns = new ArrayList<>();
-
-        final ResultSetMetaData metaData = resultSet.getMetaData();
-        final int columnCount = metaData.getColumnCount();
-
-        for (int i = 0; i < columnCount; i++) {
-            final Object column = resultSet.getObject(i + 1);
-            columns.add(column);
-        }
-        return columns;
-    }
-
-    private boolean isCompatible(final Constructor<?> constructor, final List<Object> columns) {
-        final List<String> constructorTypeNames = Arrays.stream(constructor.getParameterTypes())
-                .map(Class::getSimpleName)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-
-        final List<String> columnTypeNames = columns.stream()
-                .map(Object::getClass)
-                .map(Class::getSimpleName)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-
-        return constructorTypeNames.equals(columnTypeNames);
     }
 
     private void closeResultSet(final ResultSet resultSet) {
