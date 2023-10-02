@@ -159,13 +159,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
     }
 
     @Override
-    public <T> List<T> queryForList(final String sql, final Class<T> elementType) throws DataAccessException {
-        final RowMapper<T> singleColumnRowMapper = getSingleColumnRowMapper(elementType);
-
-        return query(sql, new RowMapperResultSetExtractor<>(singleColumnRowMapper));
-    }
-
-    private <T> RowMapper<T> getSingleColumnRowMapper(final Class<T> elementType) {
-        return new SingleColumnRowMapper<>(elementType);
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
     }
 }

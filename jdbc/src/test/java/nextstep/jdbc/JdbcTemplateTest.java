@@ -35,6 +35,11 @@ class JdbcTemplateTest {
 
         public User() {
         }
+
+        public User(final String email, final String password) {
+            this.email = email;
+            this.password = password;
+        }
     }
 
     @BeforeEach
@@ -151,7 +156,16 @@ class JdbcTemplateTest {
             .thenReturn("password2");
 
         // when
-        final List<User> users = jdbcTemplate.queryForList(sql, User.class);
+        final List<User> users = jdbcTemplate.queryForList(sql, new RowMapper<>() {
+            @Nullable
+            @Override
+            public User mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
+                return new User(
+                    resultSet.getObject("email", String.class),
+                    resultSet.getObject("password", String.class)
+                );
+            }
+        });
 
         // then
         verify(connection, times(1)).createStatement();

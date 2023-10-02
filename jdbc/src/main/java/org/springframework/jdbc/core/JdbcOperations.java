@@ -22,5 +22,5 @@ public interface JdbcOperations {
 
     int update(final String sql, final Object... args) throws DataAccessException;
 
-    <T> List<T> queryForList(final String sql, final Class<T> elementType) throws DataAccessException;
+    <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) throws DataAccessException;
 }
