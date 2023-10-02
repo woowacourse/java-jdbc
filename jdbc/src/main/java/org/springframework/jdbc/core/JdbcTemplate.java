@@ -18,7 +18,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
@@ -35,7 +35,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final List<T> result = new ArrayList<>();
