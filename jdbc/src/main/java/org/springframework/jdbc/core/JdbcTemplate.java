@@ -21,21 +21,21 @@ public class JdbcTemplate {
     }
 
     public Long executeUpdate(final String sql, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql,
-                RETURN_GENERATED_KEYS)) {
+        try (
+            final Connection connection = dataSource.getConnection();
+            final PreparedStatement pst = createUpdatePreparedStatement(sql, connection, parameters)
+        ) {
             log.debug("query : {}", sql);
-            setPreparedStatement(pstmt, parameters);
-            pstmt.executeUpdate();
-            return extractId(pstmt);
+            pst.executeUpdate();
+            return extractId(pst);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private Long extractId(final PreparedStatement pstmt) throws SQLException {
-        try (final ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+    private Long extractId(final PreparedStatement pst) throws SQLException {
+        try (final ResultSet generatedKeys = pst.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 return generatedKeys.getLong(1);
             }
@@ -44,11 +44,11 @@ public class JdbcTemplate {
     }
 
     private void setPreparedStatement(
-        final PreparedStatement pstmt,
+        final PreparedStatement pst,
         final Object[] parameters
     ) throws SQLException {
         for (int index = 1; index <= parameters.length; index++) {
-            pstmt.setObject(index, parameters[index - 1]);
+            pst.setObject(index, parameters[index - 1]);
         }
     }
 
@@ -57,10 +57,11 @@ public class JdbcTemplate {
         final Mapper<T> mapper,
         final Object... objects
     ) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            setPreparedStatement(pstmt, objects);
-            final ResultSet rs = pstmt.executeQuery();
+        try (
+            final Connection connection = dataSource.getConnection();
+            final PreparedStatement pst = createQueryPreparedStatement(sql, connection, objects);
+            final ResultSet rs = pst.executeQuery();
+        ) {
             log.debug("query : {}", sql);
             if (rs.next()) {
                 return mapper.map(rs);
@@ -70,5 +71,25 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatement createQueryPreparedStatement(
+        final String sql,
+        final Connection connection,
+        final Object... objects
+    ) throws SQLException {
+        final PreparedStatement pst = connection.prepareStatement(sql);
+        setPreparedStatement(pst, objects);
+        return pst;
+    }
+
+    private PreparedStatement createUpdatePreparedStatement(
+        final String sql,
+        final Connection connection,
+        final Object... objects
+    ) throws SQLException {
+        final PreparedStatement pst = connection.prepareStatement(sql, RETURN_GENERATED_KEYS);
+        setPreparedStatement(pst, objects);
+        return pst;
     }
 }
