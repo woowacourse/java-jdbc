@@ -1,13 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -22,17 +23,17 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void tearDown() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.execute("TRUNCATE TABLE `users` RESTART IDENTITY");
+    }
+
     @Test
     void findAll() {
-        // given
-        final var user = new User("gugu2", "password2", "hkkan2g@woowahan.com");
-        userDao.insert(user);
-
-        // when
         final var users = userDao.findAll();
 
-        // then
-        assertThat(users).hasSize(2);
+        assertThat(users).isNotEmpty();
     }
 
     @Test

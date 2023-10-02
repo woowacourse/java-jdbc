@@ -48,13 +48,17 @@ public class UserDao {
         try {
             return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
         } catch (EmptyResultDataAccessException e) {
-            throw new UserNotExistException(id);
+            throw new UserNotExistException();
         }
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        try {
+            return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        } catch (EmptyResultDataAccessException e) {
+            throw new UserNotExistException();
+        }
     }
 }
