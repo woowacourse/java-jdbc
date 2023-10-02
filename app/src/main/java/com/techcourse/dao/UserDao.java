@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.techcourse.domain.User;
 import javax.sql.DataSource;
@@ -41,7 +42,7 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
         log.debug("query : {}", sql);
@@ -49,7 +50,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(USER_MAPPER, sql, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
         log.debug("query : {}", sql);
