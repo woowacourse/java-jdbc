@@ -23,15 +23,21 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            initializePstmtArgs(pstmt, args);
+                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args)) {
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private PreparedStatement getInitializedPstmt(String sql, Connection conn, Object... args) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+
+        initializePstmtArgs(pstmt, args);
+
+        return pstmt;
     }
 
     private void initializePstmtArgs(PreparedStatement pstmt, Object... args) throws SQLException {
@@ -42,7 +48,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getQueryPstmtForObject(sql, conn, args);
+                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
             List<T> results = new ArrayList<>();
@@ -62,15 +68,13 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getQueryPstmtForObject(sql, conn, args);
+                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
                 ResultSet rs = pstmt.executeQuery()) {
 
             if (rs.next()) {
                 T result = rowMapper.mapRow(rs);
 
-                if (rs.next()) {
-                    throw new DataAccessException("Incorrect Result Size ! Result  must be one");
-                }
+                validateMultipleResults(rs);
 
                 return result;
             }
@@ -82,12 +86,10 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getQueryPstmtForObject(String sql, Connection conn, Object... args) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-
-        initializePstmtArgs(pstmt, args);
-
-        return pstmt;
+    private void validateMultipleResults(ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            throw new DataAccessException("Incorrect Result Size ! Result  must be one");
+        }
     }
 
 }
