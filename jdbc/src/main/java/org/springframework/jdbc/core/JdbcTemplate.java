@@ -30,12 +30,10 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return executePreparedStatement(sql, preparedStatement -> {
             final ResultSet rs = preparedStatement.executeQuery();
-            Optional<T> object = Optional.empty();
             if (rs.next()) {
-                object = Optional.of(rowMapper.execute(rs));
+                return Optional.of(rowMapper.execute(rs));
             }
-            rs.close();
-            return object;
+            return Optional.empty();
         }, objects);
     }
 
@@ -46,9 +44,8 @@ public class JdbcTemplate {
             while (rs.next()) {
                 results.add(rowMapper.execute(rs));
             }
-            rs.close();
             return results;
-        },objects);
+        }, objects);
     }
 
     private <T> T executePreparedStatement(final String sql, PreparedStatementExecutor<T> preparedStatementExecutor,
