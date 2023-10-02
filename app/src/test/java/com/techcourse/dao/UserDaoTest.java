@@ -5,8 +5,11 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -17,7 +20,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final var user = new User("hongsil", "486", "gurwns9325@gmail.com");
         userDao.insert(user);
     }
 
@@ -32,15 +35,31 @@ class UserDaoTest {
     void findById() {
         final var user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.getAccount()).isEqualTo("hongsil");
+    }
+
+    @Test
+    void findById_make_exception_when_no_result() {
+        assertThatThrownBy(() -> userDao.findById(100000000L))
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
+        final var account = "mylove_hongsil";
+        userDao.insert(new User(account, "비밀번호486", "love@with.you"));
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccount_make_exception_when_multiple_result() {
+        final var user = new User("ditoo", "password", "ditoo@gmail.com");
+        userDao.insert(user);
+        userDao.insert(user);
+        assertThatThrownBy(() -> userDao.findByAccount(user.getAccount()))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
