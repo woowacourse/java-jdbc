@@ -28,8 +28,8 @@ public class JdbcTemplate {
             statement.executeUpdate();
 
         } catch (SQLException e) {
-            log.error("SQL exception occurred!");
-            throw new RuntimeException(e);
+            log.error("update failed.");
+            throw new UpdateFailedException(e);
         }
     }
 
@@ -45,8 +45,8 @@ public class JdbcTemplate {
             }
             return results;
         } catch (SQLException e) {
-            log.error("SQL exception occurred!");
-            throw new RuntimeException(e);
+            log.error("select failed.");
+            throw new SelectFailedException(e);
         }
     }
 
@@ -62,8 +62,8 @@ public class JdbcTemplate {
             }
             return Optional.empty();
         } catch (SQLException e) {
-            log.error("SQL exception occurred!");
-            throw new RuntimeException(e);
+            log.error("select failed.");
+            throw new SelectFailedException(e);
         }
     }
 
