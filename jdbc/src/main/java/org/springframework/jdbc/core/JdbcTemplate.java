@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -20,8 +20,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, Object... obj) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             for (int i = 0; i < obj.length; i++) {
@@ -47,12 +47,16 @@ public class JdbcTemplate {
         }
         if (parameter instanceof Double) {
             pstmt.setDouble(parameterIndex, (Double) parameter);
+            return;
+        }
+        if (parameter instanceof LocalDateTime) {
+            pstmt.setTimestamp(parameterIndex, Timestamp.valueOf((LocalDateTime) parameter));
         }
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             for (int i = 0; i < obj.length; i++) {
@@ -62,11 +66,30 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return rowMapper.mapRow(rs, rs.getRow());
             }
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-        return null;
-        // TODO: 2023/10/02 이거 완성하고 테스ㅌ 코드 짜기
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            for (int i = 0; i < obj.length; i++) {
+                setSQLParameter(obj[i], i + 1, pstmt);
+            }
+            ResultSet rs = pstmt.executeQuery();
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
