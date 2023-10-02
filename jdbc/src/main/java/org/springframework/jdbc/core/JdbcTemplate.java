@@ -23,33 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParamsToPreparedStatement(pstmt, args);
-
-            final ResultSet resultSet = pstmt.executeQuery();
-            final List<T> results = new ArrayList<>();
-            if (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
-            }
-
-            return results;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setParamsToPreparedStatement(final PreparedStatement pstmt, final Object[] args)
-        throws SQLException
-    {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
 
@@ -61,6 +34,37 @@ public class JdbcTemplate {
         }
 
         return results.get(0);
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParamsToPreparedStatement(pstmt, args);
+
+            final ResultSet resultSet = pstmt.executeQuery();
+
+            return mapMultipleResults(resultSet, rowMapper);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setParamsToPreparedStatement(final PreparedStatement pstmt, final Object[] args)
+        throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> List<T> mapMultipleResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+        }
+
+        return results;
     }
 
     public int update(final String sql, final Object... args) {
