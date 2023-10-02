@@ -26,8 +26,8 @@ public class StatementAgent {
             return statementCallback.call(statement);
 
         } catch (SQLException e) {
-            log.error("query agent service failed.");
-            throw new QueryAgentServiceFailedException(e);
+            log.error("statement agent service failed.");
+            throw new StatementAgentServiceFailedException(e);
         }
     }
 
