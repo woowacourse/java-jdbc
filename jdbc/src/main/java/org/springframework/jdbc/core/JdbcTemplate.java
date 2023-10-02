@@ -1,72 +1,50 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
-import java.sql.*;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
+    private final QueryAgent queryAgent;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.queryAgent = new QueryAgent(dataSource);
     }
 
-    public void update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+    public int update(final String sql, final Object... args) {
+        QueryCallback<Integer> callback = PreparedStatement::executeUpdate;
+        return queryAgent.service(sql, callback, args);
+    }
 
-            setParameters(statement, args);
-            statement.executeUpdate();
+    public <T> Optional<T> selectForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = selectAll(sql, rowMapper, args);
+        validateHasUniqueResult(results);
 
-        } catch (SQLException e) {
-            log.error("update failed.");
-            throw new UpdateFailedException(e);
+        return results.stream()
+                .findAny();
+    }
+
+    private <T> void validateHasUniqueResult(List<T> results) {
+        if (results.size() != 1) {
+            throw new ResultNotUniqueException();
         }
     }
 
     public <T> List<T> selectAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
-            final ResultSet resultSet = statement.executeQuery();
+        QueryCallback<List<T>> callback = preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.map(resultSet));
             }
             return results;
-        } catch (SQLException e) {
-            log.error("select failed.");
-            throw new SelectFailedException(e);
-        }
-    }
+        };
 
-    // TODO: 프록시로 Connection, Statement 획득하는 로직 분리
-    public <T> Optional<T> selectForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
-            final ResultSet resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.map(resultSet));
-            }
-            return Optional.empty();
-        } catch (SQLException e) {
-            log.error("select failed.");
-            throw new SelectFailedException(e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
-        }
+        return queryAgent.service(sql, callback, args);
     }
 }
