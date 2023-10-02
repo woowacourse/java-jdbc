@@ -38,3 +38,12 @@
 - [x] jdbc 모듈 내에 접근제어자 수정
 - [x] 콜백 메서드 예외 처리 수정 
   - 콜백 메서드에서는 SQLException이 발생하지 않는다!
+
+### 2차
+- [ ] TransactionCallback의 Connection 제거
+- [ ] 여러 검증에 대해서는 assertAll 또는 SoftAssertions 활용
+- [ ] TransactionTemplate 테스트 코드 작성
+- [ ] 공유자원 Singleton vs static
+- [ ] JdbcTemplate 테스트 작성
+- [ ] JdbcTemplate의 executeQuery 중복 제거
+- [ ] TransactionTemplate catch 절 final
