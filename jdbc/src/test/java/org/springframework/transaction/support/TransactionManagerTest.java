@@ -53,7 +53,7 @@ class TransactionManagerTest {
     }
 
     @Test
-    void rollback_호출해도_트랜잭션은_유지() {
+    void rollback_호출하면_트랜잭션_종료() {
         // given
         TransactionManager.begin();
         TransactionManager.getConnection(dataSource);
@@ -63,11 +63,11 @@ class TransactionManagerTest {
 
         // then
         assertThat(TransactionManager.isTransactionEnable())
-            .isTrue();
+            .isFalse();
     }
 
     @Test
-    void commit_호출해도_트랜잭션은_유지() {
+    void commit_호출하면_트랜잭션_종료() {
         // given
         TransactionManager.begin();
         TransactionManager.getConnection(dataSource);
@@ -77,7 +77,7 @@ class TransactionManagerTest {
 
         // then
         assertThat(TransactionManager.isTransactionEnable())
-            .isTrue();
+            .isFalse();
     }
 
     @Test

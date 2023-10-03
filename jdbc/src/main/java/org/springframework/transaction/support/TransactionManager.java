@@ -30,8 +30,12 @@ public class TransactionManager {
         if (connection != null) {
             return connection;
         }
+        return initializeConnection(dataSource);
+    }
+
+    private static Connection initializeConnection(DataSource dataSource) {
         try {
-            connection = dataSource.getConnection();
+            Connection connection = dataSource.getConnection();
             if (isTransactionEnable()) {
                 connection.setAutoCommit(false);
             }
@@ -50,11 +54,16 @@ public class TransactionManager {
         validateTransactionEnable();
         Connection connection = connections.get();
         validateConnection(connection);
+        commit(connection);
+    }
+
+    private static void commit(Connection connection) {
         try {
             connection.commit();
         } catch (SQLException ignored) {
             // ignored
         }
+        transactionEnables.remove();
     }
 
     private static void validateTransactionEnable() {
@@ -74,22 +83,33 @@ public class TransactionManager {
         validateTransactionEnable();
         Connection connection = connections.get();
         validateConnection(connection);
+        rollback(connection);
+    }
+
+    private static void rollback(Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException ignored) {
             // ignored
         }
+        transactionEnables.remove();
     }
 
     public static void releaseConnection() {
         Connection connection = connections.get();
         validateConnection(connection);
+        if (isTransactionEnable()) {
+            rollback(connection);
+        }
+        close(connection);
+    }
+
+    private static void close(Connection connection) {
         try {
             connection.close();
         } catch (SQLException ignored) {
             // ignored
         }
         connections.remove();
-        transactionEnables.remove();
     }
 }
