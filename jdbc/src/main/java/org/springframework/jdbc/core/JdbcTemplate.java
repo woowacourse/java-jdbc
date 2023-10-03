@@ -1,8 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,13 +9,9 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
     private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
         preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
