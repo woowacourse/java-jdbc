@@ -48,9 +48,9 @@ public class TransactionTemplate {
         }
     }
 
-    private void rollback(final Connection conn) {
+    private void rollback(final Connection connection) {
         try {
-            conn.rollback();
+            connection.rollback();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
