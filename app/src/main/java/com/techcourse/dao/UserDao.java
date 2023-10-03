@@ -1,8 +1,10 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.exception.UserFoundException;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -41,14 +43,20 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        try {
+            return jdbcTemplate.queryForObject(sql, rowMapper(), id);
+        } catch (DataAccessException e) {
+            throw new UserFoundException("유저가 없거나 2명 이상 입니다.", e);
+        }
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper(), account)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        try {
+            return jdbcTemplate.queryForObject(sql, rowMapper(), account);
+        } catch (DataAccessException e) {
+            throw new UserFoundException("유저가 없거나 2명 이상 입니다.", e);
+        }
     }
 
     public RowMapper<User> rowMapper() {
