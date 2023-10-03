@@ -11,7 +11,7 @@ public class SqlExceptionConverter {
 
     public static SqlRuntimeException convert(final SQLException sqlException) {
         final SqlExceptionType sqlExceptionType = SqlExceptionType.findByException(sqlException);
-        final SqlRuntimeExceptionProvider exceptionProvider = sqlExceptionType.getExecution();
+        final SqlRuntimeExceptionProvider exceptionProvider = sqlExceptionType.getExceptionProvider();
         return exceptionProvider.provide(sqlException);
     }
 }

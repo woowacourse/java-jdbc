@@ -20,11 +20,11 @@ public enum SqlExceptionType {
     UNHANDLABLE(0, SqlRuntimeException::new);
 
     private final int code;
-    private final SqlRuntimeExceptionProvider execution;
+    private final SqlRuntimeExceptionProvider exceptionProvider;
 
-    SqlExceptionType(final int code, final SqlRuntimeExceptionProvider execution) {
+    SqlExceptionType(final int code, final SqlRuntimeExceptionProvider exceptionProvider) {
         this.code = code;
-        this.execution = execution;
+        this.exceptionProvider = exceptionProvider;
     }
 
     public static SqlExceptionType findByException(final SQLException exception) {
@@ -34,7 +34,7 @@ public enum SqlExceptionType {
             .orElse(UNHANDLABLE);
     }
 
-    public SqlRuntimeExceptionProvider getExecution() {
-        return execution;
+    public SqlRuntimeExceptionProvider getExceptionProvider() {
+        return exceptionProvider;
     }
 }
