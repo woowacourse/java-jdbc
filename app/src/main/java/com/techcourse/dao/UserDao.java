@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper rowMapper =
+    private static final RowMapper<User> rowMapper =
             resultSet -> new User(
                     resultSet.getLong("id"),
                     resultSet.getString("account"),
@@ -49,17 +49,17 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, rowMapper, User.class);
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, User.class, id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, User.class, account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 
 }
