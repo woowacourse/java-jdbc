@@ -24,11 +24,11 @@ public class JdbcTemplate {
         return queryTemplate.query(sql, (resultSet -> mapResultToList(resultSet, rowMapper)), args);
     }
 
-    private <T> List<T> mapResultToList(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> mapResultToList(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
 
-        while (rs.next()) {
-            T result = rowMapper.mapRow(rs);
+        while (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet);
 
             results.add(result);
         }
@@ -40,11 +40,11 @@ public class JdbcTemplate {
         return queryTemplate.query(sql, resultSet -> mapResultToObject(resultSet, rowMapper), args);
     }
 
-    private <T> T mapResultToObject(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        if (rs.next()) {
-            T result = rowMapper.mapRow(rs);
+    private <T> T mapResultToObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        if (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet);
 
-            validateSingleResult(rs);
+            validateSingleResult(resultSet);
 
             return result;
         }
@@ -52,8 +52,8 @@ public class JdbcTemplate {
         throw new DataAccessException("Incorrect Result Size ! Result is null");
     }
 
-    private void validateSingleResult(ResultSet rs) throws SQLException {
-        if (rs.next()) {
+    private void validateSingleResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
             throw new DataAccessException("Incorrect Result Size ! Result  must be one");
         }
     }

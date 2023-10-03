@@ -6,6 +6,6 @@ import java.sql.SQLException;
 @FunctionalInterface
 public interface UpdateExecutor<T> {
 
-    T execute(PreparedStatement pstmt) throws SQLException;
+    T execute(PreparedStatement preparedStatement) throws SQLException;
 
 }

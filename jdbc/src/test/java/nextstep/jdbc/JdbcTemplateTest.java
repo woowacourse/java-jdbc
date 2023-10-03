@@ -37,11 +37,15 @@ class JdbcTemplateTest {
     @Test
     @DisplayName("try문에서 메서드 호출을 통해 변수를 초기화 해도 객체를 사용 후 반환한다.")
     void tryWithResourcesTest() throws SQLException {
+        //given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
         when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        //when
         jdbcTemplate.update("Test Sql");
 
+        //then
         verify(preparedStatement, times(1)).close();
         verify(connection, times(1)).close();
     }

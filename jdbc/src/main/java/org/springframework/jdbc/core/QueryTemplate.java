@@ -20,34 +20,36 @@ public class QueryTemplate {
     }
 
     public <T> T update(String sql, UpdateExecutor<T> executor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args)) {
-            return executor.execute(pstmt);
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = getInitializedPreparedStatement(sql, connection, args)) {
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement getInitializedPstmt(String sql, Connection conn, Object... args) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
+    private PreparedStatement getInitializedPreparedStatement(String sql, Connection connection, Object... args)
+            throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
-        initializePstmtArgs(pstmt, args);
+        initializePreparedStatementArguments(preparedStatement, args);
 
-        return pstmt;
+        return preparedStatement;
     }
 
-    private void initializePstmtArgs(PreparedStatement pstmt, Object... args) throws SQLException {
+    private void initializePreparedStatementArguments(PreparedStatement preparedStatement, Object... args)
+            throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 
     public <T> T query(String sql, SelectExecutor<T> executor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
-                ResultSet rs = pstmt.executeQuery()) {
-            return executor.execute(rs);
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = getInitializedPreparedStatement(sql, connection, args);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            return executor.execute(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
