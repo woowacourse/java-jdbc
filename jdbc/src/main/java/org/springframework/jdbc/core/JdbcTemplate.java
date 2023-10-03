@@ -30,6 +30,24 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, statement -> getResults(rowMapper, statement), params);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        final List<T> results = execute(sql, statement -> getResults(rowMapper, statement), params);
+
+        if (results.size() > 1) {
+            throw new DataAccessException("row 갯수가 1보다 많아요.");
+        }
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(FIRST_RESULT);
+    }
+
     private <T> T execute(final String sql,
                           final StatementExecutor<T> statementExecutor,
                           final Object... params
@@ -44,36 +62,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(final PreparedStatement pstmt, final Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParams(pstmt, params);
-            log.debug(LOG_FORMAT, sql);
-
-            final List<T> results = getResults(rowMapper, pstmt);
-
-            if (results.size() > 1) {
-                throw new SQLException("row 갯수가 1보다 많아요.");
-            }
-
-            if (results.isEmpty()) {
-                return null;
-            }
-
-            return results.get(FIRST_RESULT);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     private <T> List<T> getResults(final RowMapper<T> rowMapper, final PreparedStatement pstmt) {
         try (final ResultSet rs = pstmt.executeQuery()) {
             final List<T> results = new ArrayList<>();
@@ -81,20 +69,6 @@ public class JdbcTemplate {
                 results.add(rowMapper.mapRow(rs));
             }
             return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, params);
-
-            log.debug(LOG_FORMAT, sql);
-
-            return getResults(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
