@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,15 +27,17 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
+        execute(sql, PreparedStatement::executeUpdate, params);
+    }
 
+    private <T> T execute(final String sql,
+                          final StatementExecutor<T> statementExecutor,
+                          final Object... params
+    ) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParams(pstmt, params);
-
+             final PreparedStatement pstmt = PreparedStatementGenerator.generate(conn, sql, params)) {
             log.debug(LOG_FORMAT, sql);
-
-            pstmt.executeUpdate();
+            return statementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
