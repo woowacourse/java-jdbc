@@ -26,8 +26,6 @@ class JdbcTemplateTest {
     private DataSource dataSource;
     @Mock
     private PreparedStatement preparedStatement;
-    @Mock
-    private ResultSet rs;
     @InjectMocks
     private JdbcTemplate jdbcTemplate;
 
@@ -41,12 +39,10 @@ class JdbcTemplateTest {
     void tryWithResourcesTest() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(false);
-        jdbcTemplate.query("Test Sql", null);
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+        jdbcTemplate.update("Test Sql");
 
         verify(preparedStatement, times(1)).close();
         verify(connection, times(1)).close();
-        verify(rs, times(1)).close();
     }
 }
