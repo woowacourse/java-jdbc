@@ -3,16 +3,18 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserDaoTest {
 
     private UserDao userDao;
 
-    @BeforeEach
+    @BeforeAll
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
