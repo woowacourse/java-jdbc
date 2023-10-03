@@ -24,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... elements) {
-        execute(sql, PreparedStatement::execute, elements);
+        execute(sql, PreparedStatement::executeUpdate, elements);
     }
 
     private <T> T execute(
