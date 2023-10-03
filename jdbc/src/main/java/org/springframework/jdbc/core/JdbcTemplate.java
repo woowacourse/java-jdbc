@@ -17,48 +17,52 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... values) {
         preparedStatementExecutor.execute(
-                conn -> {
-                    final PreparedStatement psmt = conn.prepareStatement(sql);
-                    setValues(psmt, values);
-                    return psmt;
-                },
+                getPreparedStatementGenerator(sql, values),
                 PreparedStatement::executeUpdate
         );
     }
 
     public <T> T queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
         return preparedStatementExecutor.execute(
-                conn -> {
-                    final PreparedStatement psmt = conn.prepareStatement(sql);
-                    setValues(psmt, values);
-                    return psmt;
-                },
-                psmt -> {
-                    final ResultSet rs = psmt.executeQuery();
-                    if (rs.next()) {
-                        return mapper.map(rs);
-                    }
-                    return null;
-                }
+                getPreparedStatementGenerator(sql, values),
+                getPreparedStatementCaller(mapper)
         );
     }
 
     public <T> List<T> query(final String sql, final Mapper<T> rowMapper, final Object... values) {
         return preparedStatementExecutor.execute(
-                conn -> {
-                    final PreparedStatement psmt = conn.prepareStatement(sql);
-                    setValues(psmt, values);
-                    return psmt;
-                },
-                psmt -> {
-                    final ResultSet rs = psmt.executeQuery();
-                    final List<T> result = new ArrayList<>();
-                    while (rs.next()) {
-                        result.add(rowMapper.map(rs));
-                    }
-                    return result;
-                }
+                getPreparedStatementGenerator(sql, values),
+                getMultiplePreparedStatementCaller(rowMapper)
         );
+    }
+
+    private <T> PreparedStatementCaller<T> getPreparedStatementCaller(final Mapper<T> mapper) {
+        return psmt -> {
+            final ResultSet rs = psmt.executeQuery();
+            if (rs.next()) {
+                return mapper.map(rs);
+            }
+            return null;
+        };
+    }
+
+    private <T> PreparedStatementCaller<List<T>> getMultiplePreparedStatementCaller(final Mapper<T> rowMapper) {
+        return psmt -> {
+            final ResultSet rs = psmt.executeQuery();
+            final List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.map(rs));
+            }
+            return result;
+        };
+    }
+
+    private PreparedStatementGenerator getPreparedStatementGenerator(final String sql, final Object[] values) {
+        return conn -> {
+            final PreparedStatement psmt = conn.prepareStatement(sql);
+            setValues(psmt, values);
+            return psmt;
+        };
     }
 
     private void setValues(final PreparedStatement psmt, final Object[] values) throws SQLException {
