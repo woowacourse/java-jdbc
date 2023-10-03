@@ -16,64 +16,39 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final ConnectionTemplate connectionTemplate;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.connectionTemplate = new ConnectionTemplate(dataSource);
     }
 
     public <T> List<T> query(final String sql,
                              final RowMapper<T> rowMapper,
-                             final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
+                             final Object... arguments) {
+        return connectionTemplate.query(sql, preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> list = new ArrayList<>();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
             return list;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, arguments);
     }
 
     public <T> Optional<T> querySingleRow(final String sql,
                                           final RowMapper<T> rowMapper,
-                                          final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-            log.debug("query : {}", sql);
+                                          final Object... arguments) {
+        return connectionTemplate.query(sql, preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
             return Optional.empty();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, arguments);
     }
 
     public void update(final String sql,
-                       final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = initializePreparedStatement(connection, sql, objects)) {
-            preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private PreparedStatement initializePreparedStatement(final Connection connection,
-                                                          final String sql,
-                                                          final Object[] objects) throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
-        }
-        return preparedStatement;
+                       final Object... arguments) {
+        connectionTemplate.query(sql, PreparedStatement::executeUpdate, arguments);
     }
 }
