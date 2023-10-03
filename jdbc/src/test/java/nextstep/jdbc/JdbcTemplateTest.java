@@ -12,12 +12,17 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.support.TransactionManager;
 
+@DisplayNameGeneration(ReplaceUnderscores.class)
+@SuppressWarnings("NonAsciiCharacters")
 class JdbcTemplateTest {
 
     private static final RowMapper<Member> MEMBER_MAPPER = rs -> {
@@ -211,6 +216,30 @@ class JdbcTemplateTest {
         // then
         assertThat(actual).usingRecursiveComparison()
             .isEqualTo(expect);
+    }
+
+    @Test
+    void 트랜잭션을_시작하지_않으면_커넥션을_종료한다() {
+        // given
+        String sql = "select id, name from member";
+        jdbcTemplate.query(sql, MEMBER_MAPPER);
+
+        // when & then
+        assertThat(TransactionManager.isConnectionEnable())
+            .isFalse();
+    }
+
+    @Test
+    void 트랜잭션을_시작하면_커넥션을_유지한다() {
+        // given
+        TransactionManager.begin();
+        String sql = "select id, name from member";
+        jdbcTemplate.query(sql, MEMBER_MAPPER);
+
+        // when & then
+        assertThat(TransactionManager.isConnectionEnable())
+            .isTrue();
+        TransactionManager.releaseConnection();
     }
 
     static class Member {
