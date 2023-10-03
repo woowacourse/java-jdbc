@@ -55,14 +55,14 @@ class JdbcTemplateTest {
     @DisplayName("execute로 쓰는 쿼리를 실행할 수 있다.")
     void execute() {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final Long id = 1L;
 
-        final Long id = jdbcTemplate.executeUpdate(
+        jdbcTemplate.executeUpdate(
             sql,
             USER_FIXTURE.getAccount(), USER_FIXTURE.getPassword(), USER_FIXTURE.getEmail()
         );
 
         final User actual = userDao.findById(id);
-
         assertAll(
             () -> assertThat(id)
                 .isEqualTo(actual.getId()),
