@@ -147,13 +147,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
     private void setPreparedStatementObjects(final Object[] args, final PreparedStatement preparedStatement)
         throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof Long) {
-                preparedStatement.setLong(i + 1, (Long) args[i]);
-                continue;
-            } else if (args[i] instanceof String) {
-                preparedStatement.setString(i + 1, (String) args[i]);
-                continue;
-            }
             preparedStatement.setObject(i + 1, args[i]);
         }
     }
