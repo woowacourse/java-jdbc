@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -90,7 +90,7 @@ class JdbcTemplateTest {
 
         // when
         final Map<String, String> result = jdbcTemplate.query(sql, new RowMapper<>() {
-            @Nullable
+            @Nonnull
             @Override
             public Map<String, String> mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
                 return Map.of(
@@ -156,7 +156,7 @@ class JdbcTemplateTest {
 
         // when
         final List<User> users = jdbcTemplate.queryForList(sql, new RowMapper<>() {
-            @Nullable
+            @Nonnull
             @Override
             public User mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
                 return new User(
