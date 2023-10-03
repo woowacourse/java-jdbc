@@ -29,14 +29,14 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
     }
 
     @Override
-    public <T> T execute(final StatementCallback<T> callback) throws DataAccessException {
-        log.info("execute: {}", callback.getSql());
+    public <T> T execute(final String sql, final StatementCallback<T> callback) throws DataAccessException {
+        log.info("execute: {}", sql);
         final var connection = getConnection();
 
         try {
             final var preparedStatement = connection.createStatement();
 
-            return callback.doInStatement(preparedStatement);
+            return callback.doInStatement(sql, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -68,18 +68,13 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         class ExecuteStatementCallback implements StatementCallback<Object> {
 
             @Override
-            public Object doInStatement(final Statement statement) throws SQLException {
+            public Object doInStatement(final String sql, final Statement statement) throws SQLException {
                 statement.execute(sql);
                 return null;
             }
-
-            @Override
-            public String getSql() {
-                return sql;
-            }
         }
 
-        execute(new ExecuteStatementCallback());
+        execute(sql, new ExecuteStatementCallback());
     }
 
     @Override
@@ -108,19 +103,14 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         class QueryStatementCallback implements StatementCallback<T> {
 
             @Override
-            public T doInStatement(final Statement statement) throws SQLException {
+            public T doInStatement(final String sql, final Statement statement) throws SQLException {
                 final ResultSet resultSet = statement.executeQuery(sql);
 
                 return extractor.extractData(resultSet);
             }
-
-            @Override
-            public String getSql() {
-                return sql;
-            }
         }
 
-        return execute(new QueryStatementCallback());
+        return execute(sql, new QueryStatementCallback());
     }
 
     @Override

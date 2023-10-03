@@ -25,7 +25,6 @@ import org.springframework.jdbc.core.RowMapper;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
-    private DataSource dataSource;
     private Connection connection;
 
     static class User {
@@ -44,7 +43,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
+        final DataSource dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.createStatement()).thenReturn(mock(Statement.class));
