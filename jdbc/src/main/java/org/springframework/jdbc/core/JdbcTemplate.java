@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -45,6 +47,16 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> List<T> query(final String sql, final Mapper<T> rowMapper, final Object... values) {
+        return queryForObject(sql, rs -> {
+            final List<T> results = new ArrayList<>();
+            do {
+                results.add(rowMapper.map(rs));
+            } while (rs.next());
+            return results;
+        }, values);
     }
 
     private void setValues(final PreparedStatement psmt, final Object[] values) throws SQLException {

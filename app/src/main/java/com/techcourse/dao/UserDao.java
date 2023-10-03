@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.Mapper;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -41,13 +40,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForObject(sql, rs -> {
-            final List<User> users = new ArrayList<>();
-            do {
-                users.add(USER_MAPPER.map(rs));
-            } while (rs.next());
-            return users;
-        });
+        return jdbcTemplate.query(sql, USER_MAPPER);
     }
 
     public User findById(final Long id) {
