@@ -4,20 +4,18 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import javax.sql.DataSource;
-import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionManager;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final TransactionManager transactionManager;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, DataSource dataSource) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
@@ -29,20 +27,11 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
-            try {
-                connection.setAutoCommit(false);
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(user, connection);
-                userHistoryDao.log(new UserHistory(user, createBy), connection);
-                connection.commit();
-            } catch (Exception e) {
-                connection.rollback();
-                throw new DataAccessException();
-            }
-        } catch (Exception e) {
-            throw new DataAccessException(e);
-        }
+        transactionManager.execute((con) -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user, con);
+            userHistoryDao.log(new UserHistory(user, createBy), con);
+        });
     }
 }
