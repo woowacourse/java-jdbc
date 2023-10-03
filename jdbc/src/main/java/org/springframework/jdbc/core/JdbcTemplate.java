@@ -42,11 +42,13 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
-            }
-            throw new NoSuchElementException();
+            return executePreparedStatement(ps -> {
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
+                }
+                throw new NoSuchElementException();
+            }, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
@@ -58,12 +60,14 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
-            List<T> results = new ArrayList<>();
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                results.add(rowMapper.getRow(rs, rs.getRow()));
-            }
-            return results;
+            return executePreparedStatement(ps -> {
+                ResultSet rs = pstmt.executeQuery();
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.getRow(rs, rs.getRow()));
+                }
+                return results;
+            }, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
@@ -85,5 +89,13 @@ public class JdbcTemplate {
                 }
             }
         };
+    }
+
+    private <T> T executePreparedStatement(PreparedStatementExecutor psExecutor, PreparedStatement pstmt) {
+        try {
+            return (T) psExecutor.execute(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
