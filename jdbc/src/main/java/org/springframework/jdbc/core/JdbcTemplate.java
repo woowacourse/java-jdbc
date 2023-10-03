@@ -27,7 +27,8 @@ public class JdbcTemplate {
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.warn("쿼리 실행 도중에 오류가 발생하였습니다.", e);
+            log.warn("쿼리 실행 도중에 오류가 발생하였습니다. {} ====> SQL = {} {} ====> Args = {}",
+                    System.lineSeparator(), sql, System.lineSeparator(), args, e);
             throw new RuntimeException(e);
         }
     }
@@ -52,7 +53,8 @@ public class JdbcTemplate {
 
             return null;
         } catch (SQLException e) {
-            log.warn("조회하던 도중에 오류가 발생하였습니다.", e);
+            log.warn("쿼리 실행 도중에 오류가 발생하였습니다. {} ====> SQL = {} {} ====> Args = {}",
+                    System.lineSeparator(), sql, System.lineSeparator(), args, e);
             throw new RuntimeException(e);
         }
     }
@@ -62,14 +64,15 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql);
              final ResultSet rs = pstmt.executeQuery();) {
 
-            final List<T> data = new ArrayList<>();
+            final List<T> queriedT = new ArrayList<>();
             while (rs.next()) {
-                data.add(rowMapper.toObject(rs));
+                queriedT.add(rowMapper.toObject(rs));
             }
 
-            return data;
+            return queriedT;
         } catch (SQLException e) {
-            log.warn("조회하던 도중에 오류가 발생하였습니다.", e);
+            log.warn("조회하던 도중에 오류가 발생하였습니다. {} ====> SQL = {}",
+                    System.lineSeparator(), sql, e);
             throw new RuntimeException(e);
         }
     }
