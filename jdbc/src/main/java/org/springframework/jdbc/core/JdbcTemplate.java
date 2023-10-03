@@ -1,6 +1,6 @@
 package org.springframework.jdbc.core;
 
-import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,28 +20,31 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(String sql, Object... params) {
+    private <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) {
         try (var con = dataSource.getConnection();
-             var ps = con.prepareStatement(sql)) {
-            log.debug("Executing SQL statement [{}]", sql);
-            setParams(ps, params);
-            ps.execute();
+             var ps = psc.createPreparedStatement(con)) {
+            return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (var con = dataSource.getConnection();
-             var ps = con.prepareStatement(sql)) {
-            log.debug("Executing SQL statement [{}]", sql);
-            setParams(ps, params);
-            return result(ps, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public void execute(String sql, Object... args) {
+        execute(new SimplePreparedStatementCreator(sql), ps -> {
+            var pss = newArgPreparedStatementSetter(args);
+            pss.setValues(ps);
+            return ps.execute();
+        });
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(new SimplePreparedStatementCreator(sql), ps -> {
+            var pss = newArgPreparedStatementSetter(args);
+            pss.setValues(ps);
+            var rs = ps.executeQuery();
+            return result(rs, rowMapper);
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -49,14 +52,7 @@ public class JdbcTemplate {
         return getSingleResult(results);
     }
 
-    private void setParams(PreparedStatement ps, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            ps.setObject(i + 1, params[i]);
-        }
-    }
-
-    private <T> List<T> result(PreparedStatement ps, RowMapper<T> rowMapper) throws SQLException {
-        var rs = ps.executeQuery();
+    private <T> List<T> result(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> result = new ArrayList<>();
         while (rs.next()) {
             result.add(rowMapper.mapRow(rs));
@@ -72,5 +68,9 @@ public class JdbcTemplate {
             throw new DataAccessException("not 1 size, size is " + results.size());
         }
         return results.iterator().next();
+    }
+
+    private PreparedStatementSetter newArgPreparedStatementSetter(Object[] args) {
+        return new ArgumentPreparedStatementSetter(args);
     }
 }
