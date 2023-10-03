@@ -36,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static void setObjects(Object[] args, PreparedStatement preparedStatement) throws SQLException {
+    private void setObjects(Object[] args, PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
@@ -55,7 +55,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> getResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
+    private <T> List<T> getResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
         List<T> results = new ArrayList<>();
         ResultSet rs = preparedStatement.executeQuery();
         while (rs.next()) {
