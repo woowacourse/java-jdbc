@@ -28,20 +28,6 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
     private Connection connection;
 
-    static class User {
-
-        private String email;
-        private String password;
-
-        public User() {
-        }
-
-        public User(final String email, final String password) {
-            this.email = email;
-            this.password = password;
-        }
-    }
-
     @BeforeEach
     void setUp() throws SQLException {
         final DataSource dataSource = mock(DataSource.class);
@@ -69,9 +55,9 @@ class JdbcTemplateTest {
         // then
         assertAll(
             () -> verify(connection, times(1)).prepareStatement(sql),
-            () -> verify(preparedStatement, times(1)).setString(1, "vero"),
-            () -> verify(preparedStatement, times(1)).setString(2, "password"),
-            () -> verify(preparedStatement, times(1)).setString(3, "email"),
+            () -> verify(preparedStatement, times(1)).setObject(1, "vero"),
+            () -> verify(preparedStatement, times(1)).setObject(2, "password"),
+            () -> verify(preparedStatement, times(1)).setObject(3, "email"),
             () -> verify(preparedStatement, times(1)).executeUpdate()
         );
     }
@@ -107,7 +93,7 @@ class JdbcTemplateTest {
         // then
         assertAll(
             () -> verify(connection, times(1)).prepareStatement(sql),
-            () -> verify(preparedStatement, times(1)).setLong(1, 1L),
+            () -> verify(preparedStatement, times(1)).setObject(1, 1L),
             () -> verify(preparedStatement, times(1)).executeQuery(),
             () -> verify(mockResultSet, times(1)).getString("account"),
             () -> verify(mockResultSet, times(1)).getString("password"),
@@ -186,5 +172,19 @@ class JdbcTemplateTest {
             () -> assertThat(users.get(1).email).isEqualTo("email2"),
             () -> assertThat(users.get(1).password).isEqualTo("password2")
         );
+    }
+
+    static class User {
+
+        private String email;
+        private String password;
+
+        public User() {
+        }
+
+        public User(final String email, final String password) {
+            this.email = email;
+            this.password = password;
+        }
     }
 }
