@@ -72,8 +72,20 @@ public class JdbcTemplate {
     }
 
     private void setArguments(PreparedStatement pstmt, Object[] arguments) throws SQLException {
-        for (int i = 1; i < arguments.length + 1; i++) {
-            pstmt.setObject(i, arguments[i - 1]);
-        }
+        PreparedStatementSetter psSetter = getPreparedStatementSetter(arguments);
+        psSetter.setValues(pstmt);
+    }
+
+    private PreparedStatementSetter getPreparedStatementSetter(Object[] arguments) {
+        PreparedStatementSetter psSetter = ps -> {
+            for (int i = 1; i < arguments.length + 1; i++) {
+                try {
+                    ps.setObject(i, arguments[i - 1]);
+                } catch (SQLException e) {
+                    throw new DataAccessException(e.getMessage());
+                }
+            }
+        };
+        return psSetter;
     }
 }
