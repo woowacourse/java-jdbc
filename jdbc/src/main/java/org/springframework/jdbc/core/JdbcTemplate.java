@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -36,14 +37,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rowMapper.getRow(rs, rs.getRow());
+                    return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
                 }
             }
             throw new NoSuchElementException();
@@ -77,10 +78,10 @@ public class JdbcTemplate {
     }
 
     private PreparedStatementSetter getPreparedStatementSetter(Object[] arguments) {
-        return ps -> {
+        return pstmt -> {
             for (int i = 1; i < arguments.length + 1; i++) {
                 try {
-                    ps.setObject(i, arguments[i - 1]);
+                    pstmt.setObject(i, arguments[i - 1]);
                 } catch (SQLException e) {
                     throw new DataAccessException(e.getMessage());
                 }
