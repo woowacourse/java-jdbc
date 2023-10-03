@@ -1,93 +1,61 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
+    private final QueryTemplate queryTemplate;
 
     public JdbcTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.queryTemplate = new QueryTemplate(dataSource);
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            initializePstmtArgs(pstmt, args);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        queryTemplate.update(sql, PreparedStatement::executeUpdate, args);
     }
 
-    private void initializePstmtArgs(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryTemplate.query(sql, (resultSet -> mapResultToList(resultSet, rowMapper)), args);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+    private <T> List<T> mapResultToList(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
 
-            List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet);
 
-            while (rs.next()) {
-                T result = rowMapper.mapRow(rs);
-
-                results.add(result);
-            }
-
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            results.add(result);
         }
+
+        return results;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getQueryPstmtForObject(sql, conn, args);
-                ResultSet rs = pstmt.executeQuery()) {
-
-            if (rs.next()) {
-                T result = rowMapper.mapRow(rs);
-
-                if (rs.next()) {
-                    throw new IllegalArgumentException("Incorrect Result Size ! Result  must be one");
-                }
-
-                return result;
-            }
-
-            throw new NoSuchElementException("Incorrect Result Size ! Result is null");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return queryTemplate.query(sql, resultSet -> mapResultToObject(resultSet, rowMapper), args);
     }
 
-    private PreparedStatement getQueryPstmtForObject(String sql, Connection conn, Object... args) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
+    private <T> T mapResultToObject(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        if (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet);
 
-        initializePstmtArgs(pstmt, args);
+            validateSingleResult(resultSet);
 
-        return pstmt;
+            return result;
+        }
+
+        throw new DataAccessException("Incorrect Result Size ! Result is null");
+    }
+
+    private void validateSingleResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            throw new DataAccessException("Incorrect Result Size ! Result  must be one");
+        }
     }
 
 }
