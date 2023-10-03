@@ -21,11 +21,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(new PreparedStatementCallback<T>() {
             @Override
             public T doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
-                ResultSet rs;
+                final ResultSet rs;
 
                 setPrepareStatement(pstmt, args);
                 rs = pstmt.executeQuery();
@@ -44,16 +44,16 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         return execute(new PreparedStatementCallback<ArrayList<T>>() {
             @Override
             public ArrayList<T> doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
-                ResultSet rs;
+                final ResultSet rs;
 
                 rs = pstmt.executeQuery();
 
                 log.debug("query : {}", sql);
-                ArrayList<T> objects = new ArrayList<>();
+                final ArrayList<T> objects = new ArrayList<>();
                 while (rs.next()) {
                     objects.add(rowMapper.mapRow(rs));
                 }
@@ -67,7 +67,7 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(String sql, Object... args) {
+    public int update(final String sql, final Object... args) {
         return execute(new PreparedStatementCallback<Integer>() {
             @Override
             public Integer doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
@@ -93,19 +93,15 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    private  <T> T execute(PreparedStatementCallback callback) {
+    private  <T> T execute(final PreparedStatementCallback callback) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
         ) {
             return (T) callback.doPreparedStatement(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new DataAccessException();
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

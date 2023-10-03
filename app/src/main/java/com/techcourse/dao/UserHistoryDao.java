@@ -1,13 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class UserHistoryDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -16,7 +12,7 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(
                 sql,
                 userHistory.getUserId(),
