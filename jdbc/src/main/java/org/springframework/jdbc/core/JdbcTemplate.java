@@ -1,18 +1,25 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final PrepareStatementGenerator PREPARED_STATEMENT_GENERATOR = (connection, sql) -> {
+        try {
+            return connection.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    };
 
     private final DataSource dataSource;
 
@@ -21,8 +28,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement preparedStatement = PREPARED_STATEMENT_GENERATOR.create(dataSource.getConnection(), sql)) {
             setPreparedStatement(preparedStatement, args);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -31,8 +37,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement preparedStatement = PREPARED_STATEMENT_GENERATOR.create(dataSource.getConnection(), sql)) {
             setPreparedStatement(preparedStatement, args);
             List<T> results = extractData(rowMapper, preparedStatement);
 
@@ -43,8 +48,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement preparedStatement = PREPARED_STATEMENT_GENERATOR.create(dataSource.getConnection(), sql)) {
 
             return extractData(rowMapper, preparedStatement);
         } catch (SQLException e) {
@@ -58,9 +62,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> extractData(final RowMapper<T> rowMapper,
-                                    final PreparedStatement preparedStatement) throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery();) {
+    private <T> List<T> extractData(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             List<T> results = new ArrayList<>();
             int rowNum = 0;
             while (resultSet.next()) {

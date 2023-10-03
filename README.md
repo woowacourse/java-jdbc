@@ -7,6 +7,6 @@
     - [x] 데이터 여러개 조회 메소드
   - [x] 데이터를 수정하는 메소드 구현
 ## 리팩토링
-- [ ] PrepareStatementGenerator 생성하기
+- [x] PrepareStatementGenerator 생성하기
 - [ ] PrepareStatementSetter 만들기
 - [ ] resultSet을 다루는 객체 만들기
