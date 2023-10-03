@@ -36,8 +36,8 @@ public class ConnectionTemplate {
     }
 
     public void update(final String sql,
-                        final UpdateQueryExecutor updateQueryExecutor,
-                        final Object... parameters) {
+                       final UpdateQueryExecutor updateQueryExecutor,
+                       final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setQueryParameter(preparedStatement, parameters);
