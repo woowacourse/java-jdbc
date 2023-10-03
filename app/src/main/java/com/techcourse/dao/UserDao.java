@@ -1,28 +1,20 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final Function<ResultSet, User> rowMapper =
-            resultSet -> {
-                try {
-                    return new User(
-                            resultSet.getLong("id"),
-                            resultSet.getString("account"),
-                            resultSet.getString("password"),
-                            resultSet.getString("email")
-                    );
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            };
+    private static final RowMapper rowMapper =
+            resultSet -> new User(
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email")
+            );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -57,17 +49,17 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, rowMapper);
+        return jdbcTemplate.queryForList(sql, rowMapper, User.class);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, User.class, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, User.class, account);
     }
 
 }

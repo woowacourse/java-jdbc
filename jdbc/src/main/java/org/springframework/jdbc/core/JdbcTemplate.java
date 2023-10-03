@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,28 +43,32 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(
             String sql, 
-            Function<ResultSet, T> rowMapper, 
+            RowMapper rowMapper,
+            Class<T> clazz,
             Object... parameters
     ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersInPreparedStatement(preparedStatement, parameters);
-            return getQueryResults(rowMapper, preparedStatement);
+            return getQueryResults(clazz, rowMapper, preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
     private <T> List<T> getQueryResults(
-            Function<ResultSet, T> rowMapper,
+            Class<T> clazz,
+            RowMapper rowMapper,
             PreparedStatement preparedStatement
     ) throws SQLException {
         List<T> queryResults = new ArrayList<>();
         ResultSet resultSet = preparedStatement.executeQuery();
 
         while (resultSet.next()) {
-            queryResults.add(rowMapper.apply(resultSet));
+            queryResults.add(
+                    clazz.cast(rowMapper.mapRow(resultSet))
+            );
         }
 
         return queryResults;
@@ -73,21 +76,23 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(
             String sql,
-            Function<ResultSet, T> rowMapper,
+            RowMapper rowMapper,
+            Class<T> clazz,
             Object... parameters
     ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersInPreparedStatement(preparedStatement, parameters);
-            return getQueryResult(rowMapper, preparedStatement);
+            return getQueryResult(clazz, rowMapper, preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
     private <T> T getQueryResult(
-            Function<ResultSet, T> rowMapper,
+            Class<T> clazz,
+            RowMapper rowMapper,
             PreparedStatement preparedStatement
     ) throws SQLException {
         ResultSet resultSet = preparedStatement.executeQuery();
@@ -96,7 +101,7 @@ public class JdbcTemplate {
 
         while (resultSet.next()) {
             rowCount++;
-            queryResult = rowMapper.apply(resultSet);
+            queryResult = clazz.cast(rowMapper.mapRow(resultSet));
         }
 
         validateResultSetSize(rowCount);
