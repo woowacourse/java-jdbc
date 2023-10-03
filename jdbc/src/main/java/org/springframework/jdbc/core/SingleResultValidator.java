@@ -1,6 +1,6 @@
 package org.springframework.jdbc.core;
 
-import org.springframework.jdbc.NotSingleResultException;
+import org.springframework.jdbc.exception.NotSingleResultException;
 
 import java.util.List;
 
