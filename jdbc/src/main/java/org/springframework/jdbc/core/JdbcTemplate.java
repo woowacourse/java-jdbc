@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.exception.DataNotFoundException;
 
 public class JdbcTemplate {
 
@@ -66,7 +67,7 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return mapper.map(rs);
             }
-            return null;
+            throw new DataNotFoundException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
