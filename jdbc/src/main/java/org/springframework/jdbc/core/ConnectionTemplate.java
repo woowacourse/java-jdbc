@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class ConnectionTemplate {
@@ -19,19 +20,35 @@ public class ConnectionTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(final String sql,
-                       final PreparedStatementExecutor<T> preparedStatementExecutor,
-                       final Object... parameters) {
+    public <T> T readResult(final String sql,
+                            final SelectQueryExecutor<T> selectQueryExecutor,
+                            final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setQueryParameter(preparedStatement, parameters);
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
-            return preparedStatementExecutor.execute(preparedStatement);
+            return selectQueryExecutor.execute(resultSet);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
+
+    public void update(final String sql,
+                        final UpdateQueryExecutor updateQueryExecutor,
+                        final Object... parameters) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setQueryParameter(preparedStatement, parameters);
+
+            updateQueryExecutor.execute(preparedStatement);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private void setQueryParameter(final PreparedStatement preparedStatement,
                                    final Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
