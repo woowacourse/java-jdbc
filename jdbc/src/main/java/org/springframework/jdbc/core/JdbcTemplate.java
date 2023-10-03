@@ -77,7 +77,7 @@ public class JdbcTemplate {
     }
 
     private PreparedStatementSetter getPreparedStatementSetter(Object[] arguments) {
-        PreparedStatementSetter psSetter = ps -> {
+        return ps -> {
             for (int i = 1; i < arguments.length + 1; i++) {
                 try {
                     ps.setObject(i, arguments[i - 1]);
@@ -86,6 +86,5 @@ public class JdbcTemplate {
                 }
             }
         };
-        return psSetter;
     }
 }
