@@ -1,0 +1,95 @@
+package org.springframework.transaction.support;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
+
+public class TransactionManager {
+
+    private static final ThreadLocal<Connection> connections = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> transactionEnables = new ThreadLocal<>();
+
+    private TransactionManager() {
+    }
+
+    public static void begin() {
+        transactionEnables.set(Boolean.TRUE);
+    }
+
+    public static boolean isTransactionEnable() {
+        Boolean isTransaction = transactionEnables.get();
+        if (isTransaction == null) {
+            return false;
+        }
+        return isTransaction;
+    }
+
+    public static Connection getConnection(DataSource dataSource) {
+        Connection connection = connections.get();
+        if (connection != null) {
+            return connection;
+        }
+        try {
+            connection = dataSource.getConnection();
+            if (isTransactionEnable()) {
+                connection.setAutoCommit(false);
+            }
+            connections.set(connection);
+            return connection;
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public static boolean isConnectionEnable() {
+        return connections.get() != null;
+    }
+
+    public static void commit() {
+        validateTransactionEnable();
+        Connection connection = connections.get();
+        validateConnection(connection);
+        try {
+            connection.commit();
+        } catch (SQLException ignored) {
+            // ignored
+        }
+    }
+
+    private static void validateTransactionEnable() {
+        if (!isTransactionEnable()) {
+            throw new IllegalStateException("Transaction is not enabled!");
+        }
+    }
+
+    private static void validateConnection(Connection connection) {
+        // IntelliJ 에서 Condition 'connection == null' is always 'false' 발생하는데, 버그 같음.
+        if (connection == null) {
+            throw new IllegalStateException("Connection is not enabled!");
+        }
+    }
+
+    public static void rollback() {
+        validateTransactionEnable();
+        Connection connection = connections.get();
+        validateConnection(connection);
+        try {
+            connection.rollback();
+        } catch (SQLException ignored) {
+            // ignored
+        }
+    }
+
+    public static void releaseConnection() {
+        Connection connection = connections.get();
+        validateConnection(connection);
+        try {
+            connection.close();
+        } catch (SQLException ignored) {
+            // ignored
+        }
+        connections.remove();
+        transactionEnables.remove();
+    }
+}
