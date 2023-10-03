@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -66,11 +67,13 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "vero", "password", "email");
 
         // then
-        verify(connection, times(1)).prepareStatement(sql);
-        verify(preparedStatement, times(1)).setString(1, "vero");
-        verify(preparedStatement, times(1)).setString(2, "password");
-        verify(preparedStatement, times(1)).setString(3, "email");
-        verify(preparedStatement, times(1)).executeUpdate();
+        assertAll(
+            () -> verify(connection, times(1)).prepareStatement(sql),
+            () -> verify(preparedStatement, times(1)).setString(1, "vero"),
+            () -> verify(preparedStatement, times(1)).setString(2, "password"),
+            () -> verify(preparedStatement, times(1)).setString(3, "email"),
+            () -> verify(preparedStatement, times(1)).executeUpdate()
+        );
     }
 
     @DisplayName("RowMapper 를 입력 받아 query 를 수행한다.")
@@ -102,15 +105,17 @@ class JdbcTemplateTest {
         }, 1L);
 
         // then
-        verify(connection, times(1)).prepareStatement(sql);
-        verify(preparedStatement, times(1)).setLong(1, 1L);
-        verify(preparedStatement, times(1)).executeQuery();
-        verify(mockResultSet, times(1)).getString("account");
-        verify(mockResultSet, times(1)).getString("password");
-        verify(mockResultSet, times(1)).getString("email");
-        assertThat(result).containsEntry("account", "vero");
-        assertThat(result).containsEntry("email", "email");
-        assertThat(result).containsEntry("password", "password");
+        assertAll(
+            () -> verify(connection, times(1)).prepareStatement(sql),
+            () -> verify(preparedStatement, times(1)).setLong(1, 1L),
+            () -> verify(preparedStatement, times(1)).executeQuery(),
+            () -> verify(mockResultSet, times(1)).getString("account"),
+            () -> verify(mockResultSet, times(1)).getString("password"),
+            () -> verify(mockResultSet, times(1)).getString("email"),
+            () -> assertThat(result).containsEntry("account", "vero"),
+            () -> assertThat(result).containsEntry("email", "email"),
+            () -> assertThat(result).containsEntry("password", "password")
+        );
     }
 
     @DisplayName("sql 을 입력받아 execute 를 수행한다.")
@@ -128,8 +133,10 @@ class JdbcTemplateTest {
         jdbcTemplate.execute(sql);
 
         // then
-        verify(connection, times(1)).createStatement();
-        verify(mockStatement, times(1)).execute(sql);
+        assertAll(
+            () -> verify(connection, times(1)).createStatement(),
+            () -> verify(mockStatement, times(1)).execute(sql)
+        );
     }
 
     @DisplayName("Class 타입을 입력 받아 쿼리 후, List 를 반환한다.")
@@ -167,15 +174,17 @@ class JdbcTemplateTest {
         });
 
         // then
-        verify(connection, times(1)).createStatement();
-        verify(mockStatement, times(1)).executeQuery(sql);
-        verify(mockResultSet, times(3)).next();
-        verify(mockResultSet, times(2)).getObject("email", String.class);
-        verify(mockResultSet, times(2)).getObject("password", String.class);
-        assertThat(users).hasSize(2);
-        assertThat(users.get(0).email).isEqualTo("email1");
-        assertThat(users.get(0).password).isEqualTo("password1");
-        assertThat(users.get(1).email).isEqualTo("email2");
-        assertThat(users.get(1).password).isEqualTo("password2");
+        assertAll(
+            () -> verify(connection, times(1)).createStatement(),
+            () -> verify(mockStatement, times(1)).executeQuery(sql),
+            () -> verify(mockResultSet, times(3)).next(),
+            () -> verify(mockResultSet, times(2)).getObject("email", String.class),
+            () -> verify(mockResultSet, times(2)).getObject("password", String.class),
+            () -> assertThat(users).hasSize(2),
+            () -> assertThat(users.get(0).email).isEqualTo("email1"),
+            () -> assertThat(users.get(0).password).isEqualTo("password1"),
+            () -> assertThat(users.get(1).email).isEqualTo("email2"),
+            () -> assertThat(users.get(1).password).isEqualTo("password2")
+        );
     }
 }
