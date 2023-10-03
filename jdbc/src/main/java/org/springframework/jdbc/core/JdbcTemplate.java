@@ -16,21 +16,22 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
     public void update(final String sql, final Object... values) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement psmt = conn.prepareStatement(sql)) {
-            setValues(psmt, values);
-            psmt.execute();
-            log.info("query : {}", sql);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        preparedStatementExecutor.execute(
+                conn -> {
+                    final PreparedStatement psmt = conn.prepareStatement(sql);
+                    setValues(psmt, values);
+                    return psmt;
+                },
+                PreparedStatement::executeUpdate
+        );
     }
 
     public <T> T queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
