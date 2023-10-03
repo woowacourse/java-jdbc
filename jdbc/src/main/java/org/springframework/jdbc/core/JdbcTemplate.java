@@ -42,10 +42,9 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
-                }
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
             }
             throw new NoSuchElementException();
         } catch (SQLException e) {
@@ -60,12 +59,11 @@ public class JdbcTemplate {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.getRow(rs, rs.getRow()));
-                }
-                return results;
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                results.add(rowMapper.getRow(rs, rs.getRow()));
             }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
