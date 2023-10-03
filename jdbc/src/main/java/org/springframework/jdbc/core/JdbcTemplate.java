@@ -64,12 +64,12 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = conn.prepareStatement(sql);
              final ResultSet rs = pstmt.executeQuery();) {
 
-            final List<T> queriedT = new ArrayList<>();
+            final List<T> queriedData = new ArrayList<>();
             while (rs.next()) {
-                queriedT.add(rowMapper.toObject(rs));
+                queriedData.add(rowMapper.toObject(rs));
             }
 
-            return queriedT;
+            return queriedData;
         } catch (SQLException e) {
             log.warn("조회하던 도중에 오류가 발생하였습니다. {} ====> SQL = {}",
                     System.lineSeparator(), sql, e);
