@@ -56,7 +56,6 @@ public class JdbcTemplate {
         }
     }
 
-
     private <T> List<T> getQueryResult(
             final RowMapper<T> rowMapper,
             final PreparedStatement preparedStatement

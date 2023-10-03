@@ -44,6 +44,6 @@
 - [x] 여러 검증에 대해서는 assertAll 또는 SoftAssertions 활용
 - [x] TransactionTemplate 테스트 코드 작성
 - [ ] 공유자원 Singleton vs static
-- [ ] JdbcTemplate 테스트 작성
+- [x] JdbcTemplate 테스트 작성
 - [ ] JdbcTemplate의 executeQuery 중복 제거
 - [x] TransactionTemplate catch 절 final
