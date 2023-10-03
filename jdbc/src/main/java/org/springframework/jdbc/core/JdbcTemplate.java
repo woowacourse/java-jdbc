@@ -22,41 +22,54 @@ public class JdbcTemplate {
         return getSingleResult(result);
     }
 
-    private <T> T getSingleResult(final List<T> result) {
-        if (result.isEmpty()) {
-            throw new DataAccessException("데이터를 찾을 수 없습니다.");
-        }
-        if (result.size() > 1) {
-            throw new DataAccessException("결과값이 두 개 이상입니다.");
-        }
-        return result.get(0);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
+        return execute(
+                conn -> conn.prepareStatement(sql),
+                pstmt -> {
+                    setValues(pstmt, args);
+                    return getResults(rowMapper, pstmt.executeQuery());
+                }
+        );
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            final List<T> result = new ArrayList<>();
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-                return result;
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
+    private void setValues(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> result = new ArrayList<>();
+        if (rs.next()) {
+            result.add(rowMapper.mapRow(rs));
+        }
+        return result;
+    }
+
+    private <T> T getSingleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터를 찾을 수 없습니다.");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("결과값이 두 개 이상입니다.");
+        }
+        return results.get(0);
     }
 
     public void update(final String sql, final Object... args) {
+        execute(
+                conn -> conn.prepareStatement(sql),
+                pstmt -> {
+                    setValues(pstmt, args);
+                    return pstmt.executeUpdate();
+                }
+        );
+    }
+
+    private <T> T execute(final PreparedStatementCreator psc, PreparedStatementCallBack<T> action) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            pstmt.executeUpdate();
+             final PreparedStatement pstmt = psc.createPreparedStatement(conn)) {
+            return action.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
