@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,7 +22,7 @@ public class ResultSetMappingTemplate {
             return null;
         } catch (SQLException e) {
             log.warn("조회된 값을 객체에 매핑하던 도중에 오류가 발생하였습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -35,7 +36,7 @@ public class ResultSetMappingTemplate {
             return queriedData;
         } catch (SQLException e) {
             log.warn("조회된 값을 객체에 매핑하던 도중에 오류가 발생하였습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }

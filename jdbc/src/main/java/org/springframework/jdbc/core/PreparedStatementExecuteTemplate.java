@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -23,10 +24,10 @@ public class PreparedStatementExecuteTemplate {
              final PreparedStatement pstmt = prepareMappedStatement(conn, sql, args);) {
 
             return callBack.callback(pstmt);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.warn("쿼리 실행 도중에 오류가 발생하였습니다. {} ====> SQL = {} {} ====> Args = {}",
                     System.lineSeparator(), sql, System.lineSeparator(), args, e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
