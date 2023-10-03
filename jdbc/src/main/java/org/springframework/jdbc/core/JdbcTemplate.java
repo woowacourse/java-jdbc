@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -20,126 +21,87 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(new PreparedStatementCallback<T>() {
+            @Override
+            public T doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
+                final ResultSet rs;
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
+                setPrepareStatement(pstmt, args);
+                rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+                log.debug("query : {}", sql);
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
                 }
-            } catch (SQLException ignored) {
+                return null;
             }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+            @Override
+            public String getSql() {
+                return sql;
             }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(new PreparedStatementCallback<ArrayList<T>>() {
+            @Override
+            public ArrayList<T> doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
+                final ResultSet rs;
 
-            rs = pstmt.executeQuery();
+                rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
-            ArrayList<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs));
-            }
-            return objects;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
+                log.debug("query : {}", sql);
+                final ArrayList<T> objects = new ArrayList<>();
+                while (rs.next()) {
+                    objects.add(rowMapper.mapRow(rs));
                 }
-            } catch (SQLException ignored) {
+                return objects;
             }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+            @Override
+            public String getSql() {
+                return sql;
             }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        });
     }
 
-    public int update(String sql, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    public int update(final String sql, final Object... args) {
+        return execute(new PreparedStatementCallback<Integer>() {
+            @Override
+            public Integer doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
+                log.debug("query : {}", sql);
 
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+                setPrepareStatement(pstmt, args);
 
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
+                return pstmt.executeUpdate();
             }
 
-            return pstmt.executeUpdate();
+            @Override
+            public String getSql() {
+                return sql;
+            }
+        });
+    }
+
+    private PreparedStatement setPrepareStatement(final PreparedStatement pstmt, final Object... args)
+            throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+        return pstmt;
+    }
+
+    private  <T> T execute(final PreparedStatementCallback callback) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
+        ) {
+            return (T) callback.doPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            e.printStackTrace();
+            throw new DataAccessException();
         }
     }
 }
