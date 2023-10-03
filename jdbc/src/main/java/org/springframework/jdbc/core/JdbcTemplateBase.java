@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.error.SqlExceptionConverter;
 
 public class JdbcTemplateBase {
 
@@ -18,9 +19,9 @@ public class JdbcTemplateBase {
         this.dataSource = dataSource;
     }
 
-    protected void executionBaseWithNonReturn(final String sql,
-                                              final JdbcTemplateVoidExecution execution,
-                                              final boolean enableTransaction) {
+    public void executionBaseWithNonReturn(final String sql,
+                                           final JdbcTemplateVoidExecution execution,
+                                           final boolean enableTransaction) {
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -31,13 +32,13 @@ public class JdbcTemplateBase {
                 connection.commit();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw SqlExceptionConverter.convert(e);
         }
     }
 
-    protected <T> T executionBaseWithReturn(final String sql,
-                                            final JdbcTemplateExecutor<T> execution,
-                                            final boolean enableTransaction) {
+    public <T> T executionBaseWithReturn(final String sql,
+                                         final JdbcTemplateExecutor<T> execution,
+                                         final boolean enableTransaction) {
 
         try (final Connection connection = dataSource.getConnection();
             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -49,8 +50,11 @@ public class JdbcTemplateBase {
             }
             return result;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SqlExceptionConverter.convert(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

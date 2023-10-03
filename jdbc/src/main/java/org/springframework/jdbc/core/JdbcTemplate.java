@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.util.List;
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.mapper.ResultSetObjectMapper;
 
 public class JdbcTemplate extends JdbcTemplateExecutionBase {
 
