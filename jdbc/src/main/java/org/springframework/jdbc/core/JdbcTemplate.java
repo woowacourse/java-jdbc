@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -24,32 +25,15 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = getConnection();
-            preparedStatement = getPreparedStatement(connection, sql, args);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DatabaseResourceException("Timeout or PreparedStatement is already closed", e);
-        } finally {
-            closeResources(connection, preparedStatement, resultSet);
-        }
+        template(this::executeUpdate, sql, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = getConnection();
-            preparedStatement = getPreparedStatement(connection, sql, args);
-            resultSet = getResultSet(preparedStatement);
+        Function<PreparedStatement, List<T>> query = preparedStatement -> {
+            ResultSet resultSet = executeQuery(preparedStatement);
             return getObjects(resultSet, rowMapper);
-        } finally {
-            closeResources(connection, preparedStatement, resultSet);
-        }
+        };
+        return template(query, sql, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -63,27 +47,16 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private Connection getConnection() {
+    private int executeUpdate(PreparedStatement preparedStatement) {
         try {
-            return dataSource.getConnection();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new DatabaseResourceException("Connection cannot be acquired.", e);
+            throw new DatabaseResourceException(
+                    "Database access error.", e);
         }
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, Object... args) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            for (int idx = 1; idx <= args.length; idx++) {
-                preparedStatement.setObject(idx, args[idx - 1]);
-            }
-            return preparedStatement;
-        } catch (SQLException e) {
-            throw new DatabaseResourceException("PreparedStatement cannot be acquired.", e);
-        }
-    }
-
-    private ResultSet getResultSet(PreparedStatement preparedStatement) {
+    private ResultSet executeQuery(PreparedStatement preparedStatement) {
         try {
             return preparedStatement.executeQuery();
         } catch (SQLException e) {
@@ -105,28 +78,33 @@ public class JdbcTemplate {
         return results;
     }
 
-    private void closeResources(Connection connection,
-                                PreparedStatement preparedStatement,
-                                ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException ignored) {
+    private <T> T template(Function<PreparedStatement, T> function, String sql, Object... args) {
+        try (
+                Connection connection = getConnection();
+                PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
+            return function.apply(preparedStatement);
+        } catch (SQLException e) {
+            throw new IllegalArgumentException();
         }
+    }
 
+    private Connection getConnection() {
         try {
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-        } catch (SQLException ignored) {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DatabaseResourceException("Connection cannot be acquired.", e);
         }
+    }
 
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, Object... args) {
         try {
-            if (connection != null) {
-                connection.close();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            for (int idx = 1; idx <= args.length; idx++) {
+                preparedStatement.setObject(idx, args[idx - 1]);
             }
-        } catch (SQLException ignored) {
+            return preparedStatement;
+        } catch (SQLException e) {
+            throw new DatabaseResourceException("PreparedStatement cannot be acquired.", e);
         }
     }
 }
