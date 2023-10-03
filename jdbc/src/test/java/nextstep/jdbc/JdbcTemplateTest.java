@@ -97,9 +97,6 @@ class JdbcTemplateTest {
             try {
                 final var jdbcDataSource = new JdbcDataSource();
                 jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-//                jdbcDataSource.setUser("");
-//                jdbcDataSource.setPassword("");
-
                 return jdbcDataSource.getConnection();
             } catch (SQLException sqlException) {
                 throw new AssertionError();
