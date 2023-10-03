@@ -32,7 +32,7 @@ class MySqlUserDaoTest {
     @Test
     void findById() {
         final var user = userDao.findById(1L);
-
+        System.out.println("user.get().getEmail() = " + user.get().getEmail());
         assertThat(user.get().getAccount()).isEqualTo("gugu");
     }
 

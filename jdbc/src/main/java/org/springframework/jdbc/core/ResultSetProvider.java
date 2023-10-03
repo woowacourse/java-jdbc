@@ -25,12 +25,12 @@ public class ResultSetProvider<T> {
         }
     }
 
-    public Optional<T> getOne(final ResultSet resultSet) throws SQLException {
+    public T getOne(final ResultSet resultSet) throws SQLException {
         if (resultSet.next()) {
             final T result = rowMapper.mapRow(resultSet);
-            return Optional.ofNullable(result);
+            return result;
         }
-        return Optional.empty();
+        return null;
     }
 
     public List<T> getList(final ResultSet resultSet) throws SQLException {
