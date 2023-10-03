@@ -53,12 +53,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, userRowMapper, new Object[]{id});
+        return jdbcTemplate.query(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, userRowMapper, new Object[]{account});
+        return jdbcTemplate.query(sql, userRowMapper, account);
     }
 }
