@@ -22,54 +22,53 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... arguments) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = prepareStatement(connection, sql, arguments)) {
-
-            log.info(sql);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, preparedStatement -> preparedStatement.executeUpdate(),
+                arguments
+        );
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = prepareStatement(connection, sql, arguments)) {
+        return execute(sql, preparedStatement -> {
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    if (!resultSet.next()) {
+                        throw new IllegalArgumentException("결과가 없습니다");
+                    }
 
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (!resultSet.next()) {
-                throw new IllegalArgumentException("결과가 없습니다");
-            }
-            return rowMapper.map(resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+                    return rowMapper.map(resultSet);
+                },
+                arguments
+        );
     }
 
     public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        List<T> results = new ArrayList<>();
+        return execute(sql, preparedStatement -> {
+                    ResultSet resultSet = preparedStatement.executeQuery();
+
+                    List<T> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        results.add(rowMapper.map(resultSet));
+                    }
+                    return results;
+                },
+                arguments
+        );
+    }
+
+    private <V> V execute(String sql, PreparedStatementExecutor<V> preparedStatementExecutor, Object... arguments) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = prepareStatement(connection, sql, arguments)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setArguments(preparedStatement, arguments);
 
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            while (resultSet.next()) {
-                results.add(rowMapper.map(resultSet));
-            }
-            return results;
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private PreparedStatement prepareStatement(Connection connection, String sql, Object... arguments) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+    private void setArguments(PreparedStatement preparedStatement, Object[] arguments) throws SQLException {
         for (int i = 0; i < arguments.length; i++) {
             preparedStatement.setObject(i + 1, arguments[i]);
         }
-        return preparedStatement;
     }
 }
