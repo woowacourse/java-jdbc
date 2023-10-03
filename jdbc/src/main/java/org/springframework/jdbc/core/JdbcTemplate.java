@@ -10,7 +10,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -38,13 +37,10 @@ public class JdbcTemplate {
 
             PreparedStatementSetter pstSetter = new ArgumentPreparedStatementSetter(args);
             pstSetter.setValues(pstmt);
-            ResultSet resultSet = pstmt.executeQuery();
 
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
+            ResultSet resultSet = pstmt.executeQuery();
+            RowMapperResultsetExtractor<T> rowMapperResultsetExtractor = new RowMapperResultsetExtractor<>(rowMapper);
+            return rowMapperResultsetExtractor.extractData(resultSet);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
