@@ -22,7 +22,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
-                    setArgument(args, preparedStatement);
+                    setArguments(args, preparedStatement);
                     preparedStatement.executeUpdate();
                     return null;
                 }
@@ -32,7 +32,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
-                    setArgument(args, preparedStatement);
+                    setArguments(args, preparedStatement);
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                         if (resultSet.next()) {
                             return rowMapper.mapRow(resultSet, resultSet.getRow());
@@ -42,9 +42,8 @@ public class JdbcTemplate {
                 });
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         return baseJdbcTemplate.execute(sql, preparedStatement -> {
-            setArgument(args, preparedStatement);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return getResults(rowMapper, resultSet);
             }
@@ -60,7 +59,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    private void setArgument(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
+    private void setArguments(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
