@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -47,13 +48,13 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
+            if (rs.next() && rs.isLast()) {
                 return rowMapper.mapRow(rs);
             }
-            return null;
+            throw new IllegalStateException("Query 조회 결과가 하나가 아닙니다.");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -69,7 +70,7 @@ public class JdbcTemplate {
             return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
