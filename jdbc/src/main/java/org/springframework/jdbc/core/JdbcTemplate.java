@@ -68,6 +68,10 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        return results.get(FIRST_RESULT_INDEX);
+        T t = results.get(FIRST_RESULT_INDEX);
+        if (t == null) {
+            throw new DataAccessException("queryForObject error: result is null");
+        }
+        return t;
     }
 }
