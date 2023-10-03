@@ -16,6 +16,7 @@ import java.util.NoSuchElementException;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int ONLY_ROW = 1;
 
     private final DataSource dataSource;
 
@@ -25,8 +26,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new NoSuchElementException("존재하지 않는 데이터 row입니다.");
+        if (results.size() != ONLY_ROW) {
+            throw new NoSuchElementException("유일하지 않은 데이터 row입니다.");
         }
 
         return results.get(0);
