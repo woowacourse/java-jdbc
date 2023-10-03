@@ -30,18 +30,18 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        return jdbcTemplate.executeQuery(sql, rs -> {
+        return jdbcTemplate.queryForObject(sql, rs -> {
             final List<User> users = new ArrayList<>();
             do {
                 users.add(USER_MAPPER.map(rs));
@@ -53,12 +53,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.executeQuery(sql, USER_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.executeQuery(sql, USER_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, USER_MAPPER, account);
     }
 }

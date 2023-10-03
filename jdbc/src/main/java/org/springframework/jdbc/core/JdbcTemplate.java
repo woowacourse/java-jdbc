@@ -19,7 +19,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final Object... values) {
+    public void update(final String sql, final Object... values) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement psmt = conn.prepareStatement(sql)) {
             setValues(psmt, values);
@@ -31,7 +31,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(final String sql, final Mapper<T> mapper, final Object... values) {
+    public <T> T queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement psmt = conn.prepareStatement(sql)) {
             setValues(psmt, values);
