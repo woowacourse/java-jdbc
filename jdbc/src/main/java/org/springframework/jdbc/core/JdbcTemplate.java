@@ -23,13 +23,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final String sql, final Object... elements) {
+    public void update(final String sql, final Object... elements) {
+        execute(sql, PreparedStatement::executeUpdate, elements);
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementExecutor<T> executor,
+            final Object... elements
+    ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             setElements(elements, preparedStatement);
 
-            preparedStatement.executeUpdate();
+            return executor.action(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -47,19 +55,15 @@ public class JdbcTemplate {
             final String sql,
             final Object... elements
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setElements(elements, preparedStatement);
-            final ResultSet resultSet = preparedStatement.executeQuery();
+        return execute(sql, preparedStatement -> createResult(preparedStatement, rowMapper), elements);
+    }
 
+    private <T> Optional<T> createResult(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
             return Optional.empty();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 
@@ -68,20 +72,16 @@ public class JdbcTemplate {
             final String sql,
             final Object... elements
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setElements(elements, preparedStatement);
-            final ResultSet resultSet = preparedStatement.executeQuery();
+        return execute(sql, preparedStatement -> createResults(preparedStatement, rowMapper), elements);
+    }
 
+    private <T> List<T> createResults(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 

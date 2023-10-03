@@ -30,7 +30,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
@@ -38,7 +38,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public Optional<User> findById(final Long id) {
