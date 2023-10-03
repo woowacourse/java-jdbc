@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -34,7 +35,7 @@ public class JdbcTemplate {
         return execute(sql, statement -> getResults(rowMapper, statement), params);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         final List<T> results = execute(sql, statement -> getResults(rowMapper, statement), params);
 
         if (results.size() > 1) {
@@ -42,10 +43,10 @@ public class JdbcTemplate {
         }
 
         if (results.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
-        return results.get(FIRST_RESULT);
+        return Optional.of(results.get(FIRST_RESULT));
     }
 
     private <T> T execute(final String sql,
