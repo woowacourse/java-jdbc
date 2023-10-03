@@ -8,5 +8,5 @@
   - [x] 데이터를 수정하는 메소드 구현
 ## 리팩토링
 - [x] PrepareStatementGenerator 생성하기
-- [ ] PrepareStatementSetter 만들기
+- [x] PrepareStatementSetter 만들기
 - [ ] resultSet을 다루는 객체 만들기
