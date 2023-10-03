@@ -63,16 +63,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final PreparedStatement pstmt) {
-        try (final ResultSet rs = pstmt.executeQuery()) {
-            final List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
+        final ResultSet rs = pstmt.executeQuery();
+        final List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
         }
+        rs.close();
+        return results;
     }
 }
