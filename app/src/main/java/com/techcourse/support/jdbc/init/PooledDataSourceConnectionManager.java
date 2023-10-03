@@ -1,24 +1,27 @@
 package com.techcourse.support.jdbc.init;
 
 import com.techcourse.config.DataSourceConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.ConnectionManager;
 
-public class DataSourceConnectionManager implements ConnectionManager {
+public class PooledDataSourceConnectionManager implements ConnectionManager {
 
-    private final DataSource dataSource;
+    private final HikariDataSource dataSource;
 
-    public DataSourceConnectionManager() {
-        this.dataSource = DataSourceConfig.getInstance();
+    public PooledDataSourceConnectionManager() {
+        this.dataSource = (HikariDataSource) DataSourceConfig.getInstance();
     }
 
     @Override
     public Connection getConnection() throws CannotGetJdbcConnectionException {
         try {
-            return dataSource.getConnection();
+            final var connection = dataSource.getConnection();
+            return connection;
         } catch (final SQLException exception) {
             throw new CannotGetJdbcConnectionException("Datasource connection error:" + exception.getMessage());
         }

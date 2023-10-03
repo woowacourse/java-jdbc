@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DataSourceConnectionManager;
+import com.techcourse.support.jdbc.init.PooledDataSourceConnectionManager;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(new JdbcTemplate(new DataSourceConnectionManager()));
+        userDao = new UserDao(new JdbcTemplate(new PooledDataSourceConnectionManager()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

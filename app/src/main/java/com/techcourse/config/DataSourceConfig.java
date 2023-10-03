@@ -1,7 +1,8 @@
 package com.techcourse.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.util.Objects;
-import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
@@ -9,17 +10,18 @@ public class DataSourceConfig {
 
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
+            INSTANCE = createHikariDataSource();
         }
         return INSTANCE;
     }
 
-    private static JdbcDataSource createJdbcDataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
+    private static HikariDataSource createHikariDataSource() {
+        final var hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+        hikariConfig.setUsername("");
+        hikariConfig.setPassword("");
+
+        return new HikariDataSource(hikariConfig);
     }
 
     private DataSourceConfig() {}
