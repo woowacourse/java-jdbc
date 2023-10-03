@@ -19,14 +19,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final long id) {
+    public <T, P> T queryForObject(final String sql, final RowMapper<T> rowMapper, final P parameter) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
+            pstmt.setObject(1, parameter);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
