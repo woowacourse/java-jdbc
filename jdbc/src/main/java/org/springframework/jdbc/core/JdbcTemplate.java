@@ -1,84 +1,81 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
     public void update(final String sql, final Object... args) {
-        try(final Connection conn = dataSource.getConnection();
-            final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setAllArguments(args, preparedStatement);
-            preparedStatement.executeUpdate();
-
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        preparedStatementExecutor.execute(
+                getPreparedStatementCreator(sql, args),
+                PreparedStatement::executeUpdate
+        );
     }
 
-    private void setAllArguments(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
+    @Nullable
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = queryResults(sql, rowMapper, args);
+        if (results.size() > 1) {
+            throw new IllegalStateException("1개의 결과만 반환 해야 합니다.");
+        }
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryResults(sql, rowMapper, args);
+    }
+
+    private <T> List<T> queryResults(final String sql, final RowMapper<T> rowMapper, final Object[] args) {
+        return preparedStatementExecutor.execute(
+                getPreparedStatementCreator(sql, args),
+                preparedStatement -> mappingQueryResult(preparedStatement, rowMapper)
+        );
+    }
+
+    private PreparedStatementCreator getPreparedStatementCreator(final String sql, final Object[] args) {
+        return conn -> {
+            log.debug("sql: {}", sql);
+            final PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            setAllArguments(preparedStatement, args);
+            return preparedStatement;
+        };
+    }
+
+    private void setAllArguments(
+            final PreparedStatement preparedStatement,
+            final Object... args
+    ) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
     }
 
-    @Nullable
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setAllArguments(args, preparedStatement);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                final T result = rowMapper.mapRow(resultSet);
-                resultSet.close();
-                return result;
-            }
-
-            resultSet.close();
-            return null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    private <T> List<T> mappingQueryResult(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        final ResultSet resultSet = preparedStatement.executeQuery();
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            final T row = rowMapper.mapRow(resultSet);
+            results.add(row);
         }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setAllArguments(args, preparedStatement);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                final T result = rowMapper.mapRow(resultSet);
-                results.add(result);
-            }
-
-            resultSet.close();
-            return results;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        resultSet.close();
+        return results;
     }
 }
