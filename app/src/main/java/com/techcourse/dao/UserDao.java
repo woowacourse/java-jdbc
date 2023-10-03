@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -17,21 +16,6 @@ public class UserDao {
                 resultSet.getString(2),
                 resultSet.getString(3),
                 resultSet.getString(4));
-    };
-
-    private static final RowMapper<List<User>> LIST_ROW_MAPPER = resultSet -> {
-        final List<User> result = new ArrayList<>();
-        while (resultSet.next()) {
-            final User user = new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
-
-            result.add(user);
-        }
-
-        return result;
     };
 
     private final JdbcTemplate jdbcTemplate;
@@ -60,7 +44,7 @@ public class UserDao {
     public List<User> findAll() {
         final String sql = "SELECT id, account, password, email FROM users";
 
-        return jdbcTemplate.queryForObject(sql, LIST_ROW_MAPPER);
+        return jdbcTemplate.queryForList(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
