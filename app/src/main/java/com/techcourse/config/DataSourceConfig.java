@@ -1,27 +1,27 @@
 package com.techcourse.config;
 
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
-
-import java.util.Objects;
 
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private DataSourceConfig() {
+    }
 
-    public static javax.sql.DataSource getInstance() {
-        if (Objects.isNull(INSTANCE)) {
-            INSTANCE = createJdbcDataSource();
+    public static DataSource getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    private static class Holder {
+
+        private static final DataSource INSTANCE = createJdbcDataSource();
+
+        private static DataSource createJdbcDataSource() {
+            final var jdbcDataSource = new JdbcDataSource();
+            jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+            jdbcDataSource.setUser("");
+            jdbcDataSource.setPassword("");
+            return jdbcDataSource;
         }
-        return INSTANCE;
     }
-
-    private static JdbcDataSource createJdbcDataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
-    }
-
-    private DataSourceConfig() {}
 }
