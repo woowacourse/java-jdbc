@@ -12,7 +12,7 @@ public interface JdbcOperations {
     <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback)
         throws DataAccessException, SQLException;
 
-    <T> T execute(final String sql, final StatementCallback<T> callback) throws DataAccessException;
+    <T> T execute(final StatementCallback<T> callback) throws DataAccessException;
 
     <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException;
 

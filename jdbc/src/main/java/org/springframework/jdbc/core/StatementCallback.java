@@ -5,5 +5,7 @@ import java.sql.Statement;
 
 public interface StatementCallback<T> {
 
-    T doInStatement(final String sql, final Statement statement) throws SQLException;
+    T doInStatement(final Statement statement) throws SQLException;
+
+    String getSql();
 }
