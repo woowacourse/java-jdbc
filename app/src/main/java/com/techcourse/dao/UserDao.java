@@ -56,4 +56,9 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql, mapper, account);
     }
+
+    public void deleteByAccount(final String gugu) {
+        final var sql = "delete from users where account = ?";
+        jdbcTemplate.execute(sql, gugu);
+    }
 }
