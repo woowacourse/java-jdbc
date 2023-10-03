@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
     private final DataSource dataSource;
@@ -18,26 +17,27 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> result = query(sql, rowMapper, args);
+        return getSingleResult(result);
+    }
+
+    private <T> T getSingleResult(final List<T> result) {
+        if (result.isEmpty()) {
+            throw new DataAccessException("데이터를 찾을 수 없습니다.");
+        }
+        if (result.size() > 1) {
+            throw new DataAccessException("결과값이 두 개 이상입니다.");
+        }
+        return result.get(0);
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.ofNullable(rowMapper.mapRow(rs));
-                }
-                return Optional.empty();
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final List<T> result = new ArrayList<>();
             try (final ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -45,19 +45,18 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public int update(final String sql, final Object... args) {
+    public void update(final String sql, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-            return pstmt.executeUpdate();
+            pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
