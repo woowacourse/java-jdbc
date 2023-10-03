@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -19,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int insert(String sql, Object... arguments) {
+    public int update(String sql, Object... arguments) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = prepareStatement(connection, sql, arguments)) {
 
@@ -39,8 +41,24 @@ public class JdbcTemplate {
             if (!resultSet.next()) {
                 throw new IllegalArgumentException("결과가 없습니다");
             }
-
             return rowMapper.map(resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        List<T> results = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = prepareStatement(connection, sql, arguments)) {
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.map(resultSet));
+            }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
