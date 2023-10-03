@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(String sql, QueryExecutor<T> executor, Object... args) {
+    public <T> T update(String sql, UpdateExecutor<T> executor, Object... args) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = getInitializedPstmt(sql, conn, args)) {
             return executor.execute(pstmt);
@@ -39,6 +40,17 @@ public class QueryTemplate {
     private void initializePstmtArgs(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    public <T> T query(String sql, SelectExecutor<T> executor, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = getInitializedPstmt(sql, conn, args);
+                ResultSet rs = pstmt.executeQuery()) {
+            return executor.execute(rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 

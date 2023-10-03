@@ -17,15 +17,11 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        queryTemplate.query(sql, PreparedStatement::executeUpdate, args);
+        queryTemplate.update(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryTemplate.query(sql, (pstmt -> {
-            try(ResultSet rs = pstmt.executeQuery()){
-                return mapResultToList(rs, rowMapper);
-            }
-        }), args);
+        return queryTemplate.query(sql, (resultSet -> mapResultToList(resultSet, rowMapper)), args);
     }
 
     private <T> List<T> mapResultToList(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
@@ -41,11 +37,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryTemplate.query(sql, (pstmt -> {
-            try(ResultSet rs = pstmt.executeQuery()){
-                return mapResultToObject(rs, rowMapper);
-            }
-        }), args);
+        return queryTemplate.query(sql, resultSet -> mapResultToObject(resultSet, rowMapper), args);
     }
 
     private <T> T mapResultToObject(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
