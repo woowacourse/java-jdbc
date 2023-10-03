@@ -22,11 +22,11 @@ public class UserHistoryDao {
                 "values (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.executeUpdate(sql,
-                String.valueOf(userHistory.getUserId()),
+                userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
-                String.valueOf(userHistory.getCreatedAt()),
+                userHistory.getCreatedAt(),
                 userHistory.getCreateBy()
         );
     }

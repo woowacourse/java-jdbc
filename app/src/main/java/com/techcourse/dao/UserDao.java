@@ -54,7 +54,7 @@ public class UserDao {
         final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         final long userId = user.getId();
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), Long.toString(userId));
+        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), userId);
     }
 
     public List<User> findAll() {
@@ -66,7 +66,7 @@ public class UserDao {
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, Long.toString(id));
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
