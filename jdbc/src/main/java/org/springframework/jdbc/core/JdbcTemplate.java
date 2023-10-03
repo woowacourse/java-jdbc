@@ -2,6 +2,8 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.exception.DataAccessException;
+import org.springframework.jdbc.exception.DataUpdateException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,7 +32,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataUpdateException(e.getMessage());
         }
     }
 
@@ -47,7 +49,7 @@ public class JdbcTemplate {
             throw new NoSuchElementException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
@@ -65,7 +67,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
