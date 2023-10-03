@@ -9,4 +9,4 @@
 ## 리팩토링
 - [x] PrepareStatementGenerator 생성하기
 - [x] PrepareStatementSetter 만들기
-- [ ] resultSet을 다루는 객체 만들기
+- [x] result를 생성하는 객체 만들기

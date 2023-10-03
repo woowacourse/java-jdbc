@@ -5,9 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -41,8 +39,11 @@ public class JdbcTemplate {
         try (final PreparedStatement preparedStatement = PREPARED_STATEMENT_GENERATOR.create(dataSource.getConnection(), sql)) {
             final PrepareStatementSetter psSetter = new ArgumentsPrepareStatementSetter(args);
             psSetter.setValue(preparedStatement);
-            List<T> results = extractData(rowMapper, preparedStatement);
 
+            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
+            List<T> results = resultMaker.extractData(rowMapper);
+
+            SingleResultValidator.validate(results);
             return results.iterator().next();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -51,21 +52,10 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (final PreparedStatement preparedStatement = PREPARED_STATEMENT_GENERATOR.create(dataSource.getConnection(), sql)) {
-
-            return extractData(rowMapper, preparedStatement);
+            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
+            return resultMaker.extractData(rowMapper);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private <T> List<T> extractData(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement) throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            return results;
         }
     }
 }
