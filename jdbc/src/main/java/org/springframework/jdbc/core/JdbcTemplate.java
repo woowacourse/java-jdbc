@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.exception.IncorrectQueryArgumentException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -56,10 +57,7 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
+            return getOneResult(rs, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -88,5 +86,16 @@ public class JdbcTemplate {
         if (questionMarksCount < argsCount) {
             throw new IncorrectQueryArgumentException("delivered parameter's count is many.");
         }
+    }
+
+    private <T> T getOneResult(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        if (rs.next()) {
+            T result = rowMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new IncorrectResultSizeDataAccessException("More than one result to return");
+            }
+            return result;
+        }
+        throw new IncorrectResultSizeDataAccessException("No result to return");
     }
 }
