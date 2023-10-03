@@ -8,5 +8,5 @@
     - [X] Command(update) 기능 구현
 - [X] UserDao 클래스 JdbcTemplate 클래스 사용하게 리팩터링
     - [X] UserDaoTest 테스트 모두 통과하게 수정
-- [ ] Transaction 적용
-    - [ ] JdbcTemplate 메서드 호출 시 같은 커넥션 적용
+- [X] Transaction 적용
+    - [X] JdbcTemplate 메서드 호출 시 같은 커넥션 적용
