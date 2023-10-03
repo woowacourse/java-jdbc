@@ -53,7 +53,7 @@ class JdbcTemplateTest {
         // given
         insert("민트", 25);
         insert("민트2", 25);
-        insert("민트3", 25);
+        insert("민트3", 26);
         final String sql = "update herb set name = ? where age = ?";
         final Object[] args = {"민트4", 25};
 
@@ -61,13 +61,13 @@ class JdbcTemplateTest {
         final int affectedRows = jdbcTemplate.execute(sql, args);
 
         // then
-        assertThat(affectedRows).isEqualTo(3);
+        assertThat(affectedRows).isEqualTo(2);
     }
 
-    private int insert(String name, int age) {
+    private void insert(String name, int age) {
         final String sql = "insert into herb(name, age) values(?, ?)";
         final Object[] args = {name, age};
-        return jdbcTemplate.execute(sql, args);
+        jdbcTemplate.execute(sql, args);
     }
 
     @Test
