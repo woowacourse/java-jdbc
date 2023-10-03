@@ -24,9 +24,7 @@ public class JdbcTemplate {
     public void executeUpdate(final String sql, final Object... parameters) {
         try (final PreparedStatement preparedStatement = dataSource.getConnection()
                 .prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            for (int i = 1; i <= parameters.length; i++) {
-                preparedStatement.setObject(i, parameters[i - 1]);
-            }
+            setParameters(parameters, preparedStatement);
             log.debug("query : {}", preparedStatement);
 
             preparedStatement.executeUpdate();
@@ -35,12 +33,16 @@ public class JdbcTemplate {
         }
     }
 
+    private void setParameters(final Object[] parameters, final PreparedStatement preparedStatement) throws SQLException {
+        for (int i = 1; i <= parameters.length; i++) {
+            preparedStatement.setObject(i, parameters[i - 1]);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final PreparedStatement preparedStatement = dataSource.getConnection()
                 .prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-            for (int i = 1; i <= parameters.length; i++) {
-                preparedStatement.setObject(i, parameters[i - 1]);
-            }
+            setParameters(parameters, preparedStatement);
             log.debug("query : {}", preparedStatement);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
