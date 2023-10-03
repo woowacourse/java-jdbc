@@ -58,7 +58,7 @@ public class JdbcTemplate {
     private static <T> List<T> getResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
         List<T> results = new ArrayList<>();
         ResultSet rs = preparedStatement.executeQuery();
-        if (rs.next()) {
+        while (rs.next()) {
             T result = rowMapper.run(rs);
             results.add(result);
         }
