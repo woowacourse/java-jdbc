@@ -17,14 +17,6 @@ public class TransactionManager {
         transactionEnables.set(Boolean.TRUE);
     }
 
-    public static boolean isTransactionEnable() {
-        Boolean isTransaction = transactionEnables.get();
-        if (isTransaction == null) {
-            return false;
-        }
-        return isTransaction;
-    }
-
     public static Connection getConnection(DataSource dataSource) {
         Connection connection = connections.get();
         if (connection != null) {
@@ -46,6 +38,14 @@ public class TransactionManager {
         }
     }
 
+    public static boolean isTransactionEnable() {
+        Boolean isTransaction = transactionEnables.get();
+        if (isTransaction == null) {
+            return false;
+        }
+        return isTransaction;
+    }
+
     public static boolean isConnectionEnable() {
         return connections.get() != null;
     }
@@ -55,15 +55,6 @@ public class TransactionManager {
         Connection connection = connections.get();
         validateConnection(connection);
         commit(connection);
-    }
-
-    private static void commit(Connection connection) {
-        try {
-            connection.commit();
-        } catch (SQLException ignored) {
-            // ignored
-        }
-        transactionEnables.remove();
     }
 
     private static void validateTransactionEnable() {
@@ -77,6 +68,15 @@ public class TransactionManager {
         if (connection == null) {
             throw new IllegalStateException("Connection is not enabled!");
         }
+    }
+
+    private static void commit(Connection connection) {
+        try {
+            connection.commit();
+        } catch (SQLException ignored) {
+            // ignored
+        }
+        transactionEnables.remove();
     }
 
     public static void rollback() {
