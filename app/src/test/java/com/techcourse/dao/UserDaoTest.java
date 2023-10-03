@@ -1,69 +1,113 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+@SuppressWarnings("NonAsciiCharacters")
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class UserDaoTest {
 
+    private JdbcTemplate jdbcTemplate;
+    private User user;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        user = userDao.findByAccount("gugu");
     }
 
     @Test
-    void findAll() {
-        final var users = userDao.findAll();
+    void 모든_회원을_조회한다() {
+        // when
+        final List<User> users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(users).hasSize(1);
+            final User user = users.get(0);
+
+            softly.assertThat(user.getAccount()).isEqualTo("gugu");
+            softly.assertThat(user.getPassword()).isEqualTo("password");
+            softly.assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
+        });
     }
 
     @Test
-    void findById() {
-        final var user = userDao.findById(1L);
+    void ID로_회원을_조회한다() {
+        // when
+        final User foundUser = userDao.findById(user.getId());
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(foundUser.getAccount()).isEqualTo("gugu");
+            softly.assertThat(foundUser.getPassword()).isEqualTo("password");
+            softly.assertThat(foundUser.getEmail()).isEqualTo("hkkang@woowahan.com");
+        });
     }
 
     @Test
-    void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+    void 계정으로_회원을_조회한다() {
+        // when
+        final User foundUser = userDao.findByAccount(user.getAccount());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        // then
+        assertSoftly(softly -> {
+            softly.assertThat(foundUser.getAccount()).isEqualTo("gugu");
+            softly.assertThat(foundUser.getPassword()).isEqualTo("password");
+            softly.assertThat(foundUser.getEmail()).isEqualTo("hkkang@woowahan.com");
+        });
     }
 
     @Test
-    void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+    void 회원을_정보를_입력한다() {
+        // given
+        final var account = "huchu";
+        final User huchu = new User(account, "password", "huchu@woowahan.com");
 
-        final var actual = userDao.findById(2L);
+        // when
+        userDao.insert(huchu);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        // then
+        final User foundUser = userDao.findByAccount(account);
+        assertSoftly(softly -> {
+            softly.assertThat(foundUser.getAccount()).isEqualTo("huchu");
+            softly.assertThat(foundUser.getPassword()).isEqualTo("password");
+            softly.assertThat(foundUser.getEmail()).isEqualTo("huchu@woowahan.com");
+        });
     }
 
     @Test
-    void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+    void 회원_정보를_수정한다() {
+        // given
+        user.changePassword("newPassword");
 
+        // when
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        // then
+        final User changedUser = userDao.findByAccount(user.getAccount());
+        assertThat(changedUser.getPassword()).isEqualTo("newPassword");
+    }
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    @AfterEach
+    void tearDown() {
+        final String deleteSql = "DELETE FROM users";
+        jdbcTemplate.update(deleteSql);
     }
 }
