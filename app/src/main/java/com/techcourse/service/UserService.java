@@ -27,6 +27,6 @@ public class UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        userHistoryDao.insert(new UserHistory(user, createBy));
     }
 }
