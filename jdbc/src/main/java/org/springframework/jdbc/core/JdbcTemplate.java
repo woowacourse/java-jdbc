@@ -20,11 +20,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
 
-            setObjectToPreparedStatement(pstmt, parameters);
+            setObjectToPreparedStatement(pstmt, arguments);
 
             return getObject(sql, rowMapper, pstmt);
         } catch (final SQLException e) {
@@ -33,16 +33,23 @@ public class JdbcTemplate {
         }
     }
 
-    private void setObjectToPreparedStatement(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
-        for (int parameterIndex = 1; parameterIndex < parameters.length + 1; parameterIndex++) {
-            pstmt.setObject(parameterIndex, parameters[parameterIndex - 1]);
+    private void setObjectToPreparedStatement(final PreparedStatement pstmt, final Object[] arguments) throws SQLException {
+        for (int parameterIndex = 1; parameterIndex < arguments.length + 1; parameterIndex++) {
+            pstmt.setObject(parameterIndex, arguments[parameterIndex - 1]);
         }
     }
 
     private <T> Optional<T> getObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
         try (final ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
-            return rs.next() ? Optional.of(rowMapper.map(rs)) : Optional.empty();
+            if (!rs.next()) {
+                return Optional.empty();
+            }
+            final T object = rowMapper.map(rs);
+            if (rs.next()) {
+                throw new SQLException("Query returned more than one result");
+            }
+            return Optional.of(object);
         }
     }
 
@@ -69,13 +76,13 @@ public class JdbcTemplate {
         return result;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public void update(final String sql, final Object... arguments) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql);) {
 
             log.debug("query : {}", sql);
 
-            setObjectToPreparedStatement(pstmt, parameters);
+            setObjectToPreparedStatement(pstmt, arguments);
 
             pstmt.executeUpdate();
         } catch (final SQLException e) {
