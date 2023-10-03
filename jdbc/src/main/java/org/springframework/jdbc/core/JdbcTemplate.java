@@ -19,9 +19,14 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        return execute(connection -> prepareStatement(sql, connection, args), PreparedStatement::executeUpdate);
+    }
+
+    private <T> T execute(final PreparedStatementCallback preparedStatementCallback,
+                         final ExecutionCallback<T> executionCallback) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = prepareStatement(sql, connection, args)) {
-            return pstmt.executeUpdate();
+             final PreparedStatement pstmt = preparedStatementCallback.prepareStatement(connection)) {
+            return executionCallback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -42,29 +47,29 @@ public class JdbcTemplate {
 
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = prepareStatement(sql, connection, args);
-             final ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
+        final List<T> results = executeQuery(connection -> prepareStatement(sql, connection, args), rowMapper);
+        if (results.isEmpty()) {
             return null;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
+        return results.get(0);
+    }
+
+    private <T> List<T> executeQuery(
+            final PreparedStatementCallback preparedStatementCallback,
+            final RowMapper<T> rowMapper
+    ) {
+        return execute(preparedStatementCallback, pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
+            }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = prepareStatement(sql, connection, args);
-             final ResultSet rs = pstmt.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return executeQuery(connection -> prepareStatement(sql, connection, args), rowMapper);
     }
 }
