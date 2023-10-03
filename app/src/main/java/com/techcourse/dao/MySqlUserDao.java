@@ -49,7 +49,7 @@ public class MySqlUserDao implements UserDao {
 
     @Override
     public Optional<User> findByAccount(final String account) {
-        final String sql = "select * from users where account = ?";
+        final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
