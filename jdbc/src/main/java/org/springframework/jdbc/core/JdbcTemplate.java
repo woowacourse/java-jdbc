@@ -55,7 +55,7 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new DataAccessException("2개 이상의 결과를 반환할 수 없습니다.");
         }
-        return Optional.ofNullable(results.iterator().next());
+        return results.stream().findAny();
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {

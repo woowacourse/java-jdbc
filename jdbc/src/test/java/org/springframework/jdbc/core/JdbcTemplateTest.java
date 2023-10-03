@@ -83,6 +83,21 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void 단일_조회시_결과가_없다면_빈_Optional을_반환한다() throws SQLException {
+        // given
+        final ResultSet resultSet = mock(ResultSet.class);
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(false);
+        final String query = "select * from users where name = hello";
+
+        // when
+        final Optional<TestUser> user = sut.queryForObject(query, TEST_USER_ROW_MAPPER);
+
+        // then
+        assertThat(user).isNotPresent();
+    }
+
+    @Test
     void 전체_조회시_List_형태의_결과를_반환한다() throws SQLException {
         // given
         final ResultSet resultSet = mock(ResultSet.class);

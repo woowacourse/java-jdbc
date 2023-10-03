@@ -17,4 +17,4 @@
 
 - [ ] changePassword 메서드 내에서 동일한 Connection을 사용하도록 한다.
 - [ ] TransactionTemplate을 만들어서 트랜잭션을 보장한다.
-- [ ] JdbcTemplate에서 results의 개수가 0개면 빈 Optional을 반환하도록 수정한다.   
+- [x] JdbcTemplate에서 단일 조회 결과가 0개면 빈 Optional을 반환하도록 수정한다.   
