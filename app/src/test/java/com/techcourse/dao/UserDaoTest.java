@@ -1,15 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.springframework.dao.DataAccessException;
 
 class UserDaoTest {
 
@@ -20,7 +19,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -42,7 +41,7 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "gugu";
         assertThatThrownBy(() -> userDao.findByAccount(account))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test

@@ -42,9 +42,38 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(
+    public <T> List<T> queryForList(
             String sql, 
             Function<ResultSet, T> rowMapper, 
+            Object... parameters
+    ) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParametersInPreparedStatement(preparedStatement, parameters);
+            return getQueryResults(rowMapper, preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> getQueryResults(
+            Function<ResultSet, T> rowMapper,
+            PreparedStatement preparedStatement
+    ) throws SQLException {
+        List<T> queryResults = new ArrayList<>();
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        while (resultSet.next()) {
+            queryResults.add(rowMapper.apply(resultSet));
+        }
+
+        return queryResults;
+    }
+
+    public <T> T queryForObject(
+            String sql,
+            Function<ResultSet, T> rowMapper,
             Object... parameters
     ) {
         try (Connection connection = dataSource.getConnection();
@@ -57,18 +86,27 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getQueryResult(
+    private <T> T getQueryResult(
             Function<ResultSet, T> rowMapper,
             PreparedStatement preparedStatement
     ) throws SQLException {
-        List<T> result = new ArrayList<>();
         ResultSet resultSet = preparedStatement.executeQuery();
+        T queryResult = null;
+        int rowCount = 0;
 
         while (resultSet.next()) {
-            result.add(rowMapper.apply(resultSet));
+            rowCount++;
+            queryResult = rowMapper.apply(resultSet);
         }
 
-        return result;
+        validateResultSetSize(rowCount);
+        return queryResult;
+    }
+
+    private void validateResultSetSize(int rowCount) {
+        if (rowCount != 1) {
+            throw new DataAccessException("조회 결과가 올바르지 않습니다.");
+        }
     }
 
 }
