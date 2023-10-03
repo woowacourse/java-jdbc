@@ -25,15 +25,23 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        template(this::executeUpdate, sql, args);
+        update(getConnection(), sql, args);
+    }
+
+    public void update(Connection connection, String sql, Object... args) {
+        template(this::executeUpdate, connection, sql, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(getConnection(), sql, rowMapper, args);
+    }
+
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
         Function<PreparedStatement, List<T>> query = preparedStatement -> {
             ResultSet resultSet = executeQuery(preparedStatement);
             return getObjects(resultSet, rowMapper);
         };
-        return template(query, sql, args);
+        return template(query, connection, sql, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -78,14 +86,9 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T template(Function<PreparedStatement, T> function, String sql, Object... args) {
-        try (
-                Connection connection = getConnection();
-                PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
-            return function.apply(preparedStatement);
-        } catch (SQLException e) {
-            throw new IllegalArgumentException();
-        }
+    private <T> T template(Function<PreparedStatement, T> function, Connection connection, String sql, Object... args) {
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
+        return function.apply(preparedStatement);
     }
 
     private Connection getConnection() {
