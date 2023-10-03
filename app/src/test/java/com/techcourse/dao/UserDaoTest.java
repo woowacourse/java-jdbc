@@ -14,7 +14,8 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "drop.sql");
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "schema.sql");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
