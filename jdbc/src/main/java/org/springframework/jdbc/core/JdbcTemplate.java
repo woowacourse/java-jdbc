@@ -24,7 +24,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... parameters) {
         try(Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = getPreparedStatement(sql, conn, parameters)){
+            PreparedStatement pstmt = getPreparedStatement(sql, conn, parameters)) {
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -64,7 +64,7 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             List<T> result = new ArrayList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
             }
             return result;
