@@ -24,6 +24,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         return execute(
+                null,
                 conn -> conn.prepareStatement(sql),
                 pstmt -> {
                     setValues(pstmt, args);
@@ -58,6 +59,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         execute(
+                null,
                 conn -> conn.prepareStatement(sql),
                 pstmt -> {
                     setValues(pstmt, args);
@@ -66,9 +68,30 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> T execute(final PreparedStatementCreator psc, PreparedStatementCallBack<T> action) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = psc.createPreparedStatement(conn)) {
+    public void update(final Connection connection, final String sql, final Object... args) {
+        execute(
+                connection,
+                conn -> conn.prepareStatement(sql),
+                pstmt -> {
+                    setValues(pstmt, args);
+                    return pstmt.executeUpdate();
+                }
+        );
+    }
+
+    private <T> T execute(final Connection connection, final PreparedStatementCreator psc, PreparedStatementCallBack<T> action) {
+        if (connection != null) {
+            return doExecute(connection, psc, action);
+        }
+        try {
+            return doExecute(dataSource.getConnection(), psc, action);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T doExecute(final Connection connection, final PreparedStatementCreator psc, final PreparedStatementCallBack<T> action) {
+        try (final PreparedStatement pstmt = psc.createPreparedStatement(connection)) {
             return action.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
