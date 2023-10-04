@@ -31,7 +31,10 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
-            return null;
+            if (!resultSet.isLast()) {
+                throw new RuntimeException("단일 데이터가 아닙니다.");
+            }
+            throw new RuntimeException("찾는 데이터가 존재하지 않습니다.");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
 
