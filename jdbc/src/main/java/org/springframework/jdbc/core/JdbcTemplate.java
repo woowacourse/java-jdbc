@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.ConnectionManager;
 import org.springframework.transaction.support.TransactionManager;
 
 public class JdbcTemplate {
@@ -26,7 +27,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, PreparedStatementSetter pstmtFunc, RowMapper<T> rsMapper) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtFunc);
             ResultSet rs = pstmt.executeQuery()
@@ -44,7 +45,7 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
@@ -59,7 +60,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rsMapper, Object... parameters) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
             ResultSet rs = pstmt.executeQuery()
@@ -77,14 +78,14 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter);
             ResultSet rs = pstmt.executeQuery()
@@ -99,14 +100,14 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = conn.prepareStatement(sql);
             ResultSet rs = pstmt.executeQuery()
@@ -121,14 +122,14 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
             ResultSet rs = pstmt.executeQuery()
@@ -143,14 +144,14 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
 
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
@@ -161,14 +162,14 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }
 
     public void update(String sql, Object... parameters) {
         logQuery(sql);
-        Connection conn = TransactionManager.getConnection(dataSource);
+        Connection conn = ConnectionManager.getConnection(dataSource);
         try (
             PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters)
         ) {
@@ -178,7 +179,7 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             if (!TransactionManager.isTransactionEnable()) {
-                TransactionManager.releaseConnection();
+                ConnectionManager.releaseConnection();
             }
         }
     }

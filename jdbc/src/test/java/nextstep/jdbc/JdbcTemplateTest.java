@@ -19,6 +19,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.ConnectionManager;
 import org.springframework.transaction.support.TransactionManager;
 
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -225,7 +226,7 @@ class JdbcTemplateTest {
         jdbcTemplate.query(sql, MEMBER_MAPPER);
 
         // when & then
-        assertThat(TransactionManager.isConnectionEnable())
+        assertThat(ConnectionManager.isConnectionEnable())
             .isFalse();
     }
 
@@ -237,9 +238,9 @@ class JdbcTemplateTest {
         jdbcTemplate.query(sql, MEMBER_MAPPER);
 
         // when & then
-        assertThat(TransactionManager.isConnectionEnable())
+        assertThat(ConnectionManager.isConnectionEnable())
             .isTrue();
-        TransactionManager.releaseConnection();
+        ConnectionManager.releaseConnection();
     }
 
     static class Member {

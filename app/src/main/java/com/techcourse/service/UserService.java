@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.jdbc.datasource.ConnectionManager;
 import org.springframework.transaction.support.TransactionManager;
 
 public class UserService {
@@ -32,12 +33,11 @@ public class UserService {
         try {
             userDao.update(user);
             userHistoryDao.insert(new UserHistory(user, createBy));
-            TransactionManager.commit();
         } catch (Exception e) {
-            TransactionManager.rollback();
+            TransactionManager.setRollback();
             throw e;
         } finally {
-            TransactionManager.releaseConnection();
+            ConnectionManager.releaseConnection();
         }
     }
 }
