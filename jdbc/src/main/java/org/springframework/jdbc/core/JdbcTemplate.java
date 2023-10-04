@@ -2,7 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.exception.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -38,7 +38,7 @@ public class JdbcTemplate {
         return context(connection -> connection.prepareStatement(sql), rm);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) throws DataAccessException {
         List<T> list = context(connection -> connection.prepareStatement(sql), rm, args);
 
         if (list.isEmpty()) {
@@ -52,18 +52,18 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    public void context(PreparedStrategy preparedStrategy) {
+    public void context(PreparedStrategy preparedStrategy) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
-    public void context(PreparedStrategy preparedStrategy, Object[] args) {
+    public void context(PreparedStrategy preparedStrategy, Object[] args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
@@ -74,11 +74,11 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm) {
+    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn);
              ResultSet rs = pstmt.executeQuery()) {
@@ -90,11 +90,11 @@ public class JdbcTemplate {
             return list;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm, Object[] args) {
+    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm, Object[] args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
@@ -111,7 +111,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 }
