@@ -1,16 +1,13 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -24,47 +21,33 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return executeUpdate(sql, args);
     }
 
-    private void setParameters(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private int executeUpdate(String sql, Object... args) {
+        return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementUpdateExecuter());
+    }
+
+    private <T> T execute(
+            PreparedStatementMaker pstmtMaker,
+            PreparedStatementExecuter<T> pstmtExecuter
+    ) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = pstmtMaker.makePreparedStatement(conn)
+        ) {
+            return pstmtExecuter.execute(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        return executeQuery(sql, rowMapper, args);
+    }
 
-            setParameters(pstmt, args);
-
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private <T> List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementQueryExecuter<>(rowMapper));
     }
 
     @Nullable

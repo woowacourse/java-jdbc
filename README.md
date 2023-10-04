@@ -11,19 +11,19 @@
 
 ## 2단계 - 리팩터링
 
-- [ ] Jdbc Template 중복코드 제거
-    - [ ] Connection
-    - [ ] PreparedStatement + setParameters
-    - [ ] ResultSet
+- [x] Jdbc Template 중복코드 제거
+    - [x] Connection
+    - [x] PreparedStatement + setParameters
+    - [x] ResultSet
 
-- [ ] 추천 도구
-    - [ ] 익명 클래스
-    - [ ] 함수형 인터페이스
-    - [ ] 제네릭
-    - [ ] 가변인자
-    - [ ] 람다
-    - [ ] try-with-resources
-    - [ ] checked vs unchecked exception
+- [x] 추천 도구
+    - [x] 익명 클래스
+    - [x] 함수형 인터페이스
+    - [x] 제네릭
+    - [x] 가변인자
+    - [x] 람다
+    - [x] try-with-resources
+    - [x] checked vs unchecked exception
 
 - [x] 변하는 요소에 대한 추상화
     - [x] PreparedStatementMaker
