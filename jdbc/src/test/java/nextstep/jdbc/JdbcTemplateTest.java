@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -125,7 +126,7 @@ class JdbcTemplateTest {
 
             // expect
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, arg))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasMessage("조회 데이터가 존재하지 않습니다.");
         }
 
@@ -140,7 +141,7 @@ class JdbcTemplateTest {
 
             // expect
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, arg))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasMessage("조회 데이터가 한 개 이상 존재합니다.");
         }
     }
