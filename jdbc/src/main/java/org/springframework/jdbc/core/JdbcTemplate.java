@@ -2,7 +2,6 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.exception.ResultSetOverflowException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -61,10 +60,6 @@ public class JdbcTemplate {
     }
 
     private <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        if (rs.getRow() > 1) {
-            throw new ResultSetOverflowException("결과가 한 개를 초과합니다.");
-        }
-
         if (rs.next()) {
             return rowMapper.mapRow(rs, rs.getRow());
         }
