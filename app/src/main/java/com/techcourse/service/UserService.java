@@ -16,7 +16,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저가 없습니다."));
     }
 
     public void insert(final User user) {
