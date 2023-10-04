@@ -8,13 +8,14 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final RowMapper mapper = (ResultSet rs) ->
+    private static final RowMapper<User> MAPPER = (ResultSet rs) ->
             new User(
                     rs.getLong(1),
                     rs.getString(2),
                     rs.getString(3),
                     rs.getString(4));
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -32,16 +33,16 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.queryForObject(sql, mapper, id);
+        return jdbcTemplate.queryForObject(sql, MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.queryForObject(sql, mapper, account);
+        return jdbcTemplate.queryForObject(sql, MAPPER, account);
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, mapper);
+        return jdbcTemplate.queryForList(sql, MAPPER);
     }
 }
