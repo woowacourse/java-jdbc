@@ -14,6 +14,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int FIRST_PARAMETER_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -26,6 +27,8 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
+
+            preparedStatement.setObject(FIRST_PARAMETER_INDEX, parameter);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
