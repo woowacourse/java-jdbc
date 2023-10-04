@@ -3,14 +3,11 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetObjectMapper;
+import org.springframework.jdbc.core.mapper.ResultSetObjectMapper;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final String USER_ACCOUNT_COLUMN = "account";
     private static final String USER_PASSWORD_COLUMN = "password";
     private static final String USER_EMAIL_COLUMN = "email";

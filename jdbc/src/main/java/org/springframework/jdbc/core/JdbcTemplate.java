@@ -1,78 +1,69 @@
 package org.springframework.jdbc.core;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.mapper.ResultSetObjectMapper;
 
-public class JdbcTemplate extends JdbcTemplateBase {
+public class JdbcTemplate extends JdbcTemplateExecutionBase {
 
     public JdbcTemplate(final DataSource dataSource) {
         super(dataSource);
     }
 
     public <T> T executeQueryForObject(final String sql, final ResultSetObjectMapper<T> mapper) {
-        return executionBaseWithReturn(sql, preparedStatement -> {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            return mapper.map(resultSet);
-        });
+        return super.executeQueryForObjectBase(sql, mapper, new Object[]{}, TRANSACTION_ENABLE);
     }
 
     public <T> T executeQueryForObject(final String sql,
                                        final ResultSetObjectMapper<T> mapper,
                                        final Object... params) {
-        return executionBaseWithReturn(sql, preparedStatement -> {
-            setParameters(params, preparedStatement);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return mapper.map(resultSet);
-            }
-            return null;
-        });
+        return super.executeQueryForObjectBase(sql, mapper, params, TRANSACTION_ENABLE);
+    }
+
+    public <T> T executeQueryForObjectWithoutTransaction(final String sql, final ResultSetObjectMapper<T> mapper) {
+        return super.executeQueryForObjectBase(sql, mapper, new Object[]{}, TRANSACTION_ENABLE);
+    }
+
+    public <T> T executeQueryForObjectWithoutTransaction(final String sql,
+                                                         final ResultSetObjectMapper<T> mapper,
+                                                         final Object... params) {
+        return super.executeQueryForObjectBase(sql, mapper, params, TRANSACTION_DISABLE);
     }
 
     public <T> List<T> executeQueryForObjects(final String sql, final ResultSetObjectMapper<T> mapper) {
-        return executionBaseWithReturn(sql, preparedStatement -> {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final List<T> objects = new ArrayList<>();
-            while (resultSet.next()) {
-                objects.add(mapper.map(resultSet));
-            }
-            return objects;
-        });
+        return super.executeQueryForObjectsBase(sql, mapper, new Object[]{}, TRANSACTION_ENABLE);
     }
 
     public <T> List<T> executeQueryForObjects(final String sql,
                                               final ResultSetObjectMapper<T> mapper,
                                               final Object... params) {
-        return executionBaseWithReturn(sql, preparedStatement -> {
-            setParameters(params, preparedStatement);
+        return super.executeQueryForObjectsBase(sql, mapper, params, TRANSACTION_ENABLE);
+    }
 
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            final List<T> objects = new ArrayList<>();
-            while (resultSet.next()) {
-                objects.add(mapper.map(resultSet));
-            }
-            return objects;
-        });
+    public <T> List<T> executeQueryForObjectsWithoutTransaction(final String sql,
+                                                                final ResultSetObjectMapper<T> mapper) {
+        return super.executeQueryForObjectsBase(sql, mapper, new Object[]{}, TRANSACTION_DISABLE);
+    }
+
+    public <T> List<T> executeQueryForObjectsWithoutTransaction(final String sql,
+                                                                final ResultSetObjectMapper<T> mapper,
+                                                                final Object... params) {
+        return super.executeQueryForObjectsBase(sql, mapper, params, TRANSACTION_DISABLE);
     }
 
     public void update(final String sql) {
-        executionBaseWithNonReturn(sql, PreparedStatement::executeUpdate);
+        updateBase(sql, new Object[]{}, TRANSACTION_ENABLE);
     }
 
     public void update(final String sql, Object... params) {
-        executionBaseWithNonReturn(sql, preparedStatement -> {
-            setParameters(params, preparedStatement);
-            preparedStatement.executeUpdate();
-        });
+        updateBase(sql, params, TRANSACTION_ENABLE);
     }
 
-    private void setParameters(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
-        }
+    public void updateWithoutTransaction(final String sql) {
+        updateBase(sql, new Object[]{}, TRANSACTION_DISABLE);
+    }
+
+    public void updateWithoutTransaction(final String sql, Object... params) {
+        updateBase(sql, params, TRANSACTION_DISABLE);
     }
 }
