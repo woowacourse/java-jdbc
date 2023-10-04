@@ -38,13 +38,20 @@ public class JdbcTemplate {
     }
 
     private <T> T getRowByQuery(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
-        final ResultSet resultSet = getResultSet(preparedStatement);
-        return new ResultSetProvider<>(rowMapper).getResults(resultSet);
+        try (
+                final ResultSet resultSet = getResultSet(preparedStatement)
+        ) {
+            return new ResultSetProvider<>(rowMapper).getResults(resultSet);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private <T> T getResult(final PreparedStatementExecutor<T> executor, final String sql, final Object... conditions) {
-        final PreparedStatement preparedStatement = getPreparedStatement(getConnection(), sql, conditions);
-        try {
+        try (
+                final Connection connection = getConnection();
+                final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, conditions)
+        ) {
             return executor.query(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
