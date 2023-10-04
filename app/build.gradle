@@ -4,6 +4,12 @@ plugins {
     id "jacoco"
 }
 
+compileJava {
+    options.compilerArgs << "-parameters"
+}
+compileTestJava {
+    options.compilerArgs << "-parameters"
+}
 group "org.example"
 version "1.0-SNAPSHOT"
 

@@ -3,6 +3,13 @@ plugins {
     id "jacoco"
 }
 
+compileJava {
+    options.compilerArgs << "-parameters"
+}
+
+compileTestJava {
+    options.compilerArgs << "-parameters"
+}
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
