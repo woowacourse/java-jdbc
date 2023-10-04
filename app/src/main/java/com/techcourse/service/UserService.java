@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
+import java.util.NoSuchElementException;
+
 public class UserService {
 
     private final UserDao userDao;
@@ -16,7 +18,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("해당 아이디의 사용자가 존재하지 않습니다."));
     }
 
     public void insert(final User user) {
