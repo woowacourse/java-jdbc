@@ -44,19 +44,19 @@ class JdbcTemplateTest {
     void sql문을_통해_객체를_조회할_수_있다() {
         String expectedName = "콩하나";
 
-        Member member = jdbcTemplate.find("select id, name from member where name = '콩하나';",
-                (rs) -> new Member(
+        TestMember testMember = jdbcTemplate.find("select id, name from member where name = '콩하나';",
+                (rs) -> new TestMember(
                         rs.getLong("id"),
                         rs.getString("name")
                 ));
 
-        assertThat(member.getName()).isEqualTo(expectedName);
+        assertThat(testMember.getName()).isEqualTo(expectedName);
     }
 
     @Test
     void sql문을_통해_하나의_객체를_조회할_때_여러_객체가_존재하면_예외가_발생한다() {
         Assertions.assertThatThrownBy(() -> jdbcTemplate.find("select id, name from member;",
-                        (rs) -> new Member(
+                        (rs) -> new TestMember(
                                 rs.getLong("id"),
                                 rs.getString("name")
                         )))
@@ -67,7 +67,7 @@ class JdbcTemplateTest {
     void sql문을_통해_하나의_객체를_조회할_때_객체가_존재하지_않으면_예외가_발생한다() {
         Assertions.assertThatThrownBy(
                         () -> jdbcTemplate.find("select id, name from member where id = " + Long.MAX_VALUE + ";",
-                                (rs) -> new Member(
+                                (rs) -> new TestMember(
                                         rs.getLong("id"),
                                         rs.getString("name")
                                 )))
@@ -79,12 +79,12 @@ class JdbcTemplateTest {
         String expectedName1 = "콩하나";
         String expectedName2 = "콩둘";
 
-        List<Member> members = jdbcTemplate.findAll("select id, name from member;",
-                (rs) -> new Member(
+        List<TestMember> testMembers = jdbcTemplate.findAll("select id, name from member;",
+                (rs) -> new TestMember(
                         rs.getLong("id"),
                         rs.getString("name")
                 ));
 
-        assertThat(members).map(Member::getName).containsExactlyInAnyOrder(expectedName1, expectedName2);
+        assertThat(testMembers).map(TestMember::getName).containsExactlyInAnyOrder(expectedName1, expectedName2);
     }
 }
