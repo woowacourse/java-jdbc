@@ -12,7 +12,7 @@
 ## 1,2 단계 피드백 요구 사항
 
 - [ ] PreparedStatementExecutor의 RuntimeException을 커스텀 예외로 처리
-- [ ] 어노테이션을 통해 함수형 인터페이스 명시
+- [x] 어노테이션을 통해 함수형 인터페이스 명시
 - [ ] JdbcTemplate.class getPreparedStatementCaller 메서드의 ResultSet 결과가 2개 이상인 경우 처리
 - [x] 컨벤션 통일
 - [ ] Optional을 사용하여 null 처리
