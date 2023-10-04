@@ -62,6 +62,6 @@ class JdbcTemplateTest {
                         rs.getString("name")
                 ));
 
-        assertThat(members.stream().map(Member::getName)).containsExactlyInAnyOrder(expectedName1, expectedName2);
+        assertThat(members).map(Member::getName).containsExactlyInAnyOrder(expectedName1, expectedName2);
     }
 }
