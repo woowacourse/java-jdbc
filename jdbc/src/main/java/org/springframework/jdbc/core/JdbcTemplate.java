@@ -23,26 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setPreparedStatementParameters(pstmt, args);
-            return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private void setPreparedStatementParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
@@ -68,17 +48,37 @@ public class JdbcTemplate {
         }, args);
     }
 
+    private void validateResultSetSize(final int size) {
+        if (size == 0) {
+            throw new DataAccessException("ResultSet is empty");
+        }
+
+        if (size > 1) {
+            throw new DataAccessException("ResultSet Size is greater than 1");
+        }
+    }
+
     public int update(final String sql, final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    private void validateResultSetSize(final int resultSetSize) {
-        if (resultSetSize == 0) {
-            throw new DataAccessException("ResultSet is empty");
+    public <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            setPreparedStatementParameters(pstmt, args);
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
         }
+    }
 
-        if (resultSetSize > 1) {
-            throw new DataAccessException("ResultSet Size is greater than 1");
+    private void setPreparedStatementParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
