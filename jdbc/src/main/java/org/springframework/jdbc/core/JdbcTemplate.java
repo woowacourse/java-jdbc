@@ -24,14 +24,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
-        final T result = preparedStatementExecutor.execute(
+        final List<T> result = preparedStatementExecutor.execute(
                 getPreparedStatementGenerator(sql, values),
-                getPreparedStatementCaller(mapper)
+                getMultiplePreparedStatementCaller(mapper)
         );
-        if (result == null) {
+        if (result.isEmpty()) {
             return Optional.empty();
+        } else if (result.size() > 1) {
+            throw new IllegalArgumentException("Too many results");
         }
-        return Optional.of(result);
+        return Optional.of(result.get(0));
     }
 
     public <T> List<T> query(final String sql, final Mapper<T> mapper, final Object... values) {
@@ -39,18 +41,6 @@ public class JdbcTemplate {
                 getPreparedStatementGenerator(sql, values),
                 getMultiplePreparedStatementCaller(mapper)
         );
-    }
-
-    private <T> PreparedStatementCaller<T> getPreparedStatementCaller(final Mapper<T> mapper) {
-        return psmt -> {
-            final ResultSet rs = psmt.executeQuery();
-
-            if (rs.next()) {
-                return mapper.map(rs);
-            }
-
-            return null;
-        };
     }
 
     private <T> PreparedStatementCaller<List<T>> getMultiplePreparedStatementCaller(final Mapper<T> mapper) {

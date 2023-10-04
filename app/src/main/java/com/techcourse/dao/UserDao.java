@@ -51,9 +51,9 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_MAPPER, id);
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public List<User> findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_MAPPER, account);
+        return jdbcTemplate.query(sql, USER_MAPPER, account);
     }
 }
