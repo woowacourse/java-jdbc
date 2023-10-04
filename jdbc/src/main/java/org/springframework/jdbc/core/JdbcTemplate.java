@@ -1,8 +1,9 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.dao.DataAccessException;
+
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -21,17 +22,16 @@ public class JdbcTemplate {
 
     public <T> T queryObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return preparedStatementExecuteTemplate.execute(pstmt -> {
-            final ResultSet rs = pstmt.executeQuery();
+            final List<T> queriedData = resultSetMappingTemplate.mapping(pstmt, rowMapper);
+            if (queriedData.size() > 1) {
+                throw new DataAccessException("조회한 데이터가 하나보다 더 많이 존재합니다.");
+            }
 
-            return resultSetMappingTemplate.mappingOne(rs, rowMapper);
+            return queriedData.get(0);
         }, sql, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return preparedStatementExecuteTemplate.execute(pstmt -> {
-            final ResultSet rs = pstmt.executeQuery();
-
-            return resultSetMappingTemplate.mapping(rs, rowMapper);
-        }, sql);
+        return preparedStatementExecuteTemplate.execute(pstmt -> resultSetMappingTemplate.mapping(pstmt, rowMapper), sql);
     }
 }
