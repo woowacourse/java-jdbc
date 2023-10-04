@@ -101,7 +101,7 @@ public class JdbcTemplate {
         );
     }
 
-    private PreparedStatement prepareStatement(String sql, Connection conn, Object[] params) {
+    private PreparedStatement prepareStatement(String sql, Connection conn, Object... params) {
         try {
             PreparedStatement pstmt = conn.prepareStatement(sql);
             for (int i = 0; i < params.length; i++) {
