@@ -6,5 +6,5 @@ import java.sql.SQLException;
 @FunctionalInterface
 public interface PreparedStatementExecuteStrategy<T> {
 
-    T strategy(final PreparedStatement pstm) throws SQLException;
+    T strategy(final PreparedStatement pstmt) throws SQLException;
 }

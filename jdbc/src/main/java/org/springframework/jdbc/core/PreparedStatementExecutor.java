@@ -14,7 +14,6 @@ public class PreparedStatementExecutor {
 
     private final DataSource dataSource;
 
-
     public PreparedStatementExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
