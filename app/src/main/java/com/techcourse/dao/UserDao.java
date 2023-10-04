@@ -27,20 +27,21 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-        if (updatedRows < 1) {
-            throw new RuntimeException("저장된 데이터가 없습니다.");
-        }
+        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         log.debug("query : {}", sql);
     }
 
+    private void updateQuery(final String sql, final Object... objects) {
+        final int updatedRows = jdbcTemplate.update(sql, objects);
+        if (updatedRows < 1) {
+            throw new RuntimeException("저장된 데이터가 없습니다.");
+        }
+    }
+
     public void update(final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?)";
-        final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-        if (updatedRows < 1) {
-            throw new RuntimeException("수정된 데이터가 없습니다.");
-        }
+        updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
 
         log.debug("query : {}", sql);
     }
