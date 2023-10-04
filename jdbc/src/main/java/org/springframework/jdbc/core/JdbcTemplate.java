@@ -64,7 +64,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> int update(final String sql, final Object... parameters) {
+    public int update(final String sql, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
