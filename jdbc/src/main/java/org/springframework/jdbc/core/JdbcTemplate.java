@@ -29,30 +29,34 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> query(final String sql, final Mapper<T> rowMapper, final Object... values) {
+    public <T> List<T> query(final String sql, final Mapper<T> mapper, final Object... values) {
         return preparedStatementExecutor.execute(
                 getPreparedStatementGenerator(sql, values),
-                getMultiplePreparedStatementCaller(rowMapper)
+                getMultiplePreparedStatementCaller(mapper)
         );
     }
 
     private <T> PreparedStatementCaller<T> getPreparedStatementCaller(final Mapper<T> mapper) {
         return psmt -> {
             final ResultSet rs = psmt.executeQuery();
+
             if (rs.next()) {
                 return mapper.map(rs);
             }
+
             return null;
         };
     }
 
-    private <T> PreparedStatementCaller<List<T>> getMultiplePreparedStatementCaller(final Mapper<T> rowMapper) {
+    private <T> PreparedStatementCaller<List<T>> getMultiplePreparedStatementCaller(final Mapper<T> mapper) {
         return psmt -> {
             final ResultSet rs = psmt.executeQuery();
             final List<T> result = new ArrayList<>();
+
             while (rs.next()) {
-                result.add(rowMapper.map(rs));
+                result.add(mapper.map(rs));
             }
+
             return result;
         };
     }
@@ -61,6 +65,7 @@ public class JdbcTemplate {
         return conn -> {
             final PreparedStatement psmt = conn.prepareStatement(sql);
             setValues(psmt, values);
+
             return psmt;
         };
     }
