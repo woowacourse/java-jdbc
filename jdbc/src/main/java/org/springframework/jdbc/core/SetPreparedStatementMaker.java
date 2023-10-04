@@ -9,7 +9,7 @@ public class SetPreparedStatementMaker implements PreparedStatementMaker {
     private final String sql;
     private final Object[] args;
 
-    public SetPreparedStatementMaker(String sql, Object[] args) {
+    public SetPreparedStatementMaker(String sql, Object... args) {
         this.sql = sql;
         this.args = args;
     }

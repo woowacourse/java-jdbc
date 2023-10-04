@@ -45,10 +45,11 @@ class JdbcTemplateTest {
     private RowMapper<TestObject> rowMapper;
 
     private JdbcTemplate jdbcTemplate;
+    private AutoCloseable openedMock;
 
     @BeforeEach
     void setUp() throws SQLException {
-        MockitoAnnotations.openMocks(this);
+        openedMock = MockitoAnnotations.openMocks(this);
 
         given(dataSource.getConnection())
                 .willReturn(connection);
@@ -56,6 +57,11 @@ class JdbcTemplateTest {
                 .willReturn(preparedStatement);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void afterAll() throws Exception {
+        openedMock.close();
     }
 
     @Test
