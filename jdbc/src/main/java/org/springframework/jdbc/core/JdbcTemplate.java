@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -22,11 +23,15 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
-        return preparedStatementExecutor.execute(
+    public <T> Optional<T> queryForObject(final String sql, final Mapper<T> mapper, final Object... values) {
+        final T result = preparedStatementExecutor.execute(
                 getPreparedStatementGenerator(sql, values),
                 getPreparedStatementCaller(mapper)
         );
+        if (result == null) {
+            return Optional.empty();
+        }
+        return Optional.of(result);
     }
 
     public <T> List<T> query(final String sql, final Mapper<T> mapper, final Object... values) {
