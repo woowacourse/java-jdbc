@@ -31,24 +31,23 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... statements
     ) {
+        final ResultSetMapper<Optional<T>> resultSetMapper = resultSet -> {
+            if (!resultSet.next()) {
+                return Optional.empty();
+            }
+
+            final T result = rowMapper.mapRow(resultSet);
+
+            if (resultSet.next()) {
+                throw new MultipleDataAccessException("단일 결과가 아닙니다.");
+            }
+
+            return Optional.of(result);
+        };
+
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(
-                        preparedStatement,
-                        resultSet -> {
-                            if (!resultSet.next()) {
-                                return Optional.empty();
-                            }
-
-                            final T result = rowMapper.mapRow(resultSet);
-
-                            if (resultSet.next()) {
-                                throw new MultipleDataAccessException("단일 결과가 아닙니다.");
-                            }
-
-                            return Optional.of(result);
-                        }
-                )
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper)
         );
     }
 
@@ -57,20 +56,19 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... statements
     ) {
+        final ResultSetMapper<List<T>> resultSetMapper = resultSet -> {
+            final List<T> result = new ArrayList<>();
+
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
+            }
+
+            return result;
+        };
+
         return preparedStatementTemplate.execute(
                 connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(
-                        preparedStatement,
-                        resultSet -> {
-                            final List<T> result = new ArrayList<>();
-
-                            while (resultSet.next()) {
-                                result.add(rowMapper.mapRow(resultSet));
-                            }
-
-                            return result;
-                        }
-                )
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper)
         );
     }
 
