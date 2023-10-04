@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.springframework.jdbc.core.PreparedStatementUtils.getPreparedStatement;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -26,19 +28,12 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... obj) {
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn)) {
             log.debug("query : {}", sql);
-            setSqlParameter(obj, pstmt);
             pstmt.execute();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new DataAccessException(exception);
-        }
-    }
-
-    private void setSqlParameter(final Object[] obj, final PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < obj.length; i++) {
-            pstmt.setObject(i + 1, obj[i]);
         }
     }
 
@@ -54,12 +49,6 @@ public class JdbcTemplate {
             log.error(exception.getMessage(), exception);
             throw new DataAccessException(exception);
         }
-    }
-
-    private PreparedStatement getPreparedStatement(final String sql, final Object[] obj, final Connection conn) throws SQLException {
-        final PreparedStatement pstmt = conn.prepareStatement(sql);
-        setSqlParameter(obj, pstmt);
-        return pstmt;
     }
 
     private <T> void validateResultSetSize(List<T> result) {
@@ -78,7 +67,7 @@ public class JdbcTemplate {
         }
         return result;
     }
-    
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
