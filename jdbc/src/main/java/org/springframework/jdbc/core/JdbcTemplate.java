@@ -24,11 +24,7 @@ public class JdbcTemplate {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
-
-    public void execute(String sql) {
-        context(connection -> connection.prepareStatement(sql));
-    }
-
+    
     public void execute(String sql, Object... args) {
         context(connection -> connection.prepareStatement(sql), args);
     }
@@ -51,18 +47,7 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    public void context(PreparedStrategy preparedStrategy) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    public void context(PreparedStrategy preparedStrategy, Object[] args) throws DataAccessException {
+    public void context(PreparedStrategy preparedStrategy, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
@@ -77,20 +62,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStrategy.createStatement(conn);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            return rss.getData(rs);
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object[] args) throws DataAccessException {
+    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
