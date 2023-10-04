@@ -23,12 +23,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
+    public <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
+            setPreparedStatementParameters(pstmt, args);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,21 +37,27 @@ public class JdbcTemplate {
         }
     }
 
+    private void setPreparedStatementParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
-            try (final ResultSet rs = setPreparedStatementParameters(pstmt, args).executeQuery()) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> objects = new ArrayList<>();
                 while (rs.next()) {
                     objects.add(rowMapper.mapRow(rs));
                 }
                 return objects;
             }
-        });
+        }, args);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
-            try (final ResultSet rs = setPreparedStatementParameters(pstmt, args).executeQuery()) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> objects = new ArrayList<>();
                 while (rs.next()) {
                     objects.add(rowMapper.mapRow(rs));
@@ -58,11 +65,11 @@ public class JdbcTemplate {
                 validateResultSetSize(objects.size());
                 return Optional.of(objects.get(0));
             }
-        });
+        }, args);
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, pstmt -> setPreparedStatementParameters(pstmt, args).executeUpdate());
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     private void validateResultSetSize(final int resultSetSize) {
@@ -73,12 +80,5 @@ public class JdbcTemplate {
         if (resultSetSize > 1) {
             throw new DataAccessException("ResultSet Size is greater than 1");
         }
-    }
-
-    private PreparedStatement setPreparedStatementParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-        return pstmt;
     }
 }
