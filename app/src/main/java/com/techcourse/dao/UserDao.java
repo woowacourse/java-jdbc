@@ -20,18 +20,14 @@ public class UserDao {
         );
     };
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
-        this.jdbcTemplate = jdbcTemplate;
+    public UserDao(final DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
     }
 
     public void insert(final User user) {
