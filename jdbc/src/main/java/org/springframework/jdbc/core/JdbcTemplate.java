@@ -21,68 +21,54 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final SqlExceptionTranslator sqlExceptionTranslator = new SqlExceptionTranslator();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... arguments) {
+    public void update(String sql, Object... arguments) {
+        queryTemplate(sql, PreparedStatement::executeUpdate, arguments);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        return queryTemplate(sql, ps -> {
+            ResultSet rs = ps.executeQuery();
+
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        }, arguments);
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        return queryTemplate(sql, preparedStatement -> {
+            ResultSet rs = preparedStatement.executeQuery();
+
+            if (rs.next()) {
+                return Optional.of(rowMapper.mapRow(rs));
+            }
+            return Optional.empty();
+        }, arguments);
+    }
+
+    private <T> T queryTemplate(String sql, PreparedStatementExecutor<T> statementExecutor, Object... arguments) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)
         ) {
             log.debug("query : {}", sql);
 
-            return pstmt.executeUpdate();
+            return statementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translateException(e);
+            throw SqlExceptionTranslator.translateException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments);
-                ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
-            }
-
-            return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translateException(e);
-        }
-    }
-
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments);
-                ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translateException(e);
-        }
-    }
-
-    private class SqlExceptionTranslator {
-        private final Set<String> BAD_SQL_GRAMMAR_CODES = Set.of(
+    private static class SqlExceptionTranslator {
+        private static final Set<String> BAD_SQL_GRAMMAR_CODES = Set.of(
                 "07",  // Dynamic SQL error
                 "21",  // Cardinality violation
                 "2A",  // Syntax error direct SQL
@@ -91,7 +77,7 @@ public class JdbcTemplate {
                 "65"   // Oracle: unknown identifier
         );
 
-        private final Set<String> DATA_ACCESS_RESOURCE_FAILURE_CODES = Set.of(
+        private static final Set<String> DATA_ACCESS_RESOURCE_FAILURE_CODES = Set.of(
                 "08",  // Connection exception
                 "53",  // PostgreSQL: insufficient resources (e.g. disk full)
                 "54",  // PostgreSQL: program limit exceeded (e.g. statement too complex)
@@ -99,7 +85,7 @@ public class JdbcTemplate {
                 "58"   // DB2: unexpected system error
         );
 
-        private JdbcException translateException(SQLException e) {
+        private static JdbcException translateException(SQLException e) {
             String sqlState = e.getSQLState();
             String classCode = sqlState.substring(0, 2);
             if (DATA_ACCESS_RESOURCE_FAILURE_CODES.contains(classCode)) {
@@ -108,7 +94,6 @@ public class JdbcTemplate {
             if (BAD_SQL_GRAMMAR_CODES.contains(classCode)) {
                 throw new BadGrammarJdbcException(e.getMessage(), e);
             }
-
             throw new JdbcException(e.getMessage(), e);
         }
     }
