@@ -16,12 +16,12 @@ public class JdbcTemplate {
         this.queryTemplate = new QueryTemplate(dataSource);
     }
 
-    public void update(String sql, Object... args) {
+    public void update(final String sql, final Object... args) {
         queryTemplate.service(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
         validateSize(results);
         return results.get(0);
     }
@@ -35,10 +35,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return queryTemplate.service(sql, prepareStatement -> {
-            ResultSet resultSet = prepareStatement.executeQuery();
-            List<T> result = new ArrayList<>();
+            final ResultSet resultSet = prepareStatement.executeQuery();
+            final List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
