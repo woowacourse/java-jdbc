@@ -28,7 +28,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?;";
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
@@ -48,7 +48,10 @@ public class UserDao {
     }
 
     public void deleteAll() {
-        String sql = "delete from users";
-        jdbcTemplate.update(sql);
+        final String deleteSql = "delete from users";
+        jdbcTemplate.update(deleteSql);
+
+        final String alterAutoIncrementSql = "ALTER TABLE users ALTER COLUMN id RESTART WITH 1";
+        jdbcTemplate.update(alterAutoIncrementSql);
     }
 }
