@@ -22,11 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public final <T> List<T> query(
-            final String sql,
-            RowMapper<T> rowMapper,
-            Object... parameters
-    ) {
+    public final <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = setValues(sql, connection, parameters);
@@ -44,11 +40,7 @@ public class JdbcTemplate {
         }
     }
 
-    public final <T> T queryForObject(
-            final String sql,
-            RowMapper<T> rowMapper,
-            final Object... parameters
-    ) {
+    public final <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = setValues(sql, connection, parameters);
@@ -64,10 +56,7 @@ public class JdbcTemplate {
         }
     }
 
-    public final void update(
-            final String sql,
-            final Object... parameters
-    ) {
+    public final void update(final String sql, final Object... parameters) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = setValues(sql, connection, parameters)
