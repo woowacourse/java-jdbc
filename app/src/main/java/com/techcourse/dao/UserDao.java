@@ -11,11 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-
-    private final RowMapper<User> rowMapper = rs -> {
+    private final static RowMapper<User> rowMapper = rs -> {
         return new User(
                 rs.getLong("id"),
                 rs.getString("account"),
@@ -23,6 +19,10 @@ public class UserDao {
                 rs.getString("email")
         );
     };
+
+    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
+
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
