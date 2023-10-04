@@ -20,49 +20,42 @@ public class JdbcTemplate {
         this.connectionManager = connectionManager;
     }
 
-    public void executeUpdate(String query, Object... parameters) {
+    public int executeUpdate(String query, Object... parameters) {
+        return execute(query, (connection, preparedStatement) -> preparedStatement.executeUpdate(), parameters);
+    }
+
+    public <T> T executeQueryForObject(String query, RowMapper<T> rowMapper, Object... parameters) {
+        return execute(query, (connection, preparedStatement) -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return rowMapper.mapRow(resultSet);
+                }
+                return null;
+            }
+        }, parameters);
+    }
+
+    public <T> List<T> executeQueryForList(String query, RowMapper<T> rowMapper, Object... parameters) {
+        return execute(query, (connection, preparedStatement) -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+                return results;
+            }
+        }, parameters);
+    }
+
+    private <T> T execute(String query, ConnectionCallback<T> callback, Object... parameters) {
         try (final Connection connection = connectionManager.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             log.info("query: {}", query);
             setParameters(preparedStatement, parameters);
-            preparedStatement.executeUpdate();
+            return callback.doInConnection(connection, preparedStatement);
         } catch (SQLException exception) {
             throw new SqlQueryException(exception.getMessage(), query);
         }
-    }
-
-    public <T> T executeQueryForObject(String query, RowMapper<T> rowMapper, Object... parameters) {
-        try (final Connection connection = connectionManager.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(query);
-             final ResultSet resultSet = executePreparedStatementQuery(preparedStatement, parameters)) {
-            log.info("query: {}", query);
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            return null;
-        } catch (SQLException exception) {
-            throw new SqlQueryException(exception.getMessage(), query);
-        }
-    }
-
-    public <T> List<T> executeQueryForList(String query, RowMapper<T> rowMapper, Object... parameters) {
-        try (final Connection connection = connectionManager.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(query);
-             final ResultSet resultSet = executePreparedStatementQuery(preparedStatement, parameters)) {
-            log.info("query: {}", query);
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException exception) {
-            throw new SqlQueryException(exception.getMessage(), query);
-        }
-    }
-
-    private ResultSet executePreparedStatementQuery(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
-        setParameters(preparedStatement, parameters);
-        return preparedStatement.executeQuery();
     }
 
     private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
