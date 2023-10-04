@@ -16,18 +16,18 @@ public class JdbcTemplate {
 
     private final ConnectionManager connectionManager;
 
-    public JdbcTemplate(ConnectionManager connectionManager) {
+    public JdbcTemplate(final ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
     }
 
-    public int executeUpdate(String query, Object... parameters) {
+    public int executeUpdate(final String query, final Object... parameters) {
         return execute(query, (connection, preparedStatement) -> preparedStatement.executeUpdate(), parameters);
     }
 
     public <T> T executeQueryForObject(
-            String query,
-            RowMapper<T> rowMapper,
-            Object... parameters
+            final String query,
+            final RowMapper<T> rowMapper,
+            final Object... parameters
     ) {
         final ResultSetExtractor<T> resultSetExtractor = resultSet -> {
             if (resultSet.next()) {
@@ -40,9 +40,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> executeQueryForList(
-            String query,
-            RowMapper<T> rowMapper,
-            Object... parameters
+            final String query,
+            final RowMapper<T> rowMapper,
+            final Object... parameters
     ) {
         final ResultSetExtractor<List<T>> resultSetExtractor = resultSet -> {
             final List<T> results = new ArrayList<>();
@@ -56,9 +56,9 @@ public class JdbcTemplate {
     }
 
     public <T> T executeQuery(
-            String query,
-            ResultSetExtractor<T> resultSetExtractor,
-            Object... parameters
+            final String query,
+            final ResultSetExtractor<T> resultSetExtractor,
+            final Object... parameters
     ) {
         return execute(query, (connection, preparedStatement) -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -67,7 +67,11 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    private <T> T execute(String query, ConnectionCallback<T> callback, Object... parameters) {
+    private <T> T execute(
+            final String query,
+            final ConnectionCallback<T> callback,
+            final Object... parameters
+    ) {
         try (final Connection connection = connectionManager.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             log.info("query: {}", query);
@@ -78,7 +82,8 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
+    private void setParameters(final PreparedStatement preparedStatement, final Object... parameters)
+            throws SQLException {
         for (int index = 1; index <= parameters.length; index++) {
             preparedStatement.setString(index, String.valueOf(parameters[index - 1]));
         }
