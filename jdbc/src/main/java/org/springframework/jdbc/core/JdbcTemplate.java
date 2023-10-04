@@ -9,8 +9,6 @@ import org.springframework.jdbc.core.exception.MultipleDataAccessException;
 
 public class JdbcTemplate {
 
-    private static final int START_STATEMENT_INDEX = 1;
-
     private final PreparedStatementTemplate preparedStatementTemplate;
     private final ResultSetTemplate resultSetTemplate;
 
@@ -21,8 +19,9 @@ public class JdbcTemplate {
 
     public int executeQuery(final String sql, final Object... statements) {
         return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                PreparedStatement::executeUpdate
+                connection -> connection.prepareStatement(sql),
+                PreparedStatement::executeUpdate,
+                statements
         );
     }
 
@@ -46,8 +45,9 @@ public class JdbcTemplate {
         };
 
         return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper)
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper),
+                statements
         );
     }
 
@@ -67,18 +67,9 @@ public class JdbcTemplate {
         };
 
         return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper)
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper),
+                statements
         );
-    }
-
-    private PreparedStatementBinder bindStatements() {
-        return (preparedStatement, statements) -> {
-            for (int i = START_STATEMENT_INDEX; i < statements.length + 1; i++) {
-                preparedStatement.setObject(i, statements[i - START_STATEMENT_INDEX]);
-            }
-
-            return preparedStatement;
-        };
     }
 }
