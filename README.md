@@ -10,3 +10,4 @@
 - [x] PrepareStatementGenerator 생성하기
 - [x] PrepareStatementSetter 만들기
 - [x] result를 생성하는 객체 만들기
+- [x] 객체의 응집성 높이기
