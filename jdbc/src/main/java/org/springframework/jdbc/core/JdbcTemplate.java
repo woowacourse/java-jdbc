@@ -35,18 +35,9 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final PrepareStatementManager prepareStatementManager = new PrepareStatementManager(new ArgumentsPrepareStatementSetter(args));
-        try (final PreparedStatement preparedStatement = prepareStatementManager.generate(dataSource.getConnection(), sql)) {
-            prepareStatementManager.setValue(preparedStatement);
-
-            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
-            List<T> results = resultMaker.extractData(rowMapper);
-
-            ResultValidator.validateSingleResult(results);
-            return results.iterator().next();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final List<T> result = query(sql, rowMapper, args);
+        ResultValidator.validateSingleResult(result);
+        return result.iterator().next();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
