@@ -1,7 +1,6 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -9,8 +8,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class PreparedStatementExecutor {
-
-    private static final Logger log = LoggerFactory.getLogger(PreparedStatementExecutor.class);
 
     private final DataSource dataSource;
 
@@ -23,8 +20,7 @@ public class PreparedStatementExecutor {
              final PreparedStatement psmt = psmtGenerator.generate(conn)) {
             return psmtCaller.call(psmt);
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage());
         }
     }
 }
