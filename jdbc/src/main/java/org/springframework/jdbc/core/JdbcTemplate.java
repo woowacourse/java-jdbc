@@ -52,9 +52,6 @@ public class JdbcTemplate {
     }
 
     private <T> void validateResultSetSize(List<T> result) {
-        if (result.isEmpty()) {
-            throw new DataAccessException("조회하려는 레코드가 존재하지 않습니다.");
-        }
         if (result.size() > VALID_RESULT_COUNT) {
             throw new DataAccessException("조회하려는 레코드는 2개 이상일 수 없습니다.");
         }
