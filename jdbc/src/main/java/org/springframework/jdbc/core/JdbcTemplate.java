@@ -24,7 +24,7 @@ public class JdbcTemplate {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
-    
+
     public void execute(String sql, Object... args) {
         context(connection -> connection.prepareStatement(sql), args);
     }
@@ -47,7 +47,7 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    public void context(PreparedStrategy preparedStrategy, Object... args) throws DataAccessException {
+    private void context(PreparedStrategy preparedStrategy, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
@@ -62,7 +62,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
+    private <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
