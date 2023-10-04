@@ -26,9 +26,9 @@ public abstract class JdbcTemplateException extends RuntimeException {
     }
 
 
-    static class SqlException extends JdbcTemplateException {
+    static class DatabaseAccessException extends JdbcTemplateException {
 
-        public SqlException(final String message) {
+        public DatabaseAccessException(final String message) {
             super(message);
         }
     }

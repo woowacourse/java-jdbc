@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplateException.SqlException;
+import org.springframework.jdbc.core.JdbcTemplateException.DatabaseAccessException;
 
 public class JdbcTemplate {
 
@@ -33,7 +33,7 @@ public class JdbcTemplate {
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SqlException(e.getMessage());
+            throw new DatabaseAccessException(e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class JdbcTemplate {
             return getObject(rowMapper, ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SqlException(e.getMessage());
+            throw new DatabaseAccessException(e.getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ public class JdbcTemplate {
             return getObjects(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SqlException(e.getMessage());
+            throw new DatabaseAccessException(e.getMessage());
         }
     }
 
