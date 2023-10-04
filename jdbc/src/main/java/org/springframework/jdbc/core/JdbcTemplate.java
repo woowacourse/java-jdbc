@@ -30,7 +30,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            setCondtion(params, pstmt);
+            setCondition(params, pstmt);
 
             pstmt.executeUpdate();
         } catch (final SQLException e) {
@@ -39,18 +39,18 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
             final List<T> results = new ArrayList<>();
 
-            final ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                T object = rowMapper.mapRow(rs);
+                final T object = rowMapper.mapRow(rs);
                 results.add(object);
             }
 
@@ -61,19 +61,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
+                final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
 
-            setCondtion(params, pstmt);
-
-            final ResultSet rs = pstmt.executeQuery();
-
             while (rs.next()) {
-                T object = rowMapper.mapRow(rs);
+                final T object = rowMapper.mapRow(rs);
                 return Optional.ofNullable(object);
             }
 
@@ -84,10 +81,15 @@ public class JdbcTemplate {
         }
     }
 
-    private static void setCondtion(final Object[] params, final PreparedStatement pstmt) throws SQLException {
+    private PreparedStatement getPreparedStatement(final String sql, final Connection conn, final Object[] params) throws SQLException {
+        final PreparedStatement pstmt = conn.prepareStatement(sql);
+        setCondition(params, pstmt);
+        return pstmt;
+    }
+
+    private void setCondition(final Object[] params, final PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
     }
-
 }
