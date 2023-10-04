@@ -1,19 +1,18 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private RowMapper<User> userRowMapper() {
+    private final RowMapper<User> userRowMapper() {
         return rs -> new User(
                 rs.getLong(1),
                 rs.getString(2),
@@ -42,18 +41,18 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        String sql = "select * from users";
+        String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, userRowMapper());
+        return jdbcTemplate.queryForObjects(sql, userRowMapper());
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, userRowMapper(), id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, userRowMapper(), account);

@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -22,53 +24,44 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executePreparedStatement(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            final ResultSet rs = pstmt.executeQuery();
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        return executePreparedStatement(sql, preparedStatement -> {
+            final ResultSet rs = preparedStatement.executeQuery();
             if (rs.next()) {
-                return rowMapper.execute(rs);
+                return Optional.of(rowMapper.execute(rs));
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return Optional.empty();
+        }, objects);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
-             final ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        return executePreparedStatement(sql, preparedStatement -> {
+            final ResultSet rs = preparedStatement.executeQuery();
             final List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.execute(rs));
             }
             return results;
+        }, objects);
+    }
+
+    private <T> T executePreparedStatement(final String sql, PreparedStatementExecutor<T> preparedStatementExecutor,
+                                           final Object... objects) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+
+            return preparedStatementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
