@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |   발생 !!
+     * Read Committed   |   안 발생 !!
+     * Repeatable Read  |   안 발생 !!
+     * Serializable     |   안 발생 !!
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +81,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -95,7 +95,7 @@ class Stage1Test {
             // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
-            assertThat(actual).isNull();
+            assertThat(actual).isNotNull();
         })).start();
 
         sleep(0.5);
@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |   발생 !!
+     * Read Committed   |   발생 !!
+     * Repeatable Read  |   안 발생 !!
+     * Serializable     |   안 발생 !!
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +130,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -197,7 +197,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
