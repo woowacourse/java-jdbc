@@ -33,10 +33,15 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void updatePassword(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+    public void update(final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.execute(sql, user.getPassword(), user.getId());
+        jdbcTemplate.execute(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
