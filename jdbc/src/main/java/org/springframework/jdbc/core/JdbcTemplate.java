@@ -36,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             final int parameterIndex = i + 1;
             pstmt.setObject(parameterIndex, args[i]);
@@ -59,7 +59,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         if (rs.next()) {
             return rowMapper.mapRow(rs, rs.getRow());
         }
@@ -82,7 +82,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         List<T> results = new ArrayList<>();
 
         while (rs.next()) {
