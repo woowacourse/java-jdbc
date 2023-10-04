@@ -22,45 +22,20 @@ public class JdbcTemplate {
     }
 
     public <T, P> T queryForObject(final String sql, final RowMapper<T> rowMapper, final P parameter) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, parameter);
-            rs = pstmt.executeQuery();
-
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
