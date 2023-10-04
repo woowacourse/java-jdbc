@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,6 +51,7 @@ public class JdbcTemplate {
         }
     }
 
+    @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args)) {
@@ -57,12 +59,9 @@ public class JdbcTemplate {
             T result = null;
             while (resultSet.next()) {
                 if (result != null) {
-                    throw new IllegalArgumentException("1개 이상의 결과가 존재합니다.");
+                    throw new DataAccessException("1개 이상의 결과가 존재합니다.");
                 }
                 result = rowMapper.mapRow(resultSet);
-            }
-            if (result == null) {
-                throw new IllegalArgumentException("결과가 존재하지 않습니다.");
             }
             return result;
         } catch (Exception e) {
