@@ -18,12 +18,12 @@ public class UserHistoryDao {
 
     private final RowMapper<UserHistory> userHistoryRowMapper() {
         return rs -> new UserHistory(
-                rs.getLong(1),
-                rs.getLong(2),
-                rs.getString(3),
-                rs.getString(4),
-                rs.getString(5),
-                rs.getString(6));
+                rs.getLong("id"),
+                rs.getLong("user_id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"),
+                rs.getString("created_by"));
     }
 
     public UserHistoryDao(final DataSource dataSource) {
