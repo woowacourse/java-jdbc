@@ -23,53 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String query, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
-
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> T queryForObject(final String query, final Class<T> convertClass, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
-
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = getPreparedStatement(conn, query, args);
+             final ResultSet rs = pstmt.executeQuery()){
             if (rs.next()) {
                 final ResultSetMetaData metaData = rs.getMetaData();
                 final int columnCount = metaData.getColumnCount();
@@ -89,45 +55,13 @@ public class JdbcTemplate {
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> queryForList(final String query, final Class<T> convertClass, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
-
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = getPreparedStatement(conn, query, args);
+             final ResultSet rs = pstmt.executeQuery()) {
             final List<T> objects = new ArrayList<>();
             while (rs.next()) {
                 final ResultSetMetaData metaData = rs.getMetaData();
@@ -148,27 +82,16 @@ public class JdbcTemplate {
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
+    }
+
+    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... args) throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
+        }
+
+        return preparedStatement;
     }
 }
