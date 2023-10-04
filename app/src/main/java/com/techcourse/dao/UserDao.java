@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -29,20 +30,20 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(User user) {
+    public void insert(Connection connection, User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         log.debug("query : {}", sql);
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
+    public void update(Connection connection, User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         log.debug("query : {}", sql);
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
