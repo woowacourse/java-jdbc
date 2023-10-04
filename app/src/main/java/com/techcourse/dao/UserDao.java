@@ -73,36 +73,9 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        if (updatedRows < 1) {
+            throw new RuntimeException("수정된 데이터가 없습니다.");
         }
     }
 

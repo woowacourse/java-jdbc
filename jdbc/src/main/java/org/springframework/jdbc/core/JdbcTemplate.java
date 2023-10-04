@@ -107,4 +107,38 @@ public class JdbcTemplate {
             }
         }
     }
+
+    public <T> int update(final String sql, final Object... parameters) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            for (int parameterIndex = 0; parameterIndex < parameters.length; parameterIndex++) {
+                pstmt.setObject(parameterIndex + 1, parameters[parameterIndex]);
+            }
+
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
 }
