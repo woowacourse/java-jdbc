@@ -54,7 +54,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                results.add(rowMaper.mapRow(rs, rs.getRow()));
+                results.add(rowMaper.mapRow(rs));
             }
 
             return results;
@@ -75,7 +75,7 @@ public class JdbcTemplate {
 
             T findObject = null;
             if (rs.next()) {
-                findObject = rowMapper.mapRow(rs, rs.getRow());
+                findObject = rowMapper.mapRow(rs);
             }
 
             validateSingleResult(findObject, rs);

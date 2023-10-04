@@ -13,7 +13,7 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private final RowMapper<User> userRowMapper =
-            (rs, rowNum) -> new User(
+            rs -> new User(
                     rs.getLong(1),
                     rs.getString(2),
                     rs.getString(3),
