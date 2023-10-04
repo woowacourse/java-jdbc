@@ -1,13 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class UserHistoryDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 

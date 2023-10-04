@@ -17,24 +17,25 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator();
-    private final DataSource dataSource;
+    private final ConnectionManager connectionManager;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.connectionManager = new ConnectionManager(dataSource);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, preparedStatement -> SingleResult.from(getQueryResult(rowMapper, preparedStatement)), args);
+        return executeQuery(sql, preparedStatement -> SingleResult.convert(getQueryResult(rowMapper, preparedStatement)), args);
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)
-        ) {
+        final Connection connection = connectionManager.getConnection();
+        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
             return executor.execute(preparedStatement);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            connectionManager.closeNotTransactional(connection);
         }
     }
 
@@ -58,5 +59,4 @@ public class JdbcTemplate {
     public int execute(final String sql, final Object... args) {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
-
 }

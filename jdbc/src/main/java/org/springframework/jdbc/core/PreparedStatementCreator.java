@@ -4,9 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class PreparedStatementCreator {
+class PreparedStatementCreator {
 
-    public PreparedStatement createPreparedStatement(
+    PreparedStatement createPreparedStatement(
             final Connection connection,
             final String sql,
             final Object... args

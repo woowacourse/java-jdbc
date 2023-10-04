@@ -5,17 +5,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (ResultSet rs) -> {
-        long id = rs.getLong("id");
-        String account = rs.getString("account");
-        String password = rs.getString("password");
-        String email = rs.getString("email");
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> {
+        final long id = rs.getLong("id");
+        final String account = rs.getString("account");
+        final String password = rs.getString("password");
+        final String email = rs.getString("email");
         return new User(id, account, password, email);
     };
 
@@ -53,5 +52,4 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
-
 }
