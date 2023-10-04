@@ -26,15 +26,15 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... args) {
-        context(connection -> connection.prepareStatement(sql), args);
+        context(sql, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rm) {
-        return context(connection -> connection.prepareStatement(sql), new RowByResultSet<>(rm));
+        return context(sql, new RowByResultSet<>(rm));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) throws DataAccessException {
-        List<T> list = context(connection -> connection.prepareStatement(sql), new RowByResultSet<>(rm), args);
+        List<T> list = context(sql, new RowByResultSet<>(rm), args);
 
         if (list.isEmpty()) {
             return null;
@@ -47,9 +47,9 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    private void context(PreparedStrategy preparedStrategy, Object... args) throws DataAccessException {
+    private void context(String sql, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
@@ -62,9 +62,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
+    private <T> List<T> context(String sql, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
