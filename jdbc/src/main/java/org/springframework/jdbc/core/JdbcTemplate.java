@@ -1,16 +1,13 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -24,50 +21,29 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        log.debug("query : {}", sql);
+        return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementUpdateExecuter());
     }
 
-    private void setParameters(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private <T> T execute(
+            PreparedStatementMaker pstmtMaker,
+            PreparedStatementExecuter<T> pstmtExecuter
+    ) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = pstmtMaker.makePreparedStatement(conn)
+        ) {
+            return pstmtExecuter.execute(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        log.debug("query : {}", sql);
+        return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementQueryExecuter<>(rowMapper));
     }
 
-    @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         final List<T> objects = query(sql, rowMapper, args);
         return getSingleObject(objects);
@@ -81,13 +57,13 @@ public class JdbcTemplate {
 
     private <T> void validateEmpty(List<T> objects) {
         if (objects.isEmpty()) {
-            throw new IllegalArgumentException("조회 데이터가 존재하지 않습니다.");
+            throw new DataAccessException("조회 데이터가 존재하지 않습니다.");
         }
     }
 
     private <T> void validateSingleSize(List<T> objects) {
         if (objects.size() > SINGLE_SIZE) {
-            throw new IllegalArgumentException("조회 데이터가 한 개 이상 존재합니다.");
+            throw new DataAccessException("조회 데이터가 한 개 이상 존재합니다.");
         }
     }
 }
