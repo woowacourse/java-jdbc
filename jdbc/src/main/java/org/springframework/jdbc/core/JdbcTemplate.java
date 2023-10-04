@@ -12,12 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.singletonList;
-import static org.springframework.jdbc.core.PreparedStatementUtil.getPreparedStatement;
-import static org.springframework.jdbc.core.PreparedStatementUtil.getResultSet;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -39,7 +35,7 @@ public class JdbcTemplate {
 
     private <T> T getRowByQuery(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) {
         try (
-                final ResultSet resultSet = getResultSet(preparedStatement)
+                final ResultSet resultSet = preparedStatement.executeQuery();
         ) {
             return new ResultSetProvider<>(rowMapper).getResults(resultSet);
         } catch (SQLException e) {
@@ -48,23 +44,21 @@ public class JdbcTemplate {
     }
 
     private <T> T getResult(final PreparedStatementExecutor<T> executor, final String sql, final Object... conditions) {
-        try (
-                final Connection connection = getConnection();
-                final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, conditions)
-        ) {
+        PreparedStatement preparedStatement = null;
+        try {
+            Connection connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            setConditions(preparedStatement, conditions);
+
             return executor.query(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+    private static void setConditions(PreparedStatement preparedStatement, Object[] conditions) throws SQLException {
+        for (int i = 1; i <= conditions.length; i++) {
+            preparedStatement.setObject(i, conditions[i - 1]);
         }
     }
-
 }
