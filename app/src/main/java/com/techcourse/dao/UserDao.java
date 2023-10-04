@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public interface UserDao {
 
-    Integer insert(final User user);
+    int insert(final User user);
 
-    Integer update(final User user);
+    int update(final User user);
 
     List<User> findAll();
 

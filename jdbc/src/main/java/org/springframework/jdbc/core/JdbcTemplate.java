@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Integer update(final String sql, final Object... conditions) {
+    public int update(final String sql, final Object... conditions) {
         return getResult(PreparedStatement::executeUpdate, sql, conditions);
     }
 
