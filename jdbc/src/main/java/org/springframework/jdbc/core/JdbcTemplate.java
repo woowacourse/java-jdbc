@@ -7,6 +7,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -37,7 +38,7 @@ public class JdbcTemplate {
         ) {
             return pstmtExecuter.execute(pstmt);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -62,13 +63,13 @@ public class JdbcTemplate {
 
     private <T> void validateEmpty(List<T> objects) {
         if (objects.isEmpty()) {
-            throw new IllegalArgumentException("조회 데이터가 존재하지 않습니다.");
+            throw new DataAccessException("조회 데이터가 존재하지 않습니다.");
         }
     }
 
     private <T> void validateSingleSize(List<T> objects) {
         if (objects.size() > SINGLE_SIZE) {
-            throw new IllegalArgumentException("조회 데이터가 한 개 이상 존재합니다.");
+            throw new DataAccessException("조회 데이터가 한 개 이상 존재합니다.");
         }
     }
 }
