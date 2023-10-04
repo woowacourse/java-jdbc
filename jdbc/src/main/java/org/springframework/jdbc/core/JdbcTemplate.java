@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate<T> {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -33,7 +33,7 @@ public class JdbcTemplate<T> {
         }
     }
 
-    public T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatement(conn, sql, args);
              ResultSet rs = pstmt.executeQuery()) {
@@ -50,7 +50,7 @@ public class JdbcTemplate<T> {
         }
     }
 
-    public List<T> queryForList(String sql, RowMapper<T> mapper, Object... args) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> mapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatement(conn, sql, args);
              ResultSet rs = pstmt.executeQuery()) {
