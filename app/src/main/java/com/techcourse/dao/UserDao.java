@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
 import java.util.List;
 
 public class UserDao {
@@ -20,16 +19,9 @@ public class UserDao {
             resultSet.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -57,13 +49,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, id).get();
         return user;
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account).get();
         return user;
     }
 }
