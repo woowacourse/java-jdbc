@@ -45,7 +45,11 @@ public class JdbcTemplate {
             return executePreparedStatement(ps -> {
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    return Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
+                    Optional<T> result = Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
+                    if (rs.next()){
+                        throw new DataAccessException();
+                    }
+                    return result;
                 }
                 throw new NoSuchElementException();
             }, pstmt);
