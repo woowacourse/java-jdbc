@@ -58,7 +58,7 @@ public class JdbcTemplate {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = prepareStatement(connection.prepareStatement(sql), objects)) {
             log.debug("query : {}", sql);
-            return preparedStatementCallback.execute(preparedStatement);
+            return preparedStatementCallback.callback(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
