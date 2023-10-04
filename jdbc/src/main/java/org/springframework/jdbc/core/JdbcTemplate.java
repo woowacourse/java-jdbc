@@ -49,7 +49,7 @@ public class JdbcTemplate {
 
     private <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         if (rs.next()) {
-            return rowMapper.mapRow(rs, rs.getRow());
+            return rowMapper.mapRow(rs);
         }
 
         return null;

@@ -9,7 +9,7 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> rowMapper = (rs, rowNum) -> new User(
+    private static final RowMapper<User> rowMapper = (rs) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
