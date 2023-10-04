@@ -1,8 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,7 +46,6 @@ public class JdbcTemplate {
             Connection connection = dataSource.getConnection();
             preparedStatement = connection.prepareStatement(sql);
             setConditions(preparedStatement, conditions);
-
             return executor.query(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
