@@ -52,10 +52,9 @@ public class JdbcTemplate {
             processPreparedStatementParameter(pstmt, args);
 
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMaper.mapRow(rs, rs.getRow()));
-                }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                results.add(rowMaper.mapRow(rs, rs.getRow()));
             }
 
             return results;
@@ -72,17 +71,16 @@ public class JdbcTemplate {
 
             processPreparedStatementParameter(pstmt, args);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
+            ResultSet rs = pstmt.executeQuery();
 
-                T findObject = null;
-                if (rs.next()) {
-                    findObject = rowMapper.mapRow(rs, rs.getRow());
-                }
-
-                validateSingleResult(findObject, rs);
-
-                return findObject;
+            T findObject = null;
+            if (rs.next()) {
+                findObject = rowMapper.mapRow(rs, rs.getRow());
             }
+
+            validateSingleResult(findObject, rs);
+
+            return findObject;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
