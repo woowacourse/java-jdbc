@@ -47,3 +47,6 @@
 - [x] JdbcTemplate 테스트 작성
 - [x] JdbcTemplate의 executeQuery 중복 제거
 - [x] TransactionTemplate catch 절 final
+
+### 3차
+- [ ] EOF 해결(TransactionTemplateTest, PreparedStatementCreatorTest)
