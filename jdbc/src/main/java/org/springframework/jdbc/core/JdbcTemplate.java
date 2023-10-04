@@ -46,46 +46,21 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            rs = pstmt.executeQuery();
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
             final List<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                final T object = rowMapper.mapRow(rs);
+            while (resultSet.next()) {
+                final T object = rowMapper.mapRow(resultSet);
                 objects.add(object);
             }
             return objects;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
