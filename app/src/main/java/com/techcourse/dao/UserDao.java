@@ -12,10 +12,10 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> rowMapper = rs -> {
-        long id = rs.getLong(1);
-        String account = rs.getString(2);
-        String password = rs.getString(3);
-        String email = rs.getString(4);
+        long id = rs.getLong("id");
+        String account = rs.getString("account");
+        String password = rs.getString("password");
+        String email = rs.getString("email");
         return new User(id, account, password, email);
     };
 
