@@ -53,7 +53,7 @@ class Stage2Test {
         assertThat(hikariPool.getTotalConnections()).isEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
 
         // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
-        assertThat(hikariDataSource.getPoolName()).isEqualTo("gugu");
+        assertThat(hikariDataSource.getPoolName()).isEqualTo("gitchan");
     }
 
     // 데이터베이스에 연결만 하는 메서드. 커넥션 풀에 몇 개의 연결이 생기는지 확인하는 용도.
@@ -71,8 +71,7 @@ class Stage2Test {
     }
 
     // 학습 테스트를 위해 HikariPool을 추출
-    public static HikariPool getPool(final HikariDataSource hikariDataSource)
-    {
+    public static HikariPool getPool(final HikariDataSource hikariDataSource) {
         try {
             Field field = hikariDataSource.getClass().getDeclaredField("pool");
             field.setAccessible(true);
