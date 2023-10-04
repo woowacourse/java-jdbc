@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.JdbcException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -25,62 +25,75 @@ public class JdbcTemplate {
     public int update(final String sql, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args)
         ) {
-            for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
-            }
-
             log.debug("run sql {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
+                final ResultSet resultSet = pstmt.executeQuery()
         ) {
-            for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
-            }
-
-            final ResultSet resultSet = pstmt.executeQuery();
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.map(resultSet));
             }
-
             log.debug("run sql {}", sql);
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
+                final ResultSet resultSet = pstmt.executeQuery()
         ) {
-            for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-                pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
-            }
-
-            final ResultSet resultSet = pstmt.executeQuery();
-
             log.debug("run sql {}", sql);
             if (resultSet.next()) {
-                return Optional.of(rowMapper.map(resultSet));
+                final T result = rowMapper.map(resultSet);
+                validateIsOnlyResult(resultSet);
+                return result;
             }
-            return Optional.empty();
+            logAndThrowNoDataFoundException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
+        }
+        return null;
+    }
+
+    private void validateIsOnlyResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            log.error("selected data count is larger than 1");
+            throw new JdbcException("selected data count is larger than 1");
+        }
+    }
+
+    private static void logAndThrowNoDataFoundException() {
+        log.error("no data found");
+        throw new JdbcException("no data found");
+    }
+
+    private PreparedStatement getPrepareStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
+        final PreparedStatement pstm = connection.prepareStatement(sql);
+        setSqlParameters(pstm, args);
+        return pstm;
+    }
+
+    private void setSqlParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+        for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
+            pstmt.setString(parameterIndex + 1, String.valueOf(args[parameterIndex]));
         }
     }
 }

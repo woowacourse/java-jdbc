@@ -50,14 +50,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
-                .orElseThrow(() -> new RuntimeException("해당되는 id의 사용자를 찾을 수 없습니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
-                .orElseThrow(() -> new RuntimeException("해당되는 account의 사용자를 찾을 수 없습니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }

@@ -8,13 +8,6 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class UserHistoryDaoTest {
 
@@ -37,7 +30,7 @@ class UserHistoryDaoTest {
         userHistoryDao.log(userHistory);
 
         var selectSql = "select id, user_id, account, password, email, created_at, created_by from user_history where created_by = ?";
-        Optional<UserHistory> result = jdbcTemplate.queryForObject(selectSql,
+        UserHistory result = jdbcTemplate.queryForObject(selectSql,
                 resultSet -> new UserHistory(
                         resultSet.getLong("id"),
                         resultSet.getLong("user_id"),
@@ -49,9 +42,8 @@ class UserHistoryDaoTest {
                 "sun-shot");
 
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(result).isPresent();
-            softly.assertThat(result.get().getAccount()).isEqualTo("philip");
-            softly.assertThat(result.get().getCreateBy()).isEqualTo("sun-shot");
+            softly.assertThat(result.getAccount()).isEqualTo("philip");
+            softly.assertThat(result.getCreateBy()).isEqualTo("sun-shot");
         });
     }
 
