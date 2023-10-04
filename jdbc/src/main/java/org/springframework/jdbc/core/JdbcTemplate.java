@@ -1,7 +1,5 @@
 package org.springframework.jdbc.core;
 
-import static java.sql.Statement.RETURN_GENERATED_KEYS;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,6 +7,8 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.exception.DataNotFoundException;
+import org.springframework.jdbc.core.exception.JdbcTemplateException;
 
 public class JdbcTemplate {
 
@@ -20,55 +20,54 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Long executeUpdate(final String sql, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql,
-                RETURN_GENERATED_KEYS)) {
+    public void executeUpdate(final String sql, final Object... parameters) {
+        try (
+            final Connection connection = dataSource.getConnection();
+            final PreparedStatement pst = createPreparedStatement(sql, connection, parameters)
+        ) {
             log.debug("query : {}", sql);
-            setPreparedStatement(pstmt, parameters);
-            pstmt.executeUpdate();
-            return extractId(pstmt);
+            pst.executeUpdate();
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Long extractId(final PreparedStatement pstmt) throws SQLException {
-        try (final ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-            if (generatedKeys.next()) {
-                return generatedKeys.getLong(1);
-            }
-            throw new SQLException("id를 찾을 수 없습니다.");
+            throw new JdbcTemplateException(e);
         }
     }
 
     private void setPreparedStatement(
-        final PreparedStatement pstmt,
+        final PreparedStatement pst,
         final Object[] parameters
     ) throws SQLException {
         for (int index = 1; index <= parameters.length; index++) {
-            pstmt.setObject(index, parameters[index - 1]);
+            pst.setObject(index, parameters[index - 1]);
         }
     }
 
     public <T> T executeQuery(
         final String sql,
         final Mapper<T> mapper,
-        final Object... objects) {
-
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            setPreparedStatement(pstmt, objects);
-            final ResultSet rs = pstmt.executeQuery();
+        final Object... objects
+    ) {
+        try (
+            final Connection connection = dataSource.getConnection();
+            final PreparedStatement pst = createPreparedStatement(sql, connection, objects);
+            final ResultSet rs = pst.executeQuery()
+        ) {
             log.debug("query : {}", sql);
             if (rs.next()) {
                 return mapper.map(rs);
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataNotFoundException();
+        } catch (final SQLException e) {
+            throw new JdbcTemplateException(e);
         }
+    }
+
+    private PreparedStatement createPreparedStatement(
+        final String sql,
+        final Connection connection,
+        final Object... parameters
+    ) throws SQLException {
+        final PreparedStatement pst = connection.prepareStatement(sql);
+        setPreparedStatement(pst, parameters);
+        return pst;
     }
 }
