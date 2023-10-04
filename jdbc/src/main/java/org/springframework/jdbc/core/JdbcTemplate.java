@@ -9,9 +9,9 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplateException.DatabaseAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplateException.DatabaseAccessException;
 
 public class JdbcTemplate {
 
@@ -26,20 +26,26 @@ public class JdbcTemplate {
     public void execute(final String sql, final Object... fields) {
         log.debug("query : {}", sql);
 
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            setPreparedStatement(ps, fields);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DatabaseAccessException(e.getMessage());
-        }
+        execute(sql, PreparedStatement::executeUpdate, fields);
     }
 
     private void setPreparedStatement(final PreparedStatement ps, final Object[] fields) throws SQLException {
         for (int i = 1; i <= fields.length; i++) {
-            ps.setObject(i, fields[i-1]);
+            ps.setObject(i, fields[i - 1]);
+        }
+    }
+
+    private <T> T execute(final String sql,
+                          final PrepareStatementExecutor<T> executor,
+                          final Object... fields) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            setPreparedStatement(ps, fields);
+
+            return executor.execute(ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DatabaseAccessException(e.getMessage());
         }
     }
 
@@ -48,24 +54,20 @@ public class JdbcTemplate {
                       final Object... fields) {
         log.debug("query : {}", sql);
 
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
+        return execute(sql,
+                ps -> executeResultSet(rowMapper, ps, (rm, rs) -> List.of(getObject(rm, rs))).get(0),
+                fields);
+    }
 
-            setPreparedStatement(ps, fields);
-            return getObject(rowMapper, ps);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DatabaseAccessException(e.getMessage());
+    private <T> List<T> executeResultSet(final RowMapper<T> rowMapper,
+                                         final PreparedStatement ps,
+                                         final ResultSetExecutor<T> resultSetExecutor) throws SQLException {
+        try (final ResultSet resultSet = ps.executeQuery()) {
+            return resultSetExecutor.execute(rowMapper, resultSet);
         }
     }
 
-    private <T> T getObject(final RowMapper<T> rowMapper, final PreparedStatement ps) throws SQLException {
-        try (final ResultSet rs = ps.executeQuery()) {
-            return executeRowMapper(rowMapper, rs);
-        }
-    }
-
-    private <T> T executeRowMapper(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> T getObject(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         if (rs.next() && rs.isLast()) {
             return rowMapper.mapRow(rs);
         }
@@ -78,15 +80,7 @@ public class JdbcTemplate {
     public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
 
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql);
-             final ResultSet rs = ps.executeQuery()) {
-
-            return getObjects(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DatabaseAccessException(e.getMessage());
-        }
+        return execute(sql, ps -> executeResultSet(rowMapper, ps, this::getObjects));
     }
 
     private <T> List<T> getObjects(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {

@@ -1,9 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +38,7 @@ public class UserDao {
         final var sql = "select id, account, password, email from users";
 
         return jdbcTemplate.findAll(sql,
-                (rs) -> new User(rs.getLong("id"),
+                rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email")));
@@ -50,7 +48,7 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.find(sql,
-                (rs) -> new User(rs.getLong("id"),
+                rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email")),
@@ -61,7 +59,7 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.find(sql,
-                (rs) -> new User(rs.getLong("id"),
+                rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email")),
