@@ -17,13 +17,30 @@ public class ObjectConverter {
     private ObjectConverter() {
     }
 
-    public static <T> T convert(ResultSet resultSet, Class<T> type) {
+    public static <T> T convertForObject(ResultSet resultSet, Class<T> type){
         try {
+            Constructor<?> allFieldsConstructor = findAllFieldsConstructor(type);
             if(resultSet.next()){
-                Constructor<?> allFieldsConstructor = findAllFieldsConstructor(type);
                 return toInstance(allFieldsConstructor, resultSet);
             }
-            return null;
+            throw new EmptyResultSetException();
+        } catch (
+            InvocationTargetException |
+            InstantiationException |
+            SQLException |
+            IllegalAccessException e) {
+            throw new ResultSetConvertException("ResultSet 을 변환하는데 실패했습니다.", e);
+        }
+    }
+
+    public static <T> List<T> convertForList(ResultSet resultSet, Class<T> type) {
+        try {
+            List<T> result = new ArrayList<>();
+            Constructor<?> allFieldsConstructor = findAllFieldsConstructor(type);
+            while(resultSet.next()){
+                result.add(toInstance(allFieldsConstructor, resultSet));
+            }
+            return result;
         } catch (
             InvocationTargetException |
             InstantiationException |

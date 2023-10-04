@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -23,15 +22,27 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, Class<T> type, Object... args) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
         ) {
             log.debug(QUERY_LOG, sql);
             setArgs(pstmt, sql, args);
-            return ObjectConverter.convert(pstmt.executeQuery(), type);
+            ResultSet resultSet = pstmt.executeQuery();
+            validOneResult(resultSet);
+            return ObjectConverter.convertForObject(resultSet, type);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void validOneResult(ResultSet resultSet) throws SQLException {
+        if(!resultSet.next()){
+            throw new IncorrectResultSizeDataAccessException("No rows selected");
+        }
+        if (resultSet.next()) {
+            throw new IncorrectResultSizeDataAccessException("More than one row selected");
+        }
+        resultSet.beforeFirst();
     }
 
     private void setArgs(PreparedStatement pstmt, String sql, Object[] args) throws SQLException {
@@ -65,12 +76,7 @@ public class JdbcTemplate {
         ) {
             log.debug(QUERY_LOG, sql);
             setArgs(pstmt, sql, args);
-            ResultSet rs = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(ObjectConverter.convert(rs, type));
-            }
-            return result;
+            return ObjectConverter.convertForList(pstmt.executeQuery(), type);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
