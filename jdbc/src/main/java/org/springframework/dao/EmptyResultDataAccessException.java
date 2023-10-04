@@ -1,8 +1,8 @@
 package org.springframework.dao;
 
-public class EmptyResultDataAccessException extends DataAccessException {
+public class EmptyResultDataAccessException extends IncorrectResultSizeDataAccessException {
 
-    public EmptyResultDataAccessException() {
-        super("Incorrect result size: expected " + 1 + ", actual " + 0);
+    public EmptyResultDataAccessException(int expectedSize) {
+        super(expectedSize, 0);
     }
 }
