@@ -60,6 +60,12 @@ public class ObjectConverter {
         return noAllFieldInitializingConstructor;
     }
 
+    private static <T> List<String> extractFieldNames(Class<T> type) {
+        return Stream.of(type.getDeclaredFields())
+            .map(Field::getName)
+            .collect(Collectors.toList());
+    }
+
     private static boolean haveAllField(Constructor<?> constructor, List<String> fieldNames) {
         Parameter[] allParameters = constructor.getParameters();
         if (fieldNames.size() != allParameters.length) {
@@ -67,12 +73,6 @@ public class ObjectConverter {
         }
         return Stream.of(allParameters)
             .allMatch(parameter -> fieldNames.contains(parameter.getName()));
-    }
-
-    private static <T> List<String> extractFieldNames(Class<T> type) {
-        return Stream.of(type.getDeclaredFields())
-            .map(Field::getName)
-            .collect(Collectors.toList());
     }
 
     private static <T> T toInstance(Constructor<?> constructor, ResultSet resultSet)
