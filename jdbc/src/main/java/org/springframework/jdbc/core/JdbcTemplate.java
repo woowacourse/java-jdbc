@@ -15,6 +15,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final String QUERY_LOG = "query : {}";
+    private static final int ONE_RESULT = 1;
 
     private final DataSource dataSource;
 
@@ -24,7 +25,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, Class<T> type, Object... args) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
+                ResultSet.CONCUR_READ_ONLY)
         ) {
             log.debug(QUERY_LOG, sql);
             setArgs(pstmt, sql, args);
@@ -38,10 +40,11 @@ public class JdbcTemplate {
     }
 
     private void validOneResult(ResultSet resultSet) throws SQLException {
-        if(!resultSet.next()){
+        if (!resultSet.next()) {
             throw new IncorrectResultSizeDataAccessException("No rows selected");
         }
-        if (resultSet.next()) {
+        resultSet.last();
+        if (resultSet.getRow() != ONE_RESULT) {
             throw new IncorrectResultSizeDataAccessException("More than one row selected");
         }
         resultSet.beforeFirst();
