@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -31,7 +32,7 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -50,16 +51,28 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
             try (final ResultSet rs = setPreparedStatementParameters(pstmt, args).executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(rowMapper.mapRow(rs));
+                final List<T> objects = new ArrayList<>();
+                while (rs.next()) {
+                    objects.add(rowMapper.mapRow(rs));
                 }
-                return Optional.empty();
+                validateResultSetSize(objects.size());
+                return Optional.of(objects.get(0));
             }
         });
     }
 
     public int update(final String sql, final Object... args) {
         return execute(sql, pstmt -> setPreparedStatementParameters(pstmt, args).executeUpdate());
+    }
+
+    private void validateResultSetSize(final int resultSetSize) {
+        if (resultSetSize == 0) {
+            throw new DataAccessException("ResultSet is empty");
+        }
+
+        if (resultSetSize > 1) {
+            throw new DataAccessException("ResultSet Size is greater than 1");
+        }
     }
 
     private PreparedStatement setPreparedStatementParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
