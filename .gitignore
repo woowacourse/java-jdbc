@@ -174,4 +174,4 @@ tomcat.*/**
 
 **/WEB-INF/classes/**
 
-study/test.mv.db
+study/test.*.db
