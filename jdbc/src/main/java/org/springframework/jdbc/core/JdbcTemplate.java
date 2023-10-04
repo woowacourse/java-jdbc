@@ -45,8 +45,8 @@ public class JdbcTemplate {
             return executePreparedStatement(ps -> {
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
-                    Optional<T> result = Optional.ofNullable(rowMapper.getRow(rs, rs.getRow()));
-                    if (rs.next()){
+                    Optional<T> result = Optional.ofNullable(rowMapper.getRow(rs));
+                    if (!rs.last()){
                         throw new DataAccessException();
                     }
                     return result;
