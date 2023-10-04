@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import org.springframework.dao.SQLExceptionTranslator;
 
 public class JdbcTemplate {
 
@@ -27,13 +28,11 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
-            for (int i = 1; i < parameters.length + 1; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
+            setQueryParameters(pstmt, parameters);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
         }
     }
 
@@ -42,20 +41,36 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            for (int i = 1; i < parameters.length + 1; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
-            try (ResultSet rs = pstmt.executeQuery();) {
+            setQueryParameters(pstmt, parameters);
+            try (ResultSet rs = pstmt.executeQuery()) {
                 log.debug("query : {}", sql);
 
+                T result = null;
                 if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
+                    result = rowMapper.mapRow(rs, rs.getRow());
                 }
+
+                verifyResultRowSize(rs, 1);
+
+                if (result == null) {
+                    throw new SQLException("조회결과가업서!");
+                }
+
+                return result;
             }
-            throw new SQLException("조회결과가업서!");
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
+        }
+    }
+
+    private static void verifyResultRowSize(final ResultSet rs, final int rowSize) throws SQLException {
+        rs.last();
+        if (rowSize < rs.getRow()) {
+            throw new SQLException(String.format("결과가 1개인 줄 알았는데, %d개 나왔서!", rs.getRow()));
+            /**
+             * 예외 원문 : Incorrect result size: expected 1, actual n
+             */
         }
     }
 
@@ -64,9 +79,7 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            for (int i = 1; i < parameters.length + 1; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
+            setQueryParameters(pstmt, parameters);
 
             try (ResultSet rs = pstmt.executeQuery();) {
                 log.debug("query : {}", sql);
@@ -79,7 +92,13 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw SQLExceptionTranslator.translate(e);
+        }
+    }
+
+    private static void setQueryParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+        for (int i = 1; i < parameters.length + 1; i++) {
+            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }
