@@ -30,9 +30,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             setSqlParameter(obj, pstmt);
             pstmt.execute();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
         }
     }
 
@@ -53,9 +53,9 @@ public class JdbcTemplate {
             }
             validateResultSetSize(result);
             return Optional.of(result.get(0));
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
         }
     }
 
@@ -85,9 +85,9 @@ public class JdbcTemplate {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
             return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
         }
     }
 }
