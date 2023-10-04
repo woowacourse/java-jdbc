@@ -19,16 +19,22 @@ public class StatementCreator {
 
     private static void setPreparedStatement(PreparedStatement pstmt, Object... arguments) throws SQLException {
         for (int argumentIdx = 1; argumentIdx < arguments.length + 1; argumentIdx++) {
-            Object argument = filterArgument(arguments[argumentIdx - 1]);
+            Object argument = SQLValidator.filterArgument(arguments[argumentIdx - 1]);
             pstmt.setObject(argumentIdx, argument);
         }
     }
 
-    private static Object filterArgument(Object argument) {
-        Object filtered = argument;
-        if (argument instanceof String) {
-            filtered = ((String) argument).replaceAll("[^a-zA-Z0-9-@.]", EMPTY_STRING);
+
+    private static class SQLValidator {
+
+        private static final String SQL_PATTERN = "[^a-zA-Z_=,\\-:'!><.?\"`% ()0-9*@\n\r]*";
+
+        private static Object filterArgument(Object argument) {
+            Object filtered = argument;
+            if (argument instanceof String) {
+                filtered = ((String) argument).replaceAll(SQL_PATTERN, EMPTY_STRING);
+            }
+            return filtered;
         }
-        return filtered;
     }
 }
