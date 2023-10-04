@@ -21,10 +21,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return executeUpdate(sql, args);
-    }
-
-    private int executeUpdate(String sql, Object... args) {
+        log.debug("query : {}", sql);
         return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementUpdateExecuter());
     }
 
@@ -43,10 +40,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeQuery(sql, rowMapper, args);
-    }
-
-    private <T> List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... args) {
+        log.debug("query : {}", sql);
         return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementQueryExecuter<>(rowMapper));
     }
 
