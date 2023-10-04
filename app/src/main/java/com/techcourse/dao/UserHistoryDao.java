@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.exception.UserHistoryNotFoundException;
+import com.techcourse.dao.exception.UserNotFoundException;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
@@ -44,6 +46,7 @@ public class UserHistoryDao {
     public UserHistory findLogByUser(final User user) {
         log.debug("User history id : {}", user.getId());
         final var sql = "select * from user_history where user_id = ?";
-        return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, user.getId());
+        return jdbcTemplate.executeQueryForObject(sql, userHistoryRowMapper, user.getId())
+                .orElseThrow(() -> new UserHistoryNotFoundException("지정한 id에 대한 UserHistory를 찾을 수 없습니다. input user id : " + user.getId()));
     }
 }
