@@ -4,10 +4,9 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.SQLParameters;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -27,59 +26,40 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final SQLParameters sqlParameters = new SQLParameters()
-                .addParameter(user.getAccount())
-                .addParameter(user.getPassword())
-                .addParameter(user.getEmail());
-        try {
-            jdbcTemplate.executeQuery(sql, sqlParameters);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        };
+        jdbcTemplate.update(sql, preparedStatementSetter);
     }
 
     public void update(final User user) {
         final String sql = "update users set password = ?, email = ? where id = ?";
-        final SQLParameters sqlParameters = new SQLParameters()
-                .addParameter(user.getPassword())
-                .addParameter(user.getEmail())
-                .addParameter(user.getId());
-        try {
-            jdbcTemplate.executeQuery(sql, sqlParameters);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setLong(3, user.getId());
+        };
+        jdbcTemplate.update(sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        try {
-            return jdbcTemplate.query(sql, USER_ROW_MAPPER);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final SQLParameters sqlParameters = new SQLParameters();
-        sqlParameters.addParameter(id);
-        try {
-            return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, sqlParameters);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, id);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, preparedStatementSetter);
+
     }
 
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final SQLParameters sqlParameters = new SQLParameters();
-        sqlParameters.addParameter(account);
-        try {
-            return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, sqlParameters);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setString(1, account);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, preparedStatementSetter);
     }
 }
