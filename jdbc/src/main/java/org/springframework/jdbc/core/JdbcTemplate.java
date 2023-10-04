@@ -24,25 +24,45 @@ public class JdbcTemplate {
         return execute(query, (connection, preparedStatement) -> preparedStatement.executeUpdate(), parameters);
     }
 
-    public <T> T executeQueryForObject(String query, RowMapper<T> rowMapper, Object... parameters) {
-        return execute(query, (connection, preparedStatement) -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
+    public <T> T executeQueryForObject(
+            String query,
+            RowMapper<T> rowMapper,
+            Object... parameters
+    ) {
+        final ResultSetExtractor<T> resultSetExtractor = resultSet -> {
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
-        }, parameters);
+            return null;
+        };
+
+        return executeQuery(query, resultSetExtractor, parameters);
     }
 
-    public <T> List<T> executeQueryForList(String query, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> executeQueryForList(
+            String query,
+            RowMapper<T> rowMapper,
+            Object... parameters
+    ) {
+        final ResultSetExtractor<List<T>> resultSetExtractor = resultSet -> {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
+        };
+
+        return executeQuery(query, resultSetExtractor, parameters);
+    }
+
+    public <T> T executeQuery(
+            String query,
+            ResultSetExtractor<T> resultSetExtractor,
+            Object... parameters
+    ) {
         return execute(query, (connection, preparedStatement) -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
+                return resultSetExtractor.extract(resultSet);
             }
         }, parameters);
     }
