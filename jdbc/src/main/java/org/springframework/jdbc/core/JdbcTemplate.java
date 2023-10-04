@@ -1,10 +1,8 @@
 package org.springframework.jdbc.core;
 
-import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +23,7 @@ public class JdbcTemplate {
     public int update(final String query, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
+
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -32,52 +31,32 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String query, final Class<T> convertClass, final Object... args) {
+    public <T> T queryForObject(final String query, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(conn, query, args);
-             final ResultSet rs = pstmt.executeQuery()){
-            if (rs.next()) {
-                final ResultSetMetaData metaData = rs.getMetaData();
-                final int columnCount = metaData.getColumnCount();
+             final ResultSet rs = pstmt.executeQuery()) {
 
-                final Object[] params = new Object[columnCount];
-                final Class<?>[] paramTypes = new Class<?>[columnCount];
-
-                for (int i = 0; i < columnCount; i++) {
-                    params[i] = rs.getObject(i + 1);
-                    paramTypes[i] = Class.forName(metaData.getColumnClassName(i + 1));
-                }
-
-                final Constructor<T> constructor = convertClass.getConstructor(paramTypes);
-                return constructor.newInstance(params);
+            if (!rs.next()) {
+                return null;
             }
-            return null;
+
+            return rowMapper.mapToRow(rs);
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> List<T> queryForList(final String query, final Class<T> convertClass, final Object... args) {
+    public <T> List<T> queryForList(final String query, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(conn, query, args);
              final ResultSet rs = pstmt.executeQuery()) {
+
             final List<T> objects = new ArrayList<>();
             while (rs.next()) {
-                final ResultSetMetaData metaData = rs.getMetaData();
-                final int columnCount = metaData.getColumnCount();
-
-                final Object[] params = new Object[columnCount];
-                final Class<?>[] paramTypes = new Class<?>[columnCount];
-
-                for (int i = 0; i < columnCount; i++) {
-                    params[i] = rs.getObject(i + 1);
-                    paramTypes[i] = Class.forName(metaData.getColumnClassName(i + 1));
-                }
-
-                final Constructor<T> constructor = convertClass.getConstructor(paramTypes);
-                objects.add(constructor.newInstance(params));
+                objects.add(rowMapper.mapToRow(rs));
             }
+
             return objects;
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
@@ -85,7 +64,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... args) throws SQLException {
+    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... args)
+            throws SQLException {
+
         final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
         for (int i = 0; i < args.length; i++) {
