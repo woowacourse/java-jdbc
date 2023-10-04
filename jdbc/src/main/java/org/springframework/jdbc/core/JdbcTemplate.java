@@ -27,17 +27,21 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, Class<T> type, Object... args) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                ResultSet.CONCUR_READ_ONLY)
+                ResultSet.CONCUR_READ_ONLY);
+            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
         ) {
             log.debug(QUERY_LOG, sql);
-            setArgs(pstmt, sql, args);
-            ResultSet resultSet = pstmt.executeQuery();
             validOneResult(resultSet);
             return ObjectConverter.convertForObject(resultSet, type);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private ResultSet executeWithArgs(PreparedStatement pstmt, String sql, Object[] args) throws SQLException {
+        setArgs(pstmt, sql, args);
+        return pstmt.executeQuery();
     }
 
     private void validOneResult(ResultSet resultSet) throws SQLException {
@@ -81,7 +85,6 @@ public class JdbcTemplate {
             PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug(QUERY_LOG, sql);
-            setArgs(pstmt, sql, args);
             return ObjectConverter.convertForList(pstmt.executeQuery(), type);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -91,7 +94,7 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+            PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             log.debug(QUERY_LOG, sql);
             setArgs(pstmt, sql, args);
@@ -105,11 +108,10 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                ResultSet.CONCUR_READ_ONLY)
+                ResultSet.CONCUR_READ_ONLY);
+            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
         ) {
             log.debug(QUERY_LOG, sql);
-            setArgs(pstmt, sql, args);
-            ResultSet resultSet = pstmt.executeQuery();
             validOneResult(resultSet);
             if(resultSet.next()){
                 return rowMapper.mapRow(resultSet);
@@ -124,10 +126,9 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
         ) {
             log.debug(QUERY_LOG, sql);
-            setArgs(pstmt, sql, args);
-            ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
