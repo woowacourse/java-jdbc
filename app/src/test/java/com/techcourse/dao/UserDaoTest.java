@@ -16,8 +16,11 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users");
+        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
 
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
