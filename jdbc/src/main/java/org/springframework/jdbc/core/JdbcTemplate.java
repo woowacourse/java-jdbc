@@ -10,6 +10,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataException;
 
 public class JdbcTemplate {
 
@@ -26,14 +28,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
-        return query(sql, statement -> {
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return mapper.map(rs);
-                }
-                return null;
-            }
-        }, args);
+        List<T> results = queryForList(sql, mapper, args);
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("조회 결과가 존재하지 않습니다.");
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataException("조회 결과가 1건 이상입니다.");
+        }
+        return results.get(0);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> mapper, Object... args) {
