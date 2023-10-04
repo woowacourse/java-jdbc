@@ -9,14 +9,11 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> ROW_MAPPER = resultSet -> {
-        resultSet.next();
-        return new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4));
-    };
+    private static final RowMapper<User> ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4));
 
     private final JdbcTemplate jdbcTemplate;
 

@@ -14,6 +14,8 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int FIRST = 0;
+    private static final int ONE = 1;
 
     private final DataSource dataSource;
 
@@ -22,13 +24,12 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(final String sql, final Object... parameters) {
-        try (final PreparedStatement preparedStatement = dataSource.getConnection()
-                .prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+        try (final PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
             setParameters(parameters, preparedStatement);
             log.debug("query : {}", preparedStatement);
 
             preparedStatement.executeUpdate();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new DataAccessException(e);
         }
     }
@@ -40,39 +41,41 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final PreparedStatement preparedStatement = dataSource.getConnection()
-                .prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+        final List<T> result = query(sql, rowMapper, parameters);
+
+        if (result.size() != ONE) {
+            throw new DataAccessException("실제 결과가 1개여야 합니다.");
+        }
+
+        return result.get(FIRST);
+    }
+
+    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        try (final PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
             setParameters(parameters, preparedStatement);
             log.debug("query : {}", preparedStatement);
 
             final ResultSet resultSet = preparedStatement.executeQuery();
-            return rowMapper.map(resultSet);
-        } catch (Exception e) {
+
+            return mapRows(rowMapper, resultSet);
+        } catch (final Exception e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final RowMapper<List<T>> listMapper = resultSet -> {
-            final int rowNumber = getRowNumber(resultSet);
+    private <T> List<T> mapRows(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        final List<T> result = new ArrayList<>();
 
-            final List<T> result = new ArrayList<>();
-            for (int i = 0; i < rowNumber; i++) {
-                final T entity = rowMapper.map(resultSet);
-                result.add(entity);
-            }
-            return result;
-        };
+        while (resultSet.next()) {
+            final T tuple = rowMapper.map(resultSet);
+            result.add(tuple);
+        }
 
-        return queryForObject(sql, listMapper, parameters);
+        return result;
     }
 
-    private int getRowNumber(final ResultSet resultSet) throws SQLException {
-        resultSet.last();
-        final int rowNumber = resultSet.getRow();
-        resultSet.beforeFirst();
-
-        return rowNumber;
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return query(sql, rowMapper, parameters);
     }
 
 }
