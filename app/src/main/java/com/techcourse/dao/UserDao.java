@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class UserDao {
 
@@ -45,16 +46,18 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql,getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql,getUserRowMapper(), id)
+                .orElseThrow(() -> new NoSuchElementException("결과가 존재하지 않습니다"));
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account)
+                .orElseThrow(() -> new NoSuchElementException("결과가 존재하지 않습니다"));
     }
 
     private RowMapper<User> getUserRowMapper() {
-        return (rs, rowNum) ->
+        return (rs) ->
                 new User(
                         rs.getLong("id"),
                         rs.getString("account"),
