@@ -70,7 +70,7 @@ public class JdbcTemplate {
         List<T> results = query(sql, rowMapper, args);
         T t = results.get(FIRST_RESULT_INDEX);
         if (t == null) {
-            throw new DataAccessException("queryForObject error: result is null");
+            throw new IndexOutOfBoundsException("queryForObject error: empty result");
         }
         return t;
     }
