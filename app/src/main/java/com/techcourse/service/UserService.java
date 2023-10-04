@@ -32,4 +32,17 @@ public class UserService {
             userHistoryDao.insert(new UserHistory(user, createBy));
         });
     }
+
+    public void changePasswordPropagation(long id, String newPassword, String createBy) {
+        final var user = findById(id);
+        user.changePassword(newPassword);
+        TransactionTemplate.execute(() -> {
+            userDao.update(user);
+            insertUserHistory(new UserHistory(user, createBy));
+        });
+    }
+
+    private void insertUserHistory(UserHistory userHistory) {
+        TransactionTemplate.execute(() -> userHistoryDao.insert(userHistory));
+    }
 }

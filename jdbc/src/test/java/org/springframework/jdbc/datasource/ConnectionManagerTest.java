@@ -56,11 +56,4 @@ class ConnectionManagerTest {
         assertThat(TransactionManager.isTransactionEnable())
             .isFalse();
     }
-
-    @Test
-    void 커넥션을_얻지_않고_releaseConnection_하면_예외() {
-        // when & then
-        assertThatThrownBy(ConnectionManager::releaseConnection)
-            .isInstanceOf(IllegalStateException.class);
-    }
 }

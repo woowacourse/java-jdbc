@@ -40,7 +40,9 @@ public class ConnectionManager {
 
     public static void releaseConnection() {
         Connection connection = connections.get();
-        validateConnection(connection);
+        if (connection == null) {
+            return;
+        }
         if (TransactionManager.isTransactionEnable()) {
             if (TransactionManager.isRollbackEnable()) {
                 rollback(connection);
@@ -50,13 +52,6 @@ public class ConnectionManager {
             TransactionManager.clear();
         }
         close(connection);
-    }
-
-    private static void validateConnection(Connection connection) {
-        // IntelliJ 에서 Condition 'connection == null' is always 'false' 발생하는데, 버그 같음.
-        if (connection == null) {
-            throw new IllegalStateException("Connection is not enabled!");
-        }
     }
 
     private static void rollback(Connection connection) {

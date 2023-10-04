@@ -1,6 +1,5 @@
 package org.springframework.transaction.support;
 
-import java.util.function.Supplier;
 import org.springframework.jdbc.datasource.ConnectionManager;
 
 public class TransactionTemplate {
@@ -30,23 +29,9 @@ public class TransactionTemplate {
 
     private static boolean isPropagation() {
         Boolean propagation = propagations.get();
-        return propagation != null;
-    }
-
-    public static <T> T execute(Supplier<T> supplier) {
-        if (isPropagation()) {
-            return supplier.get();
+        if (propagation == null) {
+            return false;
         }
-        propagations.set(Boolean.TRUE);
-        TransactionManager.begin();
-        try {
-            return supplier.get();
-        } catch (Exception e) {
-            TransactionManager.setRollback();
-            throw e;
-        } finally {
-            ConnectionManager.releaseConnection();
-            propagations.remove();
-        }
+        return propagation;
     }
 }
