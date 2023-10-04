@@ -51,22 +51,28 @@ public class ObjectConverter {
     }
 
     private static <T> Constructor<T> findAllFieldsConstructor(Class<T> type) {
-        try {
-            Constructor<T> noAllFieldInitializingConstructor = type.getDeclaredConstructor(extractFieldType(type));
-            noAllFieldInitializingConstructor.setAccessible(true);
-            return noAllFieldInitializingConstructor;
-        } catch (NoSuchMethodException e) {
-            throw new ResultSetConvertException("no All Field Initializing Constructor");
-        }
+        List<String> fieldNames = extractFieldNames(type);
+        Constructor<?> noAllFieldInitializingConstructor = Stream.of(type.getDeclaredConstructors())
+            .filter(constructor -> haveAllField(constructor, fieldNames))
+            .findAny()
+            .orElseThrow(() -> new ResultSetConvertException("no All Field Initializing Constructor"));
+        noAllFieldInitializingConstructor.setAccessible(true);
+        return (Constructor<T>) noAllFieldInitializingConstructor;
     }
 
-    private static <T> Class<?>[] extractFieldType(Class<T> type) {
-        Field[] declaredFields = type.getDeclaredFields();
-        Class<?>[] classes = new Class<?>[declaredFields.length];
-        for (int i = 0; i <declaredFields.length; i++) {
-            classes[i] = declaredFields[i].getType();
+    private static <T> List<String> extractFieldNames(Class<T> type) {
+        return Stream.of(type.getDeclaredFields())
+            .map(Field::getName)
+            .collect(Collectors.toList());
+    }
+
+    private static boolean haveAllField(Constructor<?> constructor, List<String> fieldNames) {
+        Parameter[] allParameters = constructor.getParameters();
+        if (fieldNames.size() != allParameters.length) {
+            return false;
         }
-        return classes;
+        return Stream.of(allParameters)
+            .allMatch(parameter -> fieldNames.contains(parameter.getName()));
     }
 
     private static <T> T toInstance(Constructor<T> constructor, ResultSet resultSet)
