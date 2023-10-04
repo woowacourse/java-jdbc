@@ -26,27 +26,23 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        final var result = execute(sql, preparedStatement -> {
-            final var resultSet = preparedStatement.executeQuery();
-            final var results = new ArrayList<T>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        }, objects);
-        return result.stream()
+        final var results = execute(sql, preparedStatement -> mapResults(rowMapper, preparedStatement), objects);
+        return results.stream()
                 .findAny();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return execute(sql, preparedStatement -> {
-            final var resultSet = preparedStatement.executeQuery();
-            final var results = new ArrayList<T>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        });
+        return execute(sql, preparedStatement -> mapResults(rowMapper, preparedStatement));
+    }
+
+    private <T> List<T> mapResults(final RowMapper<T> rowMapper, final PreparedStatement preparedStatement)
+            throws SQLException {
+        final var resultSet = preparedStatement.executeQuery();
+        final var results = new ArrayList<T>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
     }
 
     private PreparedStatement prepareStatement(final PreparedStatement preparedStatement, final Object[] objects)
