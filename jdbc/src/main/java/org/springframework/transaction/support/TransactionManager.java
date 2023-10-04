@@ -4,6 +4,8 @@ public class TransactionManager {
 
     private static final ThreadLocal<Boolean> transactionEnables = new ThreadLocal<>();
     private static final ThreadLocal<Boolean> rollBackEnables = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> propagations = new ThreadLocal<>();
+
 
     private TransactionManager() {
     }
@@ -11,6 +13,7 @@ public class TransactionManager {
     public static void begin() {
         transactionEnables.set(Boolean.TRUE);
         rollBackEnables.set(Boolean.FALSE);
+        propagations.set(Boolean.TRUE);
     }
 
     public static boolean isTransactionEnable() {
@@ -40,8 +43,17 @@ public class TransactionManager {
         }
     }
 
+    public static boolean isPropagation() {
+        Boolean propagation = propagations.get();
+        if (propagation == null) {
+            return false;
+        }
+        return propagation;
+    }
+
     public static void clear() {
         transactionEnables.remove();
         rollBackEnables.remove();
+        propagations.remove();
     }
 }
