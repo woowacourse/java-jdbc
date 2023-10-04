@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -95,6 +96,43 @@ public class JdbcTemplate {
             log.debug(QUERY_LOG, sql);
             setArgs(pstmt, sql, args);
             return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
+                ResultSet.CONCUR_READ_ONLY)
+        ) {
+            log.debug(QUERY_LOG, sql);
+            setArgs(pstmt, sql, args);
+            ResultSet resultSet = pstmt.executeQuery();
+            validOneResult(resultSet);
+            if(resultSet.next()){
+                return rowMapper.mapRow(resultSet);
+            }
+            throw new IncorrectResultSizeDataAccessException("No rows selected");
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug(QUERY_LOG, sql);
+            setArgs(pstmt, sql, args);
+            ResultSet resultSet = pstmt.executeQuery();
+            List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
+            }
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
