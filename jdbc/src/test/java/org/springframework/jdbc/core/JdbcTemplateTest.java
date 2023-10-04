@@ -6,8 +6,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.TestDataSourceConfig;
+import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
 
 class JdbcTemplateTest {
 
@@ -50,6 +53,26 @@ class JdbcTemplateTest {
         assertThat(member.getName()).isEqualTo(expectedName);
     }
 
+    @Test
+    void sql문을_통해_하나의_객체를_조회할_때_여러_객체가_존재하면_예외가_발생한다() {
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.find("select id, name from member;",
+                        (rs) -> new Member(
+                                rs.getLong("id"),
+                                rs.getString("name")
+                        )))
+                .isInstanceOf(MoreDataAccessException.class);
+    }
+
+    @Test
+    void sql문을_통해_하나의_객체를_조회할_때_객체가_존재하지_않으면_예외가_발생한다() {
+        Assertions.assertThatThrownBy(
+                        () -> jdbcTemplate.find("select id, name from member where id = " + Long.MAX_VALUE + ";",
+                                (rs) -> new Member(
+                                        rs.getLong("id"),
+                                        rs.getString("name")
+                                )))
+                .isInstanceOf(NoDataAccessException.class);
+    }
 
     @Test
     void sql문을_통해_여러_객체를_조회할_수_있다() {
