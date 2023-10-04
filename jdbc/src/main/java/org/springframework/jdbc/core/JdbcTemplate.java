@@ -29,7 +29,9 @@ public class JdbcTemplate {
 
     private int executeQuery(final PreparedStatement pstmt) {
         try {
-            return pstmt.executeUpdate();
+            final int executeResult = pstmt.executeUpdate();
+            log.info("INSERT, UPDATE, DELETE 수행된 행 개수 = " + executeResult);
+            return executeResult;
         } catch (SQLException e) {
             throw new DataAccessException();
         }
