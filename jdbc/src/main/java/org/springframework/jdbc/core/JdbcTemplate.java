@@ -56,12 +56,12 @@ public class JdbcTemplate {
         }
     }
 
-    public final void update(final String sql, final Object... parameters) {
+    public final int update(final String sql, final Object... parameters) {
         try (
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = setValues(sql, connection, parameters)
         ) {
-            executeQuery(PreparedStatement::execute, preparedStatement);
+            return executeQuery(PreparedStatement::executeUpdate, preparedStatement);
         } catch (SQLException e) {
             throw new JdbcException(e);
         }
