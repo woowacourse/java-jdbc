@@ -6,27 +6,29 @@ public abstract class JdbcTemplateException extends RuntimeException {
         super(message);
     }
 
-    static class NoSqlTypeException extends JdbcTemplateException {
+    static class NoDataAccessException extends JdbcTemplateException {
 
-        private static final String CANNOT_TRANSFER_TO_SQL_TYPE_MESSAGE = "sql로 변환할 수 없는 타입입니다. - ";
+        private static final String NO_DATA_ACCESS_EXCEPTION_MESSAGE = "조회하는 데이터가 없습니다.";
 
-        NoSqlTypeException(final String cause) {
-            super(CANNOT_TRANSFER_TO_SQL_TYPE_MESSAGE + cause);
+        NoDataAccessException() {
+            super(NO_DATA_ACCESS_EXCEPTION_MESSAGE);
         }
     }
 
-    static class EntityReflectionException extends JdbcTemplateException {
 
-        private static final String CANNOT_REFLECTION_MESSAGE = "엔티티로 변환이 불가능합니다. - ";
+    static class MoreDataAccessException extends JdbcTemplateException {
 
-        EntityReflectionException(final String cause) {
-            super(CANNOT_REFLECTION_MESSAGE + cause);
+        private static final String MORE_DATA_ACCESS_EXCEPTION_MESSAGE = "조회하는 데이터가 2개 이상 존재합니다..";
+
+        MoreDataAccessException() {
+            super(MORE_DATA_ACCESS_EXCEPTION_MESSAGE);
         }
     }
 
-    static class SqlException extends JdbcTemplateException {
 
-        public SqlException(final String message) {
+    static class DatabaseAccessException extends JdbcTemplateException {
+
+        public DatabaseAccessException(final String message) {
             super(message);
         }
     }

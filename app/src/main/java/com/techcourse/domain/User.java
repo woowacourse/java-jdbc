@@ -7,11 +7,6 @@ public class User {
     private String password;
     private final String email;
 
-    public User() {
-        this.account = null;
-        this.email = null;
-    }
-
     public User(long id, String account, String password, String email) {
         this.id = id;
         this.account = account;
