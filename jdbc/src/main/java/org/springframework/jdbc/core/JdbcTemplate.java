@@ -27,6 +27,7 @@ public class JdbcTemplate {
             try {
                 return pstmt.executeUpdate();
             } catch (SQLException e) {
+                log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         };
