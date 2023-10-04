@@ -11,3 +11,4 @@
 - [x] PrepareStatementSetter 만들기
 - [x] result를 생성하는 객체 만들기
 - [x] 객체의 응집성 높이기
+- [x] 클래스 네이밍 포괄적으로 수정하기

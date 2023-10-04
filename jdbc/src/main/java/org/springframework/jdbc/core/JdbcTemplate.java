@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.preparestatement.ArgumentsPrepareStatementSetter;
 import org.springframework.jdbc.core.preparestatement.PrepareStatementManager;
 import org.springframework.jdbc.core.result.ResultMaker;
+import org.springframework.jdbc.core.result.ResultValidator;
 import org.springframework.jdbc.core.result.RowMapper;
-import org.springframework.jdbc.core.result.SingleResultValidator;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -42,7 +42,7 @@ public class JdbcTemplate {
             final ResultMaker resultMaker = new ResultMaker(preparedStatement);
             List<T> results = resultMaker.extractData(rowMapper);
 
-            SingleResultValidator.validate(results);
+            ResultValidator.validateSingleResult(results);
             return results.iterator().next();
         } catch (SQLException e) {
             throw new RuntimeException(e);
