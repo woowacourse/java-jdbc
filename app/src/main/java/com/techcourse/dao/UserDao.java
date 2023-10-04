@@ -3,15 +3,15 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    private static final RowMapper<User> userRowMapper = (rs) -> new User(
+    private static final RowMapper<User> userRowMapper = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
@@ -30,7 +30,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getAccount());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getAccount());
     }
 
     public void update(final User user) {
