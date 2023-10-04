@@ -1,4 +1,4 @@
-package org.springframework.jdbc.core;
+package org.springframework.jdbc.core.preparestatement;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

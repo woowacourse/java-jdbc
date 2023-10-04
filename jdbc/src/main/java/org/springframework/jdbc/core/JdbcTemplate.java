@@ -2,6 +2,12 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.preparestatement.ArgumentsPrepareStatementSetter;
+import org.springframework.jdbc.core.preparestatement.PrepareStatementGenerator;
+import org.springframework.jdbc.core.preparestatement.PrepareStatementSetter;
+import org.springframework.jdbc.core.result.ResultMaker;
+import org.springframework.jdbc.core.result.RowMapper;
+import org.springframework.jdbc.core.result.SingleResultValidator;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;

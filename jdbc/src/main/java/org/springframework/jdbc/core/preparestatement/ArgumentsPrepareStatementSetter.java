@@ -1,9 +1,9 @@
-package org.springframework.jdbc.core;
+package org.springframework.jdbc.core.preparestatement;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class ArgumentsPrepareStatementSetter implements PrepareStatementSetter{
+public class ArgumentsPrepareStatementSetter implements PrepareStatementSetter {
 
     private final Object[] arguments;
 
