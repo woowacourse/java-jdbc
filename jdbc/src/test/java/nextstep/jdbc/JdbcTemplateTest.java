@@ -1,6 +1,6 @@
 package nextstep.jdbc;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,7 +27,8 @@ class JdbcTemplateTest {
             conn.setAutoCommit(true);
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("DROP TABLE IF EXISTS users;");
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL)");
+                stmt.execute(
+                        "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL)");
                 stmt.executeUpdate("INSERT INTO users (email) VALUES ('hkkang@woowahan.com')");
                 conn.setAutoCommit(false);
             }
@@ -39,42 +40,55 @@ class JdbcTemplateTest {
     @Test
     @DisplayName("쓰기 작업(생성, 수정, 삭제)을 하는 쿼리를 실행한다.")
     void executeUpdate() {
-        try {
-            jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
-        } catch (Exception exception) {
-            Assertions.fail(exception);
-        }
+        // given
+        failIfExceptionThrownBy(() -> {
+            // when
+            final var updated = jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
+
+            // then
+            assertThat(updated).isOne();
+        });
     }
 
     @Test
     @DisplayName("단건 레코드를 조회하는 쿼리를 실행한다.")
     void executeQueryForObject() {
-        try {
+        // given
+        failIfExceptionThrownBy(() -> {
+            // when
             User user = jdbcTemplate.executeQueryForObject(
                     "select email from users where id = ?",
                     resultSet -> new User(resultSet.getString(1)), 1L
             );
 
+            // then
             assertThat(user).usingRecursiveComparison()
                     .comparingOnlyFields("hkkang@woowahan.com");
-        } catch (Exception exception) {
-            Assertions.fail(exception);
-        }
+        });
     }
 
     @Test
     @DisplayName("다건 레코드를 조회하는 쿼리를 실행한다.")
     void executeQueryForList() {
-        try {
-            jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
+        // given
+        jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
 
+        failIfExceptionThrownBy(() -> {
+            // when
             List<User> users = jdbcTemplate.executeQueryForList(
                     "select email from users",
                     resultSet -> new User(resultSet.getString(1))
             );
 
+            // then
             assertThat(users).extracting("email")
                     .containsExactlyInAnyOrder("hkkang@woowahan.com", "doy@gmail.com");
+        });
+    }
+
+    private void failIfExceptionThrownBy(Runnable test) {
+        try {
+            test.run();
         } catch (Exception exception) {
             Assertions.fail(exception);
         }
