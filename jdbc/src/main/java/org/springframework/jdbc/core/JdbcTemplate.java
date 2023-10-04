@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -24,14 +25,17 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        return execute(sql, preparedStatement -> {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        final var result = execute(sql, preparedStatement -> {
             final var resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
+            final var results = new ArrayList<T>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
-            return null;
+            return results;
         }, objects);
+        return result.stream()
+                .findAny();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
