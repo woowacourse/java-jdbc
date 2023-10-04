@@ -31,6 +31,8 @@ public class UserDao {
         if (updatedRows < 1) {
             throw new RuntimeException("저장된 데이터가 없습니다.");
         }
+
+        log.debug("query : {}", sql);
     }
 
     public void update(final User user) {
@@ -39,11 +41,16 @@ public class UserDao {
         if (updatedRows < 1) {
             throw new RuntimeException("수정된 데이터가 없습니다.");
         }
+
+        log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         final List<User> users = jdbcTemplate.query(sql, userRowMapper);
+
+        log.debug("query : {}", sql);
+
         return users;
     }
 
