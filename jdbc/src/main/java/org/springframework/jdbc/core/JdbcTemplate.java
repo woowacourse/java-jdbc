@@ -53,7 +53,7 @@ public class JdbcTemplate {
 
             List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
+                while (rs.next()) {
                     results.add(rowMaper.mapRow(rs, rs.getRow()));
                 }
             }
