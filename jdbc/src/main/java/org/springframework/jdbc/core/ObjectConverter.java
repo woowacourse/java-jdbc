@@ -19,7 +19,7 @@ public class ObjectConverter {
 
     public static <T> T convertForObject(ResultSet resultSet, Class<T> type){
         try {
-            Constructor<?> allFieldsConstructor = findAllFieldsConstructor(type);
+            Constructor<T> allFieldsConstructor = findAllFieldsConstructor(type);
             if(resultSet.next()){
                 return toInstance(allFieldsConstructor, resultSet);
             }
@@ -36,7 +36,7 @@ public class ObjectConverter {
     public static <T> List<T> convertForList(ResultSet resultSet, Class<T> type) {
         try {
             List<T> result = new ArrayList<>();
-            Constructor<?> allFieldsConstructor = findAllFieldsConstructor(type);
+            Constructor<T> allFieldsConstructor = findAllFieldsConstructor(type);
             while(resultSet.next()){
                 result.add(toInstance(allFieldsConstructor, resultSet));
             }
@@ -50,32 +50,26 @@ public class ObjectConverter {
         }
     }
 
-    private static <T> Constructor<?> findAllFieldsConstructor(Class<T> type) {
-        List<String> fieldNames = extractFieldNames(type);
-        Constructor<?> noAllFieldInitializingConstructor = Stream.of(type.getDeclaredConstructors())
-            .filter(constructor -> haveAllField(constructor, fieldNames))
-            .findAny()
-            .orElseThrow(() -> new ResultSetConvertException("no All Field Initializing Constructor"));
-        noAllFieldInitializingConstructor.setAccessible(true);
-        return noAllFieldInitializingConstructor;
-    }
-
-    private static <T> List<String> extractFieldNames(Class<T> type) {
-        return Stream.of(type.getDeclaredFields())
-            .map(Field::getName)
-            .collect(Collectors.toList());
-    }
-
-    private static boolean haveAllField(Constructor<?> constructor, List<String> fieldNames) {
-        Parameter[] allParameters = constructor.getParameters();
-        if (fieldNames.size() != allParameters.length) {
-            return false;
+    private static <T> Constructor<T> findAllFieldsConstructor(Class<T> type) {
+        try {
+            Constructor<T> noAllFieldInitializingConstructor = type.getDeclaredConstructor(extractFieldType(type));
+            noAllFieldInitializingConstructor.setAccessible(true);
+            return noAllFieldInitializingConstructor;
+        } catch (NoSuchMethodException e) {
+            throw new ResultSetConvertException("no All Field Initializing Constructor");
         }
-        return Stream.of(allParameters)
-            .allMatch(parameter -> fieldNames.contains(parameter.getName()));
     }
 
-    private static <T> T toInstance(Constructor<?> constructor, ResultSet resultSet)
+    private static <T> Class<?>[] extractFieldType(Class<T> type) {
+        Field[] declaredFields = type.getDeclaredFields();
+        Class<?>[] classes = new Class<?>[declaredFields.length];
+        for (int i = 0; i <declaredFields.length; i++) {
+            classes[i] = declaredFields[i].getType();
+        }
+        return classes;
+    }
+
+    private static <T> T toInstance(Constructor<T> constructor, ResultSet resultSet)
         throws SQLException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Parameter[] parameters = constructor.getParameters();
         int length = parameters.length;
@@ -84,7 +78,7 @@ public class ObjectConverter {
         for (int i = 0; i < length; i++) {
             args[i] = extractParam(parameters[i], resultSet, resultColumnFields);
         }
-        return (T) constructor.newInstance(args);
+        return constructor.newInstance(args);
     }
 
     private static List<String> getResultColumnFields(ResultSet resultSet) throws SQLException {
