@@ -21,49 +21,42 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, args)) {
-
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+    public void update(final String sql, final Object... args) {
+        query(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return mapper.map(rs);
+        return query(sql, statement -> {
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return mapper.map(rs);
+                }
+                return null;
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        }, args);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> mapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                T result = mapper.map(rs);
-                results.add(result);
+        return query(sql, statement -> {
+            try (ResultSet rs = statement.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapper.map(rs));
+                }
+                return results;
             }
-            return results;
+        }, args);
+    }
+
+    private <T> T query(
+            final String sql,
+            final JdbcCallback<T> jdbcCallback,
+            final Object... args
+    ) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement preparedStatement = getPreparedStatement(conn, sql, args)) {
+            log.debug("query : {}", sql);
+            return jdbcCallback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
