@@ -7,3 +7,4 @@
   - [x] findById()
   - [x] update()
 - [x] JdbcTemplate 으로 중복 제거
+- [ ] 트랜잭션 경계 설정하기
