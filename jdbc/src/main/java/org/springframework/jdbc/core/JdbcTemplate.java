@@ -54,13 +54,17 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args)) {
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (!resultSet.next()) {
-                throw new DataAccessException("결과가 존재하지 않습니다.");
+            T result = null;
+            while (resultSet.next()) {
+                if (result != null) {
+                    throw new IllegalArgumentException("1개 이상의 결과가 존재합니다.");
+                }
+                result = rowMapper.mapRow(resultSet);
             }
-            if (resultSet.isFirst() && !resultSet.isLast()) {
-                throw new DataAccessException("1개 이상의 결과가 존재합니다.");
+            if (result == null) {
+                throw new IllegalArgumentException("결과가 존재하지 않습니다.");
             }
-            return rowMapper.mapRow(resultSet);
+            return result;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
