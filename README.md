@@ -49,4 +49,4 @@
 - [x] TransactionTemplate catch 절 final
 
 ### 3차
-- [ ] EOF 해결(TransactionTemplateTest, PreparedStatementCreatorTest)
+- [x] EOF 해결(TransactionTemplateTest, PreparedStatementCreatorTest)
