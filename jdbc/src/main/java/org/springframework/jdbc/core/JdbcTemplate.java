@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ public class JdbcTemplate {
         return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementQueryExecuter<>(rowMapper));
     }
 
-    @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         final List<T> objects = query(sql, rowMapper, args);
         return getSingleObject(objects);
