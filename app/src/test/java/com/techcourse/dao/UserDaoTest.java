@@ -3,12 +3,12 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -56,7 +56,7 @@ class UserDaoTest {
         final var account = "gugu";
 
         assertThatThrownBy(() -> userDao.findByAccount(account))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("1개 이상의 결과가 존재합니다.");
     }
 
