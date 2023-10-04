@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultSetException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.InvalidArgsException;
 
@@ -25,14 +26,21 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, Class<T> type, Object... args) {
+        return execute(sql, psmt -> {
+            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
+                validOneResult(resultSet);
+                return ObjectConverter.convertForObject(resultSet, type);
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
                 ResultSet.CONCUR_READ_ONLY);
-            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
         ) {
             log.debug(QUERY_LOG, sql);
-            validOneResult(resultSet);
-            return ObjectConverter.convertForObject(resultSet, type);
+            return preparedStatementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -81,62 +89,41 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug(QUERY_LOG, sql);
-            return ObjectConverter.convertForList(pstmt.executeQuery(), type);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, psmt -> {
+            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
+                return ObjectConverter.convertForList(resultSet, type);
+            }
+        });
     }
 
     public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug(QUERY_LOG, sql);
-            setArgs(pstmt, sql, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, psmt -> {
+            setArgs(psmt, sql, args);
+            return psmt.executeUpdate();
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                ResultSet.CONCUR_READ_ONLY);
-            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
-        ) {
-            log.debug(QUERY_LOG, sql);
-            validOneResult(resultSet);
-            if(resultSet.next()){
-                return rowMapper.mapRow(resultSet);
+        return execute(sql, psmt -> {
+            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
+                validOneResult(resultSet);
+                if (resultSet.next()) {
+                    return rowMapper.mapRow(resultSet);
+                }
+                throw new EmptyResultSetException();
             }
-            throw new IncorrectResultSizeDataAccessException("No rows selected");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet resultSet = executeWithArgs(pstmt, sql, args);
-        ) {
-            log.debug(QUERY_LOG, sql);
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
+        return execute(sql, psmt -> {
+            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
+                List<T> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(rowMapper.mapRow(resultSet));
+                }
+                return result;
             }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 }
