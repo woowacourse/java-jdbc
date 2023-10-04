@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,7 +49,7 @@ class UserDaoTest {
     @Test
     void findByAccountFailByTooManyResults() {
         assertThatThrownBy(() -> userDao.findByAccount("gugu"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasMessage(("row 갯수가 1보다 많아요."));
     }
 
