@@ -38,13 +38,13 @@ public class UserService {
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
+        } catch (final SQLException | DataAccessException e) {
             try {
                 try (final var connection = getConnection()) {
                     connection.rollback();
                 }
                 throw new DataAccessException(e);
-            } catch (SQLException ex) {
+            } catch (final SQLException ex) {
                 throw new DataAccessException(ex);
             }
         }

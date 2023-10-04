@@ -79,13 +79,13 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> T execute(final Connection connection, final PreparedStatementCreator psc, PreparedStatementCallBack<T> action) {
+    private <T> T execute(final Connection connection, final PreparedStatementCreator psc, final PreparedStatementCallBack<T> action) {
         if (connection != null) {
             return doExecute(connection, psc, action);
         }
         try {
             return doExecute(dataSource.getConnection(), psc, action);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
