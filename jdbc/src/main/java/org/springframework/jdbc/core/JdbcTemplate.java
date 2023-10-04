@@ -85,6 +85,24 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection,new PreparedStatementCallback<>() {
+            @Override
+            public Integer doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
+                log.debug("query : {}", sql);
+
+                setPrepareStatement(pstmt, args);
+
+                return pstmt.executeUpdate();
+            }
+
+            @Override
+            public String getSql() {
+                return sql;
+            }
+        });
+    }
+
     private PreparedStatement setPrepareStatement(final PreparedStatement pstmt, final Object... args)
             throws SQLException {
         for (int i = 0; i < args.length; i++) {
@@ -93,9 +111,20 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    private  <T> T execute(final PreparedStatementCallback<T> callback) {
+    private <T> T execute(final PreparedStatementCallback<T> callback) {
         try (
                 final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
+        ) {
+            return callback.doPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DataAccessException();
+        }
+    }
+
+    private <T> T execute(final Connection conn, final PreparedStatementCallback<T> callback) {
+        try (
                 final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
         ) {
             return callback.doPreparedStatement(pstmt);
