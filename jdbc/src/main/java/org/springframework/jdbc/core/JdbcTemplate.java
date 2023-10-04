@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -22,7 +23,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T, P> T queryForObject(final String sql, final RowMapper<T> rowMapper, final P parameter) {
+    public <T, P> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final P parameter) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
@@ -32,12 +33,12 @@ public class JdbcTemplate {
 
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
+                return Optional.of(rowMapper.mapRow(resultSet));
             }
             if (!resultSet.isLast()) {
                 throw new RuntimeException("단일 데이터가 아닙니다.");
             }
-            throw new RuntimeException("찾는 데이터가 존재하지 않습니다.");
+            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
 
