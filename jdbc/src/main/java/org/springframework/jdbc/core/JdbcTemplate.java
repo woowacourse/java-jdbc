@@ -1,9 +1,9 @@
 package org.springframework.jdbc.core;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -24,19 +24,22 @@ public class JdbcTemplate {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
+            setParameters(pstmt, params);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
         }
     }
 
+    private void setParameters(final PreparedStatement pstmt, final Object[] params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        List<T> result = query(sql, rowMapper, params);
+        final List<T> result = query(sql, rowMapper, params);
         if (result.size() != 1) {
             throw new DataAccessException("Result Count is Not Only 1. ResultCount=" + result.size());
         }
@@ -47,26 +50,16 @@ public class JdbcTemplate {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+            setParameters(pstmt, params);
+            final ResultSet resultSet = pstmt.executeQuery();
+            final List<T> queryResult = new ArrayList<>();
+            while (resultSet.next()) {
+                queryResult.add(rowMapper.mapRow(resultSet));
             }
-
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return resultToList(rowMapper, resultSet);
-            }
-            return Collections.emptyList();
+            return queryResult;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
         }
-    }
-
-    private <T> List<T> resultToList(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        List<T> result = new ArrayList<>();
-        do {
-            result.add(rowMapper.mapRow(resultSet));
-        } while (resultSet.next());
-        return result;
     }
 }
