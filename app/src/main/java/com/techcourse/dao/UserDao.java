@@ -29,7 +29,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final String sql = "update users set account = ?, password = ?, email =? where id = ?";
+        final String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
