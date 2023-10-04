@@ -141,17 +141,22 @@ public class JdbcTemplate {
 
     private <T> void fillFields(Class<T> requiredType, ResultSet rs, T instance) {
         Field[] fields = requiredType.getDeclaredFields();
-        try {
-            for (int i = 0; i < fields.length; i++) {
-                Field field = fields[i];
-                field.setAccessible(true);
-                field.set(instance, rs.getObject(1 + i));
-                field.setAccessible(false);
+        for (final Field field : fields) {
+            final String fieldName = field.getName();
+            try {
+                for (int i = 0; i < fields.length; i++) {
+                    final String columnName = rs.getMetaData().getColumnName(i + 1);
+                    if (columnName.equalsIgnoreCase(fieldName)) {
+                        field.setAccessible(true);
+                        field.set(instance, rs.getObject(i + 1));
+                        field.setAccessible(false);
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }
