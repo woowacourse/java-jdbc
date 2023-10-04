@@ -36,16 +36,9 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> objects = new ArrayList<>();
-                while (rs.next()) {
-                    objects.add(rowMapper.mapRow(rs));
-                }
-                validateResultSetSize(objects.size());
-                return Optional.of(objects.get(0));
-            }
-        }, args);
+        final List<T> result = query(sql, rowMapper, args);
+        validateResultSetSize(result.size());
+        return Optional.of(result.iterator().next());
     }
 
     private void validateResultSetSize(final int size) {
