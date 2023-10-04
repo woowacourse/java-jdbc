@@ -3,7 +3,6 @@ package org.springframework.jdbc.core;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +17,7 @@ public class PreparedStatementExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final String sql, final Function<PreparedStatement, T> pstmtFunction, final Object... params) {
+    public <T> T execute(final String sql, final PreparedStatementFunction<T> pstmtFunction, final Object... params) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
