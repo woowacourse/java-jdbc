@@ -25,9 +25,9 @@
     - [ ] try-with-resources
     - [ ] checked vs unchecked exception
 
-- [ ] 변하는 요소에 대한 추상화
-    - [ ] PreparedStatement 만드는 것
-    - [ ] PreparedStatement 으로 execute 하는 것
+- [x] 변하는 요소에 대한 추상화
+    - [x] PreparedStatementMaker
+    - [x] PreparedStatementExecuter
 
 - 변하는 것
     - PreparedStatement 만드는 것
