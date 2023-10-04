@@ -6,3 +6,9 @@
     - [x] 데이터 단일 조회 메소드
     - [x] 데이터 여러개 조회 메소드
   - [x] 데이터를 수정하는 메소드 구현
+## 리팩토링
+- [x] PrepareStatementGenerator 생성하기
+- [x] PrepareStatementSetter 만들기
+- [x] result를 생성하는 객체 만들기
+- [x] 객체의 응집성 높이기
+- [x] 클래스 네이밍 포괄적으로 수정하기

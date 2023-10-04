@@ -1,6 +1,6 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.exception.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -10,7 +10,8 @@ import java.sql.SQLException;
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);

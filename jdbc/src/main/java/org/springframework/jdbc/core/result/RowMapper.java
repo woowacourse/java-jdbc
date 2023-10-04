@@ -1,4 +1,4 @@
-package org.springframework.jdbc.core;
+package org.springframework.jdbc.core.result;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,14 +1,18 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.preparestatement.ArgumentsPrepareStatementSetter;
+import org.springframework.jdbc.core.preparestatement.PrepareStatementManager;
+import org.springframework.jdbc.core.result.ResultMaker;
+import org.springframework.jdbc.core.result.ResultValidator;
+import org.springframework.jdbc.core.result.RowMapper;
+
+import javax.annotation.Nullable;
+import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -21,9 +25,9 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setPreparedStatement(preparedStatement, args);
+        final PrepareStatementManager prepareStatementManager = new PrepareStatementManager(new ArgumentsPrepareStatementSetter(args));
+        try (final PreparedStatement preparedStatement = prepareStatementManager.generate(dataSource.getConnection(), sql)) {
+            prepareStatementManager.setValue(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -31,42 +35,20 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setPreparedStatement(preparedStatement, args);
-            List<T> results = extractData(rowMapper, preparedStatement);
+        final List<T> result = query(sql, rowMapper, args);
+        ResultValidator.validateSingleResult(result);
+        return result.iterator().next();
+    }
 
-            return results.iterator().next();
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
+        final PrepareStatementManager prepareStatementManager = new PrepareStatementManager(new ArgumentsPrepareStatementSetter(args));
+        try (final PreparedStatement preparedStatement = prepareStatementManager.generate(dataSource.getConnection(), sql)) {
+            prepareStatementManager.setValue(preparedStatement);
+
+            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
+            return resultMaker.extractData(rowMapper);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            return extractData(rowMapper, preparedStatement);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setPreparedStatement(final PreparedStatement ps, final Object[] args) throws SQLException {
-        for (int i = 1; i <= args.length; i++) {
-            ps.setObject(i, args[i - 1]);
-        }
-    }
-
-    private <T> List<T> extractData(final RowMapper<T> rowMapper,
-                                    final PreparedStatement preparedStatement) throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery();) {
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            return results;
         }
     }
 }
