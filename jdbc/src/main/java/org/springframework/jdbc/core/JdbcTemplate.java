@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -35,11 +34,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rm) {
-        return context(connection -> connection.prepareStatement(sql), rm);
+        return context(connection -> connection.prepareStatement(sql), new RowByResultSet<>(rm));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) throws DataAccessException {
-        List<T> list = context(connection -> connection.prepareStatement(sql), rm, args);
+        List<T> list = context(connection -> connection.prepareStatement(sql), new RowByResultSet<>(rm), args);
 
         if (list.isEmpty()) {
             return null;
@@ -78,23 +77,20 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm) throws DataAccessException {
+    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn);
              ResultSet rs = pstmt.executeQuery()) {
 
-            List<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rm.mapRow(rs));
-            }
-            return list;
+            return rss.getData(rs);
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage());
         }
     }
 
-    public <T> List<T> context(PreparedStrategy preparedStrategy, RowMapper<T> rm, Object[] args) throws DataAccessException {
+    public <T> List<T> context(PreparedStrategy preparedStrategy, ResultSetStrategy<List<T>> rss, Object[] args) throws DataAccessException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = preparedStrategy.createStatement(conn)) {
 
@@ -103,11 +99,7 @@ public class JdbcTemplate {
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(rm.mapRow(rs));
-                }
-                return list;
+                return rss.getData(rs);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
