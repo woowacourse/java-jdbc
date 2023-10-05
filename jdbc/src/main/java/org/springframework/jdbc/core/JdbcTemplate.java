@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.DatabaseConnectionException;
 
 public class JdbcTemplate {
 
@@ -74,7 +75,7 @@ public class JdbcTemplate {
 
             return objects;
         } catch (final SQLException e) {
-            throw new RuntimeException("Error database connection", e);
+            throw new DatabaseConnectionException("Error database connection", e);
         }
     }
 
