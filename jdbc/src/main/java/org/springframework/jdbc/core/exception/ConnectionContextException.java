@@ -2,9 +2,9 @@ package org.springframework.jdbc.core.exception;
 
 import org.springframework.dao.DataAccessException;
 
-public class ResultSetTemplateException extends DataAccessException {
+public class ConnectionContextException extends DataAccessException {
 
-    public ResultSetTemplateException(final Throwable cause) {
+    public ConnectionContextException(final Throwable cause) {
         super(cause);
     }
 }

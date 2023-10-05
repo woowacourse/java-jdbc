@@ -9,8 +9,6 @@ import org.springframework.jdbc.core.exception.MultipleDataAccessException;
 
 public class JdbcTemplate {
 
-    private static final int START_STATEMENT_INDEX = 1;
-
     private final PreparedStatementTemplate preparedStatementTemplate;
     private final ResultSetTemplate resultSetTemplate;
 
@@ -21,8 +19,9 @@ public class JdbcTemplate {
 
     public int executeQuery(final String sql, final Object... statements) {
         return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                PreparedStatement::executeUpdate
+                connection -> connection.prepareStatement(sql),
+                PreparedStatement::executeUpdate,
+                statements
         );
     }
 
@@ -31,24 +30,24 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... statements
     ) {
+        final ResultSetMapper<Optional<T>> resultSetMapper = resultSet -> {
+            if (!resultSet.next()) {
+                return Optional.empty();
+            }
+
+            final T result = rowMapper.mapRow(resultSet);
+
+            if (resultSet.next()) {
+                throw new MultipleDataAccessException("단일 결과가 아닙니다.");
+            }
+
+            return Optional.of(result);
+        };
+
         return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(
-                        preparedStatement,
-                        resultSet -> {
-                            if (!resultSet.next()) {
-                                return Optional.empty();
-                            }
-
-                            final T result = rowMapper.mapRow(resultSet);
-
-                            if (resultSet.next()) {
-                                throw new MultipleDataAccessException("단일 결과가 아닙니다.");
-                            }
-
-                            return Optional.of(result);
-                        }
-                )
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper),
+                statements
         );
     }
 
@@ -57,30 +56,20 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... statements
     ) {
-        return preparedStatementTemplate.execute(
-                connection -> bindStatements().bind(connection.prepareStatement(sql), statements),
-                preparedStatement -> resultSetTemplate.execute(
-                        preparedStatement,
-                        resultSet -> {
-                            final List<T> result = new ArrayList<>();
+        final ResultSetMapper<List<T>> resultSetMapper = resultSet -> {
+            final List<T> result = new ArrayList<>();
 
-                            while (resultSet.next()) {
-                                result.add(rowMapper.mapRow(resultSet));
-                            }
-
-                            return result;
-                        }
-                )
-        );
-    }
-
-    private PreparedStatementBinder bindStatements() {
-        return (preparedStatement, statements) -> {
-            for (int i = START_STATEMENT_INDEX; i < statements.length + 1; i++) {
-                preparedStatement.setObject(i, statements[i - START_STATEMENT_INDEX]);
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
             }
 
-            return preparedStatement;
+            return result;
         };
+
+        return preparedStatementTemplate.execute(
+                connection -> connection.prepareStatement(sql),
+                preparedStatement -> resultSetTemplate.execute(preparedStatement, resultSetMapper),
+                statements
+        );
     }
 }
