@@ -19,16 +19,39 @@ public class PreparedStatementExecutor {
     }
 
     public <T> T execute(
-            final PreparedStatementGenerator preparedStatementGenerator,
-            final PreparedStatementProcessor<T> preparedStatementProcessor
+            final PreparedStatementProcessor<T> preparedStatementProcessor,
+            final String sql,
+            final Object... parameters
     ) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = preparedStatementGenerator.generate(connection)
+             final PreparedStatement preparedStatement = generatePreparedStatement(connection, sql, parameters)
         ) {
             return preparedStatementProcessor.process(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private PreparedStatement generatePreparedStatement(
+            final Connection connection,
+            final String sql,
+            final Object... parameters
+    ) {
+        try {
+            log.debug("query : {}", sql);
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            setParameters(preparedStatement, parameters);
+            return preparedStatement;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+        for (int i = 1; i <= parameters.length; i++) {
+            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }

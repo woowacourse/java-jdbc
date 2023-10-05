@@ -1,7 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.RowMapper;
 import org.springframework.exception.EmptyResultException;
 import org.springframework.exception.WrongResultSizeException;
@@ -17,8 +15,6 @@ public class JdbcTemplate {
 
     private static final int SINGLE_RESULT_SIZE = 1;
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -27,30 +23,17 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... parameters) {
         return preparedStatementExecutor.execute(
-                generatePreparedStatement(sql, parameters),
-                PreparedStatement::executeUpdate
+                PreparedStatement::executeUpdate,
+                sql,
+                parameters
         );
-    }
-
-    private PreparedStatementGenerator generatePreparedStatement(final String sql, final Object... parameters) {
-        return connection -> {
-            log.debug("query : {}", sql);
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            setParameters(preparedStatement, parameters);
-            return preparedStatement;
-        };
-    }
-
-    private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
-        for (int i = 1; i <= parameters.length; i++) {
-            pstmt.setObject(i, parameters[i - 1]);
-        }
     }
 
     public <T> List<T> query(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
         return preparedStatementExecutor.execute(
-                generatePreparedStatement(sql, parameters),
-                preparedStatement -> findQueryResults(rowMapper, preparedStatement)
+                preparedStatement -> findQueryResults(rowMapper, preparedStatement),
+                sql,
+                parameters
         );
     }
 
@@ -71,7 +54,7 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    private static <T> void validateResultSize(final int size) {
+    private <T> void validateResultSize(final int size) {
         if (size > SINGLE_RESULT_SIZE) {
             throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + size);
         }
