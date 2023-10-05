@@ -4,6 +4,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.exception.TransactionTemplateException;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
@@ -13,6 +14,6 @@ public class MockUserHistoryDao extends UserHistoryDao {
 
     @Override
     public void log(final UserHistory userHistory) {
-        throw new DataAccessException();
+        throw new TransactionTemplateException(new DataAccessException());
     }
 }
