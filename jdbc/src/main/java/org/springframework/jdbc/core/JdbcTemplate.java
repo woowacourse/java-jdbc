@@ -22,11 +22,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
     public void execute(String sql, MyPreparedStatementCallback myPreparedStatementCallback) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -98,7 +93,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(String sql, ObjectMapper<T> objectMapper, Object... params) {
+    public <T> T queryForObject(String sql, ObjectMapper<T> objectMapper, Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
