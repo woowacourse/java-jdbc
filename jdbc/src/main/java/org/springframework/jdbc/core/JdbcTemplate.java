@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,8 +37,9 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
         return query(connection, sql, preparedStatement -> {
-            final var resultSet = preparedStatement.executeQuery();
-            return getObjects(rowMapper, resultSet);
+            try (final ResultSet resultSet = preparedStatement.executeQuery();) {
+                return getObjects(rowMapper, resultSet);
+            }
         });
     }
 
@@ -52,10 +54,12 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
         final List<T> results = query(connection, sql, preparedStatement -> {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            return getObjects(rowMapper, resultSet);
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                return getObjects(rowMapper, resultSet);
+            }
         }, arguments);
-        return Optional.ofNullable(results.iterator().next());
+        final Iterator<T> iterator = results.iterator();
+        return iterator.hasNext() ? Optional.of(iterator.next()) : Optional.empty();
     }
 
     public void update(final Connection connection, final String sql, final Object... arguments) {
