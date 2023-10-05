@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -59,7 +60,7 @@ public class JdbcTemplate {
             setPreparedStatement(preparedStatement, objects);
             return callBack.execute(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
         }
     }
 
