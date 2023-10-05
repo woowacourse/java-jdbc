@@ -1,11 +1,14 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.dao.DataAccessException;
 
-import java.util.Optional;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
@@ -17,7 +20,7 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public Optional<User> findById(final long id) {
+    public User findById(final long id) {
         return userDao.findById(id);
     }
 
@@ -26,9 +29,32 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id).orElseThrow(() -> new IllegalArgumentException("해당 유저가 존재하지 않습니다."));
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        try (final var connection = getConnection()) {
+            try {
+                connection.setAutoCommit(false);
+
+                final var user = findById(id);
+                user.changePassword(newPassword);
+                userDao.updatePassword(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+
+                connection.commit();
+            } catch (final SQLException | DataAccessException e) {
+                rollback(connection, e);
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private static void rollback(final Connection connection, final Exception e) throws SQLException {
+        connection.rollback();
+        throw new DataAccessException(e);
+    }
+
+    private Connection getConnection() throws SQLException {
+        return DataSourceConfig.getInstance().getConnection();
     }
 }
