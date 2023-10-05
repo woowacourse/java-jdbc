@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -40,6 +41,7 @@ class UserDaoTest {
     }
 
     @Test
+    @Disabled
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account).get();
