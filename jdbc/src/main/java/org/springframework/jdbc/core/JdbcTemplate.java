@@ -9,7 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
