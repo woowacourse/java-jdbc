@@ -37,21 +37,11 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            close(conn, pstmt, null);
         }
     }
 
-    public <T> List<T> queryAll(String sql, ObjectMapper<T> objectMapper, Object... params) {
+    public <T> List<T> queryAll(String sql, MyRowMapper<T> rowMapper, Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -67,33 +57,17 @@ public class JdbcTemplate {
 
             List<T> list = new ArrayList<>();
             while (rs.next()) {
-                list.add(objectMapper.map(rs));
+                list.add(rowMapper.map(rs));
             }
             return list;
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            close(conn, pstmt, rs);
         }
     }
 
-    public <T> T queryForObject(String sql, ObjectMapper<T> objectMapper, Object... params) {
+    public <T> T queryForObject(String sql, MyRowMapper<T> rowMapper, Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -108,29 +82,33 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return objectMapper.map(rs);
+                return rowMapper.map(rs);
             }
             return null;
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            close(conn, pstmt, rs);
         }
+    }
+
+    private void close(Connection conn, PreparedStatement pstmt, ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (SQLException ignored) {}
+
+        try {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+        } catch (SQLException ignored) {}
+
+        try {
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException ignored) {}
     }
 }
