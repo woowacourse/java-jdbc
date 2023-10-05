@@ -3,8 +3,6 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -42,14 +40,7 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
-            final List<T> results = makeResults(rowMapper, rs);
-            if (results.isEmpty()) {
-                throw new EmptyResultDataAccessException();
-            }
-            if (results.size() > 1) {
-                throw new IncorrectResultSizeDataAccessException(results.size());
-            }
-            return results.iterator().next();
+            return SingleResult.makeSingleResultFrom(makeResults(rowMapper, rs));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
