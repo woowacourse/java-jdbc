@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.statementexecutor.StatementExecutor;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Constructor;
@@ -13,8 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import static org.springframework.jdbc.core.QueryForObjectStatementExecutor.QUERY_FOR_OBJECT_EXECUTOR;
-import static org.springframework.jdbc.core.QueryStatementExecutor.QUERY_EXECUTOR;
+import static org.springframework.jdbc.core.statementexecutor.QueryForObjectStatementExecutor.QUERY_FOR_OBJECT_EXECUTOR;
+import static org.springframework.jdbc.core.statementexecutor.QueryStatementExecutor.QUERY_EXECUTOR;
 
 public class JdbcTemplate {
 
