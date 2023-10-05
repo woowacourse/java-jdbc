@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.support.JdbcAccessor;
 
 public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
@@ -24,7 +25,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         try {
             return getDataSource().getConnection();
         } catch (SQLException e) {
-            throw new RuntimeException("커넥션을 가져올 수 없습니다.");
+            throw new CannotGetJdbcConnectionException("커넥션을 가져올 수 없습니다.");
         }
     }
 
