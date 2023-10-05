@@ -26,12 +26,12 @@ public class UserDao {
         template.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void updatePassword(final User user) {
         final var sql = "update users set password = ? where id = ?";
         template.update(sql, user.getPassword(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
+    public void updatePassword(final Connection connection, final User user) {
         final var sql = "update users set password = ? where id = ?";
         template.update(connection, sql, user.getPassword(), user.getId());
     }
