@@ -1,7 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
@@ -15,7 +13,8 @@ import java.util.Optional;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int LIMIT_SIZE_OF_DATA = 1;
+    private static final int INDEX_OF_DATA = 0;
 
     private final DataSource dataSource;
 
@@ -24,55 +23,60 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapToRow(resultSet));
-            }
-
-            return results;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        return getDataFromQuery(sql, rowMapper, args);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
+        List<T> result = getDataFromQuery(sql, rowMapper, args);
 
-            if (!resultSet.next()) {
-                return Optional.empty();
-            }
+        validateSizeOfObjects(result);
 
-            return Optional.of(rowMapper.mapToRow(resultSet));
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+        if (result.isEmpty()) {
+            Optional.empty();
         }
+
+        return Optional.of(result.get(INDEX_OF_DATA));
+    }
+
+    private <T> void validateSizeOfObjects(final List<T> result) {
+        if (result.size() > LIMIT_SIZE_OF_DATA) {
+            throw new DataAccessException("데이터의 사이즈가 1 초과");
+        }
+    }
+
+    private <T> List<T> getDataFromQuery(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, preparedStatement -> getQueryResults(preparedStatement, rowMapper), args);
     }
 
     public void update(final String sql, final Object... args) {
+        execute(sql, PreparedStatement::execute, args);
+    }
+
+    private <T> T execute(final String sql, final Executor<T> executor, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
-            preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setPreparedStatement(preparedStatement, args);
+
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+    private <T> List<T> getQueryResults(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper) throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
 
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapToRow(resultSet));
+        }
+
+        return result;
+    }
+
+    private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
-
-        return preparedStatement;
     }
 }
