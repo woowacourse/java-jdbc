@@ -61,6 +61,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             return preparedStatementCallback.callback(preparedStatement);
         } catch (SQLException e) {
+            log.error("쿼리 실행 과정에서 오류가 발생했습니다. - query : {}, parameters : {}", sql, objects);
             throw new DataAccessException(e);
         }
     }
