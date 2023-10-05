@@ -36,8 +36,8 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 1개
+     * 왜 그런 결과가 나왔을까? saveSecondTransactionWithRequired 메서드의 트랜잭션 전파 속성이 REQUIRES 이기 때문에 기존 트랜잭션에 참여
      */
     @Test
     void testRequired() {
@@ -45,13 +45,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 2개
+     * 왜 그런 결과가 나왔을까? saveSecondTransactionWithRequired 메서드의 트랜잭션 전파 속성이 REQUIRES_NEW 이기 때문에
      */
     @Test
     void testRequiredNew() {
@@ -59,27 +59,33 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew"
+                );
     }
 
     /**
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
+     * 기존 트랜잭션이 롤백이 되어도, REQUIRES_NEW 전파 속성으로 새롭게 열린 트랜잭션은 정상적으로 처리.
+     * 즉, 별도의 물리 트랜잭션으로 분리된다.
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * SUPPORTS 전파 속성은 기존 트랜잭션이 있으면 참여하고 없으면 참여하지 않는다.
      */
     @Test
     void testSupports() {
@@ -87,14 +93,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * MANDATORY 전파 속성은 트랜잭션이 필수이므로 기존 트랜잭션이 존재하지 않으면 ITSE 예외가 발생한다.
      */
     @Test
     void testMandatory() {
@@ -102,8 +109,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -112,6 +119,11 @@ class Stage2Test {
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     *
+     * 물리적 트랜잭션은 디비 커넥션 개수와 1:1 대응되는 트랜잭션이다. REQUIRES_NEW 속성에서 발생할 수 있을 것 같다.
+     * 논리적 트랜잭션은 하나의 물리적 트랜잭션 내에서 파생되는 트랜잭션이다. 즉, 실제 디비 커넥션은 하나이고 그 안에서 나뉘어진다.
+     * 모든 논리 트랜잭션이 커밋되어야 물리 트랜잭션이 커밋된다.
+     * 하나의 논리 트랜잭션이라도 롤백되면 물리 트랜잭션도 롤백된다.
      */
     @Test
     void testNotSupported() {
@@ -119,13 +131,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * Hibernate에서 중첩 트랜잭션을 허용하지 않는다고 한다... Why..?
+     * 그래서 기존 First 메서드에 트랜잭션이 있으면 예외가 발생.
      */
     @Test
     void testNested() {
@@ -133,12 +147,14 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     * NEVER 전파 속성은 트랜잭션을 사용하지 않겠다는 의미이다.
+     * 기존 트랜잭션이 있으면 ITSE 예외를 발생시킨다.
      */
     @Test
     void testNever() {
@@ -146,7 +162,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
