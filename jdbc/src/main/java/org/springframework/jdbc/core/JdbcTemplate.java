@@ -42,7 +42,7 @@ public class JdbcTemplate {
 
     private void setParams(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
-            pstmt.setString(i + 1, String.valueOf(parameters[i]));
+            pstmt.setObject(i + 1, parameters[i]);
         }
     }
 
