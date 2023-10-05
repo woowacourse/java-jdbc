@@ -65,6 +65,11 @@ public class JdbcTemplate {
         if (result.isEmpty()) {
             return Optional.empty();
         }
+
+        if (result.size() != 1) {
+            throw new DataAccessException("쿼리 실행의 결과 row가 여러 개 입니다.");
+        }
+
         return Optional.of(result.get(0));
     }
 
