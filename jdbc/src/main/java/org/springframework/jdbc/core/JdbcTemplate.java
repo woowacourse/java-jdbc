@@ -28,35 +28,37 @@ public class JdbcTemplate {
         ) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
+            throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
+             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
         ) {
+            final ResultSet rs = pstmt.executeQuery();
             final List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
             }
             return list;
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
+            throw new DataAccessException(e);
         }
     }
 
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
-             final ResultSet rs = preparedStatementAndSetValue(conn, sql, objects).executeQuery()
+             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
         ) {
+            final ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
             return null;
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
+            throw new DataAccessException(e);
         }
     }
 
