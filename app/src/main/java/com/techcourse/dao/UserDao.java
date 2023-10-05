@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -22,10 +22,6 @@ public class UserDao {
 
     private JdbcTemplate jdbcTemplate;
 
-    public UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -37,24 +33,24 @@ public class UserDao {
     }
 
     public void update(User user) {
-        String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
+        String sql = "update users set account = ?, password = ? where email = ?";
         log.info("[LOG] update user");
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
-        String sql = "select * from users";
+        String sql = "select id, account, password, email from users";
         log.info("[LOG] select all from users");
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.info("[LOG] select user by id");
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.info("[LOG] select user by account");
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
