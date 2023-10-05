@@ -19,15 +19,17 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final StatementGenerator statementGenerator;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.statementGenerator = new StatementGenerator();
     }
 
     public void update(String sql, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = prepareStatement(sql, conn, params);
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
         ) {
             log.debug("query : {}", sql);
 
@@ -41,7 +43,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = prepareStatement(sql, conn, params);
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
                 ResultSet rs = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
@@ -75,7 +77,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = prepareStatement(sql, conn, params);
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
                 ResultSet rs = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
@@ -99,18 +101,6 @@ public class JdbcTemplate {
                 mapTo(requiredType),
                 params
         );
-    }
-
-    private PreparedStatement prepareStatement(String sql, Connection conn, Object... params) {
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(1 + i, params[i]);
-            }
-            return pstmt;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private <T> RowMapper<T> mapTo(Class<T> requiredType) {
