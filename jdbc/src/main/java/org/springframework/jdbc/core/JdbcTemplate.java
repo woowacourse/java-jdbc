@@ -67,15 +67,15 @@ public class JdbcTemplate {
     public <T> T queryForObject(final RowMapper<T> rowMapper, final String sql, final Object... parameters) {
         final List<T> result = query(rowMapper, sql, parameters);
 
-        validateResult(result);
+        validateResultSize(result.size());
         return result.get(0);
     }
 
-    private static <T> void validateResult(final List<T> result) {
-        if (result.size() > SINGLE_RESULT_SIZE) {
-            throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + result.size());
+    private static <T> void validateResultSize(final int size) {
+        if (size > SINGLE_RESULT_SIZE) {
+            throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + size);
         }
-        if (result.isEmpty()) {
+        if (size == 0) {
             throw new EmptyResultException("Result is Empty");
         }
     }
