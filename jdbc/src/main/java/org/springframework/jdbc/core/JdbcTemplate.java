@@ -16,6 +16,7 @@ import org.springframework.jdbc.DatabaseConnectionException;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
     private static final int ONE_DATA_INDEX = 0;
     private static final int TWO = 2;
 
