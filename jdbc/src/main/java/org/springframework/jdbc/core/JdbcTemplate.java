@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... arguments) {
-        return execute(sql, preparedStatement -> preparedStatement.executeUpdate(),
+        return execute(sql, PreparedStatement::executeUpdate,
                 arguments
         );
     }
