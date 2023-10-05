@@ -20,34 +20,34 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... params) {
-        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (ResultSet resultSet = preparedStatementWithParams(sql, params).executeQuery()) {
+        return execute(sql, pstmt -> {
+            ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
             throw new RuntimeException();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, params);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (ResultSet resultSet = preparedStatementWithParams(sql, params).executeQuery()) {
+        return execute(sql, pstmt -> {
+            ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
-        } catch (SQLException e) {
+        }, params);
+    }
+
+    private <T> T execute(String sql, PreparedStatementFunction<T> function, Object... params) {
+        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
+            return function.execute(pstmt);
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
@@ -60,5 +60,9 @@ public class JdbcTemplate {
             pstmt.setObject(i, params[i - 1]);
         }
         return pstmt;
+    }
+
+    private interface PreparedStatementFunction<T> {
+        T execute(PreparedStatement pstmt) throws Exception;
     }
 }
