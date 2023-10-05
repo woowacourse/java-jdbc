@@ -2,17 +2,19 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private final RowMapper<User> userRowMapper = resultSet -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email")
     );
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -31,16 +33,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select * from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final String sql = "select * from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final String sql = "select * from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
