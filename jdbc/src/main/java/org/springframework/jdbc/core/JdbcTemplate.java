@@ -11,8 +11,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+
+import static org.springframework.jdbc.core.QueryStatementExecutor.QUERY_EXECUTOR;
 
 public class JdbcTemplate {
 
@@ -78,15 +79,9 @@ public class JdbcTemplate {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-                ResultSet rs = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.map(rs));
-            }
-            return result;
+            return QUERY_EXECUTOR.execute(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
