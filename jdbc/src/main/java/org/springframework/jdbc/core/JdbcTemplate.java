@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -20,8 +21,8 @@ public class JdbcTemplate {
         this.queryTemplate = new QueryTemplate(dataSource);
     }
 
-    public void update(String sql, Object... parameters) {
-        queryTemplate.query(sql, PreparedStatement::executeUpdate, parameters);
+    public void update(Connection conn, String sql, Object... parameters) {
+        queryTemplate.query(conn, sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {

@@ -1,9 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,13 +24,11 @@ public class UserHistoryDao {
         this.dataSource = null;
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(final Connection conn, final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -50,13 +48,8 @@ public class UserHistoryDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
