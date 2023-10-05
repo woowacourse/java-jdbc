@@ -28,7 +28,9 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         transactionManager.save(
-                (connection, entity) -> jdbcTemplate.executeUpdate(sql,
+                (connection, entity) -> jdbcTemplate.executeUpdate(
+                        connection,
+                        sql,
                         user.getAccount(),
                         user.getPassword(),
                         user.getEmail()

@@ -8,21 +8,17 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.techcourse.support.jdbc.init.PooledDataSourceConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.ConnectionManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.TransactionManager;
 
 class UserDaoTest {
 
     private UserDao userDao;
-    private ConnectionManager connectionManager;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        connectionManager = new PooledDataSourceConnectionManager();
-        userDao = new UserDao(new TransactionManager(connectionManager), new JdbcTemplate(connectionManager));
+        userDao = new UserDao(new TransactionManager(new PooledDataSourceConnectionManager()), new JdbcTemplate());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
