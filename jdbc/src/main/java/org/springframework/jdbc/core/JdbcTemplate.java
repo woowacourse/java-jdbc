@@ -14,6 +14,12 @@ import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException
 
 public class JdbcTemplate {
 
+    @FunctionalInterface
+    private interface PreparedStatementImpl<T> {
+
+        T implement(PreparedStatement pstmt) throws SQLException;
+    }
+
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -23,41 +29,34 @@ public class JdbcTemplate {
     }
 
     public int execute(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
-            log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return manageData(PreparedStatement::executeUpdate, sql, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-
-            final List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+        return manageData(pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                final List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
+                return result;
             }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, sql, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return manageData(pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return getOneResult(rs, rowMapper);
+            }
+        }, sql, args);
+    }
 
+    private <T> T manageData(final PreparedStatementImpl<T> qm, final String sql, final Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = setPreparedStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = setPreparedStatement(conn, sql, args);) {
             log.debug("query : {}", sql);
-
-            return getOneResult(rs, rowMapper);
+            return qm.implement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
