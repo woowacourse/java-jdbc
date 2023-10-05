@@ -2,7 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionContext;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -19,10 +19,10 @@ public class ConnectionManager {
     }
 
     public Connection getConnection() {
-        if (TransactionContext.isEmpty()) {
-            return getNewConnection();
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return TransactionSynchronizationManager.getResource(dataSource);
         }
-        return TransactionContext.get();
+        return getNewConnection();
     }
 
     private Connection getNewConnection() {
@@ -42,10 +42,10 @@ public class ConnectionManager {
     }
 
     private boolean isTransactional(final Connection connection) {
-        if (TransactionContext.isEmpty()) {
-            return false;
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return TransactionSynchronizationManager.getResource(dataSource) == connection;
         }
-        return TransactionContext.get() == (connection);
+        return false;
     }
 
     private void close(final Connection connection) {

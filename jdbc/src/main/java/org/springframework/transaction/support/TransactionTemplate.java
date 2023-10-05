@@ -22,7 +22,7 @@ public class TransactionTemplate {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            TransactionContext.set(connection);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
             transactionCallback.execute();
             connection.commit();
@@ -37,7 +37,7 @@ public class TransactionTemplate {
             }
             throw new UndeclaredThrowableException(e);
         } finally {
-            TransactionContext.remove();
+            TransactionSynchronizationManager.unbindResource(dataSource);
             try {
                 if (connection != null) {
                     connection.close();
