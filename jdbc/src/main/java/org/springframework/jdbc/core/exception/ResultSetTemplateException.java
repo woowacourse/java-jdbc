@@ -1,6 +1,8 @@
 package org.springframework.jdbc.core.exception;
 
-public class ResultSetTemplateException extends RuntimeException {
+import org.springframework.dao.DataAccessException;
+
+public class ResultSetTemplateException extends DataAccessException {
 
     public ResultSetTemplateException(final Throwable cause) {
         super(cause);
