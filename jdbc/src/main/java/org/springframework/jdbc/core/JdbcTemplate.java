@@ -32,11 +32,8 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
     @Override
     public <T> T execute(final StatementCallback<T> callback) throws DataAccessException {
         log.info("execute: {}", callback.getSql());
-        final var connection = getConnection();
-
-        try {
-            final var preparedStatement = connection.createStatement();
-
+        try (final var connection = getConnection();
+            final var preparedStatement = connection.createStatement()) {
             return callback.doInStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -47,11 +44,9 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
     @Override
     public <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback)
         throws DataAccessException {
-        final Connection connection = getConnection();
-
-        try {
+        try (final Connection connection = getConnection();
             final PreparedStatement preparedStatement = createPreparedStatement(connection,
-                                                                                preparedStatementCallback.getSql());
+                                                                                preparedStatementCallback.getSql())) {
             return preparedStatementCallback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
