@@ -32,24 +32,29 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executePreparedStatement(sql, pstmt -> {
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
-        }, args);
+        List<T> results = executePreparedStatement(
+                sql,
+                pstmt -> mapResults(rowMapper, pstmt),
+                args
+        );
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return executePreparedStatement(sql, pstmt -> {
-            ResultSet rs = pstmt.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        }, args);
+        return executePreparedStatement(
+                sql,
+                pstmt -> mapResults(rowMapper, pstmt),
+                args
+        );
+    }
+
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        ResultSet rs = pstmt.executeQuery();
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
     }
 
     private <T> T executePreparedStatement(
