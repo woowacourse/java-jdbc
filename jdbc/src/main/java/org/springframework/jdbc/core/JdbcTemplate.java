@@ -41,6 +41,22 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(Connection conn, String sql, Object... args) {
+        try (
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
+
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw sqlExceptionTranslator.translate(sql, e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
                 Connection conn = dataSource.getConnection();
