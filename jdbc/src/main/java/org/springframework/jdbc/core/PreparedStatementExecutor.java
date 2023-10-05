@@ -23,4 +23,16 @@ public class PreparedStatementExecutor {
             throw new DataAccessException(e.getMessage());
         }
     }
+
+    public <T> T execute(
+            final Connection conn,
+            final PreparedStatementGenerator psmtGenerator,
+            final PreparedStatementCaller<T> psmtCaller
+    ) {
+        try (final PreparedStatement psmt = psmtGenerator.generate(conn)) {
+            return psmtCaller.call(psmt);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        }
+    }
 }
