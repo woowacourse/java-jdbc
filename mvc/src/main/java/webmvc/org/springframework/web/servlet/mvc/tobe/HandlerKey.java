@@ -16,7 +16,10 @@ public class HandlerKey {
 
     @Override
     public String toString() {
-        return "HandlerKey [url=" + url + ", requestMethod=" + requestMethod + "]";
+        return "HandlerKey{" +
+                "url='" + url + '\'' +
+                ", requestMethod=" + requestMethod +
+                '}';
     }
 
     @Override
