@@ -1,7 +1,13 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -12,13 +18,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
@@ -34,10 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |           +          |      +
+ * Read Committed   |      -      |           +          |      +
+ * Repeatable Read  |      -      |           -          |      +
+ * Serializable     |      -      |           -          |      -
  */
 class Stage1Test {
 
@@ -58,10 +57,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      +
+     * Read Committed   |      -
+     * Repeatable Read  |      -
+     * Serializable     |      -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +80,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,10 +110,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |          +
+     * Read Committed   |          +
+     * Repeatable Read  |          -
+     * Serializable     |          -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +129,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -142,6 +141,7 @@ class Stage1Test {
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
             final var subConnection = dataSource.getConnection();
+//            subConnection.setAutoCommit(false);
 
             // 사용자A가 조회한 gugu 객체를 사용자B가 다시 조회했다.
             final var anotherUser = userDao.findByAccount(subConnection, "gugu");
@@ -154,7 +154,7 @@ class Stage1Test {
         sleep(0.5);
 
         // 사용자A가 다시 gugu 객체를 조회했다.
-        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다.
+        // 사용자B는 패스워드를 변경하고 커밋했다 아님?
         final var actual = userDao.findByAccount(connection, "gugu");
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
@@ -173,16 +173,16 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      +
+     * Read Committed   |      +
+     * Repeatable Read  |      +
+     * Serializable     |      -
      */
     @Test
     void phantomReading() throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
-        final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+        final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.28"))
                 .withLogConsumer(new Slf4jLogConsumer(log));
         mysql.start();
         setUp(createMySQLDataSource(mysql));
@@ -197,7 +197,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -256,10 +256,10 @@ class Stage1Test {
         return jdbcDataSource;
     }
 
-    private void sleep(double seconds) {
+    private void sleep(final double seconds) {
         try {
             TimeUnit.MILLISECONDS.sleep((long) (seconds * 1000));
-        } catch (InterruptedException ignored) {
+        } catch (final InterruptedException ignored) {
         }
     }
 }
