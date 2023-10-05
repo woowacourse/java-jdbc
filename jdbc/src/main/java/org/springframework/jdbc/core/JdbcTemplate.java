@@ -46,13 +46,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
-        for (int parameterIndex = 0; parameterIndex < parameters.length; parameterIndex++) {
-            preparedStatement.setObject(FIRST_PARAMETER_INDEX, parameters[parameterIndex]);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
