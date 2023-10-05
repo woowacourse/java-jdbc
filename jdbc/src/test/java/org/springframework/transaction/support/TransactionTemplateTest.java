@@ -27,7 +27,7 @@ class TransactionTemplateTest {
     @Test
     void executeWithTransaction() throws SQLException {
         // given
-        TransactionCallback transactionCallback = () -> System.out.println("성공");
+        TransactionCallback<String> transactionCallback = () -> "성공";
 
         // when
         transactionTemplate.executeWithTransaction(transactionCallback);
@@ -42,7 +42,7 @@ class TransactionTemplateTest {
     void executeWithTransaction_RuntimeExceptionThrown_RollbackAndSameExceptionThrown() throws SQLException {
         // given
         RuntimeException exception = new DataAccessException("실패");
-        TransactionCallback transactionCallback = () -> {
+        TransactionCallback<Object> transactionCallback = () -> {
             throw exception;
         };
 

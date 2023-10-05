@@ -1,7 +1,7 @@
 package org.springframework.transaction.support;
 
 @FunctionalInterface
-public interface TransactionCallback {
+public interface TransactionCallback<T> {
 
-    void execute();
+    T execute();
 }

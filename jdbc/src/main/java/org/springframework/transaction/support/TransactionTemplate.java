@@ -19,13 +19,14 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeWithTransaction(final TransactionCallback transactionCallback) {
+    public <T> T executeWithTransaction(final TransactionCallback<T> transactionCallback) {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            transactionCallback.execute();
+            final T result = transactionCallback.execute();
             connection.commit();
+            return result;
         } catch (final RuntimeException e) {
             if (connection != null) {
                 rollback(connection);
