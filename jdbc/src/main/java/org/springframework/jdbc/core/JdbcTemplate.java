@@ -25,8 +25,8 @@ public class JdbcTemplate {
         preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
-    public void update(final String sql, final Object... parameters) {
-        preparedStatementExecutor.execute(
+    public int update(final String sql, final Object... parameters) {
+        return preparedStatementExecutor.execute(
                 generatePreparedStatement(sql, parameters),
                 PreparedStatement::executeUpdate
         );
