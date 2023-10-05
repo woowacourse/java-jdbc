@@ -21,5 +21,5 @@
     - [x] Connection, Statement, ResultSet 객체 close
 
 ## 3단계
-- [ ] changePassword() 메서드에 원자성을 보장하기 위해 트랜잭션을 적용
-- [ ] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경
+- [x] changePassword() 메서드에 원자성을 보장하기 위해 트랜잭션을 적용
+- [x] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경

@@ -22,12 +22,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    public Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            log.error(e.getMessage());
+            throw new IllegalStateException("데이터 소스와의 연결에 실패했습니다");
+        }
     }
 
-    public void execute(String sql, Object... args) {
-        context(sql, args);
+    public void execute(Connection connection, String sql, Object... args) {
+        context(connection, sql, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rm) {
@@ -48,8 +53,8 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    private void context(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
+    private void context(Connection connection, String sql, Object... args) {
+        try (Connection conn = connection;
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {

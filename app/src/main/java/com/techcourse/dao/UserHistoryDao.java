@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserHistoryDao {
@@ -28,8 +29,8 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory) {
-        jdbcTemplate.execute("insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
+    public void log(Connection connection, UserHistory userHistory) {
+        jdbcTemplate.execute(connection, "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
                 userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
     }
 

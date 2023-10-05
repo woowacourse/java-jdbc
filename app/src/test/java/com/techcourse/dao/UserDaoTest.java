@@ -7,21 +7,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Connection;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
     private JdbcTemplate jdbcTemplate;
+    private Connection connection;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        connection = jdbcTemplate.getConnection();
 
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
     }
 
     @Test
@@ -40,9 +44,9 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        userDao.delete();
+        userDao.delete(connection);
 
-        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        userDao.insert(connection, new User("gugu", "password", "hkkang@woowahan.com"));
 
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
@@ -54,7 +58,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
 
         final var actual = userDao.findById(2L);
 
@@ -67,7 +71,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(connection, user);
 
         final var actual = userDao.findById(1L);
 

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -25,13 +26,13 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
+    public void insert(final Connection connection, final User user) {
+        jdbcTemplate.execute(connection, "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        jdbcTemplate.execute("update users set account = ?, password = ?, email = ? where id = ?",
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.execute(connection, "update users set account = ?, password = ?, email = ? where id = ?",
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
@@ -49,7 +50,7 @@ public class UserDao {
                 , rowMapper, account);
     }
 
-    public void delete() {
-        jdbcTemplate.execute("delete from users");
+    public void delete(final Connection connection) {
+        jdbcTemplate.execute(connection, "delete from users");
     }
 }
