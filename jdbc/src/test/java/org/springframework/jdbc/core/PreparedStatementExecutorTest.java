@@ -12,7 +12,7 @@ class PreparedStatementExecutorTest {
     void execute() {
         //given
         final PreparedStatementExecutor executor = new PreparedStatementExecutor(TestDataSource.getInstance());
-        final String sql = "INSERT INTO tests (name) VALUES (?)";
+        final String sql = "INSERT INTO test_data (name) VALUES (?)";
         final String parameter = "test";
 
         //when, then
