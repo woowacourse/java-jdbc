@@ -20,9 +20,8 @@ public class TransactionalExecutor {
         } catch (Exception e) {
             rollback(con);
             throw e;
-        } finally {
-            commitAndClose(con);
         }
+        commitAndClose(con);
     }
 
     private Connection getTransactionalConnection() {
