@@ -19,6 +19,7 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
+    @Nullable
     public <T> T executeWithTransaction(final TransactionCallback<T> transactionCallback) {
         Connection connection = null;
         try {
