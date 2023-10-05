@@ -10,6 +10,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -38,13 +39,13 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, preparedStatement -> {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.mapRow(resultSet));
-            }
-            return Optional.empty();
-        }, parameters);
+        final List<T> result = query(sql, rowMapper, parameters);
+
+        if(result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("query did not return a unique result: " + result.size());
+        }
+
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {

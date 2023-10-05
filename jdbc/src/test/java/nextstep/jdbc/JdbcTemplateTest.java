@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
 
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -59,9 +61,9 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 단일_조회시_쿼리결과가_있을_경우_해당_객체를_반환한다() throws SQLException {
+    void 단일_조회시_단일_쿼리결과가_있을_경우_해당_객체를_반환한다() throws SQLException {
         // given
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
         when(resultSet.getLong(1)).thenReturn(1L);
         when(resultSet.getString(2)).thenReturn("blackcat");
 
@@ -88,6 +90,19 @@ class JdbcTemplateTest {
 
         // then
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void 단일_조회시_쿼리결과가_여러_개일_경우_예외가_발생한다() throws SQLException {
+        // given
+        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+        when(resultSet.getLong(1)).thenReturn(1L).thenReturn(2L);
+        when(resultSet.getString(2)).thenReturn("blackcat").thenReturn("blackcat");
+
+        // expected
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, memberMapper, "blackcat"))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
