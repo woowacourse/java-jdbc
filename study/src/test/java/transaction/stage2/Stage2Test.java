@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,27 +59,35 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
+     *
+     * 바깥에서 호출한 트랜잭션이 롤백되더라도, REQUIRES_NEW 옵션에 의해 새로운 트랜잭션이 생성되므로
+     * 영향을 받지 않는다.
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     *
+     * SUPPORTS 옵션의 경우 트랜잭션이 있으면 참여하고, 없으면 참여하지 않는다.
+     * 따라서 주석처리를 하는 경우에는 참여하지 않기 때문에 트랜잭션의 개수는 1개이다.
+     * 주석처리를 하지 않는 경우에도 참여하기 때문에 트랜잭션의 개수가 1개이다. 다만 트랜잭션이 다르다. 바깥 트랜잭션을 사용하게 된다.
      */
     @Test
     void testSupports() {
@@ -87,14 +95,20 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     *
+     * MANDATORY는 참여하려는 트랜잭션이 없으면 예외를 반환한다.
+     * SUPPORTS는 참여하려는 트랜잭션이 없다면 그대로 수행된다는 점에서 차이가 있다.
+     *
+     * 주석을 해제하지 않으면 예외가 발생할 것이다.
+     * 주석을 해제하면 트랜잭션에 참여할 것이다.
      */
     @Test
     void testMandatory() {
@@ -102,8 +116,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -112,6 +126,11 @@ class Stage2Test {
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     *
+     * NOT SUPPORTED의 경우 트랜잭션을 지원하지 않는다.
+     * 바깥 트랜잭션이 존재하는 경우에는 트랜잭션을 보류시킨다.
+     * 따라서 물리적 트랜잭션 개수는 바깥쪽 트랜잭션 개수를 따른다.
+     * 하지만 논리적 트랜잭션 개수는 두 개이다.
      */
     @Test
     void testNotSupported() {
@@ -119,13 +138,21 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     *
+     * NESTED의 경우 외부 트랜잭션에 중첩된다.
+     * NESTED가 선언된 논리적 트랜잭션은 롤백도 가능하고 다른 트랜잭션으로 취급받는 것 같지만
+     * 외부 트랜잭션이 롤백되는 순간 NESTED가 선언된 트랜잭션도 롤백이 된다. 그래서 중첩이 되었다 하는 것
+     * 다만 JDBC의 savepoint 기능을 사용해서 구현되는데, JPA에서는 이를 지원하고 있지 않다
+     *
+     * 바깥 트랜잭션이 없는 경우에는 새로운 트랜잭션을 생성하기 때문에 중첩되지 않고, savepoint를 사용할 일도 없으므로 예외가 발생하지 않는다.
      */
     @Test
     void testNested() {
@@ -133,8 +160,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -146,7 +173,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
