@@ -30,9 +30,11 @@ public class UserService {
 
         try {
             TransactionManager.start();
+
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
+
             TransactionManager.commit();
         } catch (DataAccessException e) {
             TransactionManager.rollback();
