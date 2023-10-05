@@ -14,12 +14,6 @@ import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException
 
 public class JdbcTemplate {
 
-    @FunctionalInterface
-    private interface PreparedStatementImpl<T> {
-
-        T implement(PreparedStatement pstmt) throws SQLException;
-    }
-
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
