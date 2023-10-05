@@ -21,13 +21,16 @@ public class PreparedStatementTemplate {
             final PreparedStatementExecutor<T> executor,
             final Object... statements
     ) {
+        final Connection connection = ConnectionContext.findConnection(dataSource);
+
         try (
-                final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = processPreparedStatement(connection, creator, statements)
         ) {
             return executor.execute(preparedStatement);
         } catch (final SQLException e) {
             throw new PreparedStatementTemplateException(e);
+        } finally {
+            ConnectionContext.removeNonTransaction();
         }
     }
 
