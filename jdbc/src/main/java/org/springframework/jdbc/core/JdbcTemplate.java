@@ -50,7 +50,7 @@ public class JdbcTemplate {
         return result.get(FIRST);
     }
 
-    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
             setParameters(parameters, preparedStatement);
             log.debug("query : {}", preparedStatement);
