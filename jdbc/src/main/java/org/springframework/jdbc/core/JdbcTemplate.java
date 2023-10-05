@@ -29,15 +29,6 @@ public class JdbcTemplate {
         return execute(sql, connection, new PrepareStatementUpdateExecutor(), args);
     }
 
-    public void update(Connection connection, String sql, Object... args) {
-        try (PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args)) {
-            preparedStatement.executeUpdate();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, new PrepareStatementQueryExecutor<>(rowMapper), args);
     }
@@ -69,16 +60,11 @@ public class JdbcTemplate {
     }
 
     private PreparedStatement getPreparedStatement(final String sql, final Connection connection, final Object... args) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-            return preparedStatement;
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
+        return preparedStatement;
     }
 
     public DataSource getDataSource() {
