@@ -7,11 +7,11 @@ public class HandlerAdapterRegistry {
 
     private final List<HandlerAdapter> handlerAdapters = new ArrayList<>();
 
-    public void addHandlerAdapter(final HandlerAdapter handlerAdapter) {
+    public void addHandlerAdapter(HandlerAdapter handlerAdapter) {
         handlerAdapters.add(handlerAdapter);
     }
 
-    public HandlerAdapter getHandlerAdapter(final Object handler) {
+    public HandlerAdapter getHandlerAdapter(Object handler) {
         return handlerAdapters.stream()
                 .filter(ha -> ha.supports(handler))
                 .findFirst()

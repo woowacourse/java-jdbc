@@ -16,12 +16,12 @@ public class HandlerExecution {
     private final Object declaredObject;
     private final Method method;
 
-    public HandlerExecution(final Object declaredObject, final Method method) {
+    public HandlerExecution(Object declaredObject, Method method) {
         this.declaredObject = declaredObject;
         this.method = method;
     }
 
-    public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response) {
+    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response) {
         try {
             return (ModelAndView) method.invoke(declaredObject, request, response);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

@@ -15,11 +15,11 @@ public class Application {
     private static final int DEFAULT_PORT = 8080;
 
     public static void main(String[] args) throws Exception {
-        final int port = defaultPortIfNull(args);
+        int port = defaultPortIfNull(args);
 
-        final var tomcat = new Tomcat();
+        Tomcat tomcat = new Tomcat();
         tomcat.setConnector(createConnector(port));
-        final var docBase = new File("app/src/main/webapp/").getAbsolutePath();
+        String docBase = new File("app/src/main/webapp/").getAbsolutePath();
         tomcat.addWebapp("", docBase);
         log.info("configuring app with basedir: {}", docBase);
 
@@ -27,8 +27,8 @@ public class Application {
         tomcat.getServer().await();
     }
 
-    private static Connector createConnector(final int port) {
-        final var connector = new Connector();
+    private static Connector createConnector(int port) {
+        Connector connector = new Connector();
         connector.setPort(port);
         connector.setProperty("bindOnInit", "false");
         return connector;

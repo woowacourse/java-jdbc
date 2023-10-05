@@ -9,12 +9,12 @@ public class UserSession {
 
     public static final String SESSION_KEY = "user";
 
-    public static Optional<User> getUserFrom(final HttpSession session) {
-        final var user = (User) session.getAttribute(SESSION_KEY);
+    public static Optional<User> getUserFrom(HttpSession session) {
+        User user = (User) session.getAttribute(SESSION_KEY);
         return Optional.ofNullable(user);
     }
 
-    public static boolean isLoggedIn(final HttpSession session) {
+    public static boolean isLoggedIn(HttpSession session) {
         return getUserFrom(session).isPresent();
     }
 

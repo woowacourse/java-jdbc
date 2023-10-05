@@ -1,5 +1,6 @@
 package webmvc.org.springframework.web.servlet.view;
 
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -17,12 +18,12 @@ public class JspView implements View {
 
     private final String viewName;
 
-    public JspView(final String viewName) {
+    public JspView(String viewName) {
         this.viewName = Objects.requireNonNull(viewName, "viewName is null. 이동할 URL을 입력하세요.");
     }
 
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    public void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception {
         log.debug("ViewName : {}", viewName);
         if (viewName.startsWith(REDIRECT_PREFIX)) {
             response.sendRedirect(viewName.substring(REDIRECT_PREFIX.length()));
@@ -34,7 +35,7 @@ public class JspView implements View {
             request.setAttribute(key, model.get(key));
         });
 
-        final var requestDispatcher = request.getRequestDispatcher(viewName);
+        RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewName);
         requestDispatcher.forward(request, response);
     }
 }

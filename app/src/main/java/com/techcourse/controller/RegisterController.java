@@ -14,8 +14,9 @@ import web.org.springframework.web.bind.annotation.RequestMethod;
 public class RegisterController {
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
-    public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
-        final var user = new User(2,
+    public ModelAndView register(HttpServletRequest request, HttpServletResponse response) {
+        User user = new User(
+                2,
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
@@ -25,7 +26,7 @@ public class RegisterController {
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
-    public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
+    public ModelAndView view(HttpServletRequest request, HttpServletResponse response) {
         return new ModelAndView(new JspView("/register.jsp"));
     }
 }

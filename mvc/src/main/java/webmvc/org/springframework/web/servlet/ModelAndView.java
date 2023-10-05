@@ -9,17 +9,17 @@ public class ModelAndView {
     private final View view;
     private final Map<String, Object> model;
 
-    public ModelAndView(final View view) {
+    public ModelAndView(View view) {
         this.view = view;
         this.model = new HashMap<>();
     }
 
-    public ModelAndView addObject(final String attributeName, final Object attributeValue) {
+    public ModelAndView addObject(String attributeName, Object attributeValue) {
         model.put(attributeName, attributeValue);
         return this;
     }
 
-    public Object getObject(final String attributeName) {
+    public Object getObject(String attributeName) {
         return model.get(attributeName);
     }
 
