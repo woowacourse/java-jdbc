@@ -11,11 +11,7 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-
-    private final RowMapper<User> rowMapper = rs -> {
+    private final static RowMapper<User> rowMapper = rs -> {
         return new User(
                 rs.getLong("id"),
                 rs.getString("account"),
@@ -24,14 +20,14 @@ public class UserDao {
         );
     };
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public UserDao(final DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
     }
 
     public void insert(final User user) {
