@@ -22,55 +22,38 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)
-        ) {
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args);
-                final ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
+        return executeQuery(
+                sql,
+                pstmt -> {
+                    final ResultSet rs = pstmt.executeQuery();
 
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
-            }
-            return Optional.empty();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+                    if (rs.next()) {
+                        return Optional.of(rowMapper.mapRow(rs));
+                    }
+                    return Optional.empty();
+                },
+                args
+        );
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql);
-                final ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
+        return executeQuery(
+                sql,
+                pstmt -> {
+                    final ResultSet rs = pstmt.executeQuery();
 
-            final List<T> resultSets = new ArrayList<>();
-            while (rs.next()) {
-                final T mappedRow = rowMapper.mapRow(rs);
-                resultSets.add(mappedRow);
-            }
-            return resultSets;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+                    final List<T> resultSets = new ArrayList<>();
+                    while (rs.next()) {
+                        final T mappedRow = rowMapper.mapRow(rs);
+                        resultSets.add(mappedRow);
+                    }
+                    return resultSets;
+                }
+        );
     }
 
     private PreparedStatement processPreparedStatement(
@@ -79,13 +62,27 @@ public class JdbcTemplate {
             final Object... args
     ) throws SQLException {
         final PreparedStatement pstmt = conn.prepareStatement(sql);
-        setPreparedStatement(args, pstmt);
+        setPreparedStatement(pstmt, args);
         return pstmt;
     }
 
-    private void setPreparedStatement(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+    private void setPreparedStatement(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> T executeQuery(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args);
+        ) {
+            log.debug("query : {}", sql);
+
+            return executor.execute(pstmt);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }
