@@ -14,12 +14,17 @@ public class QueryStatementExecutor<T> implements StatementExecutor<T> {
     }
 
     @Override
-    public <T> List<T> execute(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        final ResultSet resultSet = pstmt.executeQuery();
-        final List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(rowMapper.map(resultSet));
+    public <T> List<T> execute(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
+        try (
+                ResultSet rs = pstmt.executeQuery()
+        ) {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.map(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-        return results;
     }
 }
