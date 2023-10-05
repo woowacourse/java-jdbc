@@ -28,10 +28,12 @@ public class TransactionManager {
 
     public void commit() throws SQLException {
         connection.commit();
+        connection.close();
     }
 
     public void rollback() throws SQLException {
         connection.rollback();
+        connection.close();
     }
 
     public Connection getConnection() {
