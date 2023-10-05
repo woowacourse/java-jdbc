@@ -3,6 +3,8 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.exception.EmptyResultDataAccessException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,13 +29,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, (PreparedStatement pstmt) -> {
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            throw new RuntimeException();
-        });
+        List<T> result = query(sql, rowMapper, args);
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, result.size());
+        }
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        return result.iterator().next();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
