@@ -26,7 +26,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters)
         ) {
-            log.debug("query : {}", sql);
+            log.debug("Execute Update - query : {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,7 +39,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters);
              ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
+            log.debug("Execute Query -query : {}", sql);
             return SingleResult.makeSingleResultFrom(makeResults(rowMapper, rs));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -60,7 +60,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
+            log.debug("Execute Query - query : {}", sql);
             return makeResults(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
