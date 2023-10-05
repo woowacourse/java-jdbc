@@ -34,14 +34,10 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement makeStatement(final Connection connection, final String sql, final Object... parameters) {
-        try {
-            final PreparedStatement pstmt = connection.prepareStatement(sql);
-            setParams(pstmt, parameters);
-            return pstmt;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    private PreparedStatement makeStatement(final Connection connection, final String sql, final Object... parameters) throws SQLException {
+        final PreparedStatement pstmt = connection.prepareStatement(sql);
+        setParams(pstmt, parameters);
+        return pstmt;
     }
 
     private void setParams(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
