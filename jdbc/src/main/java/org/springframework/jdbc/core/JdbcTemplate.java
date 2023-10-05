@@ -1,15 +1,12 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
@@ -23,54 +20,48 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = getPreparedStatement(sql, conn, parameters)) {
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
+        execute(new PreparedStatementCreator(sql), ps -> {
+            final var pss = newArgumentPreparedStatementSetter(parameters);
+            pss.setValues(ps);
+            return ps.executeUpdate();
+        });
+    }
+
+    public <T> T execute(PreparedStatementCreator psc, StatementCallback<T> action) {
+        try (var conn = dataSource.getConnection();
+             var stmt = psc.createPreparedStatement(conn)) {
+            return action.doInStatement(stmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement getPreparedStatement(final String sql, final Connection conn, final Object[] parameters) throws SQLException {
-        final PreparedStatement preparedStatement = conn.prepareStatement(sql);
-        int index = 1;
-        for (Object parameter : parameters) {
-            preparedStatement.setObject(index++, parameter);
-        }
-        return preparedStatement;
+    private ArgumentPreparedStatementSetter newArgumentPreparedStatementSetter(final Object... parameters) {
+        return new ArgumentPreparedStatementSetter(parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(sql, conn, parameters);
-             ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-
-            if (rs.next() && rs.isLast()) {
-                return rowMapper.mapRow(rs);
-            }
+        final List<T> result = query(sql, rowMapper, parameters);
+        if (result.size() != 1) {
             throw new IllegalStateException("Query 조회 결과가 하나가 아닙니다.");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
+        return result.iterator().next();
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(sql, conn, parameters);
-             ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(new PreparedStatementCreator(sql), ps -> {
+            final var pss = new ArgumentPreparedStatementSetter(parameters);
+            pss.setValues(ps);
+            final var rs = ps.executeQuery();
+            return result(rowMapper, rs);
+        });
+    }
+
+    private <T> List<T> result(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.mapRow(rs));
         }
+        return result;
     }
 }

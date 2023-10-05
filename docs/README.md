@@ -9,4 +9,4 @@
   - [x] 쿼리 조회 결과가 2개 이상이거나 없을 경우 예외 처리
   - [x] RuntimeException 대신 구체적 예외 처리
 
-- [ ] JDBC 탬플릿의 중복된 try catch문 제거
+- [x] JDBC 탬플릿의 중복된 try catch문 제거

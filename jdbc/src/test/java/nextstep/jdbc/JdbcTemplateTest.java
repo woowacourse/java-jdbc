@@ -35,7 +35,7 @@ class JdbcTemplateTest {
         //given
         //when
         ResultSet resultSet = mock(ResultSet.class);
-        given(resultSet.next()).willReturn(true);
+        given(resultSet.next()).willReturn(true, true, true, false);
         given(resultSet.isLast()).willReturn(false);
         given(preparedStatement.executeQuery()).willReturn(resultSet);
 
