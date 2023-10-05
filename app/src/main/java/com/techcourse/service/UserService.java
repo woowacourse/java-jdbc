@@ -45,6 +45,8 @@ public class UserService {
             connection.commit();
         } catch (SQLException e) {
             tryRollback(connection);
+        } finally {
+            tryCloseConnection(connection);
         }
     }
 
@@ -55,6 +57,16 @@ public class UserService {
             }
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
+        }
+    }
+
+    private void tryCloseConnection(Connection connection) {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
