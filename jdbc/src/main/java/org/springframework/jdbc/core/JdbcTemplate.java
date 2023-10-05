@@ -9,7 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -33,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement makeStatement(final Connection connection,final  String sql, final Object... parameters) {
+    private PreparedStatement makeStatement(final Connection connection, final String sql, final Object... parameters) {
         try {
             final PreparedStatement pstmt = connection.prepareStatement(sql);
             setParams(pstmt, parameters);
@@ -49,14 +50,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, Function<ResultSet, T> function, final Object... parameters) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = makeStatement(conn, sql, parameters);
              ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
             if (rs.next()) {
-                return function.apply(rs);
+                return rowMapper.mapping(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -65,13 +66,17 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForList(final String sql, final Function<ResultSet, T> function) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
-            return function.apply(rs);
+            List<T> list = new ArrayList<>();
+            while (rs.next()) {
+                list.add(rowMapper.mapping(rs));
+            }
+            return list;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
