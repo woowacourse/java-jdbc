@@ -1,5 +1,7 @@
 package transaction;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +23,13 @@ public class DatabasePopulatorUtils {
         try {
             final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
             final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final var fileString = Files.readString(file.toPath());
+            final var sqls = Arrays.stream(fileString.split(";")).collect(Collectors.toList());
             connection = dataSource.getConnection();
             statement = connection.createStatement();
-            statement.execute(sql);
+            for (final var sql : sqls) {
+                statement.execute(sql);
+            }
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e.getCause());
         } finally {
