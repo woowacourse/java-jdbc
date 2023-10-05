@@ -34,7 +34,6 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
         ) {
             log.debug("query : {}", sql);
-
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -48,7 +47,7 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
         ) {
             log.debug("query : {}", sql);
-            return (T) QUERY_FOR_OBJECT_EXECUTOR.execute(pstmt, rowMapper);
+            return execute(rowMapper, pstmt, QUERY_FOR_OBJECT_EXECUTOR);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -73,7 +72,7 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
         ) {
             log.debug("query : {}", sql);
-            return QUERY_EXECUTOR.execute(pstmt, rowMapper);
+            return (List<T>) execute(rowMapper, pstmt, QUERY_EXECUTOR);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -88,6 +87,14 @@ public class JdbcTemplate {
                 mapTo(requiredType),
                 params
         );
+    }
+
+    private <T> T execute(
+            final RowMapper<T> rowMapper,
+            final PreparedStatement pstmt,
+            StatementExecutor executor
+    ) throws SQLException {
+        return (T) executor.execute(pstmt, rowMapper);
     }
 
     private <T> RowMapper<T> mapTo(Class<T> requiredType) {
