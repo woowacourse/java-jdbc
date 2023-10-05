@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.Optional;
 
 public class UserHistoryDao {
@@ -18,12 +19,12 @@ public class UserHistoryDao {
 
     private final RowMapper<UserHistory> userHistoryRowMapper() {
         return rs -> new UserHistory(
-                rs.getLong(1),
-                rs.getLong(2),
-                rs.getString(3),
-                rs.getString(4),
-                rs.getString(5),
-                rs.getString(6));
+                rs.getLong("id"),
+                rs.getLong("user_id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"),
+                rs.getString("created_by"));
     }
 
     public UserHistoryDao(final DataSource dataSource) {
@@ -38,6 +39,19 @@ public class UserHistoryDao {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy());
+    }
+
+    public void log(final Connection connection, final UserHistory userHistory) {
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(connection,
+                sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
