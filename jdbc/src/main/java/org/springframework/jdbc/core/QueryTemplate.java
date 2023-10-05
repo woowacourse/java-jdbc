@@ -19,9 +19,8 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T update(String sql, UpdateExecutor<T> executor, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = getInitializedPreparedStatement(sql, connection, args)) {
+    public <T> T update(Connection connection, String sql, UpdateExecutor<T> executor, Object... args) {
+        try (PreparedStatement preparedStatement = getInitializedPreparedStatement(sql, connection, args)) {
             return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

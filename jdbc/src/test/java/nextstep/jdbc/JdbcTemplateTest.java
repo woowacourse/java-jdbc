@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,10 +42,9 @@ class JdbcTemplateTest {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
         //when
-        jdbcTemplate.update("Test Sql");
+        jdbcTemplate.update(connection, "Test Sql");
 
         //then
         verify(preparedStatement, times(1)).close();
-        verify(connection, times(1)).close();
     }
 }
