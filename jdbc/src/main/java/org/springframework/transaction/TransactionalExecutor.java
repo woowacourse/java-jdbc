@@ -5,20 +5,20 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 
-public class TransactionManager {
+public class TransactionalExecutor {
 
     private final DataSource dataSource;
 
-    public TransactionManager(DataSource dataSource) {
+    public TransactionalExecutor(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void execute(TransactionTemplate transactionTemplate) {
+    public void execute(TransactionTask transactionTask) {
         Connection con = null;
         try {
             con = dataSource.getConnection();
             con.setAutoCommit(false);
-            transactionTemplate.execute(con);
+            transactionTask.execute(con);
             con.commit();
         } catch (SQLException e) {
             throw new DataAccessException();
