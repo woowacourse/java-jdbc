@@ -7,6 +7,7 @@ import org.springframework.dao.IncorrectResultSizeException;
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -27,26 +28,24 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-
         return queryExecutorService.execute(preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
+            return getResults(rowMapper, resultSet);
         }, sql, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    private static <T> List<T> getResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
+    }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = queryExecutorService.execute(preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> execute = new ArrayList<>();
-            while (resultSet.next()) {
-                execute.add(rowMapper.mapRow(resultSet));
-            }
-            return execute;
+            return getResults(rowMapper, resultSet);
         }, sql, args);
 
         validate(results);
