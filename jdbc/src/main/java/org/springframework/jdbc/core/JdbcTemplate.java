@@ -34,23 +34,19 @@ public class JdbcTemplate {
         T result = baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
                     setArguments(args, preparedStatement);
-                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        if (resultSet.next()) {
-                            return rowMapper.mapRow(resultSet, resultSet.getRow());
-                        }
-                        return null;
+                    final ResultSet resultSet = preparedStatement.executeQuery();
+                    if (resultSet.next()) {
+                        return rowMapper.mapRow(resultSet, resultSet.getRow());
                     }
+                    return null;
                 });
 
         return Optional.ofNullable(result);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return baseJdbcTemplate.execute(sql, preparedStatement -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                return getResults(rowMapper, resultSet);
-            }
-        });
+        return baseJdbcTemplate.execute(sql,
+                preparedStatement -> getResults(rowMapper, preparedStatement.executeQuery()));
     }
 
     private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
