@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +28,8 @@ public class JdbcTemplate {
         PreparedStatement pstmt = null;
 
         try {
-            conn = dataSource.getConnection();
-
-            log.info("query: {}", sql);
-            pstmt = conn.prepareStatement(sql);
+            conn = getConnection();
+            pstmt = prepareStatement(conn, sql, new Object[0]);
 
             myPreparedStatementCallback.execute(pstmt);
             pstmt.executeUpdate();
@@ -45,14 +44,11 @@ public class JdbcTemplate {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
 
-            log.info("query: {}", sql);
-            pstmt = conn.prepareStatement(sql);
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+        try {
+            conn = getConnection();
+            pstmt = prepareStatement(conn, sql, params);
+
             rs = pstmt.executeQuery();
 
             List<T> list = new ArrayList<>();
@@ -71,14 +67,11 @@ public class JdbcTemplate {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
 
-            log.info("query: {}", sql);
-            pstmt = conn.prepareStatement(sql);
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+        try {
+            conn = getConnection();
+            pstmt = prepareStatement(conn, sql, params);
+
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -92,23 +85,37 @@ public class JdbcTemplate {
         }
     }
 
-    private void close(Connection conn, PreparedStatement pstmt, ResultSet rs) {
+    private Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    private PreparedStatement prepareStatement(Connection conn, String sql, Object[] params) throws SQLException {
+        log.info("query: {}", sql);
+
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
+        }
+        return pstmt;
+    }
+
+    private void close(
+        @Nullable Connection conn,
+        @Nullable PreparedStatement pstmt,
+        @Nullable ResultSet rs
+    ) {
         try {
             if (rs != null) {
                 rs.close();
             }
-        } catch (SQLException ignored) {}
-
-        try {
             if (pstmt != null) {
                 pstmt.close();
             }
-        } catch (SQLException ignored) {}
-
-        try {
             if (conn != null) {
                 conn.close();
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
