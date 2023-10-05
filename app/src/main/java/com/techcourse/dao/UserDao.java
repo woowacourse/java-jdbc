@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -14,45 +14,38 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(Connection con, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(con,sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(Connection con,final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(con,sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
 
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection con) {
         String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, getUserRowMapper());
+        return jdbcTemplate.query(con,sql, getUserRowMapper());
     }
 
 
-    public User findById(final Long id) {
+    public User findById(Connection con,final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql,getUserRowMapper(), id)
+        return jdbcTemplate.queryForObject(con,sql, getUserRowMapper(), id)
                 .orElseThrow(() -> new NoSuchElementException("결과가 존재하지 않습니다"));
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(Connection con,final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account)
+        return jdbcTemplate.queryForObject(con,sql, getUserRowMapper(), account)
                 .orElseThrow(() -> new NoSuchElementException("결과가 존재하지 않습니다"));
     }
 

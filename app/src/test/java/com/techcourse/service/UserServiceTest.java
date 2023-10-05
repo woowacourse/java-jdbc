@@ -5,41 +5,47 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
+
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private DataSource dataSource;
+    private Connection con;
 
     @BeforeEach
-    void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    void setUp() throws SQLException {
+        this.jdbcTemplate = new JdbcTemplate();
         this.userDao = new UserDao(jdbcTemplate);
-
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        dataSource = DataSourceConfig.getInstance();
+        con = dataSource.getConnection();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(con, user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -47,8 +53,8 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
