@@ -80,4 +80,8 @@ public class JdbcTemplate {
     public DataSource getDataSource() {
         return dataSource;
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
