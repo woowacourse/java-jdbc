@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(final Connection conn, final UserHistory userHistory) {
         final var sql = "insert into user_history ("
                 + "user_id, "
                 + "account, "
@@ -32,7 +33,7 @@ public class UserHistoryDao {
 
         log.debug("query = {}", sql);
 
-        jdbcTemplate.execute(sql,
+        jdbcTemplate.execute(conn, sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
