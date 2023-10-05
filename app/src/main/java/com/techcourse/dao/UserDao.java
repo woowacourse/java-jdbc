@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -21,14 +22,21 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(Connection connection, final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.executeWithTransaction(
+                connection,
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, final User user) {
         String sql = "update users set account=?, password=?, email=? where id = ?";
-        jdbcTemplate.execute(
+        jdbcTemplate.executeWithTransaction(
+                connection,
                 sql,
                 user.getAccount(),
                 user.getPassword(),
