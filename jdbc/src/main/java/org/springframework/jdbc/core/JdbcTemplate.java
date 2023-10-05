@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, MyRowMapper<T> rowMapper, Object... params) {
+    public <T> Optional<T> queryForObject(String sql, MyRowMapper<T> rowMapper, Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -75,9 +76,9 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return rowMapper.map(rs);
+                return Optional.of(rowMapper.map(rs));
             }
-            return null;
+            return Optional.empty();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {

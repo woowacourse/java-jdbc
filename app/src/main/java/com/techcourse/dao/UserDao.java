@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class UserDao {
@@ -52,7 +53,7 @@ public class UserDao {
             rs.getString(2),
             rs.getString(3),
             rs.getString(4)
-        ), id);
+        ), id).orElseThrow(NoSuchElementException::new);
     }
 
     public User findByAccount(final String account) {
@@ -63,6 +64,6 @@ public class UserDao {
             rs.getString(2),
             rs.getString(3),
             rs.getString(4)
-        ), account);
+        ), account).orElseThrow(NoSuchElementException::new);
     }
 }
