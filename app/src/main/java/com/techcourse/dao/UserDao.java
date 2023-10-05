@@ -9,10 +9,10 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserDao {
 
     private static final RowMapper<User> rowMapper = rs -> new User(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4)
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -27,7 +27,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public int update(final User user) {

@@ -6,14 +6,10 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -22,7 +18,6 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql, final Object... params) throws DataAccessException {
-        log.debug("query : {}", sql);
         execute(sql, new PreparedStatementCreator(), ps -> {
             doSetValue(params, ps);
             ps.execute();
@@ -30,23 +25,16 @@ public class JdbcTemplate {
         });
     }
 
+    @SuppressWarnings("ConstantConditions")
     public int update(final String sql, final Object... params) throws DataAccessException {
-        log.debug("query : {}", sql);
-        return updateCount(execute(
+        return execute(
                 sql,
                 new PreparedStatementCreator(),
                 ps -> {
                     doSetValue(params, ps);
                     return ps.executeUpdate();
                 }
-        ));
-    }
-
-    private int updateCount(@Nullable final Integer result) throws DataAccessException {
-        if (result == null) {
-            throw new DataAccessException("no update count");
-        }
-        return result;
+        );
     }
 
     @Nullable
@@ -59,7 +47,6 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) throws DataAccessException {
-        log.debug("query : {}", sql);
         return results(execute(
                 sql,
                 new PreparedStatementCreator(),
@@ -97,7 +84,7 @@ public class JdbcTemplate {
         ) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getSQLState());
         }
     }
 
@@ -105,7 +92,7 @@ public class JdbcTemplate {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException(e.getMessage());
+            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
         }
     }
 }
