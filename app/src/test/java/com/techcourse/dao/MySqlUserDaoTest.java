@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserDaoImplTest {
+class MySqlUserDaoTest {
 
     private UserDao userDao;
 
@@ -17,7 +17,7 @@ class UserDaoImplTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userDao = new UserDaoImpl(jdbcTemplate);
+        userDao = new MySqlUserDao(jdbcTemplate);
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -32,8 +32,7 @@ class UserDaoImplTest {
     @Test
     void findById() {
         final var user = userDao.findById(1L);
-
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.get().getAccount()).isEqualTo("gugu");
     }
 
     @Test
@@ -41,7 +40,7 @@ class UserDaoImplTest {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.get().getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -52,19 +51,19 @@ class UserDaoImplTest {
 
         final var actual = userDao.findById(2L);
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.get().getAccount()).isEqualTo(account);
     }
 
     @Test
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        user.get().changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(user.get());
 
         final var actual = userDao.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.get().getPassword()).isEqualTo(newPassword);
     }
 }

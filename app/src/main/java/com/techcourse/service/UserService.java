@@ -1,32 +1,33 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDaoImpl;
+import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.repository.UserRepository;
 
 public class UserService {
 
-    private final UserDaoImpl userDao;
+    private final UserRepository userRepository;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDaoImpl userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        this.userRepository = new UserRepository(userDao);
         this.userHistoryDao = userHistoryDao;
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userRepository.findById(id);
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        userRepository.save(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
+        userRepository.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
     }
 }
