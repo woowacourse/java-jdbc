@@ -9,6 +9,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
@@ -31,17 +32,24 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        T result = baseJdbcTemplate.execute(sql,
+        return baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
                     setArguments(args, preparedStatement);
-                    final ResultSet resultSet = preparedStatement.executeQuery();
-                    if (resultSet.next()) {
-                        return rowMapper.mapRow(resultSet, resultSet.getRow());
-                    }
-                    return null;
+                    final List<T> results = getResults(rowMapper, preparedStatement.executeQuery());
+                    return Optional.ofNullable(getResult(results));
                 });
+    }
 
-        return Optional.ofNullable(result);
+    private <T> T getResult(List<T> results) {
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        if (results.size() > 1) {
+            throw new DataAccessException("조회된 데이터 수가 1을 초과합니다");
+        }
+
+        return results.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
