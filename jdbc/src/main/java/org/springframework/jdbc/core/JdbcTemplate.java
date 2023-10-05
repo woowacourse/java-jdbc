@@ -6,11 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import org.springframework.jdbc.exception.IncorrectQueryArgumentException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -22,125 +22,49 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(final String sql, final Object ... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public int execute(final String sql, final Object... args) {
+        return manageData(PreparedStatement::executeUpdate, sql, args);
+    }
 
-            log.debug("query : {}", sql);
-
-            validateArgsCount(sql, args.length);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i+1, args[i]);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return manageData(pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                final List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
+                return result;
             }
-            return pstmt.executeUpdate();
+        }, sql, args);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return manageData(pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return getOneResult(rs, rowMapper);
+            }
+        }, sql, args);
+    }
+
+    private <T> T manageData(final PreparedStatementImpl<T> qm, final String sql, final Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = setPreparedStatement(conn, sql, args);) {
+            log.debug("query : {}", sql);
+            return qm.implement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object ... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            validateArgsCount(sql, args.length);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i+1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            final List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+    private PreparedStatement setPreparedStatement(final Connection conn, final String sql, final Object... args)
+            throws SQLException {
+        final PreparedStatement pstmt = conn.prepareStatement(sql);
+        validateArgsCount(sql, args.length);
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object ... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            validateArgsCount(sql, args.length);
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i+1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return pstmt;
     }
 
     private void validateArgsCount(final String str, final int argsCount) {
@@ -155,5 +79,16 @@ public class JdbcTemplate {
         if (questionMarksCount < argsCount) {
             throw new IncorrectQueryArgumentException("delivered parameter's count is many.");
         }
+    }
+
+    private <T> T getOneResult(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        if (rs.next()) {
+            T result = rowMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new IncorrectResultSizeDataAccessException("More than one result to return");
+            }
+            return result;
+        }
+        throw new IncorrectResultSizeDataAccessException("No result to return");
     }
 }
