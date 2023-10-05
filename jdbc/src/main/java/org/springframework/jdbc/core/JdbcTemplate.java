@@ -59,10 +59,8 @@ public class JdbcTemplate {
     ) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            bind(pstmt, args);
-
             log.debug("query : {}", sql);
-
+            bind(pstmt, args);
             return preparedStatementCallback.callback(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
