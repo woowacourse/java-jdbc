@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.dao.exception.UserHistoryNotFoundException;
-import com.techcourse.dao.exception.UserNotFoundException;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
