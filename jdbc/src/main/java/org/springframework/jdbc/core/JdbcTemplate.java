@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.springframework.jdbc.core.QueryForObjectStatementExecutor.QUERY_FOR_OBJECT_EXECUTOR;
 import static org.springframework.jdbc.core.QueryStatementExecutor.QUERY_EXECUTOR;
 
 public class JdbcTemplate {
@@ -45,18 +46,9 @@ public class JdbcTemplate {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-                ResultSet rs = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
-
-            T result = null;
-            if (rs.next()) {
-                result = rowMapper.map(rs);
-            }
-            if (rs.next()) {
-                throw new IllegalStateException("2개 이상의 결과가 존재합니다!");
-            }
-            return result;
+            return (T) QUERY_FOR_OBJECT_EXECUTOR.execute(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
