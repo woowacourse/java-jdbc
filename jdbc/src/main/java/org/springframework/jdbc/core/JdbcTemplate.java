@@ -2,7 +2,6 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -25,9 +24,8 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try {
-            final ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, parameters);
-
+        return execute(sql, preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
@@ -35,25 +33,19 @@ public class JdbcTemplate {
                 throw new RuntimeException("단일 데이터가 아닙니다.");
             }
             return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-
-            throw new DataAccessException(e);
-        }
+        }, parameters);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        final ResultSet resultSet = execute(sql, PreparedStatement::executeQuery);
-        try {
+        return execute(sql, preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
                 final T object = rowMapper.mapRow(resultSet);
                 objects.add(object);
             }
             return objects;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public int update(final String sql, final Object... parameters) {
