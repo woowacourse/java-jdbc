@@ -45,7 +45,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Set<String> saveFirstTransactionWithRequiredNew() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -66,7 +66,7 @@ public class FirstUserService {
         throw new RuntimeException();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithSupports() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -77,7 +77,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithMandatory() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -130,7 +130,7 @@ public class FirstUserService {
     private void logActualTransactionActive() {
         final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
-        final var emoji = actualTransactionActive ? "✅" : "❌";
+        final var emoji = actualTransactionActive ? "✅" : "❌"; // 삼항 연산자..?
         log.info("\n{} is Actual Transaction Active : {} {}", currentTransactionName, emoji, actualTransactionActive);
     }
 }
