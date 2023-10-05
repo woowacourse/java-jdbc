@@ -31,7 +31,7 @@ class JdbcTemplateTest {
         dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate();
 
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
         when(dataSource.getConnection()).thenReturn(connection);
@@ -44,7 +44,7 @@ class JdbcTemplateTest {
         final String argument = "success";
 
         //when
-        final String result = jdbcTemplate.query(sql, preparedStatement -> argument, argument);
+        final String result = jdbcTemplate.query(connection, sql, preparedStatement -> argument, argument);
 
         //then
         assertThat(result).isEqualTo(argument);
@@ -61,7 +61,7 @@ class JdbcTemplateTest {
                 .thenReturn(false);
 
         //when
-        final List<String> results = jdbcTemplate.queryForList(sql, resultSet1 -> "result");
+        final List<String> results = jdbcTemplate.queryForList(connection, sql, resultSet1 -> "result");
 
         //then
         assertThat(results).usingRecursiveComparison()
@@ -78,7 +78,7 @@ class JdbcTemplateTest {
                 .thenReturn(false);
 
         //when
-        final Optional<String> result = jdbcTemplate.queryForObject(sql, rowMapper -> "result");
+        final Optional<String> result = jdbcTemplate.queryForObject(connection, sql, rowMapper -> "result");
 
         //then
         assertAll(
@@ -88,12 +88,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void testUpdate() throws SQLException {
+    void testUpdate() {
         // given
         final String sql = "UPDATE table SET name = ? WHERE id = ?";
 
         // when
-        jdbcTemplate.update(sql, "John", 1);
+        jdbcTemplate.update(connection, sql, "John", 1);
 
         // then
         assertAll(

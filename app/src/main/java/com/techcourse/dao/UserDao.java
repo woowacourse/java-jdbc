@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -31,30 +32,30 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(final Connection connection, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(final Connection connection) {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql, new UserRowMapper());
+        return jdbcTemplate.queryForList(connection, sql, new UserRowMapper());
     }
 
-    public User findById(final Long id) {
+    public User findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id)
+        return jdbcTemplate.queryForObject(connection, sql, new UserRowMapper(), id)
                 .orElseThrow(() -> new DataAccessException("Empty Result Data Access"));
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(final Connection connection, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account)
+        return jdbcTemplate.queryForObject(connection, sql, new UserRowMapper(), account)
                 .orElseThrow(() -> new DataAccessException("Empty Result Data Access"));
     }
 }
