@@ -96,4 +96,18 @@ class ConnectionManagerTest {
                 .should(times(1))
                 .close();
     }
+
+    @Test
+    void 커넥션을_롤백한다() throws SQLException {
+        // given
+        final Connection connection = mock(Connection.class);
+
+        // when
+        sut.rollback(connection);
+
+        // then
+        then(connection)
+                .should(times(1))
+                .rollback();
+    }
 }

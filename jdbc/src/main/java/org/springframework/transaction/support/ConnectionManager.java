@@ -48,11 +48,25 @@ public class ConnectionManager {
     }
 
     public void close(final Connection connection) {
+        if (connection == null) {
+            return;
+        }
         if (connectionHolder.isSameConnection(connection)) {
             connectionHolder.clear();
         }
         try {
             connection.close();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void rollback(final Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.rollback();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
