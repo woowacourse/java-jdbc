@@ -58,7 +58,7 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(results.size());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw sqlExceptionTranslator.translate(sql, e);
         }
     }
 
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             return extractResultSet(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw sqlExceptionTranslator.translate(sql, e);
         }
     }
 
