@@ -52,9 +52,23 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::execute, args);
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        execute(connection, sql, PreparedStatement::execute, args);
+    }
+
     private <T> T execute(final String sql, final Executor<T> executor, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setPreparedStatement(preparedStatement, args);
+
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final Executor<T> executor, final Object... args) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, args);
 
             return executor.execute(preparedStatement);
