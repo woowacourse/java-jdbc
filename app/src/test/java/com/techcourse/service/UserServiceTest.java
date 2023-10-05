@@ -6,9 +6,12 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.io.Closeable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,5 +61,31 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    @DisplayName("try-with-resource 테스트")
+    void tryWithResourcesTest() {
+        foo();
+    }
+
+    public void foo() {
+        try (final MyResource myResource = new MyResource()) {
+            try {
+                throw new RuntimeException();
+            } catch (RuntimeException e) {
+                System.out.println("error!");
+            } finally {
+                System.out.println("finally..");
+            }
+
+        }
+    }
+
+    private static class MyResource implements Closeable {
+        @Override
+        public void close() {
+            System.out.println("closed!!");
+        }
     }
 }

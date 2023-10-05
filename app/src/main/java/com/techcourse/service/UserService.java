@@ -29,7 +29,6 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-
         try (final var connection = getConnection()) {
             try {
                 connection.setAutoCommit(false);
@@ -42,6 +41,8 @@ public class UserService {
                 connection.commit();
             } catch (final SQLException | DataAccessException e) {
                 rollback(connection, e);
+            } finally {
+                connection.setAutoCommit(true);
             }
         } catch (final SQLException e) {
             throw new DataAccessException(e);
@@ -50,7 +51,6 @@ public class UserService {
 
     private static void rollback(final Connection connection, final Exception e) throws SQLException {
         connection.rollback();
-        connection.setAutoCommit(true);
         throw new DataAccessException(e);
     }
 
