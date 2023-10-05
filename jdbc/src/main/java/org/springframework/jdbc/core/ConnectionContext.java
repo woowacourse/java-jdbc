@@ -54,7 +54,8 @@ public final class ConnectionContext {
         try {
             final Connection connection = context.get();
 
-            closeAndRemove(connection);
+            connection.close();
+            context.remove();
         } catch (SQLException e) {
             throw new ConnectionContextException(e);
         }
