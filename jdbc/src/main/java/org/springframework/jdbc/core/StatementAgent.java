@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,7 +28,7 @@ public class StatementAgent {
 
         } catch (SQLException e) {
             log.error("statement agent service failed.");
-            throw new StatementAgentServiceFailedException(e);
+            throw new DataAccessException(e);
         }
     }
 
