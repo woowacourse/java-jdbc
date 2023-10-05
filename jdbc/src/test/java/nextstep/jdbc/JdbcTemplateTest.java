@@ -2,18 +2,13 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
+import nextstep.jdbc.testUtil.TestDataSourceConfig;
+import nextstep.jdbc.testUtil.TestDatabaseUtils;
 import org.assertj.core.api.SoftAssertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
@@ -25,7 +20,10 @@ import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessExce
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class JdbcTemplateTest {
 
-    static class Member {
+    private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(TestDataSourceConfig.getInstance());
+    ;
+
+    private static final class Member {
         private final Long id;
         private final String username;
 
@@ -43,33 +41,24 @@ class JdbcTemplateTest {
         }
     }
 
-    private final String sql = "SELECT * FROM MEMBER WHERE username = ?";
+    private final String sql = "SELECT * FROM member WHERE username = ?";
     private final RowMapper<Member> memberMapper = (resultSet) -> new Member(
             resultSet.getLong(1),
             resultSet.getString(2)
     );
-    private final DataSource dataSource = mock(DataSource.class);
-    private final Connection connection = mock(Connection.class);
-    private final PreparedStatement preparedStatement = mock(PreparedStatement.class);
-    private final ResultSet resultSet = mock(ResultSet.class);
 
-    @BeforeEach
-    void setUp() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+    @BeforeAll
+    static void setUp() {
+        TestDatabaseUtils.execute(TestDataSourceConfig.getInstance());
     }
 
     @Test
-    void 단일_조회시_단일_쿼리결과가_있을_경우_해당_객체를_반환한다() throws SQLException {
+    void 단일_조회시_단일_쿼리결과가_있을_경우_해당_객체를_반환한다() {
         // given
-        when(resultSet.next()).thenReturn(true).thenReturn(false);
-        when(resultSet.getLong(1)).thenReturn(1L);
-        when(resultSet.getString(2)).thenReturn("blackcat");
+        final String username = "blackcat";
 
         // when
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final Optional<Member> found = jdbcTemplate.queryForObject(sql, memberMapper, "blackcat");
+        final Optional<Member> found = jdbcTemplate.queryForObject(sql, memberMapper, username);
 
         // then
         SoftAssertions.assertSoftly(softly -> {
@@ -80,39 +69,34 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 단일_조회시_쿼리결과가_없을_경우_빈_옵셔널을_반환한다() throws SQLException {
+    void 단일_조회시_쿼리결과가_없을_경우_빈_옵셔널을_반환한다() {
         // given
-        when(resultSet.next()).thenReturn(false);
+        final String username = "blackcat";
 
         // when
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        final Optional<Member> found = jdbcTemplate.queryForObject(sql, memberMapper, "blackcat");
+        final Optional<Member> found = jdbcTemplate.queryForObject(sql, memberMapper, username + Long.MAX_VALUE);
 
         // then
         assertThat(found).isEmpty();
     }
 
     @Test
-    void 단일_조회시_쿼리결과가_여러_개일_경우_예외가_발생한다() throws SQLException {
+    void 단일_조회시_쿼리결과가_여러_개일_경우_예외가_발생한다() {
         // given
-        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-        when(resultSet.getLong(1)).thenReturn(1L).thenReturn(2L);
-        when(resultSet.getString(2)).thenReturn("blackcat").thenReturn("blackcat");
+        final String username = "gugu";
 
         // expected
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, memberMapper, "blackcat"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, memberMapper, username))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
-    void 복수_조회시_쿼리_결과가_없을_경우_빈_리스트를_반환한다() throws SQLException {
+    void 복수_조회시_쿼리_결과가_없을_경우_빈_리스트를_반환한다() {
         // given
-        when(resultSet.next()).thenReturn(false);
+        final String username = "blackcat";
 
         // when
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        List<Member> query = jdbcTemplate.query(sql, memberMapper, "blackcat");
+        List<Member> query = jdbcTemplate.query(sql, memberMapper, username + Long.MAX_VALUE);
 
         // then
         assertThat(query).isEmpty();
