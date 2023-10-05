@@ -34,9 +34,14 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.execute(sql, user.getPassword(), user.getId());
+        jdbcTemplate.execute(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
@@ -55,5 +60,10 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, mapper, account);
+    }
+
+    public void deleteByAccount(final String gugu) {
+        final var sql = "delete from users where account = ?";
+        jdbcTemplate.execute(sql, gugu);
     }
 }

@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
@@ -17,6 +19,8 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.execute("TRUNCATE TABLE USERS RESTART IDENTITY;");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -57,6 +61,7 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
+        final List<User> all = userDao.findAll();
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
