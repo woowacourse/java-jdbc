@@ -3,6 +3,8 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -52,14 +54,26 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapping(rs);
+            final List<T> results = makeResults(rowMapper, rs);
+            if (results.isEmpty()) {
+                throw new EmptyResultDataAccessException();
             }
-            return null;
+            if (results.size() > 1) {
+                throw new IncorrectResultSizeDataAccessException(results.size());
+            }
+            return results.iterator().next();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> makeResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        List<T> list = new ArrayList<>();
+        while (rs.next()) {
+            list.add(rowMapper.mapping(rs));
+        }
+        return list;
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
@@ -68,11 +82,7 @@ public class JdbcTemplate {
              ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
-            List<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rowMapper.mapping(rs));
-            }
-            return list;
+            return makeResults(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
