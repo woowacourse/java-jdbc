@@ -9,7 +9,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -25,10 +24,12 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         final var results = execute(sql, preparedStatement -> mapResults(rowMapper, preparedStatement), objects);
-        return results.stream()
-                .findAny();
+        if (results.size() != 1) {
+            throw new DataAccessException("1개의 데이터만 조회되어야 합니다.");
+        }
+        return results.get(0);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
