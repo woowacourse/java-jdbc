@@ -40,22 +40,26 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
 
-        List<T> execute = queryExecutorService.execute(preparedStatement -> {
+        List<T> results = queryExecutorService.execute(preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> results = new ArrayList<>();
+            List<T> execute = new ArrayList<>();
             while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
+                execute.add(rowMapper.mapRow(resultSet));
             }
-            return results;
+            return execute;
         }, sql, args);
 
-        if (execute.isEmpty()) {
+        validate(results);
+
+        return results.iterator().next();
+    }
+
+    private static <T> void validate(List<T> results) {
+        if (results.isEmpty()) {
             throw new NoSuchElementException("Data Row가 빈 값입니다.");
         }
-        if (execute.size() > MAX_RESULT_SIZE) {
+        if (results.size() > MAX_RESULT_SIZE) {
             throw new IncorrectResultSizeException("적합한 ResultSize를 초과했습니다.");
         }
-
-        return execute.iterator().next();
     }
 }
