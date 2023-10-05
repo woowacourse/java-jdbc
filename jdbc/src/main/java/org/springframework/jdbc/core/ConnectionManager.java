@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -38,7 +39,7 @@ public class ConnectionManager {
         if (isTransactional(connection)) {
             return;
         }
-        close(connection);
+        DataSourceUtils.releaseConnection(connection);
     }
 
     private boolean isTransactional(final Connection connection) {
@@ -48,12 +49,4 @@ public class ConnectionManager {
         return false;
     }
 
-    private void close(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
 }

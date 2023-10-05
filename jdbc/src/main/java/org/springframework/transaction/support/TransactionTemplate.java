@@ -3,6 +3,7 @@ package org.springframework.transaction.support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.exception.UndeclaredThrowableException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,8 +22,7 @@ public class TransactionTemplate {
     public void executeWithTransaction(final TransactionCallback transactionCallback) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             transactionCallback.execute();
             connection.commit();
@@ -38,12 +38,8 @@ public class TransactionTemplate {
             throw new UndeclaredThrowableException(e);
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (final SQLException e) {
-                throw new RuntimeException(e);
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection);
             }
         }
     }
