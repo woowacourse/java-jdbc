@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,14 +25,9 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
+        try {
+            final ResultSet resultSet = execute(sql, PreparedStatement::executeQuery, parameters);
 
-            setPreparedStatement(preparedStatement, parameters);
-
-            final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
@@ -42,18 +38,13 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
 
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        final ResultSet resultSet = execute(sql, PreparedStatement::executeQuery);
+        try {
             final List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
                 final T object = rowMapper.mapRow(resultSet);
@@ -66,16 +57,23 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
+    }
+
+    public <T> T execute(final String sql, final executeQueryCallback<T> callBack, final Object... objects) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            log.debug("query : {}", sql);
-
-            setPreparedStatement(preparedStatement, parameters);
-
-            return preparedStatement.executeUpdate();
+            setPreparedStatement(preparedStatement, objects);
+            return callBack.execute(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
+        for (int parameterIndex = 0; parameterIndex < parameters.length; parameterIndex++) {
+            preparedStatement.setObject(FIRST_PARAMETER_INDEX, parameters[parameterIndex]);
         }
     }
 }
