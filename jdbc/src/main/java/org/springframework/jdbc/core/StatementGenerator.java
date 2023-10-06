@@ -1,5 +1,7 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.dao.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -13,7 +15,7 @@ public class StatementGenerator {
             }
             return pstmt;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }

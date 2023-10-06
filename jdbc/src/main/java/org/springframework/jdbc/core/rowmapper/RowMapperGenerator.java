@@ -1,5 +1,7 @@
 package org.springframework.jdbc.core.rowmapper;
 
+import org.springframework.dao.DataAccessException;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -53,7 +55,7 @@ public final class RowMapperGenerator {
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         }
     }
