@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.util.List;
+import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -16,6 +17,10 @@ public class UserDao {
                     rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
