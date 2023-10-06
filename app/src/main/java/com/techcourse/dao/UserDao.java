@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,11 +24,12 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(final Connection connection,
+                       final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         final String account = user.getAccount();
@@ -36,10 +38,11 @@ public class UserDao {
 
         log.debug("sql={}", sql);
 
-        jdbcTemplate.update(sql, account, password, email);
+        jdbcTemplate.update(connection, sql, account, password, email);
     }
 
-    public void update(final User user) {
+    public void update(final Connection connection,
+                       final User user) {
         final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         final String account = user.getAccount();
@@ -49,33 +52,35 @@ public class UserDao {
 
         log.debug("sql={}", sql);
 
-        jdbcTemplate.update(sql, account, password, email, id);
+        jdbcTemplate.update(connection, sql, account, password, email, id);
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(final Connection connection) {
         final String sql = "SELECT id, account, password, email FROM users";
 
         log.debug("sql={}", sql);
 
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(connection, sql, rowMapper);
     }
 
-    public User findById(final Long id) {
+    public User findById(final Connection connection,
+                         final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
         log.debug("sql={}", sql);
 
-        Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, id);
+        Optional<User> user = jdbcTemplate.querySingleRow(connection, sql, rowMapper, id);
 
         return user.orElseThrow(() -> new IllegalArgumentException("해당 아이디로 조회되는 유저가 없습니다."));
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(final Connection connection,
+                              final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
         log.debug("sql={}", sql);
 
-        Optional<User> user = jdbcTemplate.querySingleRow(sql, rowMapper, account);
+        Optional<User> user = jdbcTemplate.querySingleRow(connection, sql, rowMapper, account);
 
         return user.orElseThrow(() -> new IllegalArgumentException("해당 계정으로 조회되는 유로가 없습니다."));
     }

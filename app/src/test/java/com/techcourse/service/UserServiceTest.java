@@ -13,24 +13,28 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
+
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         DataSource dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(dataSource);
+        Connection connection = dataSource.getConnection();
+        this.jdbcTemplate = new JdbcTemplate();
+        this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
     }
 
     @Test
