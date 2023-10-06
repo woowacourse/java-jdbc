@@ -74,7 +74,8 @@ public class JdbcTemplate {
             final PreparedStatementCallback<T> callback,
             final Object... parameters
     ) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (final Connection conn = connection;
+             final PreparedStatement preparedStatement = conn.prepareStatement(query)) {
             log.info("query: {}", query);
             setParameters(preparedStatement, parameters);
 
