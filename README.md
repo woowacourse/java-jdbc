@@ -54,7 +54,7 @@
 ## 4단계 리뷰
 - [x] AppUserService 생성자 빈칸 제거 
 - [x] TxUserService TransactionTemplate 생성자로 받도록 수정
-- [ ] TransactionTemplate 반환값 없는 메서드 만들기
+- [x] TransactionTemplate 반환값 없는 메서드 만들기
 - [ ] Nullable TypeQualifierNickname 어떤 효과?
 - [ ] TransactionSyncrhonizationManager 중복되는 get() 제거
 - [ ] ConnectionManager 제거 리팩토링

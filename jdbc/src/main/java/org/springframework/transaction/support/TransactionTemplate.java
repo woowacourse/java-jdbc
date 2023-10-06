@@ -39,9 +39,8 @@ public class TransactionTemplate {
             }
             throw new UndeclaredThrowableException(e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
             if (connection != null) {
-                DataSourceUtils.releaseConnection(connection);
+                closeTransactional(connection);
             }
         }
     }
@@ -53,5 +52,17 @@ public class TransactionTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void closeTransactional(final Connection connection) {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection);
+    }
+
+    public void executeWithoutResult(final Runnable action) {
+        executeWithTransaction(() -> {
+            action.run();
+            return null;
+        });
     }
 }
