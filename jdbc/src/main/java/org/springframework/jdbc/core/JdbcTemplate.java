@@ -27,12 +27,12 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... arguments) {
-        queryTemplate(sql, PreparedStatement::executeUpdate, arguments);
+        queryTemplate(sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         return queryTemplate(sql, ps -> {
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs = ((PreparedStatement) ps).executeQuery();
 
             List<T> result = new ArrayList<>();
             while (rs.next()) {
@@ -43,8 +43,8 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        return queryTemplate(sql, preparedStatement -> {
-            ResultSet rs = preparedStatement.executeQuery();
+        return queryTemplate(sql, ps -> {
+            ResultSet rs = ((PreparedStatement) ps).executeQuery();
 
             if (rs.next()) {
                 return Optional.of(rowMapper.mapRow(rs));
@@ -53,7 +53,7 @@ public class JdbcTemplate {
         }, arguments);
     }
 
-    private <T> T queryTemplate(String sql, PreparedStatementExecutor<T> statementExecutor, Object... arguments) {
+    private <T> T queryTemplate(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)
