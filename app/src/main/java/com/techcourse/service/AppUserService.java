@@ -13,7 +13,6 @@ public class AppUserService implements UserService {
     public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-
     }
 
     public User findById(final long id) {
