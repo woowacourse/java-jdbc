@@ -37,7 +37,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeInternal(sql, pstmt -> queryMultipleResults(pstmt, rowMapper), args);
+        return executeInternal(sql, pstmt -> {
+            final ResultSet resultSet = pstmt.executeQuery();
+            final List<T> results = new ArrayList<>();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+
+            return results;
+        }, args);
     }
 
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
@@ -58,17 +67,6 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
-    }
-
-    private <T> List<T> queryMultipleResults(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        final ResultSet resultSet = pstmt.executeQuery();
-        final List<T> results = new ArrayList<>();
-
-        while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet));
-        }
-
-        return results;
     }
 
     public int update(final String sql, final Object... args) {
