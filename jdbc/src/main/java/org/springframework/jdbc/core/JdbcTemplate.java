@@ -69,10 +69,9 @@ public class JdbcTemplate {
     }
 
     public void execute(Connection conn, String sql, Object... params) {
-        try (
-                Connection connection = conn;
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, connection, params);
-        ) {
+        try {
+            Connection connection = conn;
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, connection, params);
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -87,10 +86,9 @@ public class JdbcTemplate {
             StatementExecutor executor,
             Object... params
     ) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
+        try {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
             log.debug("query : {}", sql);
             return (T) executor.execute(pstmt, rowMapper);
         } catch (SQLException e) {

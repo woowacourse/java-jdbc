@@ -54,7 +54,7 @@ public class UserDao {
         jdbcTemplate.update(alterAutoIncrementSql);
     }
 
-    public void update(User user, Connection conn) {
+    public void update(Connection conn, User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
