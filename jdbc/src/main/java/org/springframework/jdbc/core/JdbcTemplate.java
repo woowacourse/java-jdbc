@@ -27,6 +27,15 @@ public class JdbcTemplate {
     public void execute(String sql, Object... parameters) {
         try (
             Connection conn = dataSource.getConnection();
+        ) {
+            execute(conn, sql, parameters);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void execute(Connection conn, String sql, Object... parameters) {
+        try (
             PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters)
         ) {
             pstmt.executeUpdate();

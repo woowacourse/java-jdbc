@@ -4,15 +4,18 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.transaction.TransactionalExecutor;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionalExecutor transactionalExecutor;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionalExecutor transactionalExecutor) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionalExecutor = transactionalExecutor;
     }
 
     public User findById(final long id) {
@@ -26,7 +29,9 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        transactionalExecutor.execute((con) -> {
+            userDao.update(user, con);
+            userHistoryDao.log(new UserHistory(user, createBy), con);
+        });
     }
 }
