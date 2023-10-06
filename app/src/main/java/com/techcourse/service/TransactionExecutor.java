@@ -13,15 +13,23 @@ public class TransactionExecutor {
     }
 
     public static void transactionCommand(Consumer<Connection> consumer) {
+        Connection connection = null;
+
         try {
-            Connection connection = getConnection();
+            connection = getConnection();
             connection.setAutoCommit(false);
 
             consumer.accept(connection);
 
             connection.commit();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (SQLException firstException) {
+            try {
+                connection.rollback();
+            } catch (SQLException secondException) {
+                throw new DataAccessException(secondException);
+            }
+
+            throw new DataAccessException(firstException);
         }
     }
 
