@@ -79,32 +79,15 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersInPreparedStatement(preparedStatement, parameters);
-            return getQueryResult(rowMapper, preparedStatement);
+            List<T> queryResults = getQueryResults(rowMapper, preparedStatement);
+
+            if (queryResults.size() == 1) {
+                return queryResults.get(0);
+            }
+
+            throw new DataAccessException("조회 결과가 올바르지 않습니다.");
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T getQueryResult(
-            RowMapper<T> rowMapper,
-            PreparedStatement preparedStatement
-    ) throws SQLException {
-        ResultSet resultSet = preparedStatement.executeQuery();
-        T queryResult = null;
-        int rowCount = 0;
-
-        while (resultSet.next()) {
-            rowCount++;
-            queryResult = rowMapper.mapRow(resultSet);
-        }
-
-        validateResultSetSize(rowCount);
-        return queryResult;
-    }
-
-    private void validateResultSetSize(int rowCount) {
-        if (rowCount != 1) {
-            throw new DataAccessException("조회 결과가 올바르지 않습니다.");
         }
     }
 
