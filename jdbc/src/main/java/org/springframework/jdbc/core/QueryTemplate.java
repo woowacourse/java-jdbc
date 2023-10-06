@@ -33,11 +33,9 @@ public class QueryTemplate {
     public <T> T query(String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            settingParameters(pstmt, parameters);
-            return queryExecutor.execute(pstmt);
-        } catch (SQLException e) {
+            return query(conn, sql, queryExecutor, parameters);
+        } catch (RuntimeException | SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
