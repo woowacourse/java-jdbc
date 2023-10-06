@@ -50,12 +50,13 @@ class Stage2Test {
         log.info("transactions : {}", actual);
         assertThat(actual)
                 .hasSize(1)
-                .containsExactly("");
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? 2개
      * 왜 그런 결과가 나왔을까?
+     * 내부 트랜잭션의 전파 옵션을 REQUIRES_NEW로 설정할 경우, 외부 트랜잭션이 존재할 때 내부 트랜잭션을 실행하면 새로운 물리적 트랜잭션을 만들기 때문.
      */
     @Test
     void testRequiredNew() {
@@ -63,8 +64,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
