@@ -9,7 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -23,9 +24,9 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = makeStatement(conn, sql, parameters)
+             PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters)
         ) {
-            log.debug("query : {}", sql);
+            log.debug("Execute Update - query : {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -33,45 +34,34 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement makeStatement(final Connection connection,final  String sql, final Object... parameters) {
-        try {
-            final PreparedStatement pstmt = connection.prepareStatement(sql);
-            setParams(pstmt, parameters);
-            return pstmt;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setParams(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            pstmt.setString(i + 1, String.valueOf(parameters[i]));
-        }
-    }
-
-    public <T> T queryForObject(final String sql, Function<ResultSet, T> function, final Object... parameters) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = makeStatement(conn, sql, parameters);
+             PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters);
              ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return function.apply(rs);
-            }
-            return null;
+            log.debug("Execute Query -query : {}", sql);
+            return SingleResult.makeSingleResultFrom(makeResults(rowMapper, rs));
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForList(final String sql, final Function<ResultSet, T> function) {
+    private <T> List<T> makeResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        List<T> list = new ArrayList<>();
+        while (rs.next()) {
+            list.add(rowMapper.mapping(rs));
+        }
+        return list;
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            return function.apply(rs);
+            log.debug("Execute Query - query : {}", sql);
+            return makeResults(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
