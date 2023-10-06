@@ -24,6 +24,7 @@ dependencies {
 
     implementation "org.reflections:reflections:0.10.2"
     implementation "ch.qos.logback:logback-classic:1.2.12"
+    implementation "ch.qos.logback:logback-core:1.2.12" // mysql.start() 시에 logback NoSuchMethodFoundException 해결 위해 추가
     implementation "org.apache.commons:commons-lang3:3.13.0"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:2.7.14"
