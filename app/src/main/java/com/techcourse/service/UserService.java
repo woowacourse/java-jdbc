@@ -8,6 +8,7 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
 
 public class UserService {
 
@@ -22,11 +23,25 @@ public class UserService {
     }
 
     public User findById(long id) {
-        return userDao.findById(id);
+        try {
+            Connection connection = getConnection();
+            return userDao.findById(connection, id);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public void insert(User user) {
-        userDao.insert(user);
+        try {
+            Connection connection = getConnection();
+            connection.setAutoCommit(false);
+
+            userDao.insert(connection, user);
+
+            connection.commit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
@@ -34,14 +49,14 @@ public class UserService {
             Connection connection = getConnection();
             connection.setAutoCommit(false);
 
-            User user = findById(id);
+            User user = userDao.findById(connection, id);
             user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 

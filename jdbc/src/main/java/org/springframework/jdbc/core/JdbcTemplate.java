@@ -15,16 +15,15 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(Connection connection, String sql, Object... parameters) {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
+        try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setObjects(preparedStatement);
             preparedStatement.executeUpdate();
@@ -34,15 +33,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(
-            String sql, 
+            Connection connection,
+            String sql,
             RowMapper<T> rowMapper,
             Object... parameters
     ) {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
+        try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setObjects(preparedStatement);
             
@@ -62,6 +61,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(
+            Connection connection,
             String sql,
             RowMapper<T> rowMapper,
             Object... parameters
@@ -69,8 +69,7 @@ public class JdbcTemplate {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
+        try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setObjects(preparedStatement);
             List<T> queryResults = getQueryResults(rowMapper, preparedStatement);
