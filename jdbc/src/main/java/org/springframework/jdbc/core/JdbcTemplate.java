@@ -32,6 +32,10 @@ public class JdbcTemplate {
         execute(sql, params);
     }
 
+    public void update(final Connection conn, final String sql, Object... params) {
+        execute(conn, sql, params);
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
     }
@@ -57,9 +61,17 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object... params) {
+        try {
+            execute(dataSource.getConnection(), sql, params);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void execute(Connection conn, String sql, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
+                Connection connection = conn;
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, connection, params);
         ) {
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
