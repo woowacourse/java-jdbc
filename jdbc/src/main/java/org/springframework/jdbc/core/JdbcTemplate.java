@@ -23,26 +23,45 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
+        List<T> results;
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement preparedStatement = conn.prepareStatement(sql);
+             final ResultSet resultSet = executeQuery(preparedStatement, params)) {
+            log.debug("query : {}", sql);
+            results = mapResults(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+
         if (results.size() > 1) {
             throw new DataAccessException("too many result. expected 1 but was " + results.size());
         }
         if (results.isEmpty()) {
             throw new DataAccessException("no result");
         }
+
         return results.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results;
+
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql);
              final ResultSet resultSet = executeQuery(preparedStatement, parameters)) {
             log.debug("query : {}", sql);
-            return mapResults(rowMapper, resultSet);
+            results = mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+
+        if (results.isEmpty()) {
+            throw new DataAccessException("no result");
+        }
+
+        return results;
     }
 
     private ResultSet executeQuery(final PreparedStatement preparedStatement, final Object[] parameters)
