@@ -24,14 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
  * ❗phantom reads는 docker를 실행한 상태에서 테스트를 실행한다.
  * ❗phantom reads는 MySQL로 확인한다. H2 데이터베이스에서는 발생하지 않는다.
- *
+ * <p>
  * 참고 링크
  * https://en.wikipedia.org/wiki/Isolation_(database_systems)
- *
+ * <p>
  * 각 테스트에서 어떤 현상이 발생하는지 직접 경험해보고 아래 표를 채워보자.
  * + : 발생
  * - : 발생하지 않음
- *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
+ * Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
  * Read Uncommitted |             |                      |
@@ -55,13 +55,13 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Dirty reads
+     * Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      O
+     * Read Committed   |      X
+     * Repeatable Read  |      X
+     * Serializable     |      X
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +81,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -108,13 +108,13 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Non-repeatable reads
+     * Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |          O
+     * Read Committed   |          O
+     * Repeatable Read  |          X
+     * Serializable     |          X
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +130,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -170,20 +170,25 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Phantom reads
+     * Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      O
+     * Read Committed   |      O
+     * Repeatable Read  |      O
+     * Serializable     |      X
+     *
+     * MySQL의 InnoDB는 동작 특성 떄문에 Repeatable Read에서도 Phantom read가 발생하지 않는다.
+     *
      */
     @Test
     void phantomReading() throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withLogConsumer(new Slf4jLogConsumer(log));
+                .withLogConsumer(new Slf4jLogConsumer(log))
+                .withUrlParam("allowMultipleQueries", "true");
+
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
@@ -197,7 +202,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -231,7 +236,7 @@ class Stage1Test {
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
-        assertThat(actual).hasSize(1);
+        assertThat(actual).hasSize(2);
 
         connection.rollback();
         mysql.close();
@@ -243,7 +248,10 @@ class Stage1Test {
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
-        return new HikariDataSource(config);
+        HikariDataSource dataSource = new HikariDataSource(config);
+
+        DatabasePopulatorUtils.execute(dataSource);
+        return dataSource;
     }
 
     private static DataSource createH2DataSource() {

@@ -1,6 +1,5 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
