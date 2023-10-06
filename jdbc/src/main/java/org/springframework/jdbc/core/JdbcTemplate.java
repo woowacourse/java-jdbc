@@ -2,18 +2,16 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.rowmapper.RowMapper;
 import org.springframework.jdbc.core.statementexecutor.StatementExecutor;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.springframework.jdbc.core.rowmapper.RowMapperGenerator.generateRowMapperOf;
 import static org.springframework.jdbc.core.statementexecutor.QueryForObjectStatementExecutor.QUERY_FOR_OBJECT_EXECUTOR;
 import static org.springframework.jdbc.core.statementexecutor.QueryStatementExecutor.QUERY_EXECUTOR;
 
@@ -40,7 +38,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
         return queryForObject(
                 sql,
-                mapTo(requiredType),
+                generateRowMapperOf(requiredType),
                 params
         );
     }
@@ -52,56 +50,9 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, Class<T> requiredType, Object... params) {
         return query(
                 sql,
-                mapTo(requiredType),
+                generateRowMapperOf(requiredType),
                 params
         );
-    }
-
-    private <T> RowMapper<T> mapTo(Class<T> requiredType) {
-        return rs -> {
-            T instance = createInstance(requiredType);
-            fillFields(requiredType, rs, instance);
-            return instance;
-        };
-    }
-
-    private <T> T createInstance(Class<T> requiredType) {
-        try {
-            Constructor<T> constructor = requiredType.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            T instance = constructor.newInstance();
-            constructor.setAccessible(false);
-            return instance;
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> void fillFields(Class<T> requiredType, ResultSet rs, T instance) {
-        Field[] fields = requiredType.getDeclaredFields();
-        for (final Field field : fields) {
-            final String fieldName = field.getName();
-            try {
-                for (int i = 0; i < fields.length; i++) {
-                    final String columnName = rs.getMetaData().getColumnName(i + 1);
-                    if (columnName.equalsIgnoreCase(fieldName)) {
-                        field.setAccessible(true);
-                        field.set(instance, rs.getObject(i + 1));
-                        field.setAccessible(false);
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     public void execute(String sql, Object... params) {

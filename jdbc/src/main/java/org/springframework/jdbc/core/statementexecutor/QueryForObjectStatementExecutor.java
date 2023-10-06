@@ -1,6 +1,6 @@
 package org.springframework.jdbc.core.statementexecutor;
 
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.rowmapper.RowMapper;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
