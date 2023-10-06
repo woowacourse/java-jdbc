@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -102,4 +103,17 @@ class JdbcTemplateTest {
         }
     }
 
+    @Test
+    void setConnection() {
+        //given
+        final var jdbcTemplate = new JdbcTemplate(mockDataSource);
+        final var customConnection = mock(Connection.class);
+
+        //when
+        jdbcTemplate.setConnection(customConnection);
+
+        //then
+        assertThat(jdbcTemplate).extracting("connection")
+                .isEqualTo(customConnection);
+    }
 }
