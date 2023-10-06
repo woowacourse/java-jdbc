@@ -40,6 +40,10 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
+        userDao.delete();
+
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
