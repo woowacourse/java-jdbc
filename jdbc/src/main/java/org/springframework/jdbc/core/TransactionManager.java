@@ -20,6 +20,7 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             consumer.accept(connection, entity);
             connection.commit();
+            connection.setAutoCommit(true);
             return entity;
         } catch (Exception exception) {
             try {
@@ -37,6 +38,7 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             final var result = function.apply(connection, parameters);
             connection.commit();
+            connection.setAutoCommit(true);
             return result;
         } catch (Exception exception) {
             try {
