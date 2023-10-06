@@ -36,18 +36,18 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select * from users";
 
-        return jdbcTemplate.queries(rowMapper, sql);
+        return jdbcTemplate.query(rowMapper, sql);
     }
 
     public User findById(final Long id) {
         final var sql = "select * from users where id = ?";
 
-        return (User) jdbcTemplate.query(rowMapper, sql, id);
+        return jdbcTemplate.queryForObject(rowMapper, sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select * from users where account = ?";
 
-        return (User) jdbcTemplate.query(rowMapper, sql, account);
+        return jdbcTemplate.queryForObject(rowMapper, sql, account);
     }
 }
