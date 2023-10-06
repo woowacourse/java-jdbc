@@ -74,8 +74,4 @@ public class JdbcTemplate {
     public int update(final String sql, final Object... args) {
         return executeInternal(sql, PreparedStatement::executeUpdate, args);
     }
-
-    public void execute(final String sql) {
-        executeInternal(sql, PreparedStatement::executeUpdate);
-    }
 }
