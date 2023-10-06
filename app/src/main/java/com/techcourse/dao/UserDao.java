@@ -49,10 +49,7 @@ public class UserDao {
     }
 
     public void deleteAll() {
-        final String deleteSql = "delete from users";
-        jdbcTemplate.update(deleteSql);
-
-        final String alterAutoIncrementSql = "ALTER TABLE users ALTER COLUMN id RESTART WITH 1";
+        final String alterAutoIncrementSql = "TRUNCATE TABLE users RESTART IDENTITY";
         jdbcTemplate.update(alterAutoIncrementSql);
     }
 }
