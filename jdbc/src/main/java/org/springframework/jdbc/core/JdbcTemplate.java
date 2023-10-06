@@ -1,20 +1,24 @@
 package org.springframework.jdbc.core;
 
-import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private static final int ONE_DATA_INDEX = 0;
+    private static final int TWO = 2;
 
     private final DataSource dataSource;
 
@@ -23,152 +27,67 @@ public class JdbcTemplate {
     }
 
     public int update(final String query, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+        return execute(this::executeUpdate, query, args);
+    }
+
+    private int executeUpdate(final PreparedStatement pstmt) {
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
-
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
             return pstmt.executeUpdate();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Function<PreparedStatement, T> function, final String query, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
+            return function.apply(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(final String query, final Class<T> convertClass, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+    public <T> Optional<T> queryForObject(final String query, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = executeQuery(query, rowMapper, args);
 
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                final ResultSetMetaData metaData = rs.getMetaData();
-                final int columnCount = metaData.getColumnCount();
-
-                final Object[] params = new Object[columnCount];
-                final Class<?>[] paramTypes = new Class<?>[columnCount];
-
-                for (int i = 0; i < columnCount; i++) {
-                    params[i] = rs.getObject(i + 1);
-                    paramTypes[i] = Class.forName(metaData.getColumnClassName(i + 1));
-                }
-
-                final Constructor<T> constructor = convertClass.getConstructor(paramTypes);
-                return constructor.newInstance(params);
-            }
-            return null;
-        } catch (final Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        if (results.size() >= TWO) {
+            throw new DataAccessException("2개 이상의 데이터가 존재합니다");
         }
+
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(results.get(ONE_DATA_INDEX));
     }
 
-    public <T> List<T> queryForList(final String query, final Class<T> convertClass, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+    public <T> List<T> queryForList(final String query, final RowMapper<T> rowMapper, final Object... args) {
+        return executeQuery(query, rowMapper, args);
+    }
 
-            log.debug("query : {}", query);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            final List<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                final ResultSetMetaData metaData = rs.getMetaData();
-                final int columnCount = metaData.getColumnCount();
-
-                final Object[] params = new Object[columnCount];
-                final Class<?>[] paramTypes = new Class<?>[columnCount];
-
-                for (int i = 0; i < columnCount; i++) {
-                    params[i] = rs.getObject(i + 1);
-                    paramTypes[i] = Class.forName(metaData.getColumnClassName(i + 1));
-                }
-
-                final Constructor<T> constructor = convertClass.getConstructor(paramTypes);
-                objects.add(constructor.newInstance(params));
-            }
-            return objects;
-        } catch (final Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
+    private <T> List<T> executeQuery(final String query, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(pstmt -> {
             try {
-                if (rs != null) {
-                    rs.close();
+                final ResultSet rs = pstmt.executeQuery();
+                final List<T> objects = new ArrayList<>();
+                while (rs.next()) {
+                    objects.add(rowMapper.mapToRow(rs));
                 }
-            } catch (SQLException ignored) {
+                return objects;
+            } catch (final SQLException e) {
+                throw new DataAccessException("Error execute query", e);
             }
+        }, query, args);
+    }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
+    private PreparedStatement getPreparedStatement(final Connection connection, final String sql, final Object... args)
+            throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
+
+        return preparedStatement;
     }
 }
