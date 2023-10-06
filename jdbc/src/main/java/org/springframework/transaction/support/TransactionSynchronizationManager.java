@@ -1,9 +1,9 @@
 package org.springframework.transaction.support;
 
-import java.util.HashMap;
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
@@ -12,21 +12,26 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static void initSynchronization() {
+    public static Connection getResource(final DataSource key) {
+        return getThreadLocalResource().get(key);
+    }
+
+    public static void bindResource(final DataSource key, final Connection value) {
+        getThreadLocalResource().put(key, value);
+    }
+
+    public static Connection unbindResource(final DataSource key) {
+        return getThreadLocalResource().remove(key);
+    }
+
+    private static Map<DataSource, Connection> getThreadLocalResource() {
         if (resources.get() == null) {
-            resources.set(new HashMap<>());
+            initSynchronization();
         }
+        return resources.get();
     }
 
-    public static Connection getResource(DataSource key) {
-        return resources.get().get(key);
-    }
-
-    public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
-    }
-
-    public static Connection unbindResource(DataSource key) {
-        return resources.get().remove(key);
+    private static void initSynchronization() {
+        resources.set(new HashMap<>());
     }
 }

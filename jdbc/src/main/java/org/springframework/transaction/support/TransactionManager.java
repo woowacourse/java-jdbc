@@ -13,17 +13,16 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void doInTransaction(Runnable runnable) {
-        TransactionSynchronizationManager.initSynchronization();
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        try {
+    public void doInTransaction(final Runnable runnable) {
+        try (final var connection = DataSourceUtils.getConnection(dataSource)) {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

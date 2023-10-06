@@ -83,7 +83,9 @@ public class JdbcTemplate {
             final var ps = psc.createPreparedStatement(conn, sql);
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
-            throw new DataAccessException(e.getSQLState());
+            throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(getConnection(), dataSource);
         }
     }
 
