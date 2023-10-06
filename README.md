@@ -36,3 +36,11 @@
 | 트랜잭션 관리                                   |     ✅      |     |
 | Connection, Statement, ResultSet 객체 close |     ✅      |     |
 
+## 3단계
+
+- [ ] User 비밀번호 변경 기능
+  - [ ] 비밀번호 변경 기능을 구현한다. (UserDao.changePassword())
+    - [ ] 누가, 언제, 어떤 비밀번호로 바꿨는지 이력을 남겨야한다.
+  - [ ] changePassword 원자성을 보장한다
+    - 트랜잭션을 설정한다.
+    - userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경
