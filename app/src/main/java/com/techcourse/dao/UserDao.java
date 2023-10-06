@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,5 +52,10 @@ public class UserDao {
     public void deleteAll() {
         final String alterAutoIncrementSql = "TRUNCATE TABLE users RESTART IDENTITY";
         jdbcTemplate.update(alterAutoIncrementSql);
+    }
+
+    public void update(User user, Connection conn) {
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 }

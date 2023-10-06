@@ -5,16 +5,25 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(
+            final UserDao userDao,
+            final UserHistoryDao userHistoryDao,
+            final DataSource dataSource
+    ) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -27,9 +36,16 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        try (
+                Connection conn = dataSource.getConnection();
+        ) {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userDao.update(user, conn);
+            userHistoryDao.log(new UserHistory(user, createBy));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
