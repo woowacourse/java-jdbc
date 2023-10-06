@@ -87,9 +87,11 @@ public class JdbcTemplate {
   }
 
   public void execute(final String sql, final Object... values) {
+
+    final Connection connection = TransactionManager.getConnection(dataSource);
+
     try (
-        final Connection conn = dataSource.getConnection();
-        final PreparedStatement pstmt = conn.prepareStatement(sql)
+        final PreparedStatement pstmt = connection.prepareStatement(sql)
     ) {
 
       for (int index = 1; index <= values.length; index++) {
