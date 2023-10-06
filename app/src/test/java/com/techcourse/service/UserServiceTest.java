@@ -9,6 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -18,11 +21,14 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
+        this.transactionTemplate = new TransactionTemplate(dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -50,7 +56,7 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final User user = userDao.findById(1L).get();
         final var oldPassword = user.getPassword();

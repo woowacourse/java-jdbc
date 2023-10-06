@@ -1,20 +1,16 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
     private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(final UserService userService) {
+    public TxUserService(final UserService userService, final TransactionTemplate transactionTemplate) {
         this.userService = userService;
-        final DataSource dataSource = DataSourceConfig.getInstance();
-        this.transactionTemplate = new TransactionTemplate(dataSource);
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
