@@ -2,9 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -22,22 +20,16 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
+        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
-            setParametersInPreparedStatement(preparedStatement, parameters);
+            preparedStatementSetter.setObjects(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setParametersInPreparedStatement(
-            PreparedStatement preparedStatement,
-            Object[] parameters
-    ) throws SQLException {
-        for (int parameterNumber = 0; parameterNumber < parameters.length; parameterNumber++) {
-            preparedStatement.setString(parameterNumber + 1, String.valueOf(parameters[parameterNumber]));
         }
     }
 
@@ -46,10 +38,14 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... parameters
     ) {
+        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
-            setParametersInPreparedStatement(preparedStatement, parameters);
+            preparedStatementSetter.setObjects(preparedStatement);
+            
             return getQueryResults(rowMapper, preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -60,14 +56,9 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             PreparedStatement preparedStatement
     ) throws SQLException {
-        List<T> queryResults = new ArrayList<>();
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        while (resultSet.next()) {
-            queryResults.add(rowMapper.mapRow(resultSet));
-        }
-
-        return queryResults;
+        ResultSetExtractor<T> resultSetExtractor = new ResultSetExtractor<>(rowMapper);
+        
+        return resultSetExtractor.extract(preparedStatement.executeQuery());
     }
 
     public <T> T queryForObject(
@@ -75,20 +66,27 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... parameters
     ) {
+        PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
+        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+             PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
-            setParametersInPreparedStatement(preparedStatement, parameters);
+            preparedStatementSetter.setObjects(preparedStatement);
             List<T> queryResults = getQueryResults(rowMapper, preparedStatement);
 
-            if (queryResults.size() == 1) {
-                return queryResults.get(0);
-            }
-
-            throw new DataAccessException("조회 결과가 올바르지 않습니다.");
+            return validateInquiryResult(queryResults);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T validateInquiryResult(final List<T> queryResults) {
+        if (queryResults.size() == 1) {
+            return queryResults.get(0);
+        }
+
+        throw new DataAccessException("조회 결과가 올바르지 않습니다.");
     }
 
 }
