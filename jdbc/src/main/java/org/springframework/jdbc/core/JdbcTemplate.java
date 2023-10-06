@@ -7,7 +7,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -78,10 +78,9 @@ public class JdbcTemplate {
             final PreparedStatementCreator psc,
             final PreparedStatementCallback<T> action
     ) throws DataAccessException {
-        try (
-                final var conn = getConnection();
-                final var ps = psc.createPreparedStatement(conn, sql)
-        ) {
+        try {
+            final var conn = getConnection();
+            final var ps = psc.createPreparedStatement(conn, sql);
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getSQLState());
@@ -89,10 +88,6 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
-        }
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
