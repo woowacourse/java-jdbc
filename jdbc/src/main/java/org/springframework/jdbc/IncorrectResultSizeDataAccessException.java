@@ -1,5 +1,7 @@
 package org.springframework.jdbc;
 
-public class IncorrectResultSizeDataAccessException extends RuntimeException {
+import org.springframework.dao.DataAccessException;
+
+public class IncorrectResultSizeDataAccessException extends DataAccessException {
 
 }
