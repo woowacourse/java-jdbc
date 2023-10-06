@@ -43,14 +43,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        return queryTemplate(sql, ps -> {
-            ResultSet rs = ((PreparedStatement) ps).executeQuery();
+        List<T> results = query(sql, rowMapper, arguments);
 
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
-            }
+        if (results.size() > 1) {
+            throw new JdbcException("query result is over 1");
+        }
+        try {
+            return Optional.of(results.get(0));
+        } catch (IndexOutOfBoundsException e) {
             return Optional.empty();
-        }, arguments);
+        }
     }
 
     private <T> T queryTemplate(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
