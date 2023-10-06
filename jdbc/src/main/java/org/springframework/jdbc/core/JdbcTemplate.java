@@ -52,6 +52,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
             final ResultSet resultSet = pstmt.executeQuery();
+            
             final List<T> queryResult = new ArrayList<>();
             while (resultSet.next()) {
                 queryResult.add(rowMapper.mapRow(resultSet));
