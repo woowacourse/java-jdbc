@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import com.techcourse.repository.UserRepository;
 import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -33,12 +34,20 @@ public class UserDaoWithJdbcTemplate implements UserRepository {
 
     public User findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), id);
+        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), id);
+        if (user.isEmpty()) {
+            throw new RuntimeException("유저 없음!");
+        }
+        return user.get();
     }
 
     public User findByAccount(final Connection connection, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), account);
+        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), account);
+        if (user.isEmpty()) {
+            throw new RuntimeException("유저 없음!");
+        }
+        return user.get();
     }
 
     private static RowMapper<User> getUserRowMapper() {

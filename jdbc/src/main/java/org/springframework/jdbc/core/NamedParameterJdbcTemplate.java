@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sql.DataSource;
@@ -39,7 +40,7 @@ public class NamedParameterJdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Map<String, Object> parameters) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Map<String, Object> parameters) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(getOriginalSql(sql), ResultSet.TYPE_SCROLL_SENSITIVE,
@@ -56,11 +57,7 @@ public class NamedParameterJdbcTemplate {
 
             verifyResultRowSize(rs, 1);
 
-            if (result == null) {
-                throw new SQLException("조회결과가업서!");
-            }
-
-            return result;
+            return Optional.ofNullable(result);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);

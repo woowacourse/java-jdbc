@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
                 PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
@@ -50,11 +51,7 @@ public class JdbcTemplate {
 
             verifyResultRowSize(rs, 1);
 
-            if (result == null) {
-                throw new SQLException("조회결과가업서!");
-            }
-
-            return result;
+            return Optional.ofNullable(result);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
