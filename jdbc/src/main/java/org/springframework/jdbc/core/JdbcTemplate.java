@@ -43,7 +43,8 @@ public class JdbcTemplate {
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
             setParamsToPreparedStatement(pstmt, args);
 
@@ -53,25 +54,16 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParamsToPreparedStatement(final PreparedStatement pstmt, final Object[] args)
-        throws SQLException {
+    private void setParamsToPreparedStatement(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
     }
 
-    private <T> List<T> queryMultipleResults(final PreparedStatement pstmt, final RowMapper<T> rowMapper) {
-        try {
-            final ResultSet resultSet = pstmt.executeQuery();
-
-            return mapMultipleResults(resultSet, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> mapMultipleResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> queryMultipleResults(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        final ResultSet resultSet = pstmt.executeQuery();
         final List<T> results = new ArrayList<>();
+
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
         }
@@ -80,18 +72,10 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return executeInternal(sql, pstmt -> executeUpdate(pstmt), args);
-    }
-
-    private int executeUpdate(final PreparedStatement pstmt) {
-        try {
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return executeInternal(sql, PreparedStatement::executeUpdate, args);
     }
 
     public void execute(final String sql) {
-        executeInternal(sql, pstmt -> executeUpdate(pstmt));
+        executeInternal(sql, PreparedStatement::executeUpdate);
     }
 }
