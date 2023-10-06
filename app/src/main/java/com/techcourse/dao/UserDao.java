@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.ConnectionAgent;
 
 import com.techcourse.domain.User;
 

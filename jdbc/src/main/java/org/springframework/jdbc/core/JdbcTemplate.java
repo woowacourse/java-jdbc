@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +13,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.ConnectionAgent;
 
 public class JdbcTemplate {
 
@@ -21,10 +21,10 @@ public class JdbcTemplate {
     private static final int FIRST_RESULT = 0;
     private static final String LOG_FORMAT = "query : {}";
 
-    private final DataSource dataSource;
+    private final ConnectionAgent connectionAgent;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.connectionAgent = new ConnectionAgent(dataSource);
     }
 
     public void update(final String sql, final Object... params) {
@@ -53,8 +53,9 @@ public class JdbcTemplate {
                           final StatementExecutor<T> statementExecutor,
                           final Object... params
     ) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = PreparedStatementGenerator.generate(conn, sql, params)) {
+        final Connection conn = connectionAgent.getConnection();
+
+        try (final PreparedStatement pstmt = PreparedStatementGenerator.generate(conn, sql, params)) {
             log.debug(LOG_FORMAT, sql);
             return statementExecutor.execute(pstmt);
         } catch (SQLException e) {
