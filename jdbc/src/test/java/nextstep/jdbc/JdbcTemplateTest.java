@@ -1,6 +1,7 @@
 package nextstep.jdbc;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,19 +18,20 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class JdbcTemplateTest {
 
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+
 
     @BeforeEach
     public void setUp() {
         final DataSource instance = DataSourceConfig.getInstance();
-        jdbcTemplate = new JdbcTemplate(instance);
-        String sql = "create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))";
         try (final Connection connection = instance.getConnection()) {
             final Statement statement = connection.createStatement();
-            statement.execute(sql);
+            statement.execute("drop table if exists users");
+            statement.execute("create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))");
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+
     }
 
     @Test
@@ -88,5 +90,34 @@ class JdbcTemplateTest {
         assertSoftly(softly -> {
             softly.assertThat(result).hasSize(2);
         });
+    }
+
+    @Test
+    @DisplayName("가변인자를 이용한 쿼리 테스트")
+    void vargsQuery() {
+        //given
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, preparedStatement -> {
+            preparedStatement.setString(1, "account");
+            preparedStatement.setString(2, "password");
+            preparedStatement.setString(3, "email");
+        });
+
+        //when
+        String selectSql = "select * from users where account = ?";
+        final Map<String, Object> result = jdbcTemplate.query(selectSql, (resultSet, rowNum) -> Map.of(
+                "id", resultSet.getLong("id"),
+                "account", resultSet.getString("account"),
+                "password", resultSet.getString("password"),
+                "email", resultSet.getString("email")
+        ), "account");
+
+        //then
+        assertSoftly(softly -> {
+            softly.assertThat(result.get("account")).isEqualTo("account");
+            softly.assertThat(result.get("password")).isEqualTo("password");
+            softly.assertThat(result.get("email")).isEqualTo("email");
+        });
+
     }
 }
