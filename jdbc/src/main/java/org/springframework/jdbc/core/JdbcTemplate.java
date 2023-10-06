@@ -22,10 +22,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... parameters) {
+    public int update(Connection connection, String sql, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
             setQueryParameters(pstmt, parameters);
@@ -36,10 +35,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             setQueryParameters(pstmt, parameters);
             ResultSet rs = pstmt.executeQuery();
@@ -73,10 +71,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             setQueryParameters(pstmt, parameters);
 
