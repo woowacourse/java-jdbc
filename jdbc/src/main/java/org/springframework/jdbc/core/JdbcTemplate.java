@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.SizeException;
 
 public class JdbcTemplate {
 
@@ -38,7 +39,7 @@ public class JdbcTemplate {
             throw new DataAccessException("too many result. expected 1 but was " + results.size());
         }
         if (results.isEmpty()) {
-            throw new DataAccessException("no result");
+            throw new SizeException("no result");
         }
 
         return results.get(0);
@@ -58,7 +59,7 @@ public class JdbcTemplate {
         }
 
         if (results.isEmpty()) {
-            throw new DataAccessException("no result");
+            throw new SizeException("no result");
         }
 
         return results;
