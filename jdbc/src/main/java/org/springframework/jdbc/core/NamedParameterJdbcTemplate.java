@@ -42,25 +42,25 @@ public class NamedParameterJdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Map<String, Object> parameters) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(getOriginalSql(sql), ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                PreparedStatement pstmt = conn.prepareStatement(getOriginalSql(sql), ResultSet.TYPE_SCROLL_SENSITIVE,
+                        ResultSet.CONCUR_READ_ONLY);
         ) {
             setQueryParameters(sql, pstmt, parameters);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
 
-                T result = null;
-                if (rs.next()) {
-                    result = rowMapper.mapRow(rs, rs.getRow());
-                }
-
-                verifyResultRowSize(rs, 1);
-
-                if (result == null) {
-                    throw new SQLException("조회결과가업서!");
-                }
-
-                return result;
+            T result = null;
+            if (rs.next()) {
+                result = rowMapper.mapRow(rs, rs.getRow());
             }
+
+            verifyResultRowSize(rs, 1);
+
+            if (result == null) {
+                throw new SQLException("조회결과가업서!");
+            }
+
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
@@ -86,15 +86,14 @@ public class NamedParameterJdbcTemplate {
         ) {
             setQueryParameters(sql, pstmt, parameters);
 
-            try (ResultSet rs = pstmt.executeQuery();) {
-                log.debug("query : {}", sql);
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
 
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rs.getRow()));
-                }
-                return results;
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
             }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
@@ -102,8 +101,8 @@ public class NamedParameterJdbcTemplate {
     }
 
     private static void setQueryParameters(final String sql,
-                                    final PreparedStatement pstmt,
-                                    final Map<String, Object> parameters
+                                           final PreparedStatement pstmt,
+                                           final Map<String, Object> parameters
     ) throws SQLException {
         final List<String> parameterNames = getQueryParameters(sql);
 
