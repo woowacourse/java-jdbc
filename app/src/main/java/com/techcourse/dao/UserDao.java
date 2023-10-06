@@ -1,13 +1,15 @@
 package com.techcourse.dao;
 
+import com.techcourse.dao.exception.UserNotExistException;
 import com.techcourse.domain.User;
 import java.util.List;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 public class UserDao {
 
-    private static final RowMapper<User> ROW_MAPPER = (rs, count) ->
+    private static final RowMapper<User> ROW_MAPPER = rs ->
         new User(
             rs.getLong("id"),
             rs.getString("account"),
@@ -42,12 +44,20 @@ public class UserDao {
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        try {
+            return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new UserNotExistException();
+        }
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        try {
+            return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        } catch (EmptyResultDataAccessException e) {
+            throw new UserNotExistException();
+        }
     }
 }
