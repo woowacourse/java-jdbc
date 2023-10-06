@@ -7,5 +7,5 @@ import java.util.List;
 @FunctionalInterface
 public interface ResultSetExecutor<T> {
 
-    List<T> execute(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException;
+    List<T> execute(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException;
 }
