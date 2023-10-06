@@ -4,7 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,12 +14,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final TransactionTemplate transactionTemplate;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
+        this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     public User findById(final long id) {
@@ -31,22 +31,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        Connection conn = dataSource.getConnection();
-        conn.setAutoCommit(false);
-        final var user = findById(id);
-        try {
+        transactionTemplate.transaction(connection -> {
+            var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-            conn.commit();
-            conn.setAutoCommit(true);
-        } catch (SQLException | DataAccessException e) {
-            conn.rollback();
-            conn.setAutoCommit(true);
-            throw new DataAccessException(e);
-        } finally {
-            conn.close();
-        }
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
 
     }
 }
