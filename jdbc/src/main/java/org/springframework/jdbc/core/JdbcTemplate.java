@@ -48,14 +48,20 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
+        final List<T> result = tryCatchTemplate(rs -> {
+            log.debug("query : {}", sql);
+            return convertResultSetToInstances(rowMapper, rs);
+        }, sql, obj);
+        validateResultSetSize(result);
+        return Optional.of(result.get(0));
+    }
+
+    public <T> List<T> tryCatchTemplate(final StatementExecutor<List<T>> executor, final String sql, final Object... obj) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
              final ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-            final List<T> result = convertResultSetToInstances(rowMapper, rs);
-            validateResultSetSize(result);
-            return Optional.of(result.get(0));
-        } catch (SQLException exception) {
+            return executor.execute(rs);
+        } catch (final SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new DataAccessException(exception);
         }
@@ -76,14 +82,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
-             final ResultSet rs = pstmt.executeQuery()) {
+        return tryCatchTemplate(rs -> {
             log.debug("query : {}", sql);
             return convertResultSetToInstances(rowMapper, rs);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception);
-        }
+        }, sql, obj);
     }
 }
