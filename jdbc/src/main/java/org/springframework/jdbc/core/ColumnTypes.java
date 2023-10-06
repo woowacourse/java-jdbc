@@ -1,5 +1,7 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.jdbc.ColumnConversionException;
+
 public class ColumnTypes {
 
     /**
@@ -14,7 +16,7 @@ public class ColumnTypes {
             case 12:
                 return String.class;
             default:
-                throw new IllegalStateException();
+                throw new ColumnConversionException();
         }
     }
 }
