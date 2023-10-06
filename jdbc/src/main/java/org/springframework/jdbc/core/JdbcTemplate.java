@@ -28,10 +28,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement ps = createPreparedStatement(connection, sql, args)
-        ) {
+    public int update(final Connection connection, final String sql, final Object... args) {
+        try (final PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
             return ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage());
