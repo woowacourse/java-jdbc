@@ -7,10 +7,13 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
-    public TransactionManager() {
+    private final DataSource dataSource;
+
+    public TransactionManager(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public void doInTransaction(Runnable runnable, DataSource dataSource) {
+    public void doInTransaction(Runnable runnable) {
         TransactionSynchronizationManager.initSynchronization();
         final var connection = DataSourceUtils.getConnection(dataSource);
         try {

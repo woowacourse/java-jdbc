@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -28,10 +27,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.doInTransaction(
-                () -> doChangePassword(id, newPassword, createBy),
-                DataSourceConfig.getInstance()
-        );
+        transactionManager.doInTransaction(() -> doChangePassword(id, newPassword, createBy));
     }
 
     private void doChangePassword(final long id, final String newPassword, final String createBy) {
