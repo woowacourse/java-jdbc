@@ -37,6 +37,16 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(final Connection conn, final String sql, final Object... obj) {
+        try (final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn)) {
+            log.debug("query : {}", sql);
+            pstmt.execute();
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
+        }
+    }
+
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... obj) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
