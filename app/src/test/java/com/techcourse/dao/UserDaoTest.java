@@ -1,14 +1,17 @@
 package com.techcourse.dao;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.exception.DataAccessException;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -81,7 +84,7 @@ class UserDaoTest {
     void findObjectReturnNull() {
         userDao.deleteAll();
 
-        User user = userDao.findById(1L);
-        assertThat(user).isNull();
+        assertThatThrownBy(() -> userDao.findById(1L))
+                .isInstanceOf(DataAccessException.class);
     }
 }

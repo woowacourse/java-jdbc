@@ -1,10 +1,12 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.SQLException;
-import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.exception.ResultSetMappingException;
+
+import java.sql.SQLException;
+import java.util.List;
 
 public class UserDao {
 
@@ -16,7 +18,7 @@ public class UserDao {
                     rs.getString("password"),
                     rs.getString("email"));
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new ResultSetMappingException();
         }
     };
 
