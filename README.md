@@ -15,4 +15,4 @@
 ## 트랜잭션 적용하기
 - [x] UserHistoryDao jdbcTemplate 이용하게 수정
 - [ ] 트랜잭션 동기화하기
-  - [ ] jdbcTemplate에 connection을 받는 update메소드 오버라이드하기
+  - [x] jdbcTemplate에 connection을 받는 update메소드 오버라이드하기
