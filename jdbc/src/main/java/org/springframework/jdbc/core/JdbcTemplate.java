@@ -30,33 +30,11 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
-            log.debug("query : {}", sql);
-            return execute(rowMapper, pstmt, QUERY_FOR_OBJECT_EXECUTOR);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return execute(sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
     }
 
     public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
@@ -68,18 +46,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
-            log.debug("query : {}", sql);
-            return (List<T>) execute(rowMapper, pstmt, QUERY_EXECUTOR);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return (List<T>) execute(sql, rowMapper, QUERY_EXECUTOR, params);
     }
 
     public <T> List<T> query(String sql, Class<T> requiredType, Object... params) {
@@ -88,14 +55,6 @@ public class JdbcTemplate {
                 mapTo(requiredType),
                 params
         );
-    }
-
-    private <T> T execute(
-            final RowMapper<T> rowMapper,
-            final PreparedStatement pstmt,
-            StatementExecutor executor
-    ) throws SQLException {
-        return (T) executor.execute(pstmt, rowMapper);
     }
 
     private <T> RowMapper<T> mapTo(Class<T> requiredType) {
@@ -142,6 +101,39 @@ public class JdbcTemplate {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    public void execute(String sql, Object... params) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
+        ) {
+            log.debug("query : {}", sql);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T execute(
+            String sql,
+            RowMapper<T> rowMapper,
+            StatementExecutor executor,
+            Object... params
+    ) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
+        ) {
+            log.debug("query : {}", sql);
+            return (T) executor.execute(pstmt, rowMapper);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
