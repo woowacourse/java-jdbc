@@ -34,8 +34,8 @@ public class UserService {
         }
     }
 
-    private static <T> T doDaoWithTransaction(final TransactionalDaoExecutor<T> executor,
-                                              final Connection connection) throws SQLException {
+    private <T> T doDaoWithTransaction(final TransactionalDaoExecutor<T> executor,
+                                       final Connection connection) throws SQLException {
         connection.setAutoCommit(false);
         try {
             return executor.execute(connection);
