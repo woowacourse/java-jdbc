@@ -22,18 +22,23 @@ public class UserService {
     }
 
     public User findById(final long id) {
+        return doService(connection -> userDao.findById(connection, id));
+    }
+
+    private <T> T doService(final TransactionalDaoExecutor<T> executor) {
         try {
             Connection connection = dataSource.getConnection();
-            return findByIdWithTransaction(id, connection);
+            return doDaoWithTransaction(executor, connection);
         } catch (SQLException e) {
             throw new DataBaseAccessException(e.getMessage());
         }
     }
 
-    private User findByIdWithTransaction(final long id, final Connection connection) throws SQLException {
+    private static <T> T doDaoWithTransaction(final TransactionalDaoExecutor<T> executor,
+                                              final Connection connection) throws SQLException {
         connection.setAutoCommit(false);
         try {
-            return userDao.findById(connection, id);
+            return executor.execute(connection);
         } catch (JdbcTemplateException e) {
             connection.rollback();
             throw new DataBaseAccessException(e.getMessage());
@@ -43,51 +48,20 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        try {
-            Connection connection = dataSource.getConnection();
-            insertWithTransaction(user, connection);
-        } catch (SQLException e) {
-            throw new DataBaseAccessException(e.getMessage());
-        }
-    }
-
-    private void insertWithTransaction(final User user, final Connection connection) throws SQLException {
-        connection.setAutoCommit(false);
-        try {
+        doService(connection -> {
             userDao.insert(connection, user);
-        } catch (JdbcTemplateException e) {
-            connection.rollback();
-            throw new DataBaseAccessException(e.getMessage());
-        } finally {
-            connection.setAutoCommit(true);
-        }
+            return null;
+        });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        try {
-            Connection connection = dataSource.getConnection();
-            changePasswordWithTransaction(createBy, user, connection);
-        } catch (SQLException e) {
-            throw new DataBaseAccessException(e.getMessage());
-        }
-    }
-
-    private void changePasswordWithTransaction(
-            final String createBy,
-            final User user,
-            final Connection connection) throws SQLException {
-        connection.setAutoCommit(false);
-        try {
+        doService(connection -> {
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
-        } catch (JdbcTemplateException e) {
-            connection.rollback();
-            throw new DataBaseAccessException(e.getMessage());
-        } finally {
-            connection.setAutoCommit(true);
-        }
+            return null;
+        });
     }
 }
