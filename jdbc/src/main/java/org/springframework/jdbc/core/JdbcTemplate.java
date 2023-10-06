@@ -22,13 +22,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
         try (Connection conn = dataSource.getConnection()) {
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 preparedStatementSetter.setValues(pstmt);
                 pstmt.executeUpdate();
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
@@ -43,12 +43,12 @@ public class JdbcTemplate {
                 }
                 throw new DataAccessException("Empty Result");
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private ResultSet executeQuery(final PreparedStatementSetter preparedStatementSetter, PreparedStatement preparedStatement) throws SQLException {
+    private ResultSet executeQuery(final PreparedStatementSetter preparedStatementSetter, final PreparedStatement preparedStatement) throws SQLException {
         preparedStatementSetter.setValues(preparedStatement);
         return preparedStatement.executeQuery();
     }
@@ -62,7 +62,7 @@ public class JdbcTemplate {
                 }
                 throw new DataAccessException("Empty Result");
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
@@ -84,7 +84,7 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }

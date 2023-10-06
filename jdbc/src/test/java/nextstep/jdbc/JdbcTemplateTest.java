@@ -28,7 +28,7 @@ class JdbcTemplateTest {
             final Statement statement = connection.createStatement();
             statement.execute("drop table if exists users");
             statement.execute("create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))");
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
 
