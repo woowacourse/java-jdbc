@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         List<T> results = query(sql, rowMapper, params);
         if (results.size() > 1) {
             throw new DataAccessException("too many result. expected 1 but was " + results.size());
@@ -33,7 +33,7 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql);
              final ResultSet resultSet = executeQuery(preparedStatement, parameters)) {
@@ -66,7 +66,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(final String sql, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
