@@ -25,7 +25,7 @@ public class QueryForObjectStatementExecutor<T> implements StatementExecutor<T> 
             if (rs.next()) {
                 throw new IllegalStateException("2개 이상의 결과가 존재합니다!");
             }
-            return (T) result;
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
