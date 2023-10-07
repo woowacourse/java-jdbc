@@ -1,37 +1,67 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.exception.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.exception.InvalidReleaseConnectionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
-
-    public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
+    public static Connection getConnection(final DataSource dataSource) {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection != null) {
-            return connection;
+
+        if (connection == null) {
+            connection = getNewConnection(dataSource);
         }
 
+        return connection;
+    }
+
+    private static Connection getNewConnection(final DataSource dataSource) {
         try {
-            connection = dataSource.getConnection();
+            final Connection connection = dataSource.getConnection();
+
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             return connection;
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
+            throw new CannotGetJdbcConnectionException("JDBC Connection을 얻지 못했습니다.", ex);
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(final Connection connection, final DataSource dataSource) {
         try {
+            if (connection.getAutoCommit()) {
+                final Connection unbindConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+
+                if (connection != unbindConnection) {
+                    throw new InvalidReleaseConnectionException("사용하던 Connection이 아닙니다.");
+                }
+
+                connection.close();
+                return ;
+            }
+
+            final Connection bindConnection = TransactionSynchronizationManager.getResource(dataSource);
+
+            if (connection == bindConnection) {
+                return ;
+            }
+
+            final Connection unbindConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+
+            if (unbindConnection != null && connection != unbindConnection) {
+                TransactionSynchronizationManager.bindResource(dataSource, unbindConnection);
+            }
+
             connection.close();
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        } catch (final SQLException ex) {
+            throw new CannotGetJdbcConnectionException("JDBC Connection을 닫지 못했습니다.", ex);
         }
+    }
+
+    private DataSourceUtils() {
     }
 }
