@@ -16,7 +16,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int ONLY_ROW = 1;
+    private static final int MAX_ROW_COUNT = 1;
 
     private final DataSource dataSource;
 
@@ -26,7 +26,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (results.size() != ONLY_ROW) {
+        if (results.size() > MAX_ROW_COUNT) {
             throw new IncorrectResultSizeDataAccessException();
         }
 
