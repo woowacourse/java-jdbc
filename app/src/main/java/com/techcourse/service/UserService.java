@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -7,8 +8,11 @@ import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
@@ -17,12 +21,10 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -34,8 +36,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (var connection = dataSource.getConnection();) {
-
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
 
             try {
@@ -56,6 +59,9 @@ public class UserService {
 
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
