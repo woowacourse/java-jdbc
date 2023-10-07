@@ -46,7 +46,7 @@ public class SecondUserService {
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+//    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public String saveSecondTransactionWithNotSupported() {
         userRepository.save(User.createTest());
         logActualTransactionActive();
