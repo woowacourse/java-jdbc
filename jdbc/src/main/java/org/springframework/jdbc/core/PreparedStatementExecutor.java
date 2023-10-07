@@ -29,6 +29,20 @@ public class PreparedStatementExecutor {
         }
     }
 
+    public <T> T execute(final Connection conn,
+                         final String sql,
+                         final PreparedStatementFunction<T> pstmtFunction,
+                         final Object... params) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setPreparedStatement(pstmt, params);
+            return pstmtFunction.apply(pstmt);
+        } catch (final SQLException e) {
+            throw new CannotGetJdbcConnectionException(e.getMessage());
+        }
+    }
+
     private void setPreparedStatement(final PreparedStatement pstmt, final Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
