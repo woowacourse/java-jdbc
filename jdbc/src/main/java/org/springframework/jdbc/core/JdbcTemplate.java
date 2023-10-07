@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.IncorrectResultSizeDataAccessException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -20,10 +21,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
     }
 
     public int update(String sql, Object... args) throws DataAccessException {
@@ -70,14 +67,34 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementExecution<PreparedStatement, T> function) {
-        try (
-                Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             return function.apply(pstmt);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (isConnectionManuallyInstantiated(conn)) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
         }
+    }
+
+    private Connection getConnection() throws SQLException {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            return TransactionSynchronizationManager.getResource(dataSource);
+        }
+        return dataSource.getConnection();
+    }
+
+    private boolean isConnectionManuallyInstantiated(Connection conn) {
+        return conn != null && TransactionSynchronizationManager.getResource(dataSource) == null;
     }
 }
