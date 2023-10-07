@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -23,21 +24,21 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static final RowMapper<User> userRowMapper = (rs) -> new User(
+    private static final RowMapper<User> userRowMapper = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email")
     );
 
-    public void insert(final User user) {
+    public void insert(final Connection conn, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(final Connection conn, final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
