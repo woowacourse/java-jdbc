@@ -21,7 +21,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return execute(sql, preparedStatement -> mapTable(preparedStatement, rowMapper), values);
+        return execute(sql, preparedStatement -> mapAllRows(preparedStatement, rowMapper), values);
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... values) {
@@ -48,7 +48,7 @@ public class JdbcTemplate {
         return preparedStatement;
     }
 
-    private <T> List<T> mapTable(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> mapAllRows(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
         ResultSet resultSet = preparedStatement.executeQuery();
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
