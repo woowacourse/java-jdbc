@@ -46,7 +46,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -59,7 +59,6 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setString(1, account);
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, preparedStatementSetter);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
     }
 }

@@ -53,7 +53,7 @@ class JdbcTemplateTest {
                 "email", resultSet.getString("email")
         );
         String selectSql = "select * from users";
-        final List<Map<String, Object>> result = jdbcTemplate.query(selectSql, rowMapper);
+        final List<Map<String, Object>> result = jdbcTemplate.queryForList(selectSql, rowMapper);
         assertSoftly(softly -> {
             softly.assertThat(result).hasSize(1);
             softly.assertThat(result.get(0).get("account")).isEqualTo("account");
@@ -79,7 +79,7 @@ class JdbcTemplateTest {
 
         //when
         String selectSql = "select * from users";
-        final List<Map<String, Object>> result = jdbcTemplate.query(selectSql, (resultSet, rowNum) -> Map.of(
+        final List<Map<String, Object>> result = jdbcTemplate.queryForList(selectSql, (resultSet, rowNum) -> Map.of(
                 "id", resultSet.getLong("id"),
                 "account", resultSet.getString("account"),
                 "password", resultSet.getString("password"),
