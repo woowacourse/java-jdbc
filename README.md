@@ -69,3 +69,8 @@
       - [x] testNotSupported()
       - [x] testNested()
       - [x] testNever()
+
+## 3단계 - Transaction 적용
+
+- [ ] UserService Transaction 적용
+    - [ ] UserDao, UserHistoryDao 같은 connection 사용하도록 설정
