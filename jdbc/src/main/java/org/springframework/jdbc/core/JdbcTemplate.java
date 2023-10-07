@@ -23,14 +23,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) throws DataAccessException {
+    public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args)) {
             log.debug("query : {}", sql);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -45,8 +44,7 @@ public class JdbcTemplate {
             }
             return list;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
