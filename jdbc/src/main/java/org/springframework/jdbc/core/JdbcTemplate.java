@@ -3,8 +3,10 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.JdbcException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
+import javax.xml.crypto.OctetStreamData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,8 +25,8 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPrepareStatement(conn, sql, args)
         ) {
             log.debug("run sql {}", sql);
@@ -36,8 +38,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
                 final ResultSet resultSet = pstmt.executeQuery()
         ) {
@@ -54,8 +56,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
                 final ResultSet resultSet = pstmt.executeQuery()
         ) {
