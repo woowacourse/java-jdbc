@@ -19,21 +19,9 @@ public class PreparedStatementExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> preparedStatementCallback, final Object... args) {
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setPreparedStatementArguments(pstmt, args);
-            return preparedStatementCallback.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     public <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback, final Object... args) {
-        try (final Connection connection = DataSourceUtils.getConnection(dataSource);
-             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setPreparedStatementArguments(pstmt, args);

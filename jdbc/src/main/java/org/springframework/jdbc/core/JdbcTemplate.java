@@ -1,6 +1,5 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -19,10 +18,6 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         preparedStatementExecutor.execute(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public void update(final Connection connection, final String sql, final Object... args) {
-        preparedStatementExecutor.execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
