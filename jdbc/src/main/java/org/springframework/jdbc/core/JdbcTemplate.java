@@ -76,11 +76,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
+
             return extractResultSet(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
