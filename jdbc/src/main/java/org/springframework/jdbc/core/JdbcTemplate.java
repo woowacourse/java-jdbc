@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.ConnectionManager;
+import org.springframework.transaction.support.TransactionManager;
 
 public class JdbcTemplate {
 
@@ -23,24 +25,45 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtFunc, RowMapper<T> rsMapper) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtFunc);
-            ResultSet rs = pstmt.executeQuery()
-        ) {
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        return executeQuery(queryForObjectCallback(rowMapper), sql, pstmtSetter);
+    }
+
+    private <T> ResultSetCallback<T> queryForObjectCallback(RowMapper<T> rowMapper) {
+        return rs -> {
             if (!rs.next()) {
                 throw new EmptyResultDataAccessException();
             }
-            T result = rsMapper.mapRow(rs);
+            T result = rowMapper.mapRow(rs);
             if (rs.next()) {
                 throw new IncorrectResultSizeDataAccessException();
             }
             return result;
+        };
+    }
+
+    private <T> T executeQuery(ResultSetCallback<T> callback, String sql, PreparedStatementSetter setter) {
+        Connection conn = ConnectionManager.getConnection(dataSource);
+        try (
+            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), setter);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            logQuery(sql);
+            return callback.call(rs);
         } catch (SQLException e) {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (!TransactionManager.isTransactionEnable()) {
+                ConnectionManager.releaseConnection();
+            }
         }
+    }
+
+    private PreparedStatement applyPreparedStatementSetter(PreparedStatement pstmt, PreparedStatementSetter pstmtSetter)
+        throws SQLException {
+        pstmtSetter.apply(pstmt);
+        return pstmt;
     }
 
     private void logQuery(String sql) {
@@ -51,107 +74,26 @@ public class JdbcTemplate {
         log.error(e.getMessage(), e);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rsMapper, Object... parameters) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(queryForObjectCallback(rowMapper), sql, parameters);
+    }
+
+    private <T> T executeQuery(ResultSetCallback<T> callback, String sql, Object[] objects) {
+        Connection conn = ConnectionManager.getConnection(dataSource);
+        try (
+            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), objects);
             ResultSet rs = pstmt.executeQuery()
         ) {
-            if (!rs.next()) {
-                throw new EmptyResultDataAccessException();
+            logQuery(sql);
+            return callback.call(rs);
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (!TransactionManager.isTransactionEnable()) {
+                ConnectionManager.releaseConnection();
             }
-            T result = rsMapper.mapRow(rs);
-            if (rs.next()) {
-                throw new IncorrectResultSizeDataAccessException();
-            }
-            return result;
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
         }
-    }
-
-    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter);
-            ResultSet rs = pstmt.executeQuery()
-        ) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()
-        ) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters);
-            ResultSet rs = pstmt.executeQuery()
-        ) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public void update(String sql, PreparedStatementSetter pstmtSetter) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            pstmtSetter.apply(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public void update(String sql, Object... parameters) {
-        logQuery(sql);
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters)
-        ) {
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            logException(e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private PreparedStatement applyPreparedStatementSetter(PreparedStatement pstmt,
-                                                           PreparedStatementSetter pstmtSetter)
-        throws SQLException {
-        pstmtSetter.apply(pstmt);
-        return pstmt;
     }
 
     private PreparedStatement applyPreparedStatementParameters(PreparedStatement pstmt, Object[] parameters)
@@ -162,9 +104,89 @@ public class JdbcTemplate {
         return pstmt;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return executeQuery(queryCallback(rowMapper), sql);
+    }
+
+    private <T> ResultSetCallback<List<T>> queryCallback(RowMapper<T> rowMapper) {
+        return rs -> {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        };
+    }
+
+    private <T> T executeQuery(ResultSetCallback<T> callback, String sql) {
+        Connection conn = ConnectionManager.getConnection(dataSource);
+        try (
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()
+        ) {
+            logQuery(sql);
+            return callback.call(rs);
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (!TransactionManager.isTransactionEnable()) {
+                ConnectionManager.releaseConnection();
+            }
+        }
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        return executeQuery(queryCallback(rowMapper), sql, pstmtSetter);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(queryCallback(rowMapper), sql, parameters);
+    }
+
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
+        Connection conn = ConnectionManager.getConnection(dataSource);
+        try (
+            PreparedStatement pstmt = applyPreparedStatementSetter(conn.prepareStatement(sql), pstmtSetter)
+        ) {
+            pstmt.executeUpdate();
+            logQuery(sql);
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (!TransactionManager.isTransactionEnable()) {
+                ConnectionManager.releaseConnection();
+            }
+        }
+    }
+
+    public void update(String sql, Object... parameters) {
+        Connection conn = ConnectionManager.getConnection(dataSource);
+        try (
+            PreparedStatement pstmt = applyPreparedStatementParameters(conn.prepareStatement(sql), parameters)
+        ) {
+            pstmt.executeUpdate();
+            logQuery(sql);
+        } catch (SQLException e) {
+            logException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (!TransactionManager.isTransactionEnable()) {
+                ConnectionManager.releaseConnection();
+            }
+        }
+    }
+
     @FunctionalInterface
     public interface PreparedStatementSetter {
 
         void apply(PreparedStatement pstmt) throws SQLException;
+    }
+
+    @FunctionalInterface
+    public interface ResultSetCallback<T> {
+
+        T call(ResultSet rs) throws SQLException;
     }
 }
