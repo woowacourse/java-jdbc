@@ -5,20 +5,18 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
-import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.support.TransactionExecutor;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final TransactionExecutor transactionExecutor;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionExecutor executor) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
+        this.transactionExecutor = executor;
     }
 
     public User findById(final long id) {
@@ -30,33 +28,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-        // 하나의 Connection 을 공유하도록 해야한다.
-        try {
-            // TODO: 2023-10-05 Connection 을 가져오고, commit/rollback, close 하는 부분 로직 중복 처리
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            // 아래 라인에서 실제 실행할 로직만 두는 것
-            executeChangePassword(id, newPassword, createBy, connection);
-            connection.commit();
-        } catch (Exception e) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException ex) {
-                    throw new DataAccessException(ex);
-                }
-            }
-            throw new DataAccessException();
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new DataAccessException(e);
-                }
-            }
-        }
+        transactionExecutor.execute(connection -> executeChangePassword(id, newPassword, createBy, connection));
     }
 
     private void executeChangePassword(final long id, final String newPassword, final String createBy, final Connection connection) {

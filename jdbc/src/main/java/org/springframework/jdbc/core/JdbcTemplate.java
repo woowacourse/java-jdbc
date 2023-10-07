@@ -49,6 +49,7 @@ public class JdbcTemplate {
         }, args);
     }
 
+    // TODO: 2023-10-07 Connection 생성, 삭제 관리하는 클래스 만들기 => 단, 이번에는 단순히 중복 로직 제거를 위함이므로 ThreadLocal이나 Connection 을 하나로 유지하는 건 고려하지 않음
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
         Connection con = null;
         try {
