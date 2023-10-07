@@ -45,20 +45,8 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return (List<T>) execute(sql, rowMapper, QUERY_EXECUTOR, params);
-    }
-
     public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return (List<T>) execute(conn, sql, rowMapper, QUERY_EXECUTOR, params);
-    }
-
-    public <T> List<T> query(final String sql, final Class<T> requiredType, final Object... params) {
-        return query(
-                sql,
-                generateRowMapperOf(requiredType),
-                params
-        );
     }
 
     public <T> List<T> query(final Connection conn, final String sql, final Class<T> requiredType, final Object... params) {
@@ -70,14 +58,6 @@ public class JdbcTemplate {
         );
     }
 
-    public void execute(String sql, Object... params) {
-        try {
-            execute(dataSource.getConnection(), sql, params);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     public void execute(Connection conn, String sql, Object... params) {
         try {
             PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
@@ -86,25 +66,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(
-            String sql,
-            RowMapper<T> rowMapper,
-            StatementExecutor executor,
-            Object... params
-    ) {
-        try {
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-            log.debug("query : {}", sql);
-            return (T) executor.execute(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
