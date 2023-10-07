@@ -18,14 +18,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class UserHistoryDaoTest {
 
-    private JdbcTemplate jdbcTemplate;
     private UserHistoryDao userHistoryDao;
     private Connection connection;
 
     @BeforeEach
     void setUp() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
         connection = DataSourceConfig.getInstance().getConnection();
     }
