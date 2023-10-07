@@ -5,6 +5,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -17,7 +18,7 @@ public class UserService {
 
     private final DataSource dataSource;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, DataSource dataSource) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.dataSource = dataSource;
@@ -34,20 +35,20 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException | RuntimeException e) {
             tryRollback(connection);
             throw new DataAccessException(e);
         } finally {
-            tryCloseConnection(connection);
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 
@@ -58,16 +59,6 @@ public class UserService {
             }
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
-        }
-    }
-
-    private void tryCloseConnection(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
     }
 }
