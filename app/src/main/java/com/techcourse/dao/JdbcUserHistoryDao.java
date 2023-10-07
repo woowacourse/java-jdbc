@@ -10,17 +10,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class UserHistoryDao {
+public class JdbcUserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
+    private static final Logger log = LoggerFactory.getLogger(JdbcUserHistoryDao.class);
 
     private final DataSource dataSource;
 
-    public UserHistoryDao(final DataSource dataSource) {
+    public JdbcUserHistoryDao(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public JdbcUserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
     }
 

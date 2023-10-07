@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MySqlUserDaoTest {
+class JdbcUserDaoTest {
 
     private UserDao userDao;
 
@@ -17,7 +17,7 @@ class MySqlUserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userDao = new MySqlUserDao(jdbcTemplate);
+        userDao = new JdbcUserDao(jdbcTemplate);
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

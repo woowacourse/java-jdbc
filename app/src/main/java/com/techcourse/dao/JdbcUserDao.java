@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.RowMapper;
 import java.util.List;
 import java.util.Optional;
 
-public class MySqlUserDao implements UserDao {
+public class JdbcUserDao implements UserDao {
 
     private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> {
         final long userId = resultSet.getLong("id");
@@ -19,7 +19,7 @@ public class MySqlUserDao implements UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public MySqlUserDao(final JdbcTemplate jdbcTemplate) {
+    public JdbcUserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
