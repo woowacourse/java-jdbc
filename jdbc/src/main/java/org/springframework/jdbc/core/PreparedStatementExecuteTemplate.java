@@ -19,9 +19,26 @@ public class PreparedStatementExecuteTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final PreparedStatementExecute<T> callBack, final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = prepareMappedStatement(conn, sql, args);) {
+    public <T> T execute(final PreparedStatementExecute<T> callBack,
+                         final String sql,
+                         final Object... args
+    ) {
+        try (final Connection conn = dataSource.getConnection();){
+
+            return execute(conn, callBack, sql, args);
+        } catch (SQLException e) {
+            log.warn("쿼리 실행 도중에 오류가 발생하였습니다. {} ====> SQL = {} {} ====> Args = {}",
+                    System.lineSeparator(), sql, System.lineSeparator(), args, e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T execute(final Connection conn,
+                         final PreparedStatementExecute<T> callBack,
+                         final String sql,
+                         final Object... args
+    ) {
+        try (final PreparedStatement pstmt = prepareMappedStatement(conn, sql, args);) {
 
             return callBack.callback(pstmt);
         } catch (SQLException e) {
