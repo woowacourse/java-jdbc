@@ -29,7 +29,7 @@ public class UserDao {
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection conn, User user) {
+    public void update(final Connection conn, final User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }

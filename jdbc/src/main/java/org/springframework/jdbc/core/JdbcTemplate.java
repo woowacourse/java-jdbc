@@ -58,7 +58,7 @@ public class JdbcTemplate {
         );
     }
 
-    public void execute(Connection conn, String sql, Object... params) {
+    public void execute(final Connection conn, final String sql, final Object... params) {
         try {
             PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
             log.debug("query : {}", sql);
@@ -70,11 +70,11 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(
-            Connection conn,
-            String sql,
-            RowMapper<T> rowMapper,
-            StatementExecutor executor,
-            Object... params
+            final Connection conn,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final StatementExecutor executor,
+            final Object... params
     ) {
         try {
             PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
