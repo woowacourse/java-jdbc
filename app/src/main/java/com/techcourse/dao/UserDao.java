@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,7 +33,13 @@ public class UserDao {
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
+
+        jdbcTemplate.executeWithConnection(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
@@ -44,7 +51,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public Optional<User> findByAccount(final String account) {
+    Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);

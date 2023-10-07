@@ -39,6 +39,19 @@ public class JdbcTemplate {
         }
     }
 
+    public void executeWithConnection(final Connection conn, final String sql, final Object... params) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setCondition(params, pstmt);
+
+            pstmt.executeUpdate();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (
                 final Connection conn = dataSource.getConnection();
@@ -64,7 +77,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPreparedStatement(sql, conn, params);
+                final PreparedStatement pstmt = getPreparedStatement(conn, sql, params);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
             log.debug("query : {}", sql);
@@ -81,7 +94,7 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(final String sql, final Connection conn, final Object[] params) throws SQLException {
+    private PreparedStatement getPreparedStatement(final Connection conn, final String sql, final Object[] params) throws SQLException {
         final PreparedStatement pstmt = conn.prepareStatement(sql);
         setCondition(params, pstmt);
         return pstmt;
