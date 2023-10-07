@@ -10,7 +10,6 @@ import org.springframework.dao.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Optional;
 
 public class UserService {
 
@@ -22,8 +21,9 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public Optional<User> findById(final long id) {
-        return userDao.findById(id);
+    public User findById(final long id) {
+        return userDao.findById(id)
+                .orElseThrow(IllegalArgumentException::new);
     }
 
     public void insert(final User user) {
@@ -32,32 +32,32 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = null;
 
-        try {
-            connection = dataSource.getConnection();
+        try (final Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            User user = findById(id)
-                    .orElseThrow(IllegalArgumentException::new);
+            User user = findById(id);
 
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
-            connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
-        } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new DataAccessException(e);
-            }
+            commit(connection);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
         }
+    }
+
+    private void commit(final Connection connection) throws SQLException {
+        try {
+            connection.commit();
+        } catch (final SQLException e) {
+            rollback(connection, e);
+        }
+    }
+
+    private void rollback(final Connection connection, final SQLException e) throws SQLException {
+        connection.rollback();
+        throw new DataAccessException(e);
     }
 }
