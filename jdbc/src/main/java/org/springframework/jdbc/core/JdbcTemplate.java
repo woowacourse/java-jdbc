@@ -40,19 +40,11 @@ public class JdbcTemplate {
         final List<T> results = new ArrayList<>();
 
         while (rs.next()) {
-            final T result = calculateResult(rowMapper, rs);
+            final T result = rowMapper.mapRow(rs);
             results.add(result);
         }
 
         return results;
-    }
-
-    private <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            return rowMapper.mapRow(rs);
-        }
-
-        return null;
     }
 
     private <T> T getSingleResult(final List<T> results) {
