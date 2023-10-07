@@ -2,7 +2,7 @@ package nextstep.jdbc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +36,6 @@ class JdbcTemplateTest {
         when(connection.createStatement()).thenReturn(mock(Statement.class));
 
         jdbcTemplate = new JdbcTemplate(dataSource);
-
     }
 
     @DisplayName("update 를 수행한다.")
@@ -44,8 +43,15 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         // given
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        when(connection.prepareStatement(any()))
+        final Statement statement = mock(Statement.class);
+        when(connection.createStatement())
+            .thenReturn(statement);
+        when(statement.getConnection())
+            .thenReturn(connection);
+        when(connection.prepareStatement(anyString()))
             .thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate())
+            .thenReturn(1);
 
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
@@ -68,8 +74,15 @@ class JdbcTemplateTest {
         // given
         final String sql = "select account, password, email from users where id = ?";
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        when(connection.prepareStatement(any()))
+        final Statement statement = mock(Statement.class);
+        when(connection.createStatement())
+            .thenReturn(statement);
+        when(statement.getConnection())
+            .thenReturn(connection);
+        when(connection.prepareStatement(anyString()))
             .thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate())
+            .thenReturn(1);
         final ResultSet mockResultSet = mock(ResultSet.class);
         when(preparedStatement.executeQuery())
             .thenReturn(mockResultSet);
@@ -81,7 +94,7 @@ class JdbcTemplateTest {
         final Map<String, String> result = jdbcTemplate.query(sql, new RowMapper<>() {
             @Nonnull
             @Override
-            public Map<String, String> mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
+            public Map<String, String> mapRow(final ResultSet resultSet) throws SQLException {
                 return Map.of(
                     "account", resultSet.getString("account"),
                     "password", resultSet.getString("password"),
@@ -151,7 +164,7 @@ class JdbcTemplateTest {
         final List<User> users = jdbcTemplate.queryForList(sql, new RowMapper<>() {
             @Nonnull
             @Override
-            public User mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
+            public User mapRow(final ResultSet resultSet) throws SQLException {
                 return new User(
                     resultSet.getObject("email", String.class),
                     resultSet.getObject("password", String.class)
