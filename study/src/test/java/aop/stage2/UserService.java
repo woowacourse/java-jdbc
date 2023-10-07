@@ -1,6 +1,6 @@
 package aop.stage2;
 
-import aop.Transactional;
+import aop.common.Transactional;
 import aop.domain.User;
 import aop.domain.UserHistory;
 import aop.repository.UserDao;
