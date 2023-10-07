@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      o
+     * Read Committed   |      x
+     * Repeatable Read  |      x
+     * Serializable     |      x
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |        o
+     * Read Committed   |        o
+     * Repeatable Read  |        x
+     * Serializable     |        x
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -173,10 +173,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      o
+     * Read Committed   |      o
+     * Repeatable Read  |      o
+     * Serializable     |      x
      */
     @Test
     void phantomReading() throws SQLException {
@@ -184,6 +184,7 @@ class Stage1Test {
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
                 .withLogConsumer(new Slf4jLogConsumer(log));
+        mysql.withUrlParam("allowMultiQueries", "true");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 

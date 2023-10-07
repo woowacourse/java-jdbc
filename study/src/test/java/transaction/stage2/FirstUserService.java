@@ -66,14 +66,15 @@ public class FirstUserService {
         throw new RuntimeException();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithSupports() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
+        System.out.println("firstTransactionName = " + firstTransactionName);
         userRepository.save(User.createTest());
         logActualTransactionActive();
 
         final var secondTransactionName = secondUserService.saveSecondTransactionWithSupports();
-
+        System.out.println("secondTransactionName = " + secondTransactionName);
         return of(firstTransactionName, secondTransactionName);
     }
 
@@ -99,7 +100,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+//    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithNested() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());

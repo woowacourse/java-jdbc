@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataUpdateException;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,15 +18,8 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void update(String sql, Object... arguments) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void update(Connection con, String sql, Object... arguments) {
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setArguments(pstmt, arguments);
             pstmt.executeUpdate();
@@ -37,9 +29,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> Optional<T> queryForObject(Connection con,String sql, RowMapper<T> rowMapper, Object... arguments) {
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
             return executePreparedStatement(ps -> {
@@ -59,9 +50,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> List<T> query(Connection con,String sql, RowMapper<T> rowMapper, Object... arguments) {
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
             return executePreparedStatement(ps -> {
