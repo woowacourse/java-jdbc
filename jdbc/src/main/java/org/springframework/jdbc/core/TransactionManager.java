@@ -2,11 +2,14 @@ package org.springframework.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
-  private static final ThreadLocal<Connection> resources = new ThreadLocal<>();
+  private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
   private static final ThreadLocal<Boolean> actualTransactionActive = new ThreadLocal<>();
 
   private TransactionManager() {
@@ -18,10 +21,15 @@ public class TransactionManager {
 
   public static Connection getConnection(final DataSource dataSource) {
     if (resources.get() == null) {
-      createConnectionFrom(dataSource);
+      resources.set(new HashMap<>());
     }
 
-    final Connection connection = resources.get();
+    final Map<DataSource, Connection> resource = resources.get();
+
+    final Connection connection = resource.getOrDefault(
+        dataSource,
+        createConnectionFrom(dataSource)
+    );
 
     if (isTransactionActive()) {
       setAutoCommit(connection);
@@ -30,17 +38,19 @@ public class TransactionManager {
     return connection;
   }
 
-  private static void setAutoCommit(final Connection connection) {
+  private static Connection createConnectionFrom(final DataSource dataSource) {
     try {
-      connection.setAutoCommit(false);
+      return resources.get()
+          .put(dataSource, dataSource.getConnection());
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static void createConnectionFrom(final DataSource dataSource) {
+
+  private static void setAutoCommit(final Connection connection) {
     try {
-      resources.set(dataSource.getConnection());
+      connection.setAutoCommit(false);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -51,8 +61,8 @@ public class TransactionManager {
     return isActive != null && isActive;
   }
 
-  public static void commit() {
-    final Connection connection = resources.get();
+  public static void commit(final DataSource dataSource) {
+    final Connection connection = resources.get().get(dataSource);
 
     try {
       connection.commit();
@@ -61,10 +71,11 @@ public class TransactionManager {
     }
   }
 
-  public static void rollback() {
+  public static void rollback(final DataSource dataSource) {
+    final Connection connection = resources.get().get(dataSource);
+
     try {
       if (isTransactionActive()) {
-        final Connection connection = resources.get();
         connection.rollback();
       }
     } catch (SQLException e) {
@@ -72,8 +83,8 @@ public class TransactionManager {
     }
   }
 
-  public static void release() {
-    final Connection connection = resources.get();
+  public static void release(final DataSource dataSource) {
+    final Connection connection = resources.get().get(dataSource);
 
     try {
       connection.close();

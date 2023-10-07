@@ -1,14 +1,17 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import javax.sql.DataSource;
 import org.springframework.jdbc.core.TransactionManager;
 
 public class TxUserService implements UserService {
 
   private final UserService userService;
+  private final DataSource dataSource;
 
-  public TxUserService(final UserService userService) {
+  public TxUserService(final UserService userService, final DataSource dataSource) {
     this.userService = userService;
+    this.dataSource = dataSource;
   }
 
   @Override
@@ -27,12 +30,12 @@ public class TxUserService implements UserService {
 
     try {
       userService.changePassword(id, newPassword, createBy);
-      TransactionManager.commit();
+      TransactionManager.commit(dataSource);
     } catch (Exception e) {
-      TransactionManager.rollback();
+      TransactionManager.rollback(dataSource);
       throw e;
     } finally {
-      TransactionManager.release();
+      TransactionManager.release(dataSource);
     }
   }
 }
