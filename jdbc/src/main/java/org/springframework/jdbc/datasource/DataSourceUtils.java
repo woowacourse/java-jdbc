@@ -50,12 +50,7 @@ public abstract class DataSourceUtils {
                 return ;
             }
 
-            final Connection unbindConnection = TransactionSynchronizationManager.unbindResource(dataSource);
-
-            if (unbindConnection != null && connection != unbindConnection) {
-                TransactionSynchronizationManager.bindResource(dataSource, unbindConnection);
-            }
-
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("JDBC Connection을 닫지 못했습니다.", ex);
