@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(new PreparedStatementCallback<T>() {
+        return execute(new PreparedStatementCallback<>() {
             @Override
             public T doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
                 final ResultSet rs;
@@ -45,7 +45,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        return execute(new PreparedStatementCallback<ArrayList<T>>() {
+        return execute(new PreparedStatementCallback<>() {
             @Override
             public ArrayList<T> doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
                 final ResultSet rs;
@@ -68,7 +68,25 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(new PreparedStatementCallback<Integer>() {
+        return execute(new PreparedStatementCallback<>() {
+            @Override
+            public Integer doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
+                log.debug("query : {}", sql);
+
+                setPrepareStatement(pstmt, args);
+
+                return pstmt.executeUpdate();
+            }
+
+            @Override
+            public String getSql() {
+                return sql;
+            }
+        });
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection,new PreparedStatementCallback<>() {
             @Override
             public Integer doPreparedStatement(final PreparedStatement pstmt) throws SQLException {
                 log.debug("query : {}", sql);
@@ -93,12 +111,23 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    private  <T> T execute(final PreparedStatementCallback callback) {
+    private <T> T execute(final PreparedStatementCallback<T> callback) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
         ) {
-            return (T) callback.doPreparedStatement(pstmt);
+            return callback.doPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DataAccessException();
+        }
+    }
+
+    private <T> T execute(final Connection conn, final PreparedStatementCallback<T> callback) {
+        try (
+                final PreparedStatement pstmt = conn.prepareStatement(callback.getSql())
+        ) {
+            return callback.doPreparedStatement(pstmt);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new DataAccessException();
