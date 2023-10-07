@@ -42,7 +42,5 @@ public class UserService {
         } finally {
             TransactionManager.release();
         }
-
-
     }
 }
