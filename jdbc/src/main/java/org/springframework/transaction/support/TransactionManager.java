@@ -1,4 +1,4 @@
-package org.springframework.transaction.core;
+package org.springframework.transaction.support;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -6,30 +6,36 @@ import java.sql.SQLException;
 
 public class TransactionManager {
 
-    private static final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
-
+    private final ConnectionHolder connectionHolder;
     private final DataSource dataSource;
 
-    public TransactionManager(DataSource dataSource) {
+    public TransactionManager(DataSource dataSource, ConnectionHolder connectionHolder) {
         this.dataSource = dataSource;
+        this.connectionHolder = connectionHolder;
     }
 
     public Connection getConnection() {
-        if (connectionThreadLocal.get() == null) {
-            try {
-                return dataSource.getConnection();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+        if (connectionHolder.isEmpty()) {
+            return newConnection();
         }
-        return connectionThreadLocal.get();
+        return connectionHolder.getConnection();
+    }
+
+    private Connection newConnection() {
+        try {
+            Connection connection = dataSource.getConnection();
+            connectionHolder.setConnection(connection);
+            return connection;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Connection start() {
         try {
             Connection connection = getConnection();
             connection.setAutoCommit(false);
-            connectionThreadLocal.set(connection);
+            connectionHolder.setConnection(connection);
             return connection;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -41,7 +47,7 @@ public class TransactionManager {
             Connection connection = getConnection();
             connection.commit();
             connection.close();
-            connectionThreadLocal.remove();
+            connectionHolder.remove();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -52,7 +58,7 @@ public class TransactionManager {
             Connection connection = getConnection();
             connection.rollback();
             connection.close();
-            connectionThreadLocal.remove();
+            connectionHolder.remove();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
