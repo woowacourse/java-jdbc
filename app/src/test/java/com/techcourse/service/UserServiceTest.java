@@ -30,7 +30,7 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
