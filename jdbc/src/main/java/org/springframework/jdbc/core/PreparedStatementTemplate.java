@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.exception.PreparedStatementTemplateException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class PreparedStatementTemplate {
 
@@ -21,7 +22,7 @@ public class PreparedStatementTemplate {
             final PreparedStatementExecutor<T> executor,
             final Object... statements
     ) {
-        final Connection connection = ConnectionContext.findConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (
                 final PreparedStatement preparedStatement = processPreparedStatement(connection, creator, statements)
@@ -30,7 +31,7 @@ public class PreparedStatementTemplate {
         } catch (final SQLException e) {
             throw new PreparedStatementTemplateException(e);
         } finally {
-            ConnectionContext.removeNonTransaction();
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
