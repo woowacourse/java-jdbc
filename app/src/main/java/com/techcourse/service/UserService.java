@@ -9,6 +9,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import javax.sql.DataSource;
+import org.springframework.dao.ConnectionCloseException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.TransactionAutoCommitException;
+import org.springframework.dao.TransactionCommitException;
+import org.springframework.dao.TransactionRollbackException;
 
 public class UserService {
 
@@ -34,19 +39,35 @@ public class UserService {
         try {
             final DataSource dataSource = DataSourceConfig.getInstance();
             conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
+            setAutoCommit(false, conn);
 
             final User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
 
-            conn.commit();
-        } catch (final SQLException e) {
+            commit(conn);
+        } catch (final RuntimeException | SQLException e) {
             rollback(conn);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             close(conn);
+        }
+    }
+
+    private void setAutoCommit(final boolean autoCommit, final Connection conn) {
+        try {
+            conn.setAutoCommit(autoCommit);
+        } catch (final SQLException e) {
+            throw new TransactionAutoCommitException(e);
+        }
+    }
+
+    private void commit(final Connection conn) {
+        try {
+            conn.commit();
+        } catch (final SQLException e) {
+            throw new TransactionCommitException();
         }
     }
 
@@ -54,7 +75,7 @@ public class UserService {
         try {
             connection.rollback();
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new TransactionRollbackException(e);
         }
     }
 
@@ -62,7 +83,7 @@ public class UserService {
         try {
             connection.close();
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new ConnectionCloseException(e);
         }
     }
 }
