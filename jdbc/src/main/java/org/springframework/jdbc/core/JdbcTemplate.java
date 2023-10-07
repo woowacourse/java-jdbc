@@ -21,15 +21,22 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(final String sql, final Object... parameters) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pst = createPreparedStatement(sql, connection, parameters)
-        ) {
+        executeSql(PreparedStatement::execute, sql, parameters);
+    }
+
+    public <T> T executeQuery(
+        final String sql,
+        final Mapper<T> mapper,
+        final Object... objects
+    ) {
+        return executeSql(pst -> {
+            final ResultSet rs = pst.executeQuery();
             log.debug("query : {}", sql);
-            pst.executeUpdate();
-        } catch (final SQLException e) {
-            throw new JdbcTemplateException(e);
-        }
+            if (rs.next()) {
+                return mapper.map(rs);
+            }
+            throw new DataNotFoundException();
+        }, sql, objects);
     }
 
     private void setPreparedStatement(
@@ -41,26 +48,6 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(
-        final String sql,
-        final Mapper<T> mapper,
-        final Object... objects
-    ) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pst = createPreparedStatement(sql, connection, objects);
-            final ResultSet rs = pst.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return mapper.map(rs);
-            }
-            throw new DataNotFoundException();
-        } catch (final SQLException e) {
-            throw new JdbcTemplateException(e);
-        }
-    }
-
     private PreparedStatement createPreparedStatement(
         final String sql,
         final Connection connection,
@@ -69,5 +56,19 @@ public class JdbcTemplate {
         final PreparedStatement pst = connection.prepareStatement(sql);
         setPreparedStatement(pst, parameters);
         return pst;
+    }
+
+    private <T> T executeSql(
+        final PreparedStatementExecutor<T> preparedStatementExecutor,
+        final String sql,
+        final Object... objects) {
+        try (
+            final Connection connection = dataSource.getConnection();
+            final PreparedStatement pst = createPreparedStatement(sql, connection, objects)
+        ) {
+            return preparedStatementExecutor.execute(pst);
+        } catch (final SQLException e) {
+            throw new JdbcTemplateException(e);
+        }
     }
 }
