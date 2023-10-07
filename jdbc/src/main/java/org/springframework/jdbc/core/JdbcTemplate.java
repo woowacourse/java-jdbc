@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.exception.DataAccessException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
         return context(sql, new RowByResultSet<>(rm));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) throws DataAccessException {
+    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
         List<T> list = context(sql, new RowByResultSet<>(rm), args);
 
         if (list.isEmpty()) {
@@ -41,13 +42,13 @@ public class JdbcTemplate {
         }
 
         if (list.size() > 1) {
-            throw new DataAccessException("조건에 해당하는 값이 " + list.size() + "개입니다.");
+            throw new IncorrectResultSizeDataAccessException("조건에 해당하는 값이 " + list.size() + "개입니다.");
         }
 
         return list.get(0);
     }
 
-    private void context(String sql, Object... args) throws DataAccessException {
+    private void context(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -62,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> context(String sql, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
+    private <T> List<T> context(String sql, ResultSetStrategy<List<T>> rss, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
