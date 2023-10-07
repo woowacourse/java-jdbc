@@ -1,6 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -48,5 +51,18 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, User.class, account);
+    }
+
+    public void update(Connection conn, User user) {
+        final var sql = "update users set account=?, password=?, email=? where id=?";
+        try(PreparedStatement preparedStatement = conn.prepareStatement(sql)){
+            preparedStatement.setObject(1, user.getAccount());
+            preparedStatement.setObject(2, user.getPassword());
+            preparedStatement.setObject(3, user.getEmail());
+            preparedStatement.setObject(4, user.getId());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
