@@ -71,17 +71,17 @@ public class UserService {
         }
     }
 
-    private void rollback(final Connection connection) {
+    private void rollback(final Connection conn) {
         try {
-            connection.rollback();
+            conn.rollback();
         } catch (final SQLException e) {
             throw new TransactionRollbackException(e);
         }
     }
 
-    private void close(final Connection connection) {
+    private void close(final Connection conn) {
         try {
-            connection.close();
+            conn.close();
         } catch (final SQLException e) {
             throw new ConnectionCloseException(e);
         }
