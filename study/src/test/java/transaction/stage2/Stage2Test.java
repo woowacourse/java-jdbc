@@ -1,5 +1,6 @@
 package transaction.stage2;
 
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -36,8 +37,8 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 1
+     * 왜 그런 결과가 나왔을까? Required + Required
      */
     @Test
     void testRequired() {
@@ -45,13 +46,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 2
+     * 왜 그런 결과가 나왔을까? Requried + Required New
      */
     @Test
     void testRequiredNew() {
@@ -59,8 +60,11 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsAll(Set.of(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew"
+                ));
     }
 
     /**
@@ -69,12 +73,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -87,14 +91,14 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
-     * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자. -> 참여할 수 있는 트랜잭션이 없으면 IllegalTransactionStateException 발생
      */
     @Test
     void testMandatory() {
@@ -102,16 +106,18 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 1개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 0개
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     * https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html
+     * https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/transaction.html
      */
     @Test
     void testNotSupported() {
@@ -119,13 +125,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2);
     }
 
     /**
-     * 아래 테스트는 왜 실패할까?
+     * 아래 테스트는 왜 실패할까? Nested는 JDBC savepoint 기능을 사용하는데 JPA에서는 사용할 수 없다.
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * 기존의 트랜잭션이 없으면 새로운 트랜잭션을 생성하기 때문에 동작한다.
      */
     @Test
     void testNested() {
@@ -133,8 +139,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1);
     }
 
     /**
@@ -146,7 +151,6 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1);
     }
 }
