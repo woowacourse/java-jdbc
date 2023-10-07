@@ -6,6 +6,8 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +23,14 @@ class UserDaoTest {
     private JdbcTemplate jdbcTemplate;
     private User user;
     private UserDao userDao;
+    private Connection connection;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userDao = new UserDao(jdbcTemplate);
+        connection = DataSourceConfig.getInstance().getConnection();
 
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         user = userDao.findByAccount("gugu");
@@ -99,6 +103,19 @@ class UserDaoTest {
 
         // when
         userDao.update(user);
+
+        // then
+        final User changedUser = userDao.findByAccount(user.getAccount());
+        assertThat(changedUser.getPassword()).isEqualTo("newPassword");
+    }
+
+    @Test
+    void Connection을_이용해_회원_정보를_수정한다() throws SQLException {
+        // given
+        user.changePassword("newPassword");
+
+        // when
+        userDao.update(connection, user);
 
         // then
         final User changedUser = userDao.findByAccount(user.getAccount());
