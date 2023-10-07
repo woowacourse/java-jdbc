@@ -28,15 +28,15 @@ public class JdbcTemplate {
         this.statementGenerator = new StatementGenerator();
     }
 
-    public void update(final Connection conn, final String sql, Object... params) {
+    public void update(final Connection conn, final String sql, final Object... params) {
         execute(conn, sql, params);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return execute(sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
+    public <T> T queryForObject(final String sql, final Class<T> requiredType, final Object... params) {
         return queryForObject(
                 sql,
                 generateRowMapperOf(requiredType),
@@ -44,11 +44,11 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return (List<T>) execute(sql, rowMapper, QUERY_EXECUTOR, params);
     }
 
-    public <T> List<T> query(String sql, Class<T> requiredType, Object... params) {
+    public <T> List<T> query(final String sql, final Class<T> requiredType, final Object... params) {
         return query(
                 sql,
                 generateRowMapperOf(requiredType),
