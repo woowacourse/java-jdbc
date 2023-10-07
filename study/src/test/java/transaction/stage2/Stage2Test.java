@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(FirstUserService.class.getName() + ".saveFirstTransactionWithRequired");
     }
 
     /**
@@ -55,12 +55,13 @@ class Stage2Test {
      */
     @Test
     void testRequiredNew() {
-        final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
+        final var actual = firstUserService.saveFirstTransactionWithRequiresNew();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(FirstUserService.class.getName() + ".saveFirstTransactionWithRequiresNew",
+                        SecondUserService.class.getName() + ".saveSecondTransactionWithRequiresNew");
     }
 
     /**
@@ -69,12 +70,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
-        assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
+        assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiresNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -87,8 +88,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(FirstUserService.class.getName() + ".saveFirstTransactionWithSupports");
     }
 
     /**
@@ -102,8 +103,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(FirstUserService.class.getName() + ".saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -119,8 +120,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(SecondUserService.class.getName() + ".saveSecondTransactionWithNotSupported");
     }
 
     /**
@@ -133,8 +134,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(SecondUserService.class.getName() + ".saveSecondTransactionWithNested");
     }
 
     /**
@@ -146,7 +147,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(SecondUserService.class.getName() + ".saveSecondTransactionWithNever");
     }
 }

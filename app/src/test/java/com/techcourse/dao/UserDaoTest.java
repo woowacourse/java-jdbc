@@ -8,20 +8,27 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
+import javax.sql.DataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private Connection connection;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        userDao = new UserDao(dataSource);
+        connection = dataSource.getConnection();
         final var user = new User("hongsil", "486", "gurwns9325@gmail.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
     }
 
     @Test
@@ -47,7 +54,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "mylove_hongsil";
-        userDao.insert(new User(account, "비밀번호486", "love@with.you"));
+        userDao.insert(connection, new User(account, "비밀번호486", "love@with.you"));
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -56,8 +63,8 @@ class UserDaoTest {
     @Test
     void findByAccount_make_exception_when_multiple_result() {
         final var user = new User("ditoo", "password", "ditoo@gmail.com");
-        userDao.insert(user);
-        userDao.insert(user);
+        userDao.insert(connection, user);
+        userDao.insert(connection, user);
         assertThatThrownBy(() -> userDao.findByAccount(user.getAccount()))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
@@ -66,7 +73,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
 
         final var actual = userDao.findById(2L);
 
@@ -79,7 +86,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(connection, user);
 
         final var actual = userDao.findById(1L);
 
