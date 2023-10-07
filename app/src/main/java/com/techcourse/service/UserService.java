@@ -30,14 +30,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final Connection connection;
-        try {
-            final DataSource dataSource = DataSourceConfig.getInstance();
-            connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-
+        final Connection connection = getConnection();
         try (connection) {
             connection.setAutoCommit(false);
 
@@ -48,11 +41,24 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(e.getMessage(), e);
-            }
+            rollbackConnection(e, connection);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            final DataSource dataSource = DataSourceConfig.getInstance();
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void rollbackConnection(final SQLException e, final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
             throw new DataAccessException(e.getMessage(), e);
         }
     }
