@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,33 +22,34 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(final Connection connection, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.execute(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(final Connection connection, final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
 
-        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.execute(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-
-    public List<User> findAll() {
+    public List<User> findAll(final Connection connection) {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.findAll(sql,
+        return jdbcTemplate.findAll(connection,
+                sql,
                 rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
                         rs.getString("email")));
     }
 
-    public User findById(final Long id) {
+    public User findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.find(sql,
+        return jdbcTemplate.find(connection,
+                sql,
                 rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
@@ -55,10 +57,11 @@ public class UserDao {
                 id);
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(final Connection connection, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.find(sql,
+        return jdbcTemplate.find(connection,
+                sql,
                 rs -> new User(rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),

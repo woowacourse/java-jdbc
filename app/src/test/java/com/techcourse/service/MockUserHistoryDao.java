@@ -2,8 +2,9 @@ package com.techcourse.service;
 
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
-import org.springframework.dao.DataAccessException;
+import java.sql.Connection;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.JdbcTemplateException;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
@@ -12,7 +13,12 @@ public class MockUserHistoryDao extends UserHistoryDao {
     }
 
     @Override
-    public void log(final UserHistory userHistory) {
-        throw new DataAccessException();
+    public void log(final Connection connection, final UserHistory userHistory) {
+        throw new JdbcTemplateException("공습 경보!!!") {
+            @Override
+            public String getMessage() {
+                return super.getMessage();
+            }
+        };
     }
 }

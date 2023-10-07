@@ -36,16 +36,28 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql,
-                          final PrepareStatementExecutor<T> executor,
+                          final PreparedStatementExecutor<T> executor,
                           final Object... fields) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
-            setPreparedStatement(ps, fields);
-
-            return executor.execute(ps);
+        try (final Connection conn = dataSource.getConnection()){
+            return executeWithTransaction(sql, executor, conn, fields);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    private <T> T executeWithTransaction(final String sql,
+                                         final PreparedStatementExecutor<T> executor,
+                                         final Connection conn,
+                                         final Object[] fields) throws SQLException {
+        conn.setAutoCommit(false);
+        try {
+            return execute(conn, sql, executor, fields);
+        } catch (JdbcTemplateException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(true);
         }
     }
 
@@ -89,5 +101,43 @@ public class JdbcTemplate {
             objects.add(rowMapper.mapRow(rs));
         }
         return objects;
+    }
+
+    public void execute(final Connection conn, final String sql, final Object... fields) {
+        log.debug("query : {}", sql);
+
+        execute(conn, sql, PreparedStatement::executeUpdate, fields);
+    }
+
+    private <T> T execute(final Connection conn,
+                         final String sql,
+                         final PreparedStatementExecutor<T> executor,
+                         final Object... fields) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            setPreparedStatement(ps, fields);
+
+            return executor.execute(ps);
+        } catch (SQLException e) {
+            throw new DatabaseAccessException(e.getMessage());
+        }
+    }
+
+    public <T> T find(final Connection conn,
+                      final String sql,
+                      final RowMapper<T> rowMapper,
+                      final Object... fields) {
+        log.debug("query : {}", sql);
+
+        return execute(conn,
+                sql,
+                ps -> executeResultSet(rowMapper, ps, (rm, rs) -> List.of(getObject(rm, rs))).get(0),
+                fields);
+    }
+
+
+    public <T> List<T> findAll(final Connection conn, final String sql, final RowMapper<T> rowMapper) {
+        log.debug("query : {}", sql);
+
+        return execute(conn, sql, ps -> executeResultSet(rowMapper, ps, this::getObjects));
     }
 }
