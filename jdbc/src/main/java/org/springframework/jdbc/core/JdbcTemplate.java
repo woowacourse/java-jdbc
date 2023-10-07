@@ -31,6 +31,10 @@ public class JdbcTemplate {
         }
     }
 
+    public void execute(String sql, Object... args) {
+        context(sql, args);
+    }
+
     public void execute(Connection connection, String sql, Object... args) {
         context(connection, sql, args);
     }
@@ -53,9 +57,23 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    private void context(Connection connection, String sql, Object... args) {
-        try (Connection conn = connection;
+    private void context(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
+    }
+
+    private void context(Connection connection, String sql, Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);

@@ -26,9 +26,19 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public void insert(final User user) {
+        jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
+                user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public void insert(final Connection connection, final User user) {
         jdbcTemplate.execute(connection, "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void update(final User user) {
+        jdbcTemplate.execute("update users set account = ?, password = ?, email = ? where id = ?",
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final Connection connection, final User user) {
@@ -50,7 +60,7 @@ public class UserDao {
                 , rowMapper, account);
     }
 
-    public void delete(final Connection connection) {
-        jdbcTemplate.execute(connection, "delete from users");
+    public void delete() {
+        jdbcTemplate.execute("delete from users");
     }
 }

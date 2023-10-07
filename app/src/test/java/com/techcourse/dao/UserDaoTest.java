@@ -25,7 +25,7 @@ class UserDaoTest {
 
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
@@ -44,9 +44,9 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        userDao.delete(connection);
+        userDao.delete();
 
-        userDao.insert(connection, new User("gugu", "password", "hkkang@woowahan.com"));
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
 
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
@@ -58,7 +58,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
@@ -71,7 +71,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 

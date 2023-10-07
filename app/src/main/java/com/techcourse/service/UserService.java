@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
@@ -30,8 +29,8 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public void insert(Connection connection, final User user) {
-        userDao.insert(connection, user);
+    public void insert(final User user) {
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
