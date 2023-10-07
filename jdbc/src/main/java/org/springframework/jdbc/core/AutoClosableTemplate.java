@@ -31,6 +31,14 @@ abstract class AutoClosableTemplate {
         }
     }
 
+    public void execute(final Connection conn, final String sql, final Object... objects) {
+        try (final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
+            commandQuery(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
