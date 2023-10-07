@@ -16,13 +16,11 @@ class UserHistoryDaoTest {
 
     private UserHistoryDao userHistoryDao;
     private JdbcTemplate jdbcTemplate;
-    private Connection connection;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        connection = jdbcTemplate.getConnection();
 
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
@@ -30,7 +28,7 @@ class UserHistoryDaoTest {
     @Test
     void log가_잘_기록되는지_확인() {
         UserHistory userHistory = new UserHistory(1L, 1L, "jena", "jenapw", "jenaemail", "jena");
-        userHistoryDao.log(connection, userHistory);
+        userHistoryDao.log(userHistory);
 
         List<UserHistory> actual = userHistoryDao.findAll();
 

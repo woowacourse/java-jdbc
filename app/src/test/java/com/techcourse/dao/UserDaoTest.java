@@ -15,13 +15,11 @@ class UserDaoTest {
 
     private UserDao userDao;
     private JdbcTemplate jdbcTemplate;
-    private Connection connection;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        connection = jdbcTemplate.getConnection();
 
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
