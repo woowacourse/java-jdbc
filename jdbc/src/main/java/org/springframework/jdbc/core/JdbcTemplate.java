@@ -27,6 +27,10 @@ public class JdbcTemplate {
         query(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        queryWithConnection(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
         List<T> results = queryForList(sql, mapper, args);
         if (results.isEmpty()) {
@@ -57,6 +61,21 @@ public class JdbcTemplate {
     ) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = getPreparedStatement(conn, sql, args)) {
+            log.debug("query : {}", sql);
+            return jdbcCallback.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T queryWithConnection(
+            final Connection connection,
+            final String sql,
+            final JdbcCallback<T> jdbcCallback,
+            final Object... args
+    ) {
+        try (final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
             log.debug("query : {}", sql);
             return jdbcCallback.execute(preparedStatement);
         } catch (SQLException e) {
