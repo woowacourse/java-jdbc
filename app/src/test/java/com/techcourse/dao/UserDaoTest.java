@@ -7,25 +7,32 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private Connection conn;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        conn = dataSource.getConnection();
+        DatabasePopulatorUtils.execute(dataSource);
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gitchan", "password", "gitchan@naver.com");
-        userDao.insert(user);
+        userDao.insert(conn, user);
     }
 
     @AfterEach
     void tearDown() {
-        userDao.deleteAll();
+        userDao.deleteAll(conn);
     }
 
     @Test
@@ -65,7 +72,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gitchan";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(conn, user);
 
         final var actual = userDao.findById(2L).get();
 
@@ -78,7 +85,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(conn, user);
 
         final var actual = userDao.findById(1L).get();
 

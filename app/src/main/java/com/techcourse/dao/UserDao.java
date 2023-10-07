@@ -24,14 +24,14 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void insert(final User user) {
+    public void insert(final Connection conn, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(Connection conn, User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -49,13 +49,8 @@ public class UserDao {
         return Optional.of(jdbcTemplate.queryForObject(sql, User.class, account));
     }
 
-    public void deleteAll() {
+    public void deleteAll(final Connection conn) {
         final String alterAutoIncrementSql = "TRUNCATE TABLE users RESTART IDENTITY";
-        jdbcTemplate.update(alterAutoIncrementSql);
-    }
-
-    public void update(Connection conn, User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(conn, alterAutoIncrementSql);
     }
 }

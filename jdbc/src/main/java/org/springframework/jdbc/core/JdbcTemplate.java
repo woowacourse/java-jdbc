@@ -28,10 +28,6 @@ public class JdbcTemplate {
         this.statementGenerator = new StatementGenerator();
     }
 
-    public void update(String sql, Object... params) {
-        execute(sql, params);
-    }
-
     public void update(final Connection conn, final String sql, Object... params) {
         execute(conn, sql, params);
     }

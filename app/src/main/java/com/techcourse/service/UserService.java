@@ -32,8 +32,17 @@ public class UserService {
                 .orElseThrow(() -> new NoSuchElementException("해당 아이디의 사용자가 존재하지 않습니다."));
     }
 
-    public void insert(final User user) {
-        userDao.insert(user);
+    public void insert(final User user) throws SQLException {
+        final Connection conn = dataSource.getConnection();
+        conn.setAutoCommit(false);
+        try {
+            userDao.insert(conn, user);
+
+            conn.commit();
+        } catch (SQLException e) {
+            conn.rollback();
+            throw new DataAccessException(e);
+        }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
