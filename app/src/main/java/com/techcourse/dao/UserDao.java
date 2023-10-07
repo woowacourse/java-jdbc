@@ -17,10 +17,6 @@ public class UserDao {
 
     private JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
