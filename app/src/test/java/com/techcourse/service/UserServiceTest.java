@@ -11,6 +11,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionExecutor;
 
@@ -22,9 +23,10 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final ConnectionManager connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate(connectionManager);
         this.userDao = new UserDao(jdbcTemplate);
-        this.transactionExecutor = new TransactionExecutor(DataSourceConfig.getInstance());
+        this.transactionExecutor = new TransactionExecutor(connectionManager);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");

@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -17,10 +16,10 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final ConnectionManager connectionManager;
 
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcTemplate(final ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -49,22 +48,12 @@ public class JdbcTemplate {
         }, args);
     }
 
-    // TODO: 2023-10-07 Connection 생성, 삭제 관리하는 클래스 만들기 => 단, 이번에는 단순히 중복 로직 제거를 위함이므로 ThreadLocal이나 Connection 을 하나로 유지하는 건 고려하지 않음
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
-        Connection con = null;
+        final Connection connection = connectionManager.getConnection();
         try {
-            con = dataSource.getConnection();
-            return executeInternalWithConnection(dataSource.getConnection(), sql, executor, args);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return executeInternalWithConnection(connection, sql, executor, args);
         } finally {
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            connectionManager.closeConnection(connection);
         }
     }
 

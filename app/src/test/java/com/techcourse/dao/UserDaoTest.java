@@ -8,24 +8,27 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.ConnectionManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private ConnectionManager connectionManager;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        userDao = new UserDao(new JdbcTemplate(connectionManager));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @AfterEach
     void tearDown() {
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(connectionManager);
         jdbcTemplate.update("TRUNCATE TABLE `users` RESTART IDENTITY");
     }
 
