@@ -32,12 +32,13 @@ public class JdbcTemplate {
         execute(conn, sql, params);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(conn, sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
     }
 
-    public <T> T queryForObject(final String sql, final Class<T> requiredType, final Object... params) {
+    public <T> T queryForObject(final Connection conn, final String sql, final Class<T> requiredType, final Object... params) {
         return queryForObject(
+                conn,
                 sql,
                 generateRowMapperOf(requiredType),
                 params
@@ -48,8 +49,21 @@ public class JdbcTemplate {
         return (List<T>) execute(sql, rowMapper, QUERY_EXECUTOR, params);
     }
 
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return (List<T>) execute(conn, sql, rowMapper, QUERY_EXECUTOR, params);
+    }
+
     public <T> List<T> query(final String sql, final Class<T> requiredType, final Object... params) {
         return query(
+                sql,
+                generateRowMapperOf(requiredType),
+                params
+        );
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final Class<T> requiredType, final Object... params) {
+        return query(
+                conn,
                 sql,
                 generateRowMapperOf(requiredType),
                 params
@@ -66,8 +80,7 @@ public class JdbcTemplate {
 
     public void execute(Connection conn, String sql, Object... params) {
         try {
-            Connection connection = conn;
-            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, connection, params);
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -90,6 +103,22 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T execute(
+            Connection conn,
+            String sql,
+            RowMapper<T> rowMapper,
+            StatementExecutor executor,
+            Object... params
+    ) {
+        try {
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
+            log.debug("query : {}", sql);
+            return (T) executor.execute(pstmt, rowMapper);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

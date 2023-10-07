@@ -34,19 +34,19 @@ public class UserDao {
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(final Connection conn) {
         final var sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql, User.class);
+        return jdbcTemplate.query(conn, sql, User.class);
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(final Connection conn, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return Optional.of(jdbcTemplate.queryForObject(sql, User.class, id));
+        return Optional.of(jdbcTemplate.queryForObject(conn, sql, User.class, id));
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public Optional<User> findByAccount(final Connection conn, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return Optional.of(jdbcTemplate.queryForObject(sql, User.class, account));
+        return Optional.of(jdbcTemplate.queryForObject(conn, sql, User.class, account));
     }
 
     public void deleteAll(final Connection conn) {

@@ -27,8 +27,8 @@ public class UserService {
         this.dataSource = dataSource;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id)
+    public User findById(final long id) throws SQLException {
+        return userDao.findById(dataSource.getConnection(), id)
                 .orElseThrow(() -> new NoSuchElementException("해당 아이디의 사용자가 존재하지 않습니다."));
     }
 

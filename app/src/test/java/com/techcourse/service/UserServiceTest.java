@@ -45,7 +45,7 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
+    void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final UserService userService = new UserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
