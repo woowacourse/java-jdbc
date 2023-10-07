@@ -40,26 +40,32 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
                 Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
+                ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            bindStatementWithArgs(args, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
-
             log.debug(QUERY_FORMAT, sql);
 
             if (resultSet.next()) {
                 T result = rowMapper.mapRow(resultSet, resultSet.getRow());
-                resultSet.close();
 
                 return Optional.ofNullable(result);
             }
-
-            resultSet.close();
 
             return Optional.empty();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private PreparedStatement getPreparedStatement(
+            Connection connection,
+            String sql,
+            Object[] args
+    ) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        bindStatementWithArgs(args, preparedStatement);
+
+        return preparedStatement;
     }
 
     private void bindStatementWithArgs(Object[] args, PreparedStatement preparedStatement) throws SQLException {
