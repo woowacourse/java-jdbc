@@ -31,17 +31,13 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        try {
-            return execute(sql, pstmt -> {
-                preparedStatementSetter.setValues(pstmt);
-                return pstmt.executeUpdate();
-            });
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, pstmt -> {
+            preparedStatementSetter.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) throws SQLException {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) throws DataAccessException {
         return execute(connection -> {
             try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 return preparedStatementCallback.doInPreparedStatement(pstmt);
@@ -49,9 +45,25 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T execute(final ConnectionCallBack<T> connectionCallBack) throws SQLException {
+    private <T> T execute(final ConnectionCallBack<T> connectionCallBack) throws DataAccessException {
+        return execute((con, action) -> {
+            try {
+                con.setAutoCommit(false);
+                final T result = action.doInConnection(con);
+                con.commit();
+                return result;
+            } catch (final SQLException e) {
+                con.rollback();
+                throw new DataAccessException(e);
+            }
+        }, connectionCallBack);
+    }
+
+    private <T> T execute(final TransactionCallback<T> transactionCallback, final ConnectionCallBack<T> action) throws DataAccessException {
         try (final Connection connection = dataSource.getConnection()) {
-            return connectionCallBack.doInConnection(connection);
+            return transactionCallback.doInTransaction(connection, action);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
@@ -63,20 +75,16 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        try {
-            return query(sql, rs -> {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
-                }
-                throw new SQLException("No data found");
-            }, preparedStatementSetter);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
+    public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return query(sql, rs -> {
+            if (rs.next()) {
+                return rowMapper.mapRow(rs, rs.getRow());
+            }
+            throw new SQLException("No data found");
+        }, preparedStatementSetter);
     }
 
-    private <T> T query(String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws SQLException {
+    private <T> T query(String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws DataAccessException {
         return execute(sql, pstmt -> {
             pss.setValues(pstmt);
             try (final ResultSet rs = pstmt.executeQuery()) {
@@ -86,20 +94,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        try {
-            return query(sql, rs -> {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rs.getRow()));
-                }
-                return results;
-            }, args);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return query(sql, rs -> {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return results;
+        }, args);
     }
 
-    private <T> T query(final String sql, final ResultSetExtractor<T> rse, final Object... args) throws SQLException {
+    private <T> T query(final String sql, final ResultSetExtractor<T> rse, final Object... args) throws DataAccessException {
         return query(sql, rse, pstmt -> {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
