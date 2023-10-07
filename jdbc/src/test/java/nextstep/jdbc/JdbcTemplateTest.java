@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 import java.sql.Connection;
@@ -63,28 +64,54 @@ class JdbcTemplateTest {
     void afterAll() throws Exception {
         openedMock.close();
     }
+    @Nested
+    class 데이터_update_쿼리를_실행할_때 {
 
-    @Test
-    void 데이터를_update하는_쿼리를_실행하고_update된_레코드_수를_반환한다() throws SQLException {
-        // given
-        given(preparedStatement.executeUpdate())
-                .willReturn(1);
+        @Test
+        void 새로운_Connection을_생성해_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
+            // given
+            given(preparedStatement.executeUpdate())
+                    .willReturn(1);
 
-        final String sql = "sql";
-        final String arg = "arg";
+            final String sql = "sql";
+            final String arg = "arg";
 
-        // when
-        final int actual = jdbcTemplate.update(sql, arg);
+            // when
+            final int actual = jdbcTemplate.update(sql, arg);
 
-        // then
-        assertThat(actual).isEqualTo(1);
+            // then
+            assertThat(actual).isEqualTo(1);
 
-        then(preparedStatement)
-                .should(times(1))
-                .setObject(1, "arg");
+            then(preparedStatement)
+                    .should(times(1))
+                    .setObject(1, "arg");
 
-        assertThatConnectionOpenedAndClosed();
-        assertThatPrepareStatementOpenedAndClosed();
+            assertThatConnectionOpenedAndClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+        }
+
+        @Test
+        void Connection을_받아_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
+            // given
+            given(preparedStatement.executeUpdate())
+                    .willReturn(1);
+
+            final String sql = "sql";
+            final String arg = "arg";
+
+            // when
+            final int actual = jdbcTemplate.update(connection, sql, arg);
+
+            // then
+            assertThat(actual).isEqualTo(1);
+
+            then(preparedStatement)
+                    .should(times(1))
+                    .setObject(1, "arg");
+
+            assertThatConnectionDidNotOpenAndClose();
+            assertThatPrepareStatementOpenedAndClosed();
+        }
     }
 
     @Nested
@@ -210,6 +237,16 @@ class JdbcTemplateTest {
 
         then(connection)
                 .should(times(1))
+                .close();
+    }
+
+    private void assertThatConnectionDidNotOpenAndClose() throws SQLException {
+        then(dataSource)
+                .should(never())
+                .getConnection();
+
+        then(connection)
+                .should(never())
                 .close();
     }
 
