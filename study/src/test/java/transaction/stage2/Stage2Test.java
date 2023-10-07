@@ -1,14 +1,14 @@
 package transaction.stage2;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +59,11 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew"
+                );
     }
 
     /**
@@ -69,12 +72,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).isEmpty();
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -86,9 +89,16 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
+
+        // @Transactional 없을 때
+        // assertThat(actual)
+        //         .hasSize(1)
+        //         .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
+
+        // @Transactional 있을 때
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -98,12 +108,19 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
+
+        // @Transactional 없을 때
+        // assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+        //         .isInstanceOf(IllegalTransactionStateException.class);
+
+        // @Transactional 있을 때
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
+
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -118,9 +135,19 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
+
+        // @Transactional 있을 때 -> 물리적 1개, 논리적 2개 (jpa transaction 제외)
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported"
+                );
+
+        // @Transactional 없을 때 -> 물리적 0개, 논리적 1개 (jpa transaction 제외)
+        // assertThat(actual)
+        //         .hasSize(1)
+        //         .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
@@ -132,9 +159,16 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithNested();
 
         log.info("transactions : {}", actual);
+
+        // @Transactional 있을 때
+        // 실패이유 : NestedTransactionNotSupportedException: JpaDialect does not support savepoints
+        // Actual creation of a nested transaction will only work on specific transaction managers.
+
+        // @Transactional 없을 때
+        // Execute within a nested transaction if a current transaction exists, behave like REQUIRED otherwise.
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -142,11 +176,17 @@ class Stage2Test {
      */
     @Test
     void testNever() {
-        final var actual = firstUserService.saveFirstTransactionWithNever();
+        // @Transactional 있을 때
+        // assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNever())
+        //         .isInstanceOf(IllegalTransactionStateException.class);
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        // @Transactional 없을 때
+         final var actual = firstUserService.saveFirstTransactionWithNever();
+
+         log.info("transactions : {}", actual);
+
+         assertThat(actual)
+                 .hasSize(1)
+                 .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
