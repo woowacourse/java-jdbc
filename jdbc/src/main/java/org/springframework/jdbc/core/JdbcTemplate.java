@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.exception.DataNotFoundException;
 import org.springframework.jdbc.core.exception.JdbcTemplateException;
+import org.springframework.transaction.support.ConnectionManager;
 
 public class JdbcTemplate {
 
@@ -61,11 +62,11 @@ public class JdbcTemplate {
     private <T> T executeSql(
         final PreparedStatementExecutor<T> preparedStatementExecutor,
         final String sql,
-        final Object... objects) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pst = createPreparedStatement(sql, connection, objects)
-        ) {
+        final Object... objects
+    )  {
+        final Connection connection = ConnectionManager.getInstance().getConnection(dataSource);
+
+        try (final PreparedStatement pst = createPreparedStatement(sql, connection, objects)) {
             return preparedStatementExecutor.execute(pst);
         } catch (final SQLException e) {
             throw new JdbcTemplateException(e);

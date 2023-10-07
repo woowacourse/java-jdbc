@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.transaction.support.ConnectionManager;
 
 public class UserService {
 
@@ -24,9 +25,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        final ConnectionManager connectionManager = ConnectionManager.getInstance();
+        connectionManager.beginTransaction();
+        try {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+
+            connectionManager.commit();
+        } catch (final Exception e) {
+            connectionManager.rollback();
+            throw e;
+        } finally {
+            connectionManager.close();
+        }
     }
 }

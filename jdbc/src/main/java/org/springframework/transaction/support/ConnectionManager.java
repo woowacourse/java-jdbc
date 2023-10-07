@@ -1,10 +1,9 @@
 package org.springframework.transaction.support;
 
-import static java.lang.Boolean.TRUE;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.jdbc.core.exception.DataNotFoundException;
 import org.springframework.transaction.exception.ConnectionManagerException;
 
 public class ConnectionManager {
@@ -12,11 +11,12 @@ public class ConnectionManager {
     private static final ConnectionManager INSTANCE = new ConnectionManager();
 
     private final ThreadLocal<Connection> connectionResource;
-    private final ThreadLocal<Boolean> transactionStarted;
+    private final ThreadLocal<Integer> transactionCount;
 
     private ConnectionManager() {
         connectionResource = new ThreadLocal<>();
-        transactionStarted = new ThreadLocal<>();
+        transactionCount = new ThreadLocal<>();
+        transactionCount.set(0);
     }
 
     public static ConnectionManager getInstance() {
@@ -24,22 +24,27 @@ public class ConnectionManager {
     }
 
     public void beginTransaction() {
-        transactionStarted.set(TRUE);
+        transactionCount.set(transactionCount.get() + 1);
     }
 
-    public Connection getConnection(final DataSource dataSource) throws SQLException {
-        if (isNotAlreadyStarted()) {
-            final Connection connection = dataSource.getConnection();
-            connectionResource.set(connection);
+    public Connection getConnection(final DataSource dataSource) {
+        try {
+            if (isNotAlreadyStarted()) {
+                final Connection connection = dataSource.getConnection();
+                beginTransaction(connection);
+                connectionResource.set(connection);
+            }
+
+            return connectionResource.get();
+        } catch (final SQLException e) {
+            throw new DataNotFoundException();
         }
+    }
 
-        final Connection connection = connectionResource.get();
-
-        if (transactionStarted.get() != null && transactionStarted.get()) {
+    private void beginTransaction(final Connection connection) throws SQLException {
+        if (transactionCount.get() != 1) {
             connection.setAutoCommit(false);
         }
-
-        return connection;
     }
 
     private boolean isNotAlreadyStarted() {
@@ -55,6 +60,7 @@ public class ConnectionManager {
             throw new ConnectionManagerException(e);
         } finally {
             connectionResource.remove();
+            transactionCount.remove();
         }
     }
 
