@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
@@ -40,6 +41,12 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void update(Connection connection, User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? ";
+
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users ";
 
@@ -59,5 +66,4 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
                 .orElseThrow(DataAccessException::new);
     }
-
 }
