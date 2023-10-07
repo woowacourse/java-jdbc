@@ -34,6 +34,22 @@ public class PreparedStatementExecutor {
         }
     }
 
+    public <T> T execute(
+            final Connection connection,
+            final PreparedStatementProcessor<T> preparedStatementProcessor,
+            final String sql,
+            final Object... parameters
+    ) {
+        try (
+             final PreparedStatement preparedStatement = generatePreparedStatement(connection, sql, parameters)
+        ) {
+            return preparedStatementProcessor.process(preparedStatement);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private PreparedStatement generatePreparedStatement(
             final Connection connection,
             final String sql,

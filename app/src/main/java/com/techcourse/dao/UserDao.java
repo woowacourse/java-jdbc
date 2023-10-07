@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.springframework.dao.RowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -31,6 +32,12 @@ public class UserDao {
         final var sql = "update users SET account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users SET account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
