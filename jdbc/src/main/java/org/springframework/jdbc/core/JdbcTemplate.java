@@ -10,6 +10,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -88,7 +89,7 @@ public class JdbcTemplate {
 
   public void execute(final String sql, final Object... values) {
 
-    final Connection connection = TransactionManager.getConnection(dataSource);
+    final Connection connection = TransactionSynchronizationManager.getConnection(dataSource);
 
     try (
         final PreparedStatement pstmt = connection.prepareStatement(sql)

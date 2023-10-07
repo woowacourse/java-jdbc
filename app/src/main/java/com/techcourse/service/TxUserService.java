@@ -2,7 +2,7 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 import javax.sql.DataSource;
-import org.springframework.jdbc.core.TransactionManager;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TxUserService implements UserService {
 
@@ -26,16 +26,16 @@ public class TxUserService implements UserService {
 
   @Override
   public void changePassword(final long id, final String newPassword, final String createBy) {
-    TransactionManager.start();
+    TransactionSynchronizationManager.start();
 
     try {
       userService.changePassword(id, newPassword, createBy);
-      TransactionManager.commit(dataSource);
+      TransactionSynchronizationManager.commit(dataSource);
     } catch (Exception e) {
-      TransactionManager.rollback(dataSource);
+      TransactionSynchronizationManager.rollback(dataSource);
       throw e;
     } finally {
-      TransactionManager.release(dataSource);
+      TransactionSynchronizationManager.release(dataSource);
     }
   }
 }
