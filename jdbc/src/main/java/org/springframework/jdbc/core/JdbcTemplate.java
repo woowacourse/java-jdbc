@@ -22,45 +22,47 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setPreparedStatement(preparedStatement, objects);
-            preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+    public void update(final String sql, final Object... objects) {
+        execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setPreparedStatement(preparedStatement, objects);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-            if (!resultSet.next()) {
+        final PreparedStatementExecutor<Optional<T>> pse = preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(rowMapper.mapToRow(resultSet));
+                }
                 return Optional.empty();
             }
-            return Optional.ofNullable(rowMapper.mapToRow(resultSet));
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        };
+        return execute(sql, pse, objects);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(connection, sql, objects);
-             final ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapToRow(resultSet));
+        final PreparedStatementExecutor<List<T>> pse = preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapToRow(resultSet));
+                }
+                return results;
             }
-            return results;
+        };
+        return execute(sql, pse, objects);
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementExecutor<T> executor,
+            final Object... objects
+    ) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            setPreparedStatement(preparedStatement, objects);
+            return executor.action(preparedStatement);
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -69,13 +71,5 @@ public class JdbcTemplate {
         for (int i = 0; i < objects.length; i++) {
             preparedStatement.setObject(i + 1, objects[i]);
         }
-    }
-
-    private PreparedStatement getPreparedStatement(final Connection connection, final String sql,
-                                                   final Object[] objects)
-            throws SQLException {
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        setPreparedStatement(preparedStatement, objects);
-        return preparedStatement;
     }
 }
