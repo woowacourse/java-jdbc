@@ -20,6 +20,11 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID에 해당하는 유저가 존재하지 않습니다."));
     }
 
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account)
+                .orElseThrow(() -> new IllegalArgumentException("해당 Account에 해당하는 유저가 존재하지 않습니다."));
+    }
+
     public void insert(final User user) {
         userDao.insert(user);
     }
