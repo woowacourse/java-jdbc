@@ -8,16 +8,25 @@ public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
-    private TransactionSynchronizationManager() {}
-
-    public static Connection getResource(DataSource key) {
-        return null;
+    private TransactionSynchronizationManager() {
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    public static Connection getResource(final DataSource key) {
+        final Map<DataSource, Connection> mappings = resources.get();
+        return mappings.get(key);
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static void bindResource(final DataSource key, final Connection value) {
+        final Map<DataSource, Connection> mappings = resources.get();
+        mappings.put(key, value);
+    }
+
+    public static Connection unbindResource(final DataSource key) {
+        final Map<DataSource, Connection> mappings = resources.get();
+        return mappings.remove(key);
+    }
+
+    public static void release() {
+        resources.remove();
     }
 }
