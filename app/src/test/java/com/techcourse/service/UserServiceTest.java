@@ -5,11 +5,13 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,16 +20,19 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private Connection connection;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "drop.sql");
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "schema.sql");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        connection = DataSourceConfig.getInstance().getConnection();
+        userDao.insert(connection, user);
     }
 
     @Test
