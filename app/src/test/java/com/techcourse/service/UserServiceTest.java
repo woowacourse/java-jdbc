@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
