@@ -63,11 +63,14 @@ public class JdbcTemplate {
     }
 
     private <T> T mapRow(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
-        ResultSet resultSet = preparedStatement.executeQuery();
-        if (resultSet.next()) {
-            return rowMapper.mapRow(resultSet);
+        List<T> allRows = mapAllRows(preparedStatement, rowMapper);
+        if (allRows.isEmpty()) {
+            return null;
         }
-        return null;
+        if (allRows.size() == 1) {
+            return allRows.get(0);
+        }
+        throw new RuntimeException("결과가 2개 이상입니다.");
     }
 
     public void update(String sql, Object... values) {
