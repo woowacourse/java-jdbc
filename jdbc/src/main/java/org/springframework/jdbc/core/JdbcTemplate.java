@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,8 +54,6 @@ public class JdbcTemplate {
     private static class ConnectionTemplate {
 
         private final Logger log = LoggerFactory.getLogger(ConnectionTemplate.class);
-
-        public ConnectionTemplate() {}
 
         public <T> T readResult(final Connection connection,
                                 final String sql,
