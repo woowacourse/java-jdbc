@@ -15,7 +15,6 @@ public class UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
-    private final SQLExceptionTranslator sqlExceptionTranslator = new SQLExceptionTranslator();
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
@@ -46,7 +45,7 @@ public class UserService {
                 throw e;
             }
         } catch (SQLException e) {
-            throw sqlExceptionTranslator.translate("", e);
+            throw SQLExceptionTranslator.translate("", e);
         }
     }
 }
