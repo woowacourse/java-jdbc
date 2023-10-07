@@ -6,7 +6,7 @@ import org.springframework.dao.DataAccessException;
 
 public class SQLExceptionTranslator {
 
-    public DataAccessException translate(@Nullable String sql,  SQLException e) {
+    public static DataAccessException translate(@Nullable String sql,  SQLException e) {
         Class<? extends DataAccessException> exceptionClazz =
                 H2SQLErrorCodeToDataAccessExceptionMapper.mapSQLErrorCode(e.getErrorCode());
 

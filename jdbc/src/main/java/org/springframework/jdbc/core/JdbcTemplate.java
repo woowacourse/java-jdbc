@@ -17,11 +17,9 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final SQLExceptionTranslator sqlExceptionTranslator;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.sqlExceptionTranslator = new SQLExceptionTranslator();
     }
 
     public int update(String sql, Object... args) {
@@ -37,7 +35,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translate(sql, e);
+            throw SQLExceptionTranslator.translate(sql, e);
         }
     }
 
@@ -53,7 +51,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translate(sql, e);
+            throw SQLExceptionTranslator.translate(sql, e);
         }
     }
 
@@ -74,7 +72,7 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(results.size());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translate(sql, e);
+            throw SQLExceptionTranslator.translate(sql, e);
         }
     }
 
@@ -86,7 +84,7 @@ public class JdbcTemplate {
             return extractResultSet(pstmt.executeQuery(), rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw sqlExceptionTranslator.translate(sql, e);
+            throw SQLExceptionTranslator.translate(sql, e);
         }
     }
 
