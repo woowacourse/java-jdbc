@@ -29,6 +29,19 @@ class UserServiceTest {
     }
 
     @Test
+    void testInsert() {
+        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+
+        final var actual = userService.findById(1L);
+
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
     void testFindById() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
