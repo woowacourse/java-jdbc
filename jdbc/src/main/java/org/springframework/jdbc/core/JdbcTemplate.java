@@ -23,14 +23,33 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection()) {
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                preparedStatementSetter.setValues(pstmt);
-                pstmt.executeUpdate();
-            }
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            executeUpdate(preparedStatementSetter, pstmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private void executeUpdate(final PreparedStatementSetter preparedStatementSetter, final PreparedStatement pstmt) throws SQLException {
+        preparedStatementSetter.setValues(pstmt);
+        pstmt.executeUpdate();
+    }
+
+    public void update(final String sql, final Object... args) throws DataAccessException {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            executeUpdate(pstmt, args);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void executeUpdate(final PreparedStatement pstmt, final Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+        pstmt.executeUpdate();
     }
 
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
@@ -56,7 +75,7 @@ public class JdbcTemplate {
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (final ResultSet rs = executeQuery(args, pstmt)) {
+            try (final ResultSet rs = executeQuery(pstmt, args)) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs, rs.getRow());
                 }
@@ -67,7 +86,7 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+    private ResultSet executeQuery(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
@@ -77,7 +96,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (final ResultSet rs = pstmt.executeQuery()) {
+            try (final ResultSet rs = executeQuery(pstmt)) {
                 List<T> result = new ArrayList<>();
                 while (rs.next()) {
                     result.add(rowMapper.mapRow(rs, rs.getRow()));
