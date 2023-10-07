@@ -16,6 +16,9 @@ public class InMemoryUserRepository {
     }
 
     public static void save(final User user) {
+        if (database.containsKey(user.getAccount())) {
+            throw new IllegalArgumentException("중복되는 Account입니다.");
+        }
         database.put(user.getAccount(), user);
     }
 
