@@ -11,12 +11,11 @@ public class ConnectionManager {
     private static final ConnectionManager INSTANCE = new ConnectionManager();
 
     private final ThreadLocal<Connection> connectionResource;
-    private final ThreadLocal<Integer> transactionCount;
+    private final ThreadLocal<Boolean> startTransactioned;
 
     private ConnectionManager() {
         connectionResource = new ThreadLocal<>();
-        transactionCount = new ThreadLocal<>();
-        transactionCount.set(0);
+        startTransactioned = new ThreadLocal<>();
     }
 
     public static ConnectionManager getInstance() {
@@ -24,7 +23,7 @@ public class ConnectionManager {
     }
 
     public void beginTransaction() {
-        transactionCount.set(transactionCount.get() + 1);
+        startTransactioned.set(Boolean.TRUE);
     }
 
     public Connection getConnection(final DataSource dataSource) {
@@ -42,7 +41,7 @@ public class ConnectionManager {
     }
 
     private void beginTransaction(final Connection connection) throws SQLException {
-        if (transactionCount.get() != 1) {
+        if (startTransactioned.get() != null && startTransactioned.get()) {
             connection.setAutoCommit(false);
         }
     }
@@ -60,7 +59,7 @@ public class ConnectionManager {
             throw new ConnectionManagerException(e);
         } finally {
             connectionResource.remove();
-            transactionCount.remove();
+            startTransactioned.remove();
         }
     }
 
