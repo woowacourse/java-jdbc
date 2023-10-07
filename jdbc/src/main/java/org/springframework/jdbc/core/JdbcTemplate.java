@@ -48,7 +48,7 @@ public class JdbcTemplate {
     }
 
     private <T> T manageData(final Connection conn, final PreparedStatementImpl<T> qm, final String sql, final Object... args) {
-        try (PreparedStatement pstmt = setPreparedStatement(conn, sql, args);) {
+        try (PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
             return qm.callback(pstmt);
         } catch (SQLException e) {
