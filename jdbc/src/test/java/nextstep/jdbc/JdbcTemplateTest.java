@@ -67,7 +67,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
 
         // when
-        final List<TestUser> testUsers = jdbcTemplate.query(sql, ROW_MAPPER);
+        final List<TestUser> testUsers = jdbcTemplate.queryForList(sql, ROW_MAPPER);
 
         // then
         assertSoftly(softly -> {

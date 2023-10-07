@@ -27,28 +27,33 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        final PreparedStatementExecutor<Optional<T>> pse = preparedStatement -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(rowMapper.mapToRow(resultSet));
-                }
-                return Optional.empty();
+        final ResultSetExtractor<Optional<T>> rse = resultSet -> {
+            if (resultSet.next()) {
+                return Optional.of(rowMapper.mapToRow(resultSet));
             }
+            return Optional.empty();
         };
-        return execute(sql, pse, objects);
+        return query(sql, rse, objects);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        final PreparedStatementExecutor<List<T>> pse = preparedStatement -> {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
+        final ResultSetExtractor<List<T>> rse = resultSet -> {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapToRow(resultSet));
+            }
+            return results;
+        };
+        return query(sql, rse, objects);
+    }
+
+    private <T> T query(final String sql, final ResultSetExtractor<T> rse, final Object... elements) {
+        final PreparedStatementExecutor<T> pse = preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapToRow(resultSet));
-                }
-                return results;
+                return rse.extract(resultSet);
             }
         };
-        return execute(sql, pse, objects);
+        return execute(sql, pse, elements);
     }
 
     private <T> T execute(
