@@ -25,14 +25,31 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), ResourceNames.SCHEMA_RESOURCE_NAME);
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), ResourceNames.TRUNCATE_RESOURCE_NAME);
+    }
+
+    @Test
+    void testFindById() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+
+        final var actual = userService.findById(1L);
+
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields("id")
+                .isEqualTo(user);
     }
 
     @Test
     void testChangePassword() {
+        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -45,9 +62,15 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
+        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        // Application Service
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 Service 추상화
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
