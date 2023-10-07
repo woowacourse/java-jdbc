@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -31,7 +31,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -46,7 +46,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final TxUserService userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
