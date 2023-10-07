@@ -18,7 +18,7 @@ class ConnectionManagerTest {
         @Test
         @DisplayName("스레드에서 connection을 생성한 적이 없다면, tx를 생성한다.")
         void getNewConnection() throws SQLException {
-            final ConnectionManager txManager = new ConnectionManager();
+            final ConnectionManager txManager = ConnectionManager.getInstance();
 
             final Connection connection = txManager.getConnection(DataSourceConfig.getInstance());
 
@@ -29,7 +29,7 @@ class ConnectionManagerTest {
         @Test
         @DisplayName("스레드에서 connection을 생성한 적이 있다면, 기존 tx를 반환한다.")
         void getOldConnection() throws SQLException {
-            final ConnectionManager txManager = new ConnectionManager();
+            final ConnectionManager txManager = ConnectionManager.getInstance();
             final Connection oldTransaction = txManager.getConnection(
                 DataSourceConfig.getInstance());
 

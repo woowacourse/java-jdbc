@@ -6,10 +6,16 @@ import javax.sql.DataSource;
 
 public class ConnectionManager {
 
+    private static final ConnectionManager INSTANCE = new ConnectionManager();
+
     private final ThreadLocal<Connection> connectionResource;
 
-    public ConnectionManager() {
+    private ConnectionManager() {
         connectionResource = new ThreadLocal<>();
+    }
+
+    public static ConnectionManager getInstance(){
+        return INSTANCE;
     }
 
     public Connection getConnection(final DataSource dataSource) throws SQLException {
