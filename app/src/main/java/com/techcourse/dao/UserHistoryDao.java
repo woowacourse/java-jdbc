@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 public class UserHistoryDao {
 
@@ -40,7 +39,7 @@ public class UserHistoryDao {
             pstmt.setString(3, userHistory.getPassword());
             pstmt.setString(4, userHistory.getEmail());
             pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
+            pstmt.setString(6, userHistory.getCreatedBy());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -59,4 +58,22 @@ public class UserHistoryDao {
             } catch (SQLException ignored) {}
         }
     }
+
+    public UserHistory findById(Long id){
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "select * from user_history where id = ?";
+        return jdbcTemplate.queryForObject(sql, UserHistory.class, id);
+    }
+
+    //    public void log(final UserHistory userHistory) {
+//        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+//
+//        jdbcTemplate.update(sql,
+//            userHistory.getUserId(),
+//            userHistory.getAccount(),
+//            userHistory.getPassword(),
+//            userHistory.getEmail(),
+//            userHistory.getCreatedAt(),
+//            userHistory.getCreateBy()
+//        );
 }
