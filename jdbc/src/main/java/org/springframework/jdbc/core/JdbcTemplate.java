@@ -50,7 +50,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = setPreparedStatement(conn, sql, args);) {
             log.debug("query : {}", sql);
-            return qm.implement(pstmt);
+            return qm.callback(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
