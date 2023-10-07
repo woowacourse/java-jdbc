@@ -90,7 +90,7 @@ class JdbcTemplateTest {
 
 
         @Test
-        void 결과가_존재하지_않으면_Optional을_반환한다() throws Exception {
+        void 결과가_존재하지_않으면_Optional_empty를_반환한다() throws Exception {
             // given
             when(resultSet.next()).thenReturn(false);
             final String sql = "select * from users where id = ?";
