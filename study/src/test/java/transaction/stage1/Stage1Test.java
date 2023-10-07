@@ -154,7 +154,7 @@ class Stage1Test {
         sleep(0.5);
 
         // 사용자A가 다시 gugu 객체를 조회했다.
-        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다.
+        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다. => 구구의 실수. 자동 커밋 된다. (우테코 강의 014번의 14분 20초 참고)
         final var actual = userDao.findByAccount(connection, "gugu");
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.

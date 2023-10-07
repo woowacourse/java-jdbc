@@ -1,7 +1,5 @@
 package org.springframework.jdbc.core;
 
-import static java.util.Objects.requireNonNull;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,8 +23,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        try (final var preparedStatement = getConnection().prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
             try (final var resultSet = preparedStatement.executeQuery()) {
@@ -51,9 +48,12 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+    public <T> Optional<T> executeQueryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        try (final var preparedStatement = getConnection().prepareStatement(sql)) {
             setParameters(params, preparedStatement);
 
             try (final var resultSet = preparedStatement.executeQuery()) {
@@ -73,8 +73,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        try (final var preparedStatement = getConnection().prepareStatement(sql)) {
             setParameters(params, preparedStatement);
             preparedStatement.executeUpdate();
             log.info("JDBC UPDATE SQL = {}", sql);
@@ -87,8 +86,8 @@ public class JdbcTemplate {
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return requireNonNull(dataSource, "DataSource가 null입니다.").getConnection();
+    private Connection getConnection() {
+        return TransactionManager.getConnection(dataSource);
     }
 
     private void setParameters(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {
