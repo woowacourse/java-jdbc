@@ -1,10 +1,9 @@
 package org.springframework.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.exception.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,83 +12,63 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final int MAX_RESULT_SIZE = 1;
+    public static final int FIRST_INDEX = 0;
 
-    private final DataSource dataSource;
+    private final PreparedStatementExecutor preparedStatementExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.preparedStatementExecutor = new PreparedStatementExecutor(dataSource);
     }
 
     public int update(final String sql, final Object... args) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setArguments(pstmt, args);
-
-            log.debug("query : {}", sql);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void setArguments(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            final int parameterIndex = i + 1;
-            pstmt.setObject(parameterIndex, args[i]);
-        }
+        return preparedStatementExecutor.execute(PreparedStatement::executeUpdate, sql, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setArguments(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
+        return preparedStatementExecutor.execute(
+                pstmt -> {
+                    final ResultSet rs = pstmt.executeQuery();
+                    final List<T> results = getResults(rowMapper, rs);
 
-            log.debug("query : {}", sql);
-
-            return calculateResult(rowMapper, rs);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+                    return getSingleResult(results);
+                }, sql, args
+        );
     }
 
-    private static <T> T calculateResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            return rowMapper.mapRow(rs, rs.getRow());
-        }
-
-        return null;
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            ResultSet rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            return getResults(rowMapper, rs);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
-        List<T> results = new ArrayList<>();
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+        final List<T> results = new ArrayList<>();
 
         while (rs.next()) {
-            final T result = calculateResult(rowMapper, rs);
+            final T result = rowMapper.mapRow(rs);
             results.add(result);
         }
 
         return results;
+    }
+
+    private <T> T getSingleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("조회된 결과가 존재하지 않습니다.");
+        }
+        if (results.size() > MAX_RESULT_SIZE) {
+            throw new IncorrectResultSizeDataAccessException("조회된 결과의 개수가 적절하지 않습니다.");
+        }
+
+        return results.get(FIRST_INDEX);
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return preparedStatementExecutor.execute(
+                pstmt -> {
+                    final ResultSet rs = pstmt.executeQuery();
+
+                    return getResults(rowMapper, rs);
+                }, sql
+        );
+    }
+
+    public boolean execute(final String sql) {
+        return preparedStatementExecutor.execute(PreparedStatement::execute, sql);
     }
 }
