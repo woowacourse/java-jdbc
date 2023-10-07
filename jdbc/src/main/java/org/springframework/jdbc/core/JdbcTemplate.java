@@ -53,8 +53,8 @@ public class JdbcTemplate {
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException(1);
         }
         return results.iterator().next();
     }
