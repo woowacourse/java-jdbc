@@ -67,4 +67,8 @@ public class JdbcTemplate {
                 }, sql
         );
     }
+
+    public boolean execute(final String sql) {
+        return preparedStatementExecutor.execute(PreparedStatement::execute, sql);
+    }
 }

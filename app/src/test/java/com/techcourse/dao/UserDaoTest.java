@@ -5,16 +5,30 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.exception.EmptyResultDataAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
+
+    private static final String TRUNCATE_USER_TABLE_SQL = "DROP TABLE IF EXISTS users;" +
+            "create table if not exists users ( " +
+            "    id bigint auto_increment," +
+            "    account varchar(100) not null," +
+            "    password varchar(100) not null," +
+            "    email varchar(100) not null," +
+            "    primary key(id)" +
+            ");";
 
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.execute(TRUNCATE_USER_TABLE_SQL);
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -36,11 +50,26 @@ class UserDaoTest {
     }
 
     @Test
+    void findByIdException() {
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isInstanceOf(EmptyResultDataAccessException.class)
+                .hasMessage("조회된 결과가 존재하지 않습니다.");
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccountException() {
+        final var account = "jamie";
+        assertThatThrownBy(() -> userDao.findByAccount(account))
+                .isInstanceOf(EmptyResultDataAccessException.class)
+                .hasMessage("조회된 결과가 존재하지 않습니다.");
     }
 
     @Test
