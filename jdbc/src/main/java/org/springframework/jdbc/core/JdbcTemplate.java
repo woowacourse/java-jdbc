@@ -54,7 +54,7 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    private <T> void validateResultSize(final int size) {
+    private void validateResultSize(final int size) {
         if (size > SINGLE_RESULT_SIZE) {
             throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + size);
         }
