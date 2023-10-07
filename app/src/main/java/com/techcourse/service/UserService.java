@@ -1,19 +1,25 @@
 package com.techcourse.service;
 
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.dao.JdbcUserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.repository.UserRepository;
+import org.springframework.jdbc.transaction.TransactionManager;
+import org.springframework.jdbc.transaction.Transactional;
+
+import javax.sql.DataSource;
 
 public class UserService {
 
+    private final Transactional transactional;
     private final UserRepository userRepository;
-    private final UserHistoryDao userHistoryDao;
+    private final JdbcUserHistoryDao jdbcUserHistoryDao;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final DataSource dataSource, final UserDao userDao, final JdbcUserHistoryDao jdbcUserHistoryDao) {
+        this.transactional = new Transactional(dataSource);
         this.userRepository = new UserRepository(userDao);
-        this.userHistoryDao = userHistoryDao;
+        this.jdbcUserHistoryDao = jdbcUserHistoryDao;
     }
 
     public User findById(final long id) {
@@ -25,9 +31,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userRepository.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        transactional.execute(connection -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userRepository.update(user);
+            jdbcUserHistoryDao.log(new UserHistory(user, createBy));
+            return null;
+        });
     }
 }
