@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -24,24 +25,24 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(Connection connection, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
         };
-        jdbcTemplate.update(sql, preparedStatementSetter);
+        jdbcTemplate.update(connection, sql, preparedStatementSetter);
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, final User user) {
         final String sql = "update users set password = ?, email = ? where id = ?";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> {
             pstmt.setString(1, user.getPassword());
             pstmt.setString(2, user.getEmail());
             pstmt.setLong(3, user.getId());
         };
-        jdbcTemplate.update(sql, preparedStatementSetter);
+        jdbcTemplate.update(connection, sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {

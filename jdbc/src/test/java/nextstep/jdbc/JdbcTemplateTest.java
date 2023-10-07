@@ -7,7 +7,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -23,8 +22,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     public void setUp() {
-        final DataSource instance = DataSourceConfig.getInstance();
-        try (final Connection connection = instance.getConnection()) {
+        try (final Connection connection = jdbcTemplate.getConnection()) {
             final Statement statement = connection.createStatement();
             statement.execute("drop table if exists users");
             statement.execute("create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))");
@@ -39,7 +37,7 @@ class JdbcTemplateTest {
         //given
         //when
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, preparedStatement -> {
+        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");
@@ -66,12 +64,12 @@ class JdbcTemplateTest {
     public void queryList() {
         //given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, preparedStatement -> {
+        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");
         });
-        jdbcTemplate.update(sql, preparedStatement -> {
+        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
             preparedStatement.setString(1, "account2");
             preparedStatement.setString(2, "password2");
             preparedStatement.setString(3, "email2");
@@ -97,7 +95,7 @@ class JdbcTemplateTest {
     void vargsQuery() {
         //given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, preparedStatement -> {
+        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");
