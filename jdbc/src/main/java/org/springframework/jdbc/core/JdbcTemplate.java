@@ -1,5 +1,6 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,16 +21,18 @@ public class JdbcTemplate {
         this.queryExecutorService = new QueryExecutorService(dataSource);
     }
 
-    public void update(final String query, final Object... columns) {
-        queryExecutorService.execute(PreparedStatement::executeUpdate, query, columns);
+    public void update(final Connection connection, final String query, final Object... columns) {
+        queryExecutorService.execute(connection, PreparedStatement::executeUpdate, query, columns);
     }
 
-    public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... columns) {
-        return execute(query, rowMapper, columns);
+    public <T> List<T> query(final Connection connection, final String query, final RowMapper<T> rowMapper,
+                             final Object... columns) {
+        return execute(connection, query, rowMapper, columns);
     }
 
-    public <T> Optional<T> queryForObject(final String query, final RowMapper<T> rowMapper, final Object... columns) {
-        final List<T> results = execute(query, rowMapper, columns);
+    public <T> Optional<T> queryForObject(final Connection connection, final String query, final RowMapper<T> rowMapper,
+                                          final Object... columns) {
+        final List<T> results = execute(connection, query, rowMapper, columns);
         validateSize(results);
         if (results.isEmpty()) {
             return Optional.empty();
@@ -37,11 +40,17 @@ public class JdbcTemplate {
         return Optional.of(results.get(FIRST_INDEX_OF_RESULT));
     }
 
-    private <T> List<T> execute(final String query, final RowMapper<T> rowMapper, final Object[] columns) {
-        return queryExecutorService.execute(pstmt -> {
-            final ResultSet resultSet = pstmt.executeQuery();
-            return getResult(rowMapper, resultSet);
-        }, query, columns);
+    private <T> List<T> execute(final Connection connection, final String query, final RowMapper<T> rowMapper,
+                                final Object[] columns) {
+        return queryExecutorService.execute(
+                connection,
+                pstmt -> {
+                    final ResultSet resultSet = pstmt.executeQuery();
+                    return getResult(rowMapper, resultSet);
+                },
+                query,
+                columns
+        );
     }
 
     private <T> List<T> getResult(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {

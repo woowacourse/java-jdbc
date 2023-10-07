@@ -14,10 +14,10 @@ public class QueryExecutorService {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final QueryExecutor<T> queryExecutor, final String query, final Object... columns) {
+    public <T> T execute(final Connection connection, final QueryExecutor<T> queryExecutor, final String query,
+                         final Object... columns) {
         try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = getPreparedstatement(conn, query, columns);
+                final PreparedStatement pstmt = getPreparedstatement(connection, query, columns);
         ) {
             return queryExecutor.execute(pstmt);
         } catch (final SQLException e) {
