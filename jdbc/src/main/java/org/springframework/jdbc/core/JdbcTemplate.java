@@ -3,7 +3,8 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.core.TransactionManager;
+import org.springframework.transaction.support.ConnectionHolder;
+import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -20,7 +21,7 @@ public class JdbcTemplate {
     private final TransactionManager transactionManager;
 
     public JdbcTemplate(DataSource dataSource) {
-        this.transactionManager = new TransactionManager(dataSource);
+        this.transactionManager = new TransactionManager(dataSource, ConnectionHolder.getInstance());
     }
 
     public int update(String sql, Object... args) {
@@ -45,6 +46,7 @@ public class JdbcTemplate {
                 PreparedStatement statement = getPreparedStatement(sql, connection, args);
         ) {
             log.debug("query : {}", sql);
+            log.info("---------------------------{}------------------------------{}", connection.getMetaData(), sql);
             return executor.fetchData(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
