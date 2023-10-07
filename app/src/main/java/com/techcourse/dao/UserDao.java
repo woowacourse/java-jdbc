@@ -12,10 +12,10 @@ public class UserDao {
 
     private static final RowMapper<User> USER_ROW_MAPPER = (resultSet, rowNum) ->
             new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4)
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email")
             );
 
     private final JdbcTemplate jdbcTemplate;
