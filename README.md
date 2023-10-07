@@ -20,3 +20,14 @@ flowchart RL
 - [x] PreparedStatement 작업 처리 역할을 분리한다.
 - [x] ResultSet 내 데이터를 매핑하는 역할을 분리한다.
 - [x] 데이터베이스 쿼리 예외 발생시 DataAccessException 을 던지도록 수정한다.
+
+## 3단계
+
+- [x] TransactionTemplate 을 구현하여 사용자 비밀번호 변경과 사용자 로그를 하나의 트랜잭션에서 진행하도록 한다.
+
+```mermaid
+flowchart RL
+    UserService --- TransactionTemplate
+    UserService --- UserDao
+    UserService --- UserHistoryDao
+```
