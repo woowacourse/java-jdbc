@@ -30,8 +30,8 @@ public class UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
         transactionalExecutor.execute((con) -> {
-            userDao.update(user, con);
-            userHistoryDao.log(new UserHistory(user, createBy), con);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }
