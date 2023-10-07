@@ -46,8 +46,7 @@ public class TransactionManager {
         try {
             Connection connection = getConnection();
             connection.commit();
-            connection.close();
-            connectionHolder.remove();
+            remove(connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -57,10 +56,14 @@ public class TransactionManager {
         try {
             Connection connection = getConnection();
             connection.rollback();
-            connection.close();
-            connectionHolder.remove();
+            remove(connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void remove(Connection connection) throws SQLException {
+        connection.close();
+        connectionHolder.remove();
     }
 }
