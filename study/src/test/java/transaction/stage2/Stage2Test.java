@@ -41,12 +41,13 @@ class Stage2Test {
      */
     @Test
     void testRequired() {
+        // required: 트랜잭션 필요 -> 있으면 사용, 없으면 새로 생성
         final var actual = firstUserService.saveFirstTransactionWithRequired();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -55,12 +56,16 @@ class Stage2Test {
      */
     @Test
     void testRequiredNew() {
+        // REQUIRES_NEW: 이미 트랜잭션이 있어도 새로운 트랜잭션을 생성한다.
         final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(2)
+            .containsExactlyInAnyOrder(
+                "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew"
+            );
     }
 
     /**
@@ -69,12 +74,14 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        // SecondService는 다른 트랜잭션을 가진다 -> rollback 되지 않음 => 여기서 save한 user는 commit 된다.
+        // FirstSerivce는 예외 발생으로 rollback => 여기서 save 한 user는 rollback
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
-                .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -83,12 +90,17 @@ class Stage2Test {
      */
     @Test
     void testSupports() {
+        // SUPPORTS: 부모 트랜잭션이 있으면 해당 트랜잭션을 사용, 없다면 트랜잭션이 없는 상태로 실행
+        // 주석이라면? firstUserService -> 트랜잭션 없음. secondUserSerivce -> 트랜잭션 어노테이션 => Second만 논리적 트랜잭션, 물리적으로는 둘 다 없음
+        // 주석이 아니라면? firstUserService, secondUserService 가 같은 트랜잭션 사용
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactlyInAnyOrder(
+                "transaction.stage2.FirstUserService.saveFirstTransactionWithSupports"
+            );
     }
 
     /**
@@ -98,12 +110,13 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
+        // MANDATORY: 트랜잭션이 있어야 함을 강제한다. 부모 트랜잭션이 있다면 사용하고, 없다면 IlleagalTransactionStateException
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -115,12 +128,15 @@ class Stage2Test {
      */
     @Test
     void testNotSupported() {
+        // NOT_SUPPORTED: 기존 트랜잭션이 있든없든 트랜잭션을 실행하지 않는다. 기존 트랜잭션이 있었다면? 이를 보류
+        // 주석있다면 1개 (SecondService 에 논리적, 물리적으로는 둘 다 X)
+        // 주석없다면 2개 (FirstService: 논리적, 물리적 실행 / SecondService: 논리적O, 물리적 X)
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
@@ -129,12 +145,17 @@ class Stage2Test {
      */
     @Test
     void testNested() {
+        // NESTED: 기존 트랜잭션이 있다면 중첩 트랜잭션 생성, 기존 트랜잭션이 없다면 새 트랜잭션 생성
+        // 부모 트랜잭션에 문제가 생기면 중첩 트랜잭션은 영향을 받는다. 하지만 중첩 트랜잭션의 영향을 부모 트랜잭션이 받지는 않는다.
+        // JPA 에서는 중첩으로 사용 불가 (즉 부모 트랜잭션이 있는 상황에서 NESTED 불가)
+        // 주석 처리하면: 1개 (새로 생성), 외부에 영향 X
+        // 주석 없으면: 2개, 외부1, 중첩1
         final var actual = firstUserService.saveFirstTransactionWithNested();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -142,11 +163,14 @@ class Stage2Test {
      */
     @Test
     void testNever() {
+        // NEVER: 트랜잭션 없이 실행. 부모 트랜잭션이 있었다면 IlleaglTransactionStateException 발생
+        // firstService 에 @Transactional 있다면 예외 발생
+        // @Transactional 주석이라면 실행 (트랜잭션 없이) -> 물리적 트랜잭션은 없지만, 논리적으로는 어노테이션이 있기 때문에 1개 반환?
         final var actual = firstUserService.saveFirstTransactionWithNever();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+            .hasSize(1)
+            .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }

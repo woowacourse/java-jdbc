@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,27 +81,27 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
 
             // ❗️gugu 객체는 connection에서 아직 커밋하지 않은 상태다.
-            // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다.
+            // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다. -> 커밋하지 않은 객체 조회: READ UNCOMMITTED
             // 사용자B가 사용자A가 커밋하지 않은 데이터를 조회하는게 적절할까?
-            final var actual = userDao.findByAccount(subConnection, "gugu");
+            final var actual = userDao.findByAccount(subConnection, "gugu"); // READ UNCOMMITTED여야 actual에 값이 담긴다.
 
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
-            // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
+            // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자. -> READ UNCOMMITTED
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
             assertThat(actual).isNull();
         })).start();
 
-        sleep(0.5);
+        sleep(0.5); // 데이터 insert 되고 B 트랜잭션이 커밋되기 전의 값을 읽기까지 0.5초를 기다려준다.
 
-        // 롤백하면 사용자A의 user 데이터를 저장하지 않았는데 사용자B는 user 데이터가 있다고 인지한 상황이 된다.
-        connection.rollback();
+        // 롤백하면 사용자A의 user 데이터를 저장하지 않았는데 사용자B는 user 데이터가 있다고 인지한 상황이 된다. (Dirty Read)
+        connection.rollback(); // B가 데이터를 읽은 후 rollback 하는 작업
     }
 
     /**
@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,14 +130,14 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
 
         // 사용자A가 gugu 객체를 조회했다.
         final var user = userDao.findByAccount(connection, "gugu");
-        log.info("user : {}", user);
+        log.info("user : {}", user); // 앞에서 insert 한 결과가 조회된다.
 
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
@@ -151,10 +151,12 @@ class Stage1Test {
             userDao.update(subConnection, anotherUser);
         })).start();
 
-        sleep(0.5);
+        sleep(0.5); // B 트랜잭션이 동작할 때 까지 대기
 
         // 사용자A가 다시 gugu 객체를 조회했다.
-        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다.
+        // 사용자B는 비밀번호 수정 후, 커밋이 되었다.
+        // -> READ UNCOMMITED, COMMITED 라면 actual에서 비번이 B가 변경한 값으로 바뀌어있다.
+
         final var actual = userDao.findByAccount(connection, "gugu");
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
@@ -173,10 +175,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -184,6 +186,7 @@ class Stage1Test {
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
                 .withLogConsumer(new Slf4jLogConsumer(log));
+        mysql.withUrlParam("allowMultiQueries", "true");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
@@ -197,7 +200,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -229,7 +232,7 @@ class Stage1Test {
         final var actual = userDao.findGreaterThan(connection, 1);
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
-        // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+        // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자. -> serializable만 통과: 트랜잭션A가 다 끝난 후에야 트랜잭션 B가 시작 => B의 insert가 실행되기 전이다.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
         assertThat(actual).hasSize(1);
 
@@ -249,8 +252,8 @@ class Stage1Test {
     private static DataSource createH2DataSource() {
         final var jdbcDataSource = new JdbcDataSource();
         // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
+//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
         jdbcDataSource.setUser("sa");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;

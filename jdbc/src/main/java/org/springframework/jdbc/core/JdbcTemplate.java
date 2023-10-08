@@ -50,10 +50,16 @@ public class JdbcTemplate {
     }
 
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
+        final Connection connection = ConnectionManager.getConnection(dataSource);
+        try {
+            return executeInternalWithConnection(connection, sql, executor, args);
+        } finally {
+            ConnectionManager.closeConnection(connection);
+        }
+    }
+
+    private <T> T executeInternalWithConnection(final Connection con, final String sql, final QueryExecutor<T> executor, final Object... args) {
+        try (final PreparedStatement pstmt = con.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParamsToPreparedStatement(pstmt, args);
 
@@ -71,5 +77,9 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return executeInternal(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return executeInternalWithConnection(connection, sql, PreparedStatement::executeUpdate, args);
     }
 }
