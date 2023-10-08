@@ -72,5 +72,5 @@
 
 ## 3단계 - Transaction 적용
 
-- [ ] UserService Transaction 적용
-    - [ ] UserDao, UserHistoryDao 같은 connection 사용하도록 설정
+- [x] UserService Transaction 적용
+    - [x] UserDao, UserHistoryDao 같은 connection 사용하도록 설정
