@@ -1,5 +1,6 @@
 package org.springframework.connection;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -19,7 +20,7 @@ public class ConnectionManager {
             connection.setAutoCommit(autoCommit);
             return connection;
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -27,7 +28,7 @@ public class ConnectionManager {
         try {
             connection.rollback();
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
