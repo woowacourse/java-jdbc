@@ -61,7 +61,7 @@ public class TransactionUserService implements UserService {
             });
         }
 
-        private <T> T executeTransactionWithSupplier(Supplier<T> supplier) {
+        private <T> T executeTransactionWithSupplier(final Supplier<T> supplier) {
             Transaction transaction = Transaction.start(dataSource);
             transaction.setReadOnly(readOnly);
             try {
