@@ -4,6 +4,9 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.SQLException;
+import org.springframework.dao.JdbcException;
+import org.springframework.transaction.support.Transactional;
 
 public class UserService {
 
@@ -24,9 +27,19 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        final Transactional transactional = Transactional.getInstance();
+
+        try {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            transactional.commit();
+        } catch (SQLException e) {
+            transactional.rollback();
+            throw new JdbcException(e);
+        } finally {
+            transactional.close();
+        }
     }
 }

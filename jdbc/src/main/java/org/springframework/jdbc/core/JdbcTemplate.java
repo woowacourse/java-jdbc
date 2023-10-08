@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.JdbcException;
+import org.springframework.transaction.support.Transactional;
 
 public class JdbcTemplate {
 
@@ -71,18 +71,18 @@ public class JdbcTemplate {
             final CallBack<T> callBack,
             final Object... parameters
     ) {
+        final Transactional transactional = Transactional.getInstance();
+        final Connection connection = transactional.getConnection(dataSource);
+
         try (
-                final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            connection.setAutoCommit(false);
             setValues(sql, preparedStatement, parameters);
-            final T result = callBack.call(preparedStatement);
-            connection.commit();
-            return result;
+            return callBack.call(preparedStatement);
         } catch (SQLException e) {
-            throw new JdbcException(e);
+            throw new RuntimeException(e);
         }
+
     }
 
     public DataSource getDataSource() {
