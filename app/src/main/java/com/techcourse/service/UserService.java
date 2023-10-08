@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Optional;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -24,8 +23,8 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public Optional<User> findById(final long id) {
-        return userDao.findById(id);
+    public User findById(final long id) {
+        return userDao.findById(id).orElseThrow();
     }
 
     public void insert(final User user) {
@@ -39,7 +38,7 @@ public class UserService {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
-            final User user = findById(id).orElseThrow();
+            final User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
