@@ -15,6 +15,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_SIZE = 1;
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
@@ -48,12 +49,9 @@ public class JdbcTemplate {
     }
 
     private <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        List<T> list = query(connection, sql, rowMapper, pss);
-
-        if (list.isEmpty()) {
-            throw new DataAccessException("해당하는 유저가 없습니다.");
-        }
-        return list.get(0);
+        List<T> result = query(connection, sql, rowMapper, pss);
+        validateResultSize(result);
+        return result.get(0);
     }
 
     private void update(Connection connection, String sql, PreparedStatementSetter pss) {
@@ -94,6 +92,16 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private static <T> void validateResultSize(List<T> result) {
+        if (result.isEmpty()) {
+            throw new DataAccessException("해당하는 유저가 없습니다.");
+        }
+
+        if(result.size() > SINGLE_SIZE) {
+            throw new DataAccessException("해당하는 유저가 2명 이상입니다.");
         }
     }
 }
