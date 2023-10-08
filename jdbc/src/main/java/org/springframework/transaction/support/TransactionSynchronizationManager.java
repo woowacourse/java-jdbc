@@ -7,21 +7,24 @@ import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources;
-
-    static {
-        resources = new ThreadLocal<>();
-        resources.set(new HashMap<>());
-    }
+    private static ThreadLocal<Map<DataSource, Connection>> resources;
 
     private TransactionSynchronizationManager() {
     }
 
     public static Connection getResource(final DataSource key) {
+        if (resources == null) {
+            return null;
+        }
+
         return resources.get().get(key);
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
+        if (resources == null) {
+            resources = ThreadLocal.withInitial(HashMap::new);
+        }
+
         final Map<DataSource, Connection> connections = resources.get();
         connections.put(key, value);
     }
@@ -30,5 +33,9 @@ public abstract class TransactionSynchronizationManager {
         final Map<DataSource, Connection> connections = resources.get();
 
         connections.remove(key);
+
+        if (connections.isEmpty()) {
+            resources.remove();
+        }
     }
 }
