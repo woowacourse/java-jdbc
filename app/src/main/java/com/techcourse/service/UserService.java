@@ -8,6 +8,8 @@ import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -35,16 +37,13 @@ public class UserService {
         userDao.insert(user);
     }
 
-    void changePassword(final long id, final String newPassword, final String createBy) {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        Connection connection = null;
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            final DataSource dataSource = DataSourceConfig.getInstance();
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
@@ -54,7 +53,8 @@ public class UserService {
             log.error("SQLException occurred");
             throw new DataAccessException(e);
         } finally {
-            release(connection);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -65,18 +65,6 @@ public class UserService {
             } catch (final SQLException ex) {
                 log.error("rollback callback");
                 throw new DataAccessException(ex);
-            }
-        }
-    }
-
-    private void release(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.setAutoCommit(true);
-                connection.close();
-            } catch (final SQLException e) {
-                log.error("Cannot close Connection");
-                throw new DataAccessException(e);
             }
         }
     }

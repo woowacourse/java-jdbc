@@ -1,23 +1,49 @@
 package org.springframework.transaction.support;
 
+import org.springframework.transaction.TransactionException;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources;
 
-    private TransactionSynchronizationManager() {}
-
-    public static Connection getResource(DataSource key) {
-        return null;
+    static {
+        resources = new ThreadLocal<>();
+        resources.set(new HashMap<>());
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    private TransactionSynchronizationManager() {
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static Connection getResource(final DataSource key) {
+        return resources.get().get(key);
+    }
+
+    public static void bindResource(final DataSource key, final Connection value) {
+        final Map<DataSource, Connection> connections = resources.get();
+        try {
+            value.setAutoCommit(false);
+            connections.put(key, value);
+        } catch (final SQLException e) {
+            throw new TransactionException("Failed to bind");
+        }
+    }
+
+    public static void unbindResource(final DataSource key) {
+        final Map<DataSource, Connection> connections = resources.get();
+
+        if (connections.containsKey(key)) {
+            try {
+                final Connection removedConnection = connections.remove(key);
+                removedConnection.setAutoCommit(true);
+            } catch (final SQLException e) {
+                throw new TransactionException("Failed to unbind");
+            }
+        }
     }
 }
