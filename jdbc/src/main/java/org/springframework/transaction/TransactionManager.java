@@ -24,10 +24,7 @@ public class TransactionManager {
     }
 
     private void close() {
-        transactionTemplate.execute(connection -> {
-            connection.close();
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        });
+        transactionTemplate.execute(connection -> DataSourceUtils.releaseConnection(connection, dataSource));
     }
 
     public void rollback() {
