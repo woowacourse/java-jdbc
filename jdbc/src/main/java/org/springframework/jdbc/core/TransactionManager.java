@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
-public class TransactionManager {
+public class TransactionManager implements AutoCloseable {
     private final DataSource dataSource;
 
     public TransactionManager(final DataSource dataSource) {
@@ -24,7 +24,8 @@ public class TransactionManager {
         process(Connection::rollback);
     }
 
-    public void release() {
+    @Override
+    public void close() {
         DataSourceUtils.releaseConnection(dataSource);
     }
 

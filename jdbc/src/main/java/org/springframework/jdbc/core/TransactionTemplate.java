@@ -22,7 +22,7 @@ public class TransactionTemplate {
     }
 
     private <R> R executeInternal(final Supplier<R> action) {
-        try {
+        try (transactionManager) {
             transactionManager.start();
 
             R result = action.get();
@@ -32,8 +32,6 @@ public class TransactionTemplate {
         } catch (DataAccessException e) {
             transactionManager.rollback();
             throw e;
-        } finally {
-            transactionManager.release();
         }
     }
 }
