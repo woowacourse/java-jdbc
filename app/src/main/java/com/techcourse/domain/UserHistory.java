@@ -5,14 +5,11 @@ import java.time.LocalDateTime;
 public class UserHistory {
 
     private Long id;
-
     private final long userId;
     private final String account;
     private final String password;
     private final String email;
-
     private final LocalDateTime createdAt;
-
     private final String createBy;
 
     public UserHistory(final User user, final String createBy) {
