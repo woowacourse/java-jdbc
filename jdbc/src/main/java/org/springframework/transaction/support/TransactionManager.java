@@ -6,6 +6,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionManager {
 
@@ -16,11 +17,19 @@ public class TransactionManager {
     }
 
     public void execute(final LogicExecutor logicExecutor) {
+        executeWithResult(() -> {
+            logicExecutor.run();
+            return null;
+        });
+    }
+
+    public <T>T executeWithResult(final Supplier<T> logicExecutor) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
-            logicExecutor.run();
+            T result = logicExecutor.get();
             conn.commit();
+            return result;
         } catch (Exception e) {
             rollback(conn);
             throw new DataAccessException(e);
