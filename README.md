@@ -79,7 +79,7 @@
 
 - [ ] Transaction synchronization 적용
   - [ ] DataSourceUtils 사용
-  - [ ] TransactionSynchronizationManager 구현
+  - [x] TransactionSynchronizationManager 구현
 
 - [ ] Transaction Service 추상화
   - [ ] Transaction을 다루는 Service 따로 만들기
