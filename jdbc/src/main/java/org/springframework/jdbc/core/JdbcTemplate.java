@@ -16,7 +16,7 @@ import java.util.Optional;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int FIRST_PARAMETER_INDEX = 1;
+    private static final int PARAMETER_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -65,7 +65,7 @@ public class JdbcTemplate {
 
     private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
         for (int parameterIndex = 0; parameterIndex < parameters.length; parameterIndex++) {
-            preparedStatement.setObject(FIRST_PARAMETER_INDEX, parameters[parameterIndex]);
+            preparedStatement.setObject(PARAMETER_OFFSET + parameterIndex, parameters[parameterIndex]);
         }
     }
 }
