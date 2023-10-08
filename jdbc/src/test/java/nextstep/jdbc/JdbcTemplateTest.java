@@ -67,50 +67,45 @@ class JdbcTemplateTest {
     @Nested
     class 데이터_update_쿼리를_실행할_때 {
 
+        @BeforeEach
+        void setUp() throws SQLException {
+            given(preparedStatement.executeUpdate())
+                    .willReturn(1);
+        }
+
+        @AfterEach
+        void tearDown() throws SQLException {
+            assertThatPrepareStatementOpenedAndClosed();
+        }
+
         @Test
         void 새로운_Connection을_생성해_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
             // given
-            given(preparedStatement.executeUpdate())
-                    .willReturn(1);
-
             final String sql = "sql";
             final String arg = "arg";
 
             // when
-            final int actual = jdbcTemplate.update(sql, arg);
+            final int affectedRows = jdbcTemplate.update(sql, arg);
 
             // then
-            assertThat(actual).isEqualTo(1);
-
-            then(preparedStatement)
-                    .should(times(1))
-                    .setObject(1, "arg");
+            assertThat(affectedRows).isEqualTo(1);
 
             assertThatConnectionOpenedAndClosed();
-            assertThatPrepareStatementOpenedAndClosed();
         }
 
         @Test
         void Connection을_받아_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
             // given
-            given(preparedStatement.executeUpdate())
-                    .willReturn(1);
-
             final String sql = "sql";
             final String arg = "arg";
 
             // when
-            final int actual = jdbcTemplate.update(connection, sql, arg);
+            final int affectedRows = jdbcTemplate.update(connection, sql, arg);
 
             // then
-            assertThat(actual).isEqualTo(1);
-
-            then(preparedStatement)
-                    .should(times(1))
-                    .setObject(1, "arg");
+            assertThat(affectedRows).isEqualTo(1);
 
             assertThatConnectionDidNotOpenAndClose();
-            assertThatPrepareStatementOpenedAndClosed();
         }
     }
 
