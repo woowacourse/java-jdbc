@@ -32,13 +32,14 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(dataSource);
-        final UserService userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService txUserService = new TxUserService(appUserService);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        txUserService.changePassword(1L, newPassword, createBy);
 
-        final User actual = userService.findById(1L);
+        final User actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -47,15 +48,16 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(new JdbcTemplate(dataSource));
-        final UserService userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService txUserService = new TxUserService(appUserService);
 
         final String newPassword = "newPassword";
         final String createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(TransactionTemplateException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> txUserService.changePassword(1L, newPassword, createBy));
 
-        final User actual = userService.findById(1L);
+        final User actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

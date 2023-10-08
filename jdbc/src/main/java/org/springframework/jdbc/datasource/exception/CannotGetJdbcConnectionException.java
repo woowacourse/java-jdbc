@@ -1,4 +1,4 @@
-package org.springframework.jdbc;
+package org.springframework.jdbc.datasource.exception;
 
 import java.sql.SQLException;
 
