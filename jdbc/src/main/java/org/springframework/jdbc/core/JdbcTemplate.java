@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 
@@ -45,31 +44,29 @@ public class JdbcTemplate {
         }
     }
 
-    @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = executeQuery(connection -> prepareStatement(sql, connection, args), rowMapper);
+        final List<T> results = queryForList(sql, rowMapper, args);
         if (results.isEmpty()) {
-            return null;
+            throw new DataAccessException();
         }
-        return results.get(0);
+        if(results.size() > 1) {
+            for (T result : results) {
+                System.out.println("result = " + result);
+            }
+            throw new DataAccessException();
+        }
+        return results.iterator().next();
     }
 
-    private <T> List<T> executeQuery(
-            final PreparedStatementCallback preparedStatementCallback,
-            final RowMapper<T> rowMapper
-    ) {
-        return execute(preparedStatementCallback, pstmt -> {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection -> prepareStatement(sql, connection, args), pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
+                final List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
                 return results;
             }
         });
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(connection -> prepareStatement(sql, connection, args), rowMapper);
     }
 }
