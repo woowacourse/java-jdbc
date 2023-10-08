@@ -2,10 +2,8 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 public class TransactionUserService implements UserService {
@@ -31,29 +29,15 @@ public class TransactionUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
+        Transaction transaction = Transaction.start(dataSource);
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
-
             appUserService.changePassword(id, newPassword, createBy);
-
-            connection.commit();
+            transaction.commit();
         } catch (SQLException | RuntimeException e) {
-            tryRollback(connection);
+            transaction.rollback();
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(dataSource);
-        }
-    }
-
-    private void tryRollback(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.rollback();
-            }
-        } catch (SQLException ex) {
-            throw new DataAccessException(ex);
+            transaction.close();
         }
     }
 }
