@@ -30,8 +30,8 @@ public class JdbcTemplate {
         return queryForObject(connection, sql, rowMapper, createPreparedStatementSetter(args));
     }
 
-    public void update(Connection connection, String sql, Object... args) {
-        update(connection, sql, createPreparedStatementSetter(args));
+    public int update(Connection connection, String sql, Object... args) {
+        return update(connection, sql, createPreparedStatementSetter(args));
     }
 
     public void update(String sql, Object... args) {
@@ -54,10 +54,10 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    private void update(Connection connection, String sql, PreparedStatementSetter pss) {
+    private int update(Connection connection, String sql, PreparedStatementSetter pss) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             pss.setParameters(preparedStatement);
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }

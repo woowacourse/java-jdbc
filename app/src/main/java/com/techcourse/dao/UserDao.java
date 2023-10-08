@@ -32,10 +32,10 @@ public class UserDao {
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection connection, User user) {
+    public int update(Connection connection, User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         log.info("[LOG] update user");
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        return jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll(Connection connection) {

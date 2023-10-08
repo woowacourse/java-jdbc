@@ -5,6 +5,8 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -58,6 +60,7 @@ public class UserService {
             connection.setAutoCommit(false);
             User user = findById(id);
             user.changePassword(newPassword);
+            updateUser(connection, user);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
@@ -66,6 +69,13 @@ public class UserService {
             throw new RuntimeException(e);
         } finally {
             close(connection);
+        }
+    }
+
+    private void updateUser(Connection connection, User user) {
+        int updateSize = userDao.update(connection, user);
+        if(updateSize != 1){
+            throw new DataAccessException("갱신된 데이터의 개수가 올바르지 않습니다.");
         }
     }
 
