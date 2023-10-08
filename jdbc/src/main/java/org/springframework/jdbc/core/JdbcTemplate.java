@@ -56,7 +56,10 @@ public class JdbcTemplate {
         if (result.size() > 1) {
             throw new DataAccessException("예상하는 쿼리의 결과보다 많이 결과가 나왔습니다.");
         }
-        return Optional.ofNullable(result.get(0));
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.get(0));
     }
 
     private PreparedStatement getPreparedStatement(

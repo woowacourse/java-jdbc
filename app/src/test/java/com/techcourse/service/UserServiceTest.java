@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -28,6 +29,23 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @Test
+    void findById() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        assertThat(userService.findById(1L)).usingRecursiveComparison().ignoringFields("id").isEqualTo(user);
+    }
+
+    @Test
+    void findById_NotFound() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+        assertThatThrownBy(
+                () -> userService.findById(10L)
+        ).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
