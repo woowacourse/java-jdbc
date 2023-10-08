@@ -40,10 +40,10 @@ class TransactionManagerTest {
         transactionManager.initialize();
 
         // when
-        final SimpleConnectionHolder simpleConnectionHolder = getResource(dataSource);
+        final ConnectionHolder connectionHolder = getResource(dataSource);
         assertSoftly(softly -> {
-            softly.assertThat(simpleConnectionHolder.isTransactionActive()).isTrue();
-            softly.assertThat(simpleConnectionHolder.getConnection()).isEqualTo(connection);
+            softly.assertThat(connectionHolder.isTransactionActive()).isTrue();
+            softly.assertThat(connectionHolder.getConnection()).isEqualTo(connection);
         });
         then(connection)
                 .should(times(1))
@@ -54,8 +54,8 @@ class TransactionManagerTest {
     void 커밋한다() throws SQLException {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder simpleConnectionHolder = new SimpleConnectionHolder(connection);
-        TransactionSynchronizationManager.bindResource(dataSource, simpleConnectionHolder);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
 
         // when
         transactionManager.commit();
@@ -70,8 +70,8 @@ class TransactionManagerTest {
     void 커넥션을_종료한다() throws SQLException {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder simpleConnectionHolder = new SimpleConnectionHolder(connection);
-        TransactionSynchronizationManager.bindResource(dataSource, simpleConnectionHolder);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
 
         // when
         transactionManager.close();

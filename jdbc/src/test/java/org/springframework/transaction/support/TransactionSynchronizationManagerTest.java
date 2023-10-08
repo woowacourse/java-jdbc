@@ -25,32 +25,32 @@ class TransactionSynchronizationManagerTest {
     void 리소스를_저장한다() {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder simpleConnectionHolder = new SimpleConnectionHolder(connection);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
 
         // when
-        TransactionSynchronizationManager.bindResource(dataSource, simpleConnectionHolder);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
 
         // then
-        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isEqualTo(simpleConnectionHolder);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isEqualTo(connectionHolder);
     }
 
     @Test
     void 리소스를_가져온다() {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder simpleConnectionHolder = new SimpleConnectionHolder(connection);
-        TransactionSynchronizationManager.bindResource(dataSource, simpleConnectionHolder);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
 
         // expect
-        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isEqualTo(simpleConnectionHolder);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isEqualTo(connectionHolder);
     }
 
     @Test
     void 리소스를_해제한다() {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder simpleConnectionHolder = new SimpleConnectionHolder(connection);
-        TransactionSynchronizationManager.bindResource(dataSource, simpleConnectionHolder);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
 
         // when
         TransactionSynchronizationManager.unbindResource(dataSource);

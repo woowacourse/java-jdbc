@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.transaction.support.SimpleConnectionHolder;
+import org.springframework.transaction.support.ConnectionHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public abstract class DataSourceUtils {
@@ -13,14 +13,14 @@ public abstract class DataSourceUtils {
     }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        final SimpleConnectionHolder simpleConnectionHolder = TransactionSynchronizationManager.getResource(dataSource);
-        if (simpleConnectionHolder != null) {
-            return simpleConnectionHolder.getConnection();
+        final ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (connectionHolder != null) {
+            return connectionHolder.getConnection();
         }
 
         try {
             final Connection connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, new SimpleConnectionHolder(connection));
+            TransactionSynchronizationManager.bindResource(dataSource, new ConnectionHolder(connection));
             return connection;
         } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
@@ -28,12 +28,12 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        final SimpleConnectionHolder simpleConnectionHolder = TransactionSynchronizationManager.getResource(dataSource);
-        if (simpleConnectionHolder.isTransactionActive()) {
+        final ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (connectionHolder.isTransactionActive()) {
             return;
         }
         try {
-            final SimpleConnectionHolder unbindResource = TransactionSynchronizationManager.unbindResource(dataSource);
+            final ConnectionHolder unbindResource = TransactionSynchronizationManager.unbindResource(dataSource);
             if (unbindResource.isSameConnection(connection)) {
                 connection.close();
             }

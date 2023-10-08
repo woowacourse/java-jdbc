@@ -17,7 +17,7 @@ public class TransactionManager {
         try {
             final Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            final SimpleConnectionHolder connectionHolder = new SimpleConnectionHolder(connection);
+            final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
             connectionHolder.setTransactionActive(true);
             TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
         } catch (final SQLException e) {
@@ -26,7 +26,7 @@ public class TransactionManager {
     }
 
     private void execute(final ThrowingConsumer<Connection, SQLException> consumer) {
-        final SimpleConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        final ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
         final Connection connection = connectionHolder.getConnection();
         try {
             consumer.accept(connection);

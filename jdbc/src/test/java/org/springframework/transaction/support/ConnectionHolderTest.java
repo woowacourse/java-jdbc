@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-class SimpleConnectionHolderTest {
+class ConnectionHolderTest {
 
     @Test
     void TransactionActiveFlag를_설정한다() {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder connectionHolder = new SimpleConnectionHolder(connection);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
 
         // when
         connectionHolder.setTransactionActive(true);
@@ -29,7 +29,7 @@ class SimpleConnectionHolderTest {
     void 동일한_커넥션인지_비교한다() {
         // given
         final Connection connection = mock(Connection.class);
-        final SimpleConnectionHolder connectionHolder = new SimpleConnectionHolder(connection);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
 
         // expect
         assertThat(connectionHolder.isSameConnection(connection)).isTrue();

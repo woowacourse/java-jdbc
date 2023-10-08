@@ -2,16 +2,16 @@ package org.springframework.transaction.support;
 
 import java.sql.Connection;
 
-public class SimpleConnectionHolder {
+public class ConnectionHolder {
 
     private final Connection connection;
     private boolean transactionActive;
 
-    public SimpleConnectionHolder(final Connection connection) {
+    public ConnectionHolder(final Connection connection) {
         this(connection, false);
     }
 
-    public SimpleConnectionHolder(final Connection connection, final boolean transactionActive) {
+    public ConnectionHolder(final Connection connection, final boolean transactionActive) {
         this.connection = connection;
         this.transactionActive = transactionActive;
     }
