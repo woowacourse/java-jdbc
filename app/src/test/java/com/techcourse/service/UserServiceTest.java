@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;

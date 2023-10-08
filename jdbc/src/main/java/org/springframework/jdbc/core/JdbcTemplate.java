@@ -26,6 +26,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(final Connection conn, final String query, final Object... args) {
+        return execute(conn, this::executeUpdate, query, args);
+    }
+
     public int update(final String query, final Object... args) {
         return execute(this::executeUpdate, query, args);
     }
@@ -34,6 +38,15 @@ public class JdbcTemplate {
         try {
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final Function<PreparedStatement, T> function, final String query, final Object... args) {
+        try (final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
+            return function.apply(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
