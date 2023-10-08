@@ -53,22 +53,23 @@
 
 - [x] 2단계 - Propagation
     - [x] 테스트 통과
-      - [x] testRequired()
-        - saveFirstTransactionWithRequired() 메서드는 REQUIRED 설정. 메서드 호출 시 트랜잭션 한 개 생성.
-        - 내부에서 saveSecondTransactionWithRequired() 호출. 이 메서드는 REQUIRED 설정. 기존 트랜잭션 이어서 사용.
-        - 총 1개 트랜잭션.
-      - [x] testRequiredNew()
-        - saveFirstTransactionWithRequiredNew() 메서드는 REQUIRED 설정. 메서드 호출 시 트랜잭션 한 개 생성.
-        - 내부에서 saveSecondTransactionWithRequiresNew() 호출. 이 메서드는 REQUIRES_NEW 설정. 메서드 호출 시 트랜잭션 한 개 생성.
-        - 총 2개 트랜잭션.
-      - [x] testRequiredNewWithRollback()
-        - saveSecondTransactionWithRequiresNew() 메서드가 REQUIRES_NEW 설정이기 때문에, 이 메서드의 동작에 saveAndExceptionWithRequiredNew() 메서드의 트랜잭션이 영향을 주지 않는다.
-        - 따라서 saveAndExceptionWithRequiredNew() 메서드가 롤백되더라도, User가 save 된다.
-      - [x] testSupports()
-      - [x] testMandatory()
-      - [x] testNotSupported()
-      - [x] testNested()
-      - [x] testNever()
+        - [x] testRequired()
+            - saveFirstTransactionWithRequired() 메서드는 REQUIRED 설정. 메서드 호출 시 트랜잭션 한 개 생성.
+            - 내부에서 saveSecondTransactionWithRequired() 호출. 이 메서드는 REQUIRED 설정. 기존 트랜잭션 이어서 사용.
+            - 총 1개 트랜잭션.
+        - [x] testRequiredNew()
+            - saveFirstTransactionWithRequiredNew() 메서드는 REQUIRED 설정. 메서드 호출 시 트랜잭션 한 개 생성.
+            - 내부에서 saveSecondTransactionWithRequiresNew() 호출. 이 메서드는 REQUIRES_NEW 설정. 메서드 호출 시 트랜잭션 한 개 생성.
+            - 총 2개 트랜잭션.
+        - [x] testRequiredNewWithRollback()
+            - saveSecondTransactionWithRequiresNew() 메서드가 REQUIRES_NEW 설정이기 때문에, 이 메서드의 동작에
+              saveAndExceptionWithRequiredNew() 메서드의 트랜잭션이 영향을 주지 않는다.
+            - 따라서 saveAndExceptionWithRequiredNew() 메서드가 롤백되더라도, User가 save 된다.
+        - [x] testSupports()
+        - [x] testMandatory()
+        - [x] testNotSupported()
+        - [x] testNested()
+        - [x] testNever()
 
 ## 3단계 - Transaction 적용
 
@@ -77,10 +78,10 @@
 
 ## 4단계 - Transaction synchronization 적용
 
-- [ ] Transaction synchronization 적용
-  - [ ] DataSourceUtils 사용
-  - [x] TransactionSynchronizationManager 구현
+- [x] Transaction synchronization 적용
+    - [x] DataSourceUtils 사용
+    - [x] TransactionSynchronizationManager 구현
 
 - [ ] Transaction Service 추상화
-  - [ ] Transaction을 다루는 Service 따로 만들기
-  - [ ] testTransactionRollback() 테스트 통과
+    - [ ] Transaction을 다루는 Service 따로 만들기
+    - [ ] testTransactionRollback() 테스트 통과

@@ -64,49 +64,24 @@ class JdbcTemplateTest {
     void afterAll() throws Exception {
         openedMock.close();
     }
-    @Nested
-    class 데이터_update_쿼리를_실행할_때 {
 
-        @BeforeEach
-        void setUp() throws SQLException {
-            given(preparedStatement.executeUpdate())
-                    .willReturn(1);
-        }
+    @Test
+    void 데이터_update_쿼리를_실행할_때_update된_레코드_수를_반환한다() throws SQLException {
+        // given
+        given(preparedStatement.executeUpdate())
+                .willReturn(1);
 
-        @AfterEach
-        void tearDown() throws SQLException {
-            assertThatPrepareStatementOpenedAndClosed();
-        }
+        final String sql = "sql";
+        final String arg = "arg";
 
-        @Test
-        void 새로운_Connection을_생성해_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
-            // given
-            final String sql = "sql";
-            final String arg = "arg";
+        // when
+        final int affectedRows = jdbcTemplate.update(sql, arg);
 
-            // when
-            final int affectedRows = jdbcTemplate.update(sql, arg);
+        // then
+        assertThat(affectedRows).isEqualTo(1);
 
-            // then
-            assertThat(affectedRows).isEqualTo(1);
-
-            assertThatConnectionOpenedAndClosed();
-        }
-
-        @Test
-        void Connection을_받아_작업한_후_update된_레코드_수를_반환한다() throws SQLException {
-            // given
-            final String sql = "sql";
-            final String arg = "arg";
-
-            // when
-            final int affectedRows = jdbcTemplate.update(connection, sql, arg);
-
-            // then
-            assertThat(affectedRows).isEqualTo(1);
-
-            assertThatConnectionDidNotOpenAndClose();
-        }
+        assertThatConnectionOpenedButNotClosed();
+        assertThatPrepareStatementOpenedAndClosed();
     }
 
     @Nested
@@ -116,13 +91,6 @@ class JdbcTemplateTest {
         void setUp() throws SQLException {
             given(preparedStatement.executeQuery())
                     .willReturn(resultSet);
-        }
-
-        @AfterEach
-        void tearDown() throws SQLException {
-            assertThatConnectionOpenedAndClosed();
-            assertThatPrepareStatementOpenedAndClosed();
-            assertThatResultSetOpenedAndClosed();
         }
 
         @Test
@@ -141,6 +109,10 @@ class JdbcTemplateTest {
 
             // then
             assertThat(testObject).isNotNull();
+
+            assertThatConnectionOpenedButNotClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+            assertThatResultSetOpenedAndClosed();
         }
 
         @Test
@@ -156,6 +128,10 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, arg))
                     .isInstanceOf(DataAccessException.class)
                     .hasMessage("조회 데이터가 존재하지 않습니다.");
+
+            assertThatConnectionOpenedButNotClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+            assertThatResultSetOpenedAndClosed();
         }
 
         @Test
@@ -171,6 +147,10 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, arg))
                     .isInstanceOf(DataAccessException.class)
                     .hasMessage("조회 데이터가 한 개 이상 존재합니다.");
+
+            assertThatConnectionOpenedButNotClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+            assertThatResultSetOpenedAndClosed();
         }
     }
 
@@ -181,13 +161,6 @@ class JdbcTemplateTest {
         void setUp() throws SQLException {
             given(preparedStatement.executeQuery())
                     .willReturn(resultSet);
-        }
-
-        @AfterEach
-        void tearDown() throws SQLException {
-            assertThatConnectionOpenedAndClosed();
-            assertThatPrepareStatementOpenedAndClosed();
-            assertThatResultSetOpenedAndClosed();
         }
 
         @Test
@@ -206,6 +179,10 @@ class JdbcTemplateTest {
 
             // then
             assertThat(objects).hasSize(2);
+
+            assertThatConnectionOpenedButNotClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+            assertThatResultSetOpenedAndClosed();
         }
 
         @Test
@@ -222,22 +199,16 @@ class JdbcTemplateTest {
 
             // then
             assertThat(objects).isEmpty();
+
+            assertThatConnectionOpenedButNotClosed();
+            assertThatPrepareStatementOpenedAndClosed();
+            assertThatResultSetOpenedAndClosed();
         }
     }
 
-    private void assertThatConnectionOpenedAndClosed() throws SQLException {
+    private void assertThatConnectionOpenedButNotClosed() throws SQLException {
         then(dataSource)
                 .should(times(1))
-                .getConnection();
-
-        then(connection)
-                .should(times(1))
-                .close();
-    }
-
-    private void assertThatConnectionDidNotOpenAndClose() throws SQLException {
-        then(dataSource)
-                .should(never())
                 .getConnection();
 
         then(connection)
