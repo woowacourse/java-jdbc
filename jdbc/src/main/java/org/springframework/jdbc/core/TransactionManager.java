@@ -22,7 +22,7 @@ public final class TransactionManager {
             runnable.run();
             connection.commit();
         } catch (SQLException | DataAccessException e) {
-            try (connection){
+            try {
                 connection.rollback();
             } catch (SQLException ex) {
                 throw new DataAccessException(ex);
