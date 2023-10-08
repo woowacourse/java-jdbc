@@ -17,14 +17,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserServiceTest {
 
-    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() throws SQLException {
         final DataSource instance = DataSourceConfig.getInstance();
-        this.dataSource = instance;
         this.jdbcTemplate = new JdbcTemplate(instance);
         this.userDao = new UserDao(jdbcTemplate);
 

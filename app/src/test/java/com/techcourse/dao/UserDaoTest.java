@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
@@ -15,63 +16,64 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class UserDaoTest {
 
     private UserDao userDao;
-    private DataSource dataSource;
+    private Connection connection;
 
     @BeforeEach
     void setup() throws SQLException {
-        final DataSource instance = DataSourceConfig.getInstance();
-        DatabasePopulatorUtils.execute(instance);
-        dataSource = instance;
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        jdbcTemplate.execute(dataSource.getConnection(), "TRUNCATE TABLE USERS RESTART IDENTITY;");
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        connection = dataSource.getConnection();
+        jdbcTemplate.execute(connection, "TRUNCATE TABLE USERS RESTART IDENTITY;");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(connection, user);
+
     }
 
     @Test
-    void findAll() throws SQLException {
-        final var users = userDao.findAll(dataSource.getConnection());
+    void findAll() {
+        final var users = userDao.findAll(connection);
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
-    void findById() throws SQLException {
-        final var user = userDao.findById(dataSource.getConnection(),1L);
+    void findById() {
+        final var user = userDao.findById(connection,1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findByAccount() throws SQLException {
+    void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(dataSource.getConnection(),account);
+        final var user = userDao.findByAccount(connection,account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
-    void insert() throws SQLException {
+    void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(connection, user);
 
-        final var actual = userDao.findById(dataSource.getConnection(),2L);
+        final var actual = userDao.findById(connection,2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         final var newPassword = "password99";
-        final List<User> all = userDao.findAll(dataSource.getConnection());
-        final var user = userDao.findById(dataSource.getConnection(),1L);
+        final List<User> all = userDao.findAll(connection);
+        final var user = userDao.findById(connection,1L);
         user.changePassword(newPassword);
 
-        userDao.update(dataSource.getConnection(),user);
+        userDao.update(connection,user);
 
-        final var actual = userDao.findById(dataSource.getConnection(),1L);
+        final var actual = userDao.findById(connection,1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
