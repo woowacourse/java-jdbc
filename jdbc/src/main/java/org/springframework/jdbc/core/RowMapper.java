@@ -8,6 +8,6 @@ import javax.annotation.Nonnull;
 public interface RowMapper<T> {
 
     @Nonnull
-    T mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException;
+    T mapRow(final ResultSet resultSet) throws SQLException;
 }
 

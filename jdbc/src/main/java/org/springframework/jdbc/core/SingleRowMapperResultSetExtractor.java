@@ -14,6 +14,9 @@ public class SingleRowMapperResultSetExtractor<T> implements ResultSetExtractor<
 
     @Override
     public T extractData(final ResultSet resultSet) throws SQLException, DataAccessException {
-        return rowMapper.mapRow(resultSet, 1);
+        if(resultSet.next()) {
+            return rowMapper.mapRow(resultSet);
+        }
+        throw new DataAccessException("데이터를 찾을 수 없습니다.");
     }
 }

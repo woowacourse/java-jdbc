@@ -14,7 +14,7 @@ public class UserDao {
     private final RowMapper<User> userRowMapper = new RowMapper<>() {
         @Nonnull
         @Override
-        public User mapRow(final ResultSet resultSet, final int rowNumber) throws SQLException {
+        public User mapRow(final ResultSet resultSet) throws SQLException {
             return new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),

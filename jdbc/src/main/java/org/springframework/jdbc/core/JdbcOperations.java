@@ -1,7 +1,6 @@
 package org.springframework.jdbc.core;
 
 
-import java.sql.SQLException;
 import java.util.List;
 import org.springframework.dao.DataAccessException;
 
@@ -9,10 +8,7 @@ public interface JdbcOperations {
 
     void execute(final String sql) throws DataAccessException;
 
-    <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback)
-        throws DataAccessException, SQLException;
-
-    <T> T execute(final StatementCallback<T> callback) throws DataAccessException;
+    <T> T execute(final StatementCallback<T> callback, final String sql) throws DataAccessException;
 
     <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException;
 
