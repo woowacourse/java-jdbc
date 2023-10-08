@@ -18,18 +18,12 @@ public abstract class TransactionSynchronizationManager {
         final Map<DataSource, Connection> targetResources = resources.get();
 
         if (isInvalidConnection(targetResources, key)) {
+            removeResources(targetResources);
+
             return null;
         }
 
-        final Connection targetConnection = targetResources.get(key);
-
-        if (targetConnection != null) {
-            return targetConnection;
-        }
-
-        targetResources.remove(key);
-        removeResources(targetResources);
-        return null;
+        return targetResources.get(key);
     }
 
     private static boolean isInvalidConnection(
@@ -37,6 +31,12 @@ public abstract class TransactionSynchronizationManager {
             final DataSource key
     ) {
         return targetResources == null || !targetResources.containsKey(key);
+    }
+
+    private static void removeResources(final Map<DataSource, Connection> targetResources) {
+        if (targetResources == null || targetResources.isEmpty()) {
+            resources.remove();
+        }
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
@@ -61,12 +61,6 @@ public abstract class TransactionSynchronizationManager {
         resources.set(newTargetResources);
 
         return newTargetResources;
-    }
-
-    private static void removeResources(final Map<DataSource, Connection> targetResources) {
-        if (targetResources.isEmpty()) {
-            resources.remove();
-        }
     }
 
     @Nullable
