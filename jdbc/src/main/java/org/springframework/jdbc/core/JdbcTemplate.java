@@ -39,6 +39,21 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(Connection conn, String sql, Object... args) throws SQLException {
+        log.debug("query : {}", sql);
+        return execute(conn, new SetPreparedStatementMaker(sql, args), new PreparedStatementUpdateExecuter());
+    }
+
+    private <T> T execute(
+            Connection conn,
+            PreparedStatementMaker pstmtMaker,
+            PreparedStatementExecuter<T> pstmtExecuter
+    ) throws SQLException {
+        try (PreparedStatement pstmt = pstmtMaker.makePreparedStatement(conn)) {
+            return pstmtExecuter.execute(pstmt);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         log.debug("query : {}", sql);
         return execute(new SetPreparedStatementMaker(sql, args), new PreparedStatementQueryExecuter<>(rowMapper));
