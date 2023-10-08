@@ -13,18 +13,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 class UserServiceTest {
 
-    private TransactionManager transactionManager;
+    private TransactionTemplate transactionTemplate;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
         final DataSource dataSource = DataSourceConfig.getInstance();
-        this.transactionManager = new TransactionManager(dataSource);
+        this.transactionTemplate = new TransactionTemplate(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
@@ -54,7 +54,7 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
