@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.error.exception.MethodNotAllowedSqlRuntimeE
 import org.springframework.jdbc.core.error.exception.MethodNotAllowedSqlRuntimeException.ExecuteUpdateSqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.SqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.SyntaxSqlRuntimeException;
+import org.springframework.jdbc.core.error.exception.TableNotFoundSqlRuntimeException;
 
 public enum SqlExceptionType {
     METHOD_NOT_ALLOWED_EXECUTE_UPDATE(90001, ExecuteUpdateSqlRuntimeException::new),

@@ -12,11 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.JdbcTemplateBase;
-import org.springframework.jdbc.core.error.TableNotFoundSqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.ColumnSqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.DataConversionSqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.MethodNotAllowedSqlRuntimeException;
 import org.springframework.jdbc.core.error.exception.SyntaxSqlRuntimeException;
+import org.springframework.jdbc.core.error.exception.TableNotFoundSqlRuntimeException;
 import org.springframework.jdbc.core.mapper.ResultSetObjectMapper;
 
 class SqlRuntimeExceptionTest {
