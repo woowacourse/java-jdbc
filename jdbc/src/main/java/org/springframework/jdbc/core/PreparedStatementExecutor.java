@@ -40,16 +40,12 @@ public class PreparedStatementExecutor {
             final Connection connection,
             final String sql,
             final Object... parameters
-    ) {
-        try {
-            log.debug("query : {}", sql);
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+    ) throws SQLException {
+        log.debug("query : {}", sql);
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
-            setParameters(preparedStatement, parameters);
-            return preparedStatement;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        setParameters(preparedStatement, parameters);
+        return preparedStatement;
     }
 
     private void setParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
