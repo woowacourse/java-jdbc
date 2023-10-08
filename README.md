@@ -74,3 +74,13 @@
 
 - [x] UserService Transaction 적용
     - [x] UserDao, UserHistoryDao 같은 connection 사용하도록 설정
+
+## 4단계 - Transaction synchronization 적용
+
+- [ ] Transaction synchronization 적용
+  - [ ] DataSourceUtils 사용
+  - [ ] TransactionSynchronizationManager 구현
+
+- [ ] Transaction Service 추상화
+  - [ ] Transaction을 다루는 Service 따로 만들기
+  - [ ] testTransactionRollback() 테스트 통과
