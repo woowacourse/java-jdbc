@@ -1,5 +1,6 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -27,7 +28,25 @@ public class PrepareStatementExecutor {
             log.debug("query : {}", sql);
 
             setParameters(pstmt, params);
-            
+
+            return processor.process(pstmt);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage());
+        }
+    }
+
+    public <T> T execute(
+            final Connection connection,
+            final PreparedStatementProcessor<T> processor,
+            final String sql,
+            final Object... params
+    ) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, params);
+
             return processor.process(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
