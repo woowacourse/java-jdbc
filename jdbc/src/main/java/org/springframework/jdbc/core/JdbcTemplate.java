@@ -11,12 +11,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
     private static Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -32,7 +31,18 @@ public class JdbcTemplate {
                 results.add(rowMapper.run(resultSet));
             }
 
-            return results;
+    public void update(Connection connection, String sql, Object... args) {
+        update(connection, sql, createPreparedStatementSetter(args));
+    }
+
+    public void update(String sql, Object... args) {
+        update(sql, createPreparedStatementSetter(args));
+    }
+
+    private <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            pss.setParameters(preparedStatement);
+            return mapResultSetToObject(rowMapper, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
@@ -48,16 +58,19 @@ public class JdbcTemplate {
                 return Optional.empty();
             }
 
-            return Optional.of(rowMapper.run(resultSet));
+    private void update(Connection connection, String sql, PreparedStatementSetter pss) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            pss.setParameters(preparedStatement);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
-    public void update(String sql, Object... args) {
+    private void update(String sql, PreparedStatementSetter pss) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            pss.setParameters(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -65,12 +78,13 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, Object[] args) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(Object... args) {
+        return psmt -> {
+            for (int i = 0; i < args.length; i++) {
+                psmt.setObject(i + 1, args[i]);
+            }
+        };
+    }
 
         return preparedStatement;
     }
