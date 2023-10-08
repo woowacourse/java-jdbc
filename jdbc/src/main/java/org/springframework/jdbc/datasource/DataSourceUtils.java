@@ -27,6 +27,10 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            if (!connection.getAutoCommit()) {
+                return;
+            }
+
             connection.close();
             TransactionSynchronizationManager.unbindResource(dataSource);
         } catch (SQLException ex) {

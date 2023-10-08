@@ -34,8 +34,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
-        //TODO: connection 안닫는 문제 해결
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
