@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -31,22 +33,32 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection connection = dataSource.getConnection())  {
-            try {
-                connection.setAutoCommit(false);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+        try {
+            connection.setAutoCommit(false);
 
-                connection.commit();
-            } catch (Exception e) {
-                connection.rollback();
-                throw new DataAccessException(e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (Exception e) {
+            rollbackAndThrowException(connection, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
+
+    private void rollbackAndThrowException(final Connection connection, final Exception e) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new DataAccessException(ex);
+        }
+        throw new DataAccessException(e);
+    }
+
 }

@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,22 +25,7 @@ public class PreparedStatementExecutor {
             final String sql,
             final Object... parameters
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = generatePreparedStatement(connection, sql, parameters)
-        ) {
-            return preparedStatementProcessor.process(preparedStatement);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> T execute(
-            final Connection connection,
-            final PreparedStatementProcessor<T> preparedStatementProcessor,
-            final String sql,
-            final Object... parameters
-    ) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
              final PreparedStatement preparedStatement = generatePreparedStatement(connection, sql, parameters)
         ) {
