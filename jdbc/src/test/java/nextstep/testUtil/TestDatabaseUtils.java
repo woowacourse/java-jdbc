@@ -1,4 +1,4 @@
-package nextstep.jdbc.testUtil;
+package nextstep.testUtil;
 
 import java.io.File;
 import java.io.IOException;
