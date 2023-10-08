@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.service.user;
 
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -32,4 +32,5 @@ public class AppUserService implements UserService {
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
     }
+
 }

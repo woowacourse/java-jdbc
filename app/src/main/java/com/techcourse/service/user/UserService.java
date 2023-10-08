@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.service.user;
 
 import com.techcourse.domain.User;
 

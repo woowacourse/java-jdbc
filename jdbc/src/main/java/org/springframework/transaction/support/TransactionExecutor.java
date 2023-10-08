@@ -1,10 +1,10 @@
-package com.techcourse.service;
+package org.springframework.transaction.support;
 
-import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceConfig;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionExecutor {

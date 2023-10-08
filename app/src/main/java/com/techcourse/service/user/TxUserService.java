@@ -1,6 +1,7 @@
-package com.techcourse.service;
+package com.techcourse.service.user;
 
 import com.techcourse.domain.User;
+import org.springframework.transaction.support.TransactionExecutor;
 
 public class TxUserService implements UserService {
 
@@ -24,4 +25,5 @@ public class TxUserService implements UserService {
     public void changePassword(long id, String newPassword, String createBy) {
         TransactionExecutor.transactionCommand(() -> userService.changePassword(id, newPassword, createBy));
     }
+
 }

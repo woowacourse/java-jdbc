@@ -3,10 +3,12 @@ package com.techcourse.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.techcourse.config.DataSourceConfig;
+import org.springframework.jdbc.datasource.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.user.AppUserService;
+import com.techcourse.service.user.TxUserService;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
