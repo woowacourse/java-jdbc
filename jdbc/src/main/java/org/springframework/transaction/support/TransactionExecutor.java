@@ -26,7 +26,7 @@ public class TransactionExecutor {
             executeStrategy.strategy(connection);
 
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error("execute exception : {}", e);
             rollback(connection);
             throw new RuntimeException(e);
