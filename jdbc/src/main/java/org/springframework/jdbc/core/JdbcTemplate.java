@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,26 +24,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final Connection connection, final String sql, final Object... elements) {
-        execute(connection, sql, PreparedStatement::executeUpdate, elements);
-    }
-
-    private <T> T execute(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementExecutor<T> executor,
-            final Object... elements
-    ) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setElements(elements, preparedStatement);
-
-            return executor.action(preparedStatement);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     public void update(final String sql, final Object... elements) {
         execute(sql, PreparedStatement::executeUpdate, elements);
     }
@@ -52,15 +33,16 @@ public class JdbcTemplate {
             final PreparedStatementExecutor<T> executor,
             final Object... elements
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try  (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setElements(elements, preparedStatement);
 
             return executor.action(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
