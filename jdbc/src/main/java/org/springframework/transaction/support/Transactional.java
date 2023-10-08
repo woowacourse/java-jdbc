@@ -5,11 +5,13 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.JdbcException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class Transactional {
 
     private static Transactional instance;
-    private static final ThreadLocal<Connection> resource = new ThreadLocal<>();
+    private final ThreadLocal<Connection> resource;
+    private final ThreadLocal<DataSource> dataSource;
 
     public static synchronized Transactional getInstance() {
         if (instance == null) {
@@ -18,14 +20,20 @@ public class Transactional {
         return instance;
     }
 
+    private Transactional() {
+        this.resource = new ThreadLocal<>();
+        this.dataSource = new ThreadLocal<>();
+    }
+
     public Connection getConnection(final DataSource dataSource) {
         if (resource.get() != null) {
             return resource.get();
         }
         try {
-            final Connection connection = dataSource.getConnection();
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            resource.set(connection);
+            this.resource.set(connection);
+            this.dataSource.set(dataSource);
             return connection;
         } catch (SQLException e) {
             throw new CannotGetJdbcConnectionException("", e);
@@ -50,7 +58,9 @@ public class Transactional {
         } catch (SQLException e) {
             throw new JdbcException(e);
         } finally {
+            DataSourceUtils.releaseConnection(resource.get(), dataSource.get());
             resource.remove();
+            dataSource.remove();
         }
     }
 }
