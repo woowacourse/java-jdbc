@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
@@ -14,11 +15,10 @@ public class TransactionManager {
     }
 
     public <T> T execute(final TransactionExecutor<T> transactionExecutor) {
-        Connection connection = null;
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            final T result = transactionExecutor.execute(connection);
+            final T result = transactionExecutor.execute();
             connection.commit();
             return result;
         } catch (final SQLException e) {
@@ -30,11 +30,10 @@ public class TransactionManager {
     }
 
     public void executeNoReturn(final TransactionNoReturnExecutor transactionExecutor) {
-        Connection connection = null;
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            transactionExecutor.execute(connection);
+            transactionExecutor.execute();
             connection.commit();
         } catch (final SQLException e) {
             rollback(connection);
@@ -52,9 +51,6 @@ public class TransactionManager {
     }
 
     private void close(final Connection connection) {
-        try {
-            connection.close();
-        } catch (final SQLException ignored) {
-        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }

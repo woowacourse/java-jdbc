@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class QueryExecutorService {
 
@@ -14,10 +15,10 @@ public class QueryExecutorService {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final Connection connection, final QueryExecutor<T> queryExecutor, final String query,
+    public <T> T execute(final QueryExecutor<T> queryExecutor, final String query,
                          final Object... columns) {
         try (
-                final PreparedStatement pstmt = getPreparedstatement(connection, query, columns);
+                final PreparedStatement pstmt = getPreparedstatement(query, columns);
         ) {
             return queryExecutor.execute(pstmt);
         } catch (final SQLException e) {
@@ -25,9 +26,10 @@ public class QueryExecutorService {
         }
     }
 
-    private PreparedStatement getPreparedstatement(final Connection conn, final String query, final Object[] columns)
+    private PreparedStatement getPreparedstatement(final String query, final Object[] columns)
             throws SQLException {
-        final PreparedStatement preparedStatement = conn.prepareStatement(query);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final PreparedStatement preparedStatement = connection.prepareStatement(query);
         setParameters(preparedStatement, columns);
         return preparedStatement;
     }

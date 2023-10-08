@@ -28,7 +28,7 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        transactionManager.executeNoReturn(connection -> userDao.insert(connection, user));
+        transactionManager.executeNoReturn(() -> userDao.insert(user));
     }
 
     @Test

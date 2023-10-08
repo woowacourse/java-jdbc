@@ -21,20 +21,20 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return transactionManager.execute(connection -> userDao.findById(connection, id)
-                .orElseThrow(() -> new NoSuchElementException("해당 사용자가 존재하지 않습니다.")));
+        return userDao.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("해당 사용자가 존재하지 않습니다."));
     }
 
     public void insert(final User user) {
-        transactionManager.executeNoReturn(connection -> userDao.insert(connection, user));
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.executeNoReturn(connection -> {
+        transactionManager.executeNoReturn(() -> {
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }
