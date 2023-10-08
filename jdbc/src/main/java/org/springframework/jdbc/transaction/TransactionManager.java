@@ -14,14 +14,27 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void begin(final Connection connection) {
+    public <T> T execute(final TransactionExecutor<T> transactionExecutor) {
+        try {
+            Connection connection = begin();
+            T response = transactionExecutor.execute(connection);
+            commit();
+            return response;
+        } catch (RuntimeException e) {
+            rollback();
+            throw e;
+        }
+    }
+
+    public Connection begin() {
+        Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         connectionInThread.set(connection);
-        getConnection();
+        return connection;
     }
 
     public void commit() {
