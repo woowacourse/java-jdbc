@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDao;
 import com.techcourse.dao.JdbcUserHistoryDao;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.repository.UserRepository;

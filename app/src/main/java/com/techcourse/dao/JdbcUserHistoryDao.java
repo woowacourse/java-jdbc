@@ -1,14 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 public class JdbcUserHistoryDao implements UserHistoryDao {
 

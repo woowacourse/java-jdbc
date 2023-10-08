@@ -1,12 +1,17 @@
 package org.springframework.jdbc.transaction;
 
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class TransactionManager {
+import static org.springframework.jdbc.datasource.DataSourceUtils.*;
+import static org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.*;
 
-    private static final ThreadLocal<Connection> connectionInThread = new ThreadLocal<>();
+public class TransactionManager {
 
     private final DataSource dataSource;
 
@@ -27,54 +32,33 @@ public class TransactionManager {
     }
 
     public Connection begin() {
-        Connection connection = getConnection();
+        Connection connection = getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        connectionInThread.set(connection);
         return connection;
     }
 
     public void commit() {
-        Connection connection = getConnection();
+        Connection connection = getConnection(dataSource);
         try {
             connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        init(connection);
+        releaseConnection(connection, dataSource);
     }
 
     public void rollback() {
-        Connection connection = getConnection();
+        Connection connection = getConnection(dataSource);
         try {
             connection.rollback();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        init(connection);
-    }
-
-    private void init(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        connectionInThread.remove();
-    }
-
-    public Connection getConnection() {
-        if (connectionInThread.get() == null) {
-            try {
-                return dataSource.getConnection();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return connectionInThread.get();
+        releaseConnection(connection, dataSource);
     }
 
 }

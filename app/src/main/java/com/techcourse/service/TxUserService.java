@@ -1,7 +1,5 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.JdbcUserHistoryDao;
 import com.techcourse.domain.User;
 import org.springframework.jdbc.transaction.TransactionManager;
 
