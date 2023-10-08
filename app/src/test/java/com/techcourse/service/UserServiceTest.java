@@ -11,6 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,11 +36,13 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        var userService = new UserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+
+        new Thread(() -> userService.changePassword(1L, newPassword, createBy)).start();
+        sleep(0.5);
 
         final var actual = userService.findById(1L);
 
@@ -55,11 +58,18 @@ class UserServiceTest {
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        new Thread(() -> assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, newPassword, createBy))).start();
+        sleep(0.5);
 
         final var actual = userService.findById(1L);
-
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private void sleep(double seconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep((long) (seconds * 1000));
+        } catch (InterruptedException ignored) {
+        }
     }
 }

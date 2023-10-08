@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.springframework.transaction.support.TransactionSynchronizationManager.getResource;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -28,10 +30,6 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... arguments) {
         queryTemplate(sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
-    }
-
-    public void update(Connection connection, String sql, Object... arguments) {
-        queryTemplate(connection, sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
@@ -60,29 +58,24 @@ public class JdbcTemplate {
     }
 
     private <T> T queryTemplate(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)
-        ) {
+        Connection conn = getResource(dataSource);
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = StatementCreator.createStatement(conn, sql, arguments);
             log.debug("query : {}", sql);
 
             return statementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SqlExceptionTranslator.translateException(e);
-        }
-    }
-
-    private <T> T queryTemplate(Connection connection, String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
-        try (
-                PreparedStatement pstmt = StatementCreator.createStatement(connection, sql, arguments)
-        ) {
-            log.debug("query : {}", sql);
-
-            return statementExecutor.execute(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw SqlExceptionTranslator.translateException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                throw new JdbcException("cannot close Statement", e);
+            }
         }
     }
 
