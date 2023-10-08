@@ -1,10 +1,10 @@
 package org.springframework.transaction.support;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,19 +17,22 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         if (resources.get() == null) {
-            try {
-                Map<DataSource, Connection> threadResource = new HashMap<>();
-                threadResource.put(key, key.getConnection());
-                resources.set(threadResource);
-            } catch (SQLException e) {
-                throw new DataAccessException("cannot get Connection", e);
-            }
+            return null;
         }
-
         return resources.get().get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        if (resources.get() == null) {
+            try {
+                Map<DataSource, Connection> threadResource = new HashMap<>();
+                resources.set(threadResource);
+            } catch (Exception e) {
+                throw new DataAccessException("cannot get Connection", e);
+            }
+        }
+
+        resources.get().put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
@@ -40,14 +43,14 @@ public abstract class TransactionSynchronizationManager {
             resources.remove();
             return connection;
         } catch (Exception e) {
-            throw new DataAccessException("connection close failed", e);
+            throw new DataAccessException("resource unbind failed", e);
         }
     }
 
     public static void execute(DataSource dataSource, Runnable runnable) {
         Connection connection = null;
         try {
-            connection = getResource(dataSource);
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             runnable.run();
@@ -56,7 +59,7 @@ public abstract class TransactionSynchronizationManager {
         } catch (Exception e) {
             ConnectionManager.rollback(e, connection);
         } finally {
-            ConnectionManager.close(connection);
+            ConnectionManager.close(dataSource, connection);
         }
     }
 }

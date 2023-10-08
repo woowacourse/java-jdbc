@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.BadGrammarJdbcException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.JdbcException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -15,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import static org.springframework.transaction.support.TransactionSynchronizationManager.getResource;
 
 public class JdbcTemplate {
 
@@ -58,7 +57,7 @@ public class JdbcTemplate {
     }
 
     private <T> T queryTemplate(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
-        Connection conn = getResource(dataSource);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         PreparedStatement pstmt = null;
         try {
             pstmt = StatementCreator.createStatement(conn, sql, arguments);

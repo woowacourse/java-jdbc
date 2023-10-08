@@ -41,8 +41,7 @@ class UserServiceTest {
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
 
-        new Thread(() -> userService.changePassword(1L, newPassword, createBy)).start();
-        sleep(0.5);
+        userService.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L);
 
@@ -57,9 +56,8 @@ class UserServiceTest {
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        new Thread(() -> assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy))).start();
+
+        assertThrows(DataAccessException.class, () -> userService.changePassword(1L, newPassword, createBy));
         sleep(0.5);
 
         final var actual = userService.findById(1L);

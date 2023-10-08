@@ -6,8 +6,6 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -40,9 +38,9 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        List<User> users = userDao.findByAccount(account);
+        User user = userDao.findByAccount(account).get();
 
-        assertThat(users).extracting("account").containsOnly("gugu");
+        assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
