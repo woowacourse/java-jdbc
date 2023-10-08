@@ -19,7 +19,7 @@ public class TransactionManager {
             conn.setAutoCommit(false);
             logicExecutor.run(conn);
             conn.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollback(conn);
             throw new IllegalStateException(e);
         } finally {
@@ -27,10 +27,7 @@ public class TransactionManager {
         }
     }
 
-    private void rollback(final Connection conn) {
-        if(conn == null) {
-            return;
-        }
+private void rollback(final Connection conn) {
         try {
             conn.rollback();
         } catch (SQLException e) {
