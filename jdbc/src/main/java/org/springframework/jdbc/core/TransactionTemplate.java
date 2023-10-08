@@ -11,25 +11,21 @@ public class TransactionTemplate {
     }
 
     public void execute(final Runnable runnable) {
-        try {
-            transactionManager.start();
-
+        executeInternal(() -> {
             runnable.run();
-
-            transactionManager.commit();
-        } catch (DataAccessException e) {
-            transactionManager.rollback();
-            throw e;
-        } finally {
-            transactionManager.release();
-        }
+            return null;
+        });
     }
 
     public <R> R executeWithResult(final Supplier<R> supplier) {
+        return executeInternal(supplier);
+    }
+
+    private <R> R executeInternal(final Supplier<R> action) {
         try {
             transactionManager.start();
 
-            final R result = supplier.get();
+            R result = action.get();
 
             transactionManager.commit();
             return result;
