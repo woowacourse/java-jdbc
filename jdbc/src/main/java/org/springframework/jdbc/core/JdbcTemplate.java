@@ -14,32 +14,29 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final ConnectionManager connectionManager;
-
-    public JdbcTemplate(final ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
-    }
-
-    public int executeUpdate(final String query, final Object... parameters) {
-        return execute(query, (connection, preparedStatement) -> preparedStatement.executeUpdate(), parameters);
+    public int executeUpdate(final Connection connection, final String query, final Object... parameters) {
+        PreparedStatementCallback<Integer> preparedStatementCallback = PreparedStatement::executeUpdate;
+        return execute(connection, query, preparedStatementCallback, parameters);
     }
 
     public <T> T executeQueryForObject(
+            final Connection connection,
             final String query,
             final RowMapper<T> rowMapper,
             final Object... parameters
     ) {
-        final ResultSetExtractor<T> resultSetExtractor = resultSet -> {
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
+        final var results = executeQueryForList(connection, query, rowMapper, parameters);
+        if (results.isEmpty()) {
             return null;
-        };
-
-        return executeQuery(query, resultSetExtractor, parameters);
+        }
+        if (results.size() > 1) {
+            throw new SqlQueryException(query, "cannot map for single result");
+        }
+        return results.get(0);
     }
 
     public <T> List<T> executeQueryForList(
+            final Connection connection,
             final String query,
             final RowMapper<T> rowMapper,
             final Object... parameters
@@ -52,31 +49,37 @@ public class JdbcTemplate {
             return results;
         };
 
-        return executeQuery(query, resultSetExtractor, parameters);
+        return executeQuery(connection, query, resultSetExtractor, parameters);
     }
 
     public <T> T executeQuery(
+            final Connection connection,
             final String query,
             final ResultSetExtractor<T> resultSetExtractor,
             final Object... parameters
     ) {
-        return execute(query, (connection, preparedStatement) -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                return resultSetExtractor.extract(resultSet);
-            }
-        }, parameters);
+        return execute(
+                connection,
+                query,
+                preparedStatement -> {
+                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                        return resultSetExtractor.extract(resultSet);
+                    }
+                }, parameters);
     }
 
     private <T> T execute(
+            final Connection connection,
             final String query,
-            final ConnectionCallback<T> callback,
+            final PreparedStatementCallback<T> callback,
             final Object... parameters
     ) {
-        try (final Connection connection = connectionManager.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (final Connection conn = connection;
+             final PreparedStatement preparedStatement = conn.prepareStatement(query)) {
             log.info("query: {}", query);
             setParameters(preparedStatement, parameters);
-            return callback.doInConnection(connection, preparedStatement);
+
+            return callback.doInConnection(preparedStatement);
         } catch (SQLException exception) {
             throw new SqlQueryException(exception.getMessage(), query);
         }

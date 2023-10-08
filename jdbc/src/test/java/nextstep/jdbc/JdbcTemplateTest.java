@@ -17,12 +17,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class JdbcTemplateTest {
 
+    private ConnectionManager connectionManager;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
-        TestConnectionManager connectionManager = new TestConnectionManager();
-        this.jdbcTemplate = new JdbcTemplate(connectionManager);
+        this.connectionManager = new TestConnectionManager();
+        this.jdbcTemplate = new JdbcTemplate();
         try (Connection conn = connectionManager.getConnection()) {
             conn.setAutoCommit(true);
             try (Statement stmt = conn.createStatement()) {
@@ -43,7 +44,10 @@ class JdbcTemplateTest {
         // given
         failIfExceptionThrownBy(() -> {
             // when
-            final var updated = jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
+            final var updated = jdbcTemplate.executeUpdate(
+                    connectionManager.getConnection(),
+                    "insert into users (email) values (?)", "doy@gmail.com"
+            );
 
             // then
             assertThat(updated).isOne();
@@ -57,6 +61,7 @@ class JdbcTemplateTest {
         failIfExceptionThrownBy(() -> {
             // when
             User user = jdbcTemplate.executeQueryForObject(
+                    connectionManager.getConnection(),
                     "select email from users where id = ?",
                     resultSet -> new User(resultSet.getString(1)), 1L
             );
@@ -71,11 +76,15 @@ class JdbcTemplateTest {
     @DisplayName("다건 레코드를 조회하는 쿼리를 실행한다.")
     void executeQueryForList() {
         // given
-        jdbcTemplate.executeUpdate("insert into users (email) values (?)", "doy@gmail.com");
+        jdbcTemplate.executeUpdate(
+                connectionManager.getConnection(),
+                "insert into users (email) values (?)", "doy@gmail.com"
+        );
 
         failIfExceptionThrownBy(() -> {
             // when
             List<User> users = jdbcTemplate.executeQueryForList(
+                    connectionManager.getConnection(),
                     "select email from users",
                     resultSet -> new User(resultSet.getString(1))
             );
