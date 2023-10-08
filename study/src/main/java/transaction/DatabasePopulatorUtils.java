@@ -23,7 +23,9 @@ public class DatabasePopulatorUtils {
             final var sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
             statement = connection.createStatement();
-            statement.execute(sql);
+            for (String query : sql.split(";")) {
+                statement.execute(query + ";");
+            }
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e.getCause());
         } finally {
