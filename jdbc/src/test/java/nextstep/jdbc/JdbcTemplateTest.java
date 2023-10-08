@@ -67,7 +67,9 @@ class JdbcTemplateTest {
         ResultSet resultSetMock = mock(ResultSet.class);
         RowMapper<TestUser> rowMapperMock = mock(RowMapper.class);
         given(preparedStatementMock.executeQuery()).willReturn(resultSetMock);
-        given(resultSetMock.next()).willReturn(true);
+        given(resultSetMock.next())
+                .willReturn(true)
+                .willReturn(false);
         given(rowMapperMock.mapRow(eq(resultSetMock), anyInt()))
                 .willReturn(new TestUser(1L, account, password, email));
 
