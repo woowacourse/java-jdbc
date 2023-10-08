@@ -24,4 +24,16 @@ public class PreparedStatementExecutor {
             throw new RuntimeException(e);
         }
     }
+
+    public <T> T execute(
+            final Connection connection,
+            final PreparedStatementCreator preparedStatementCreator,
+            final PreparedStatementCaller<T> preparedStatementCaller
+    ) {
+        try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
+            return preparedStatementCaller.call(preparedStatement);
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
