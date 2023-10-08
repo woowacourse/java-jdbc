@@ -5,48 +5,59 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = DataSourceConfig.getInstance();
     }
 
     public void insert(final User user) {
-        try (final Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+        try {
             userDao.insert(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, "system"));
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
         }
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    public void changePassword(final long id, final String newPassword, final String createBy) throws DataAccessException {
         final var user = findById(id);
         user.changePassword(newPassword);
-        try (final Connection connection = dataSource.getConnection()) {
-            try {
-                connection.setAutoCommit(false);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (final Exception e) {
-                connection.rollback();
-                throw new RuntimeException(e);
-            } finally {
-                connection.setAutoCommit(true);
-            }
+        final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+        try {
+            connection.setAutoCommit(false);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            connection.commit();
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new DataAccessException(ex);
+            }
+            throw new DataAccessException(e);
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
+            }
+            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
+            TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
         }
     }
 
