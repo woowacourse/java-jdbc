@@ -4,3 +4,6 @@
 - [x] 2단계 - 리팩터링
     - 중복 제거
 - [x] 3단계 - Transaction 적용하기
+- [ ] 4단계 - Transaction synchronization 적용하기
+  - [ ] Transaction synchronization 적용하기
+  - [ ] 트랜잭션 서비스 추상화하기
