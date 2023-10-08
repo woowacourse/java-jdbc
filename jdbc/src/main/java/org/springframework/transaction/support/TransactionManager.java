@@ -1,6 +1,8 @@
 package org.springframework.transaction.support;
 
-import org.springframework.jdbc.datasource.ConnectionUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,24 +16,24 @@ public class TransactionManager {
     }
 
     public void execute(final LogicExecutor logicExecutor) {
-        final Connection conn = ConnectionUtils.getConnection(dataSource);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
-            logicExecutor.run(conn);
+            logicExecutor.run();
             conn.commit();
         } catch (Exception e) {
             rollback(conn);
-            throw new IllegalStateException(e);
+            throw new DataAccessException(e);
         } finally {
-            ConnectionUtils.releaseConnection(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-private void rollback(final Connection conn) {
+    private void rollback(final Connection conn) {
         try {
             conn.rollback();
         } catch (SQLException e) {
-            throw new IllegalStateException(e);
+            throw new DataAccessException(e);
         }
     }
 }

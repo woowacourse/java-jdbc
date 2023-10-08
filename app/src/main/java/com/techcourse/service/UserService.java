@@ -6,8 +6,6 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.transaction.support.TransactionManager;
 
-import java.sql.Connection;
-
 public class UserService {
 
     private final UserDao userDao;
@@ -30,13 +28,13 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.execute((conn) -> changePasswordInTransaction(id, newPassword, createBy, conn));
+        transactionManager.execute(() -> changePasswordInTransaction(id, newPassword, createBy));
     }
 
-    private void changePasswordInTransaction(final long id, final String newPassword, final String createBy, final Connection conn) {
+    private void changePasswordInTransaction(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(conn, user);
-        userHistoryDao.log(conn, new UserHistory(user, createBy));
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }

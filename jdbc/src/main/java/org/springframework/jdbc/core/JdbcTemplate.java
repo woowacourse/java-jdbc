@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.EmptyResultDataAccessException;
 import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
@@ -55,8 +56,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final Object[] args, final PreparedStatementFunction<T> preparedStatementExecutor) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
