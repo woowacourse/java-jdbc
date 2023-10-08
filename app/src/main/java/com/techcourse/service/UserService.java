@@ -53,7 +53,7 @@ public class UserService {
             throw new ConnectionException(e.getMessage());
         } catch (DataAccessException e) {
             rollback(connection);
-            throw new DataAccessException(e.getMessage());
+            throw e;
         } finally {
             close(connection);
         }
