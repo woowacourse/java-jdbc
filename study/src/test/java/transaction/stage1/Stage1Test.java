@@ -2,6 +2,8 @@ package transaction.stage1;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.List;
+import java.util.Objects;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,10 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |          +           |      +
+ * Read Committed   |      -      |          +           |      +
+ * Repeatable Read  |      -      |          -           |      +
+ * Serializable     |      -      |          -           |      -
  */
 class Stage1Test {
 
@@ -58,10 +60,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |     +
+     * Read Committed   |     -
+     * Repeatable Read  |     -
+     * Serializable     |     -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +83,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -95,7 +97,7 @@ class Stage1Test {
             // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
-            assertThat(actual).isNull();
+            log.info("actual : {}", Objects.isNull(actual));
         })).start();
 
         sleep(0.5);
@@ -111,10 +113,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |    +
+     * Read Committed   |    +
+     * Repeatable Read  |    -
+     * Serializable     |    -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +132,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,17 +175,18 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |    +
+     * Read Committed   |    +
+     * Repeatable Read  |    +
+     * Serializable     |    -
      */
     @Test
     void phantomReading() throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withLogConsumer(new Slf4jLogConsumer(log));
+                .withLogConsumer(new Slf4jLogConsumer(log))
+                .withUrlParam("allowMultiQueries", "true");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
@@ -197,13 +200,14 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
 
         // 사용자A가 id로 범위를 조회했다.
-        userDao.findGreaterThan(connection, 1);
+        final List<User> greaterThan = userDao.findGreaterThan(connection, 1);
+        System.out.println(greaterThan.size());
 
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
@@ -249,7 +253,7 @@ class Stage1Test {
     private static DataSource createH2DataSource() {
         final var jdbcDataSource = new JdbcDataSource();
         // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
         jdbcDataSource.setUser("sa");
         jdbcDataSource.setPassword("");

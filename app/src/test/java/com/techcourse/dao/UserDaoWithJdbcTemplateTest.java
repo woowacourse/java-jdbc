@@ -3,6 +3,8 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -17,29 +19,31 @@ class UserDaoWithJdbcTemplateTest {
 
     private UserDaoWithJdbcTemplate userDao;
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private Connection connection;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         final DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
+        connection = dataSource.getConnection();
         userDao = new UserDaoWithJdbcTemplate(dataSource);
         namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
+        final var users = userDao.findAll(connection);
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final long savedUserId = userDao.findAll().get(0).getId();
-        final var user = userDao.findById(savedUserId);
+        final long savedUserId = userDao.findAll(connection).get(0).getId();
+        final var user = userDao.findById(connection, savedUserId);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -48,16 +52,16 @@ class UserDaoWithJdbcTemplateTest {
     void findByAccount() {
         final var account = "gugu";
 
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(connection, account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
     void findByAccountIncorrectColumnSize() {
-        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        userDao.insert(connection, new User("gugu", "password", "hkkang@woowahan.com"));
 
-        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+        assertThatThrownBy(() -> userDao.findByAccount(connection, "gugu"))
                 .hasMessageContaining("결과가 1개인 줄 알았는데, 2개 나왔서!");
     }
 
@@ -65,9 +69,9 @@ class UserDaoWithJdbcTemplateTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(connection, 2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -75,14 +79,14 @@ class UserDaoWithJdbcTemplateTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final long savedUserId = userDao.findAll().get(0).getId();
+        final long savedUserId = userDao.findAll(connection).get(0).getId();
 
-        final var user = userDao.findById(savedUserId);
+        final var user = userDao.findById(connection, savedUserId);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(connection, user);
 
-        final var actual = userDao.findById(savedUserId);
+        final var actual = userDao.findById(connection, savedUserId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

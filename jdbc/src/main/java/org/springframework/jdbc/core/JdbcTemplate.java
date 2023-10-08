@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,10 +23,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... parameters) {
+    public int update(Connection connection, String sql, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             log.debug("query : {}", sql);
             setQueryParameters(pstmt, parameters);
@@ -36,28 +36,22 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             setQueryParameters(pstmt, parameters);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
 
-                T result = null;
-                if (rs.next()) {
-                    result = rowMapper.mapRow(rs, rs.getRow());
-                }
-
-                verifyResultRowSize(rs, 1);
-
-                if (result == null) {
-                    throw new SQLException("조회결과가업서!");
-                }
-
-                return result;
+            T result = null;
+            if (rs.next()) {
+                result = rowMapper.mapRow(rs, rs.getRow());
             }
+
+            verifyResultRowSize(rs, 1);
+
+            return Optional.ofNullable(result);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
@@ -74,29 +68,28 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
             setQueryParameters(pstmt, parameters);
 
-            try (ResultSet rs = pstmt.executeQuery();) {
-                log.debug("query : {}", sql);
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
 
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rs.getRow()));
-                }
-                return results;
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
             }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
         }
     }
 
-    private static void setQueryParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+    private static void setQueryParameters(final PreparedStatement pstmt, final Object[] parameters)
+            throws SQLException {
         for (int i = 1; i < parameters.length + 1; i++) {
             pstmt.setObject(i, parameters[i - 1]);
         }

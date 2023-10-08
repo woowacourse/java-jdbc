@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -43,14 +44,22 @@ public class UserDaoWithNamedParameterJdbcTemplate {
         final var sql = "select id, account, password, email from users where id = :id";
         final HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("id", id);
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
+        final Optional<User> user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
+        if (user.isEmpty()) {
+            throw new RuntimeException("유저 없음!");
+        }
+        return user.get();
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = :account";
         final HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("account", account);
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
+        final Optional<User> user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
+        if (user.isEmpty()) {
+            throw new RuntimeException("유저 없음!");
+        }
+        return user.get();
     }
 
     private static RowMapper<User> getUserRowMapper() {
