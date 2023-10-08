@@ -53,7 +53,7 @@ public class JdbcTemplate {
         return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> T execute(final Connection connection, final String sql, final executeQueryCallback<T> callBack, final Object... objects) {
+    public <T> T execute(final Connection connection, final String sql, final ExecuteQueryCallback<T> callBack, final Object... objects) {
         try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, objects);
             return callBack.execute(preparedStatement);
