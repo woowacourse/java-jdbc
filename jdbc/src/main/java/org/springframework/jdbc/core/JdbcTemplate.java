@@ -1,5 +1,6 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,7 +46,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementFunction<T> function, Object... params) {
-        try (PreparedStatement pstmt = preparedStatementWithParams(sql, params)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = preparedStatementWithParams(connection, sql, params)) {
             return function.execute(pstmt);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -53,8 +55,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement preparedStatementWithParams(String sql, Object... params) throws SQLException {
-        PreparedStatement pstmt = dataSource.getConnection().prepareStatement(sql);
+    private PreparedStatement preparedStatementWithParams(Connection con, String sql, Object... params)
+            throws SQLException {
+        PreparedStatement pstmt = con.prepareStatement(sql);
         log.debug("query : {}", sql);
         for (int i = 1; i <= params.length; i++) {
             pstmt.setObject(i, params[i - 1]);
