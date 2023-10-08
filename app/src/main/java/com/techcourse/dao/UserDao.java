@@ -10,13 +10,11 @@ import java.util.Optional;
 
 public class UserDao {
 
-    private static final ResultSetMapper<User> USER_MAPPER = rs -> {
-        long userId = rs.getLong(1);
-        String userAccount = rs.getString(2);
-        String password = rs.getString(3);
-        String email = rs.getString(4);
-        return new User(userId, userAccount, password, email);
-    };
+    private static final ResultSetMapper<User> USER_MAPPER = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
