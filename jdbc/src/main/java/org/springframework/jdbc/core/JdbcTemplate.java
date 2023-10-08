@@ -43,10 +43,10 @@ public class JdbcTemplate {
     }
 
     private <T> T getResult(final PreparedStatementExecutor<T> executor, final String sql, final Object... conditions) {
-        PreparedStatement preparedStatement = null;
-        try {
-            Connection connection = transactionManager.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
+        Connection connection = transactionManager.getConnection();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
             setConditions(preparedStatement, conditions);
             return executor.query(preparedStatement);
         } catch (SQLException e) {
