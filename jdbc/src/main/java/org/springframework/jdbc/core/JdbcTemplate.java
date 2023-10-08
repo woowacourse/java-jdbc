@@ -23,46 +23,49 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results;
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql);
-             final ResultSet resultSet = executeQuery(preparedStatement, params)) {
-            log.debug("query : {}", sql);
-            results = mapResults(rowMapper, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> results = query(sql, rowMapper, params);
         if (results.size() > 1) {
-            throw new DataAccessException("too many result. expected 1 but was " + results.size());
+            throw new SizeException("too many result. expected 1 but was " + results.size());
         }
         if (results.isEmpty()) {
             throw new SizeException("no result");
         }
-
         return results.get(0);
     }
 
-    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results;
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> results = query(connection, sql, rowMapper, params);
+        if (results.size() > 1) {
+            throw new SizeException("too many result. expected 1 but was " + results.size());
+        }
+        if (results.isEmpty()) {
+            throw new SizeException("no result");
+        }
+        return results.get(0);
+    }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql);
              final ResultSet resultSet = executeQuery(preparedStatement, parameters)) {
             log.debug("query : {}", sql);
-            results = mapResults(rowMapper, resultSet);
+            return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
 
-        if (results.isEmpty()) {
-            throw new SizeException("no result");
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        try (final PreparedStatement preparedStatement = conn.prepareStatement(sql);
+             final ResultSet resultSet = executeQuery(preparedStatement, parameters)) {
+            log.debug("query : {}", sql);
+            return mapResults(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
-
-        return results;
     }
 
     private ResultSet executeQuery(final PreparedStatement preparedStatement, final Object[] parameters)
@@ -86,9 +89,21 @@ public class JdbcTemplate {
         return results;
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(final String sql, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(preparedStatement, parameters);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void update(final Connection conn, final String sql, final Object... parameters) {
+        try (final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParameters(preparedStatement, parameters);
