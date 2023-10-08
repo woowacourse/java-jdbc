@@ -1,41 +1,43 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private UserHistoryDao userHistoryDao;
-    private UserService userService;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
-        this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        this.userService = new UserService(userDao, userHistoryDao);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userService.insert(user);
+        userDao.insert(DataSourceUtils.getConnection(DataSourceConfig.getInstance()), user);
     }
 
     @Test
     void testChangePassword() {
+        UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
+        UserService userService = new UserService(userDao, userHistoryDao);
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
+
         userService.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L);

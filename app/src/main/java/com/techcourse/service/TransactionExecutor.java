@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionExecutor {
 
@@ -14,9 +15,8 @@ public class TransactionExecutor {
 
     public static void transactionCommand(Consumer<Connection> consumer) {
         Connection connection = null;
-
         try {
-            connection = getConnection();
+            connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
             connection.setAutoCommit(false);
 
             consumer.accept(connection);
@@ -30,22 +30,15 @@ public class TransactionExecutor {
             }
 
             throw new DataAccessException(firstException);
+        } finally {
+            DataSourceUtils.releaseConnection(DataSourceConfig.getInstance());
         }
     }
 
     public static <T> T transactionQuery(Function<Connection, T> function) {
-        try {
-            Connection connection = getConnection();
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
 
-            return function.apply(connection);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private static Connection getConnection() throws SQLException {
-        return DataSourceConfig.getInstance()
-                .getConnection();
+        return function.apply(connection);
     }
 
 }
