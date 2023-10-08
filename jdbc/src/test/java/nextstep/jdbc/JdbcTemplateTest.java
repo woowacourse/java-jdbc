@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.BDDMockito.anyString;
 import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.never;
+import static org.mockito.BDDMockito.verify;
 import static org.mockito.BDDMockito.when;
+import static org.mockito.Mockito.atLeastOnce;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,8 +22,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.ConnectionManager;
-import org.springframework.transaction.support.TransactionManager;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @SuppressWarnings("NonAsciiCharacters")
@@ -220,27 +222,25 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 트랜잭션을_시작하지_않으면_커넥션을_종료한다() {
+    void 트랜잭션을_시작하지_않으면_커넥션을_종료한다() throws Exception {
         // given
         String sql = "select id, name from member";
         jdbcTemplate.query(sql, MEMBER_MAPPER);
 
         // when & then
-        assertThat(ConnectionManager.isConnectionEnable())
-            .isFalse();
+        verify(conn, atLeastOnce()).close();
     }
 
     @Test
-    void 트랜잭션을_시작하면_커넥션을_유지한다() {
+    void 트랜잭션을_시작하면_커넥션을_유지한다() throws Exception {
         // given
-        TransactionManager.begin();
+        TransactionSynchronizationManager.begin();
         String sql = "select id, name from member";
         jdbcTemplate.query(sql, MEMBER_MAPPER);
 
         // when & then
-        assertThat(ConnectionManager.isConnectionEnable())
-            .isTrue();
-        ConnectionManager.releaseConnection();
+        verify(conn, never()).close();
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     static class Member {

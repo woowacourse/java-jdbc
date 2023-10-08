@@ -8,19 +8,24 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
 
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
+    private TransactionTemplate transactionTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.transactionTemplate = new TransactionTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
@@ -49,9 +54,9 @@ class UserServiceTest {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         // 애플리케이션 서비스
         final var appUserHistoryService = new AppUserHistoryService(userHistoryDao);
-        final var appUserService = new AppUserService(userDao, new TxUserHistoryService(appUserHistoryService));
+        final var appUserService = new AppUserService(userDao, new TxUserHistoryService(transactionTemplate, appUserHistoryService));
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

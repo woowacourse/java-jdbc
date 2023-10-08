@@ -5,9 +5,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class TxUserService implements UserService {
 
+    private final TransactionTemplate transactionTemplate;
     private final UserService userService;
 
-    public TxUserService(UserService userService) {
+    public TxUserService(TransactionTemplate transactionTemplate, UserService userService) {
+        this.transactionTemplate = transactionTemplate;
         this.userService = userService;
     }
 
@@ -23,6 +25,6 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        TransactionTemplate.execute(() -> userService.changePassword(id, newPassword, createBy));
+        transactionTemplate.execute(() -> userService.changePassword(id, newPassword, createBy));
     }
 }
