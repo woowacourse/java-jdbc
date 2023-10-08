@@ -13,30 +13,37 @@ public class TransactionExecutor {
     }
 
     public static void transactionCommand(Runnable runnable) {
-        Connection connection = null;
         try {
-            connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+            Connection connection = getConnection();
             connection.setAutoCommit(false);
 
             runnable.run();
 
             connection.commit();
         } catch (SQLException firstException) {
-            try {
-                connection.rollback();
-            } catch (SQLException secondException) {
-                throw new DataAccessException(secondException);
-            }
-
+            rollback();
             throw new DataAccessException(firstException);
         } finally {
             DataSourceUtils.releaseConnection(DataSourceConfig.getInstance());
         }
     }
 
+    private static Connection getConnection() {
+        return DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+    }
+
+    private static void rollback() {
+        try {
+            Connection connection = getConnection();
+            connection.rollback();
+        } catch (SQLException secondException) {
+            throw new DataAccessException(secondException);
+        }
+    }
+
     public static <T> T transactionQuery(Supplier<T> supplier) {
         try {
-            DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+            getConnection();
             return supplier.get();
         } catch (Exception e) {
             throw new DataAccessException(e);
