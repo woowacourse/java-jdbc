@@ -51,23 +51,6 @@ public class JdbcTemplate {
         return results;
     }
 
-//    private <T> T executeQuery(
-//            final Connection conn,
-//            final String sql,
-//            final PreparedStatementExecutor<T> executor,
-//            final Object... args
-//    ) {
-//        try (
-//                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)
-//        ) {
-//            log.debug("query : {}", sql);
-//
-//            return executor.execute(pstmt);
-//        } catch (final SQLException e) {
-//            throw new DataAccessException(e);
-//        }
-//    }
-
     private <T> T executeQuery(
             final String sql,
             final PreparedStatementExecutor<T> executor,
