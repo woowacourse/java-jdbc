@@ -42,23 +42,30 @@ public class UserService {
 
             conn.commit();
         } catch (RuntimeException | SQLException e) {
-            if (conn == null) {
-                throw new DataAccessException("connection이 null입니다.", e);
-            }
-            try {
-                conn.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException("롤백 실패", e);
-            }
+            rollback(conn, e);
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
+            close(conn);
+        }
+    }
 
+    private void rollback(Connection conn, Exception e) {
+        if (conn == null) {
+            return;
+        }
+        try {
+            conn.rollback();
+        } catch (SQLException ignored) {
+            throw new DataAccessException("롤백 실패", e);
+        }
+    }
+
+    private void close(Connection conn) {
+        try {
+            if (conn != null) {
+                conn.close();
             }
+        } catch (SQLException ignored) {
         }
     }
 }
