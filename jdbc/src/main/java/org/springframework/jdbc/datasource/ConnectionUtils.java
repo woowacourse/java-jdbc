@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public class ConnectionUtils {
 
-    public static Connection getConnection(DataSource dataSource) {
+    public static Connection getConnection(final DataSource dataSource) {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -15,7 +15,7 @@ public class ConnectionUtils {
         }
     }
 
-    public static void releaseConnection(Connection conn) {
+    public static void releaseConnection(final Connection conn) {
         try{
             conn.close();
         } catch (SQLException e) {

@@ -13,8 +13,8 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(LogicExecutor logicExecutor) {
-        Connection conn = ConnectionUtils.getConnection(dataSource);
+    public void execute(final LogicExecutor logicExecutor) {
+        final Connection conn = ConnectionUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
             logicExecutor.run(conn);
@@ -25,10 +25,12 @@ public class TransactionManager {
         } finally {
             ConnectionUtils.releaseConnection(conn);
         }
-
     }
 
-    private static void rollback(final Connection conn) {
+    private void rollback(final Connection conn) {
+        if(conn == null) {
+            return;
+        }
         try {
             conn.rollback();
         } catch (SQLException e) {
