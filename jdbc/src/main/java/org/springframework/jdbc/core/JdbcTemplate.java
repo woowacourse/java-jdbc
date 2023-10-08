@@ -78,9 +78,7 @@ public class JdbcTemplate {
             final PreparedStatementCreator psc,
             final PreparedStatementCallback<T> action
     ) throws DataAccessException {
-        try {
-            final var conn = getConnection();
-            final var ps = psc.createPreparedStatement(conn, sql);
+        try (final var ps = psc.createPreparedStatement(getConnection(), sql)) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage());
