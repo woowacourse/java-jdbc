@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -38,8 +39,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement psmt = conn.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement psmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setArgs(args, psmt);
@@ -68,7 +69,8 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final Connection connection, final String sql, final Object... args) {
+    public void update(final String sql, final Object... args) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
