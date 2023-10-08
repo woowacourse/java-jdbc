@@ -18,9 +18,8 @@ public class TransactionManager {
     }
 
     public <T> T run(final TransactionExecutor<T> transactionExecutor) {
-        Connection connection = null;
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             final T action = transactionExecutor.action();
