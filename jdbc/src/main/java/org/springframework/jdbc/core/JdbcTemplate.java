@@ -34,6 +34,16 @@ public class JdbcTemplate {
         }
     }
 
+    public void executeWithTransaction(Connection connection, String sql, Object...parameters) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameterIfExist(preparedStatement, parameters);
+            log.info("JDBC EXECUTE WITH TRANSACTION SQL = {}", sql);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            throw new DatabaseExecuteException(e.getMessage());
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
