@@ -6,17 +6,20 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource = DataSourceConfig.getInstance();
+    private static final int QUERY_SINGLE_SIZE = 1;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
@@ -24,66 +27,51 @@ public class UserService {
     }
 
     public User findById(long id) throws SQLException {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            return userDao.findById(connection, id);
+            User user = userDao.findById(connection, id);
+            connection.commit();
+            return user;
         } catch (SQLException e) {
             connection.rollback();
-            throw new RuntimeException(e);
-        } finally {
-            close(connection);
+            throw new SQLTransactionRollbackException(e.getMessage());
         }
-
     }
 
     public void insert(User user) throws SQLException {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
             userDao.insert(connection, user);
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
-            throw new RuntimeException(e);
-        } finally {
-            close(connection);
+            throw new SQLTransactionRollbackException(e.getMessage());
         }
     }
 
     public void changePassword(long id, String newPassword, String createBy) throws SQLException {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
             User user = findById(id);
             user.changePassword(newPassword);
             updateUser(connection, user);
-            userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
-            throw new RuntimeException(e);
+            throw new SQLTransactionRollbackException(e.getMessage());
         } finally {
-            close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private void updateUser(Connection connection, User user) {
         int updateSize = userDao.update(connection, user);
-        if(updateSize != 1){
+        if (updateSize != QUERY_SINGLE_SIZE) {
             throw new DataAccessException("갱신된 데이터의 개수가 올바르지 않습니다.");
-        }
-    }
-
-    private void close(Connection connection){
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 }
