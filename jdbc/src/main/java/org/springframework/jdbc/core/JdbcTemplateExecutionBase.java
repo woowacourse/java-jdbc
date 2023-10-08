@@ -16,8 +16,7 @@ public class JdbcTemplateExecutionBase extends JdbcTemplateBase {
 
     protected <T> T executeQueryForObjectBase(final String sql,
                                               final ResultSetObjectMapper<T> mapper,
-                                              final Object[] params,
-                                              final boolean isTransactionEnable) {
+                                              final Object[] params) {
         final JdbcTemplateExecutor<T> execution = preparedStatement -> {
             setParameters(params, preparedStatement);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -27,13 +26,12 @@ public class JdbcTemplateExecutionBase extends JdbcTemplateBase {
                 return null;
             }
         };
-        return super.executionBaseWithReturn(sql, execution, isTransactionEnable);
+        return super.executionBaseWithReturn(sql, execution);
     }
 
     protected <T> List<T> executeQueryForObjectsBase(final String sql,
                                                      final ResultSetObjectMapper<T> mapper,
-                                                     final Object[] params,
-                                                     final boolean isTransactionEnable) {
+                                                     final Object[] params) {
         final JdbcTemplateExecutor<List<T>> execution = preparedStatement -> {
             setParameters(params, preparedStatement);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -44,17 +42,15 @@ public class JdbcTemplateExecutionBase extends JdbcTemplateBase {
                 return objects;
             }
         };
-        return super.executionBaseWithReturn(sql, execution, isTransactionEnable);
+        return super.executionBaseWithReturn(sql, execution);
     }
 
-    protected void updateBase(final String sql,
-                              final Object[] params,
-                              final boolean isTransactionEnable) {
+    protected void updateBase(final String sql, final Object[] params) {
         final JdbcTemplateVoidExecution execution = preparedStatement -> {
             setParameters(params, preparedStatement);
             preparedStatement.executeUpdate();
         };
-        super.executionBaseWithNonReturn(sql, execution, isTransactionEnable);
+        super.executionBaseWithNonReturn(sql, execution);
     }
 
     private void setParameters(final Object[] params, final PreparedStatement preparedStatement) throws SQLException {

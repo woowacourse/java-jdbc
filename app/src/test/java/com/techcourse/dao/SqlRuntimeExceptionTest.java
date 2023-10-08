@@ -61,7 +61,7 @@ class SqlRuntimeExceptionTest {
         //when
         //then
         assertThatThrownBy(
-            () -> jdbcTemplateExecutionBase.executionBaseWithNonReturn(sql, PreparedStatement::executeQuery, true)
+            () -> jdbcTemplateExecutionBase.executionBaseWithNonReturn(sql, PreparedStatement::executeQuery)
         ).isInstanceOf(MethodNotAllowedSqlRuntimeException.ExecuteQuerySqlRuntimeException.class);
     }
 
