@@ -35,6 +35,17 @@ public class JdbcTemplate {
         }
     }
 
+    public void executeUpdate(final Connection connection, final String sql, final Object... parameters) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameters(parameters, preparedStatement);
+            log.debug("query : {}", preparedStatement);
+
+            preparedStatement.executeUpdate();
+        } catch (final Exception e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     private void setParameters(final Object[] parameters, final PreparedStatement preparedStatement) throws SQLException {
         for (int i = 1; i <= parameters.length; i++) {
             preparedStatement.setObject(i, parameters[i - 1]);
@@ -77,17 +88,6 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return query(sql, rowMapper, parameters);
-    }
-
-    public void executeUpdate(final Connection connection, final String sql, final Object... parameters) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(parameters, preparedStatement);
-            log.debug("query : {}", preparedStatement);
-
-            preparedStatement.executeUpdate();
-        } catch (final Exception e) {
-            throw new DataAccessException(e);
-        }
     }
 
 }
