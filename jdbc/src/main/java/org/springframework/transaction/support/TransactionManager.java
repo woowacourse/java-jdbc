@@ -20,10 +20,19 @@ public class TransactionManager {
             logicExecutor.run(conn);
             conn.commit();
         } catch (SQLException e) {
+            extracted(conn);
             throw new IllegalStateException(e);
         } finally {
             ConnectionUtils.releaseConnection(conn);
         }
 
+    }
+
+    private static void extracted(final Connection conn) {
+        try {
+            conn.rollback();
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
