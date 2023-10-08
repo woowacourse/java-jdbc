@@ -19,18 +19,16 @@ class UserDaoTest {
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     private UserDao userDao;
-    private DataSource dataSource;
 
     @BeforeEach
     void setup() throws SQLException {
-        dataSource = DataSourceConfig.getInstance();
-        DatabasePopulatorUtils.execute(dataSource);
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        jdbcTemplate.update(dataSource.getConnection(), "TRUNCATE TABLE users RESTART IDENTITY");
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
         userDao = new UserDao(DataSourceConfig.getInstance());
 
         User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
@@ -42,7 +40,7 @@ class UserDaoTest {
 
     @Test
     void findById() throws SQLException {
-        userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         User user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
@@ -60,7 +58,7 @@ class UserDaoTest {
     void insert() throws SQLException {
         String account = "insert-gugu";
         User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
 
         User actual = userDao.findById(2L);
 
@@ -73,7 +71,7 @@ class UserDaoTest {
         User user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(dataSource.getConnection(), user);
+        userDao.update(user);
 
         User actual = userDao.findById(1L);
 
@@ -88,7 +86,7 @@ class UserDaoTest {
         assertThat(findUser).isNotNull();
 
         User duplicateUser = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), duplicateUser);
+        userDao.insert(duplicateUser);
 
         //when then
         assertThatThrownBy(() -> userDao.findByAccount("gugu"))

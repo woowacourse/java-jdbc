@@ -23,15 +23,15 @@ class UserServiceTest {
     private TransactionManager transactionManager;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
         this.transactionManager = new TransactionManager(dataSource);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test

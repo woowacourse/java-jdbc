@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class QueryTemplate {
 
@@ -19,7 +20,8 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T update(Connection connection, String sql, UpdateExecutor<T> executor, Object... args) {
+    public <T> T update(String sql, UpdateExecutor<T> executor, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = getInitializedPreparedStatement(sql, connection, args)) {
             return executor.execute(preparedStatement);
         } catch (SQLException e) {
