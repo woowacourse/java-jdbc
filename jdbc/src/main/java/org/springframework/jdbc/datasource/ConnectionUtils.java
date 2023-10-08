@@ -1,6 +1,6 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.exception.CannotGetJdbcConnectionException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
