@@ -10,9 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -20,17 +17,18 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private DataSource dataSource;
+    private long userId;
 
     @BeforeEach
     void setUp() {
-        this.dataSource = DataSourceConfig.getInstance();
+        final var dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userId = userDao.insert(user);
     }
 
     @Test
@@ -41,9 +39,9 @@ class UserServiceTest {
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
 
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(userId, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(userId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -61,17 +59,10 @@ class UserServiceTest {
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(userId, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(userId);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-    }
-
-    private void sleep(double seconds) {
-        try {
-            TimeUnit.MILLISECONDS.sleep((long) (seconds * 1000));
-        } catch (InterruptedException ignored) {
-        }
     }
 }

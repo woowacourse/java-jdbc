@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,16 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... arguments) {
         queryTemplate(sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
+    }
+
+    public long updateAndReturnKey(String sql, Object... arguments) {
+        try (Statement statement = queryAndReturnStatement(sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments)) {
+            ResultSet resultSet = statement.getGeneratedKeys();
+            resultSet.next();
+            return resultSet.getLong(1);
+        } catch (Exception e) {
+            throw new JdbcException("cannot get key", e);
+        }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
@@ -58,23 +69,27 @@ public class JdbcTemplate {
 
     private <T> T queryTemplate(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = StatementCreator.createStatement(conn, sql, arguments);
+        try (PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)) {
             log.debug("query : {}", sql);
 
             return statementExecutor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SqlExceptionTranslator.translateException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                throw new JdbcException("cannot close Statement", e);
-            }
+        }
+    }
+
+    private <T> Statement queryAndReturnStatement(String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            PreparedStatement pstmt = StatementCreator.createStatementWithKey(conn, sql, arguments);
+            log.debug("query : {}", sql);
+
+            statementExecutor.execute(pstmt);
+            return pstmt;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw SqlExceptionTranslator.translateException(e);
         }
     }
 

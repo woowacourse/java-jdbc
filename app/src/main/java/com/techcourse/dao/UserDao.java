@@ -24,16 +24,22 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public long insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.updateAndReturnKey(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where users.id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void deleteAll() {
+        final String sql = "delete from users";
+
+        jdbcTemplate.update(sql);
     }
 
     public List<User> findAll() {
