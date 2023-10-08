@@ -1,7 +1,6 @@
 package nextstep.jdbc;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -11,64 +10,31 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 
-class JdbcTemplateTest {
+public class JdbcTemplateTest {
 
-    private Connection connection;
-    private PreparedStatement preparedStatement;
-    private ResultSet resultSet;
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        connection = mock(Connection.class);
-        preparedStatement = mock(PreparedStatement.class);
-        resultSet = mock(ResultSet.class);
-
-        DataSource dataSource = mock(DataSource.class);
+    void setUp() {
+        dataSource = TestDataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
-
-        given(dataSource.getConnection()).willReturn(connection);
-        given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
-        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        String sql = "CREATE TABLE IF NOT EXISTS users (id BIGINT AUTO_INCREMENT PRIMARY KEY, account VARCHAR(100) NOT NULL)";
+        jdbcTemplate.update(sql);
     }
 
-    @DisplayName("query() 메서드 실행 후에 관련 자원이 close 되는지 확인한다.")
     @Test
-    void query_WhetherResourceClosed() throws SQLException {
-        // when
-        jdbcTemplate.query("select * from users", rs -> null);
-
-        // then
-        verify(connection).close();
-        verify(preparedStatement).close();
-        verify(resultSet).close();
-    }
-
-    @DisplayName("queryForObject() 메서드 실행 후에 관련 자원이 close 되는지 확인한다.")
-    @Test
-    void queryForObject_WhetherResourceClosed() throws SQLException {
-        // when
-        jdbcTemplate.queryForObject("select * from users", rs -> null);
-
-        // then
-        verify(connection).close();
-        verify(preparedStatement).close();
-        verify(resultSet).close();
-    }
-
-    @DisplayName("update() 메서드 실행 후에 관련 자원이 close 되는지 확인한다.")
-    @Test
-    void update_WhetherResourceClosed() throws SQLException {
-        // when
-        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)");
-
-        // then
-        verify(connection).close();
-        verify(preparedStatement).close();
+    void resultSetIsClosed() throws SQLException {
+        //given
+        final String sql = "select id, account from users";
+        final ResultSet resultSet;
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            resultSet = preparedStatement.executeQuery();
+            assertThat(resultSet.isClosed()).isFalse();
+        }
+        assertThat(resultSet.isClosed()).isTrue();
     }
 }

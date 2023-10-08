@@ -25,13 +25,12 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, pstmt -> {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> objects = new ArrayList<>();
-                while (rs.next()) {
-                    objects.add(rowMapper.mapRow(rs));
-                }
-                return objects;
+            final ResultSet rs = pstmt.executeQuery();
+            final List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                objects.add(rowMapper.mapRow(rs));
             }
+            return objects;
         }, args);
     }
 
