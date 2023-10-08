@@ -20,7 +20,7 @@ public class TransactionManager {
             logicExecutor.run(conn);
             conn.commit();
         } catch (SQLException e) {
-            extracted(conn);
+            rollback(conn);
             throw new IllegalStateException(e);
         } finally {
             ConnectionUtils.releaseConnection(conn);
@@ -28,7 +28,7 @@ public class TransactionManager {
 
     }
 
-    private static void extracted(final Connection conn) {
+    private static void rollback(final Connection conn) {
         try {
             conn.rollback();
         } catch (SQLException e) {
