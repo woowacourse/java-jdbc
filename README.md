@@ -23,4 +23,4 @@
 
 - [x] TransactionSynchronizationManager가 올바르게 작동하도록 구현한다.
 - [x] DataSourceUtils를 사용하여 Connection을 가져오도록 한다.
-- [ ] 트랜잭션 서비스를 추상화한다.  
+- [x] 트랜잭션 서비스를 추상화한다.  
