@@ -22,7 +22,7 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(Connection connection, final User user) {
+    public void insert(final Connection connection, final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.executeWithTransaction(
                 connection,
@@ -33,7 +33,7 @@ public class UserDao {
         );
     }
 
-    public void update(Connection connection, final User user) {
+    public void update(final Connection connection, final User user) {
         String sql = "update users set account=?, password=?, email=? where id = ?";
         jdbcTemplate.executeWithTransaction(
                 connection,
