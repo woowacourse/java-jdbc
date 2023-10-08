@@ -38,7 +38,7 @@ public class UserService {
                 final var user = findById(id);
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
-                userHistoryDao.log(new UserHistory(user, createBy));
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
             } catch (Exception e) {
