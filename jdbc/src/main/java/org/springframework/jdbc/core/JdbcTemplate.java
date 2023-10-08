@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,8 +25,8 @@ public class JdbcTemplate {
     }
 
     public void execute(final String sql, final Object... params) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
@@ -34,27 +35,13 @@ public class JdbcTemplate {
 
             pstmt.executeUpdate();
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public void executeWithConnection(final Connection conn, final String sql, final Object... params) {
-        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setCondition(params, pstmt);
-
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
@@ -69,14 +56,13 @@ public class JdbcTemplate {
 
             return results;
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = getPreparedStatement(conn, sql, params);
                 final ResultSet rs = pstmt.executeQuery()
         ) {
@@ -89,7 +75,6 @@ public class JdbcTemplate {
 
             return Optional.empty();
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
