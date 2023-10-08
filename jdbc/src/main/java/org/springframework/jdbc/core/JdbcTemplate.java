@@ -3,7 +3,6 @@ package org.springframework.jdbc.core;
 import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
 
@@ -19,10 +18,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return preparedStatementExecuteTemplate.execute(PreparedStatement::executeUpdate, sql, args);
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return preparedStatementExecuteTemplate.execute(conn, PreparedStatement::executeUpdate, sql, args);
     }
 
     public <T> T queryObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {

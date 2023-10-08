@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -23,17 +24,12 @@ public class PreparedStatementExecuteTemplate {
                          final String sql,
                          final Object... args
     ) {
-        try (final Connection conn = dataSource.getConnection();){
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
 
-            return execute(conn, callBack, sql, args);
-        } catch (SQLException e) {
-            log.warn("쿼리 실행 도중에 오류가 발생하였습니다. {} ====> SQL = {} {} ====> Args = {}",
-                    System.lineSeparator(), sql, System.lineSeparator(), args, e);
-            throw new DataAccessException(e);
-        }
+        return execute(conn, callBack, sql, args);
     }
 
-    public <T> T execute(final Connection conn,
+    private  <T> T execute(final Connection conn,
                          final PreparedStatementExecute<T> callBack,
                          final String sql,
                          final Object... args
