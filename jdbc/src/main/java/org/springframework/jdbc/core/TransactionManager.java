@@ -13,28 +13,25 @@ public class TransactionManager {
     }
 
     public void start() {
-        process(() -> getConnection().setAutoCommit(false));
+        process(connection -> connection.setAutoCommit(false));
     }
 
     public void commit() {
-        process(getConnection()::commit);
+        process(Connection::commit);
     }
 
     public void rollback() {
-        process(getConnection()::rollback);
+        process(Connection::rollback);
     }
 
     public void release() {
         DataSourceUtils.releaseConnection(dataSource);
     }
 
-    private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
-    }
-
     private void process(final TransactionProcessor processor) {
         try {
-            processor.process();
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            processor.process(connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
