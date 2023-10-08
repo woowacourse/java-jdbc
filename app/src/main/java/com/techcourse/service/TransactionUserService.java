@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -26,7 +27,7 @@ public class TransactionUserService implements UserService {
             return user;
         } catch (SQLException | RuntimeException e) {
             transaction.rollback();
-            throw new TransactionFailedException(e);
+            throw new DataAccessException(e);
         } finally {
             transaction.close();
         }
@@ -40,7 +41,7 @@ public class TransactionUserService implements UserService {
             transaction.commit();
         } catch (SQLException | RuntimeException e) {
             transaction.rollback();
-            throw new TransactionFailedException(e);
+            throw new DataAccessException(e);
         } finally {
             transaction.close();
         }
@@ -54,7 +55,7 @@ public class TransactionUserService implements UserService {
             transaction.commit();
         } catch (SQLException | RuntimeException e) {
             transaction.rollback();
-            throw new TransactionFailedException(e);
+            throw new DataAccessException(e);
         } finally {
             transaction.close();
         }
