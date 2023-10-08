@@ -64,7 +64,7 @@ public class Transactional {
         }
     }
 
-    public static <T> T serviceForObject(FunctionForObject<T> function) {
+    public static <T> T serviceForObject(ServiceForObject<T> function) {
         final Transactional transactional = getInstance();
         try {
             final T result = function.service();
@@ -79,10 +79,10 @@ public class Transactional {
         }
     }
 
-    public static void service(Function function) {
+    public static void service(Service service) {
         final Transactional transactional = getInstance();
         try {
-            function.service();
+            service.service();
             transactional.commit();
         } catch (SQLException e) {
             transactional.rollback();
