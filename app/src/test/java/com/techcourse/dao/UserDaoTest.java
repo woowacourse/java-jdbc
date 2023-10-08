@@ -26,7 +26,7 @@ class UserDaoTest {
     @AfterEach
     void tearDown() {
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        jdbcTemplate.update("TRUNCATE TABLE `users` RESTART IDENTITY");
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 
     @Test
