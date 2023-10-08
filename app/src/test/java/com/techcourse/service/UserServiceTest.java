@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.connection.ConnectionManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 
 class UserServiceTest {
 
@@ -22,13 +23,14 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate = new JdbcTemplate();
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
         connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connectionManager.getAutoCommittedConnection(), user);
+        userDao.insert(user);
     }
 
     @Test

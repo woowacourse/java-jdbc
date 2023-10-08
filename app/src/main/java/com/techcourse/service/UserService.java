@@ -21,23 +21,21 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        final Connection connection = connectionManager.getAutoCommittedConnection();
-        return userDao.findById(connection, id);
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        final Connection connection = connectionManager.getAutoCommittedConnection();
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        final Connection connection = connectionManager.getNotAutoCommittedConnection();
+        final Connection connection = connectionManager.getConnection(false);
         try {
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (final Exception exception) {
             connectionManager.rollback(connection);
