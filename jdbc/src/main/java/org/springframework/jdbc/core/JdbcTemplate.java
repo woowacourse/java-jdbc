@@ -9,24 +9,27 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.support.DataSourceTransactionManager;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final DataSourceTransactionManager transactionManager;
 
     public JdbcTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.transactionManager = new DataSourceTransactionManager(dataSource);
     }
 
     private <T> T execute(PreparedStatementCreator psc, PreparedStatementCallback<T> action) {
-        try (var con = dataSource.getConnection();
-             var ps = psc.createPreparedStatement(con)) {
+        var con = transactionManager.getConnection();
+        try (var ps = psc.createPreparedStatement(con)) {
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            transactionManager.release(con);
         }
     }
 
