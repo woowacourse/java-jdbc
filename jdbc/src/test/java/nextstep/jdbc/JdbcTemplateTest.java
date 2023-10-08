@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Optional;
-import nextstep.jdbc.testUtil.TestDataSourceConfig;
-import nextstep.jdbc.testUtil.TestDatabaseUtils;
+import nextstep.testUtil.TestDataSourceConfig;
+import nextstep.testUtil.TestDatabaseUtils;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayNameGeneration;
