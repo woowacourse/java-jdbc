@@ -7,7 +7,6 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,7 +29,7 @@ public class UserService {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         connection.setAutoCommit(false);
         try {
-            User user = userDao.findById(connection, id);
+            User user = userDao.findById(id);
             connection.commit();
             return user;
         } catch (SQLException e) {
@@ -43,7 +42,7 @@ public class UserService {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         connection.setAutoCommit(false);
         try {
-            userDao.insert(connection, user);
+            userDao.insert(user);
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
@@ -57,8 +56,8 @@ public class UserService {
         try {
             User user = findById(id);
             user.changePassword(newPassword);
-            updateUser(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            updateUser(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
@@ -68,8 +67,8 @@ public class UserService {
         }
     }
 
-    private void updateUser(Connection connection, User user) {
-        int updateSize = userDao.update(connection, user);
+    private void updateUser(User user) {
+        int updateSize = userDao.update(user);
         if (updateSize != QUERY_SINGLE_SIZE) {
             throw new DataAccessException("갱신된 데이터의 개수가 올바르지 않습니다.");
         }
