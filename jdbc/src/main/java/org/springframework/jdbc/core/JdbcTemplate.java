@@ -1,5 +1,6 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,8 +32,30 @@ public class JdbcTemplate {
         );
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        baseJdbcTemplate.execute(connection,
+                sql,
+                preparedStatement -> {
+                    setArguments(args, preparedStatement);
+                    preparedStatement.executeUpdate();
+                    return null;
+                }
+        );
+    }
+
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return baseJdbcTemplate.execute(sql,
+                preparedStatement -> {
+                    setArguments(args, preparedStatement);
+                    final List<T> results = getResults(rowMapper, preparedStatement.executeQuery());
+                    return Optional.ofNullable(getResult(results));
+                });
+    }
+
+    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                          final Object... args) {
+        return baseJdbcTemplate.execute(connection,
+                sql,
                 preparedStatement -> {
                     setArguments(args, preparedStatement);
                     final List<T> results = getResults(rowMapper, preparedStatement.executeQuery());
@@ -57,6 +80,12 @@ public class JdbcTemplate {
                 preparedStatement -> getResults(rowMapper, preparedStatement.executeQuery()));
     }
 
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
+        return baseJdbcTemplate.execute(connection,
+                sql,
+                preparedStatement -> getResults(rowMapper, preparedStatement.executeQuery()));
+    }
+
     private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
         final ArrayList<T> results = new ArrayList<>();
         while (resultSet.next()) {
@@ -74,5 +103,11 @@ public class JdbcTemplate {
 
     public void execute(final String sql) {
         baseJdbcTemplate.execute(sql, PreparedStatement::execute);
+    }
+
+    public void execute(final Connection connection, final String sql) {
+        baseJdbcTemplate.execute(connection,
+                sql,
+                PreparedStatement::execute);
     }
 }
