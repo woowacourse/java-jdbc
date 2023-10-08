@@ -6,25 +6,20 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
-    private Connection connection;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "drop.sql");
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance(), "schema.sql");
-        connection = DataSourceConfig.getInstance().getConnection();
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
@@ -53,7 +48,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
@@ -66,7 +61,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
