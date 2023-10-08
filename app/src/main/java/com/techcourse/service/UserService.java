@@ -47,15 +47,19 @@ public class UserService {
         try (final Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            return execute(transactionExecutor, connection);
+            return commitTransaction(transactionExecutor, connection);
         } catch (SQLException e) {
             throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
         }
     }
 
-    private <T> T execute(final TransactionExecutor<T> transactionExecutor, final Connection connection) throws SQLException {
+    private <T> T commitTransaction(final TransactionExecutor<T> transactionExecutor, final Connection connection) throws SQLException {
         try {
-            return transactionExecutor.execute(connection);
+            final T result = transactionExecutor.execute(connection);
+
+            connection.commit();
+
+            return result;
         } catch (Exception ex) {
             connection.rollback();
 
