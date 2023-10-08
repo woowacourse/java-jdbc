@@ -8,6 +8,8 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class UserService {
 
@@ -29,15 +31,14 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
+        try {
+            connection.setAutoCommit(false);
             final User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException e) {
@@ -48,11 +49,8 @@ public class UserService {
             }
             throw new RuntimeException(e);
         } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
