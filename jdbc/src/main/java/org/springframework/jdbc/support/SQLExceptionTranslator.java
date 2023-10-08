@@ -6,7 +6,6 @@ import org.springframework.dao.DataAccessException;
 public class SQLExceptionTranslator {
 
     private SQLExceptionTranslator() {
-        
     }
 
     public static DataAccessException translate(String sql,  SQLException e) {
