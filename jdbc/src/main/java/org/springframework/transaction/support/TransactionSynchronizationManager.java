@@ -1,7 +1,6 @@
 package org.springframework.transaction.support;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -44,22 +43,6 @@ public abstract class TransactionSynchronizationManager {
             return connection;
         } catch (Exception e) {
             throw new DataAccessException("resource unbind failed", e);
-        }
-    }
-
-    public static void execute(DataSource dataSource, Runnable runnable) {
-        Connection connection = null;
-        try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
-
-            runnable.run();
-
-            connection.commit();
-        } catch (Exception e) {
-            ConnectionManager.rollback(e, connection);
-        } finally {
-            ConnectionManager.close(dataSource, connection);
         }
     }
 }
