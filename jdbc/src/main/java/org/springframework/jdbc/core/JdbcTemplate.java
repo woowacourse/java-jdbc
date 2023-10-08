@@ -55,6 +55,17 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setPreparedStatementParameters(pstmt, args);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
         try (
                 final Connection conn = dataSource.getConnection();
