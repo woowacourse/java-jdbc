@@ -27,10 +27,6 @@ public class JdbcTemplate {
         executePreparedStatement(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public void update(final Connection connection, final String sql, final Object... objects) {
-        executeSameConnectionPreparedStatement(connection, sql, PreparedStatement::executeUpdate, objects);
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return executePreparedStatement(sql, preparedStatement -> {
             final ResultSet rs = preparedStatement.executeQuery();
@@ -56,22 +52,6 @@ public class JdbcTemplate {
                                            final Object... objects) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-
-            return preparedStatementExecutor.execute(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T executeSameConnectionPreparedStatement(final Connection connection, final String sql,
-                                                         PreparedStatementExecutor<T> preparedStatementExecutor, final Object... objects) {
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             for (int i = 0; i < objects.length; i++) {
