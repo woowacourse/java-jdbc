@@ -1,4 +1,4 @@
-package nextstep.jdbc.testUtil;
+package nextstep.testUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,9 @@ public class TestDatabaseUtils {
 
     private static final Logger log = LoggerFactory.getLogger(TestDatabaseUtils.class);
 
+    private TestDatabaseUtils() {
+    }
+
     public static void execute(final DataSource dataSource) {
         try (final Connection connection = dataSource.getConnection();
              final Statement statement = connection.createStatement();
@@ -26,8 +29,5 @@ public class TestDatabaseUtils {
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e);
         }
-    }
-
-    private TestDatabaseUtils() {
     }
 }
