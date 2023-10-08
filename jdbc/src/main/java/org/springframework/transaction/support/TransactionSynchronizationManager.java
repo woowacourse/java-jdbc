@@ -38,7 +38,6 @@ public abstract class TransactionSynchronizationManager {
         try {
             Map<DataSource, Connection> resource = resources.get();
             Connection connection = resource.get(key);
-            connection.close();
             resources.remove();
             return connection;
         } catch (Exception e) {
