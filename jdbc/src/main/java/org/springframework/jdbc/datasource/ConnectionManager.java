@@ -40,16 +40,23 @@ public class ConnectionManager {
 
     public static void releaseConnection() {
         Connection connection = connections.get();
-        if (connection == null) {
-            return;
+        try {
+            if (connection == null) {
+                return;
+            }
+            closeConnection(connection);
+        } finally {
+            TransactionManager.clear();
         }
+    }
+
+    private static void closeConnection(Connection connection) {
         if (TransactionManager.isTransactionEnable()) {
             if (TransactionManager.isRollbackEnable()) {
                 rollback(connection);
             } else {
                 commit(connection);
             }
-            TransactionManager.clear();
         }
         close(connection);
     }
@@ -57,16 +64,16 @@ public class ConnectionManager {
     private static void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException ignored) {
-            // ignored
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
     private static void commit(Connection connection) {
         try {
             connection.commit();
-        } catch (SQLException ignored) {
-            // ignored
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
