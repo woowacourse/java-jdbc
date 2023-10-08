@@ -30,10 +30,10 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.execute((conn) -> businessLogic(id, newPassword, createBy, conn));
+        transactionManager.execute((conn) -> changePasswordInTransaction(id, newPassword, createBy, conn));
     }
 
-    private void businessLogic(final long id, final String newPassword, final String createBy, final Connection conn) {
+    private void changePasswordInTransaction(final long id, final String newPassword, final String createBy, final Connection conn) {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(conn, user);
