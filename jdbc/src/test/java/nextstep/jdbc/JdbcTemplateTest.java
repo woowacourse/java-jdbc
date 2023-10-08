@@ -1,12 +1,5 @@
 package nextstep.jdbc;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -19,8 +12,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("NonAsciiCharacters")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -89,7 +86,9 @@ class JdbcTemplateTests {
         given(this.preparedStatement.executeQuery()).willThrow(sqlException);
 
         assertThatExceptionOfType(DataAccessException.class)
-                .isThrownBy(() -> this.template.query(sql, resultSet -> {return "";}))
+                .isThrownBy(() -> this.template.query(sql, resultSet -> {
+                    return "";
+                }))
                 .withCause(sqlException);
         verify(this.preparedStatement).close();
         verify(this.connection, atLeastOnce()).close();
