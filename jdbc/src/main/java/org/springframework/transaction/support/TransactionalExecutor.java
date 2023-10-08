@@ -2,7 +2,6 @@ package org.springframework.transaction.support;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,7 +9,13 @@ import java.sql.SQLException;
 
 public class TransactionalExecutor {
 
-    public void execute(BusinessLogicProcessor businessLogicProcessor, DataSource dataSource) {
+    private final DataSource dataSource;
+
+    public TransactionalExecutor(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void execute(BusinessLogicProcessor businessLogicProcessor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
