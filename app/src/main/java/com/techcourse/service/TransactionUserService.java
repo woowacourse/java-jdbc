@@ -40,7 +40,7 @@ public class TransactionUserService implements UserService {
                 .executeTransactionWithRunnable(() -> appUserService.changePassword(id, newPassword, createBy));
     }
 
-    static class TransactionExecutor {
+    private static class TransactionExecutor {
 
         private DataSource dataSource;
         private boolean readOnly = false;
