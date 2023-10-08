@@ -28,39 +28,39 @@ public class JdbcTemplate {
         this.statementGenerator = new StatementGenerator();
     }
 
-    public void update(String sql, Object... params) {
-        execute(sql, params);
+    public void update(final Connection conn, final String sql, final Object... params) {
+        execute(conn, sql, params);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(conn, sql, rowMapper, QUERY_FOR_OBJECT_EXECUTOR, params);
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... params) {
+    public <T> T queryForObject(final Connection conn, final String sql, final Class<T> requiredType, final Object... params) {
         return queryForObject(
+                conn,
                 sql,
                 generateRowMapperOf(requiredType),
                 params
         );
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return (List<T>) execute(sql, rowMapper, QUERY_EXECUTOR, params);
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return (List<T>) execute(conn, sql, rowMapper, QUERY_EXECUTOR, params);
     }
 
-    public <T> List<T> query(String sql, Class<T> requiredType, Object... params) {
+    public <T> List<T> query(final Connection conn, final String sql, final Class<T> requiredType, final Object... params) {
         return query(
+                conn,
                 sql,
                 generateRowMapperOf(requiredType),
                 params
         );
     }
 
-    public void execute(String sql, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
+    public void execute(final Connection conn, final String sql, final Object... params) {
+        try {
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -70,22 +70,22 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(
-            String sql,
-            RowMapper<T> rowMapper,
-            StatementExecutor executor,
-            Object... params
+            final Connection conn,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final StatementExecutor executor,
+            final Object... params
     ) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
-        ) {
+        try {
+            PreparedStatement pstmt = statementGenerator.prepareStatement(sql, conn, params);
             log.debug("query : {}", sql);
             return (T) executor.execute(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
