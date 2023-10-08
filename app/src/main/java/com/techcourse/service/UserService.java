@@ -47,13 +47,13 @@ public class UserService {
         try (final Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            return executeTransaction(transactionExecutor, connection);
+            return execute(transactionExecutor, connection);
         } catch (SQLException e) {
             throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
         }
     }
 
-    private <T> T executeTransaction(final TransactionExecutor<T> transactionExecutor, final Connection connection) throws SQLException {
+    private <T> T execute(final TransactionExecutor<T> transactionExecutor, final Connection connection) throws SQLException {
         try {
             return transactionExecutor.execute(connection);
         } catch (Exception ex) {
