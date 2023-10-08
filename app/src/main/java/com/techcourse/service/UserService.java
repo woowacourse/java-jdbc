@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class UserService {
 
@@ -31,29 +32,26 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = null;
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            conn = dataSource.getConnection();
+            TransactionSynchronizationManager.bindResource(dataSource, conn);
             conn.setAutoCommit(false);
 
             final User user = findById(id);
             user.changePassword(newPassword);
 
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             conn.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 conn.rollback();
             } catch (SQLException exception) {
                 throw new DataAccessException(exception);
             }
         } finally {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                throw new DataAccessException(e);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

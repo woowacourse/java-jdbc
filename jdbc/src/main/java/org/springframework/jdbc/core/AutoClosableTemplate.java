@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 abstract class AutoClosableTemplate {
 
@@ -22,16 +23,7 @@ abstract class AutoClosableTemplate {
     }
 
     public void execute(final String sql, final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
-        ) {
-            commandQuery(pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public void execute(final Connection conn, final String sql, final Object... objects) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
             commandQuery(pstmt);
         } catch (SQLException e) {
