@@ -8,8 +8,8 @@ import java.sql.SQLException;
 
 public class TransactionUserService implements UserService {
 
-    private AppUserService appUserService;
-    private DataSource dataSource;
+    private final AppUserService appUserService;
+    private final DataSource dataSource;
 
 
     public TransactionUserService(final AppUserService appUserService, final DataSource dataSource) {
