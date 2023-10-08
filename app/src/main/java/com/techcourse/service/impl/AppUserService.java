@@ -1,9 +1,10 @@
-package com.techcourse.service;
+package com.techcourse.service.impl;
 
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.service.UserService;
 
 public class AppUserService implements UserService {
 
