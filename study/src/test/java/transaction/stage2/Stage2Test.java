@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +59,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactlyInAnyOrder("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,12 +69,13 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        // second는 롤백되지 않음
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -85,10 +86,11 @@ class Stage2Test {
     void testSupports() {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
+        // 주석이 있을 때, 사이즈가 1, 두번째 트랜잭션 이름만 존재하나, 활성 상태는 아니다. (이는 @Tx 로 인해 이름은 생성되었으나, SUPOORT 옵션으로 Tx 없이 실행되기 때문)
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -100,10 +102,11 @@ class Stage2Test {
     void testMandatory() {
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
+        // 주석이 없으면 예외이다.
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
