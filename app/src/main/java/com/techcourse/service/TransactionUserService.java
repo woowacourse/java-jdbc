@@ -35,7 +35,7 @@ public class TransactionUserService implements UserService {
             transaction.commit();
         } catch (SQLException | RuntimeException e) {
             transaction.rollback();
-            throw new DataAccessException(e);
+            throw new TransactionFailedException(e);
         } finally {
             transaction.close();
         }
