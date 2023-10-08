@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class PreparedStatementExecutor {
 
@@ -19,15 +20,18 @@ public class PreparedStatementExecutor {
     }
 
     public <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql, final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
+        try (final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects)) {
             log.debug("query : {}", sql);
             return preparedStatementCallback.call(preparedStatement);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
