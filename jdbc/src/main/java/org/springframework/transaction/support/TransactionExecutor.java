@@ -2,19 +2,20 @@ package org.springframework.transaction.support;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionManager;
 
 public class TransactionExecutor {
 
-    private final ConnectionManager connectionManager;
+    private final DataSource dataSource;
 
-    public TransactionExecutor(final ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public TransactionExecutor(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public void execute(final TransactionWorker worker) {
-        final Connection connection = connectionManager.getConnection();
+        final Connection connection = ConnectionManager.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
 
@@ -25,7 +26,7 @@ public class TransactionExecutor {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            connectionManager.closeConnection(connection);
+            ConnectionManager.closeConnection(connection);
         }
     }
 

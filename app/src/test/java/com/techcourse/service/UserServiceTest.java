@@ -8,10 +8,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ConnectionManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionExecutor;
 
@@ -23,12 +23,12 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        final ConnectionManager connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
-        this.jdbcTemplate = new JdbcTemplate(connectionManager);
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
-        this.transactionExecutor = new TransactionExecutor(connectionManager);
+        this.transactionExecutor = new TransactionExecutor(dataSource);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }

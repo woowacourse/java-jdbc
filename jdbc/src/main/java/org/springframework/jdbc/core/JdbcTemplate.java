@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -16,10 +17,10 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final ConnectionManager connectionManager;
+    private final DataSource dataSource;
 
-    public JdbcTemplate(final ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public JdbcTemplate(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -49,11 +50,11 @@ public class JdbcTemplate {
     }
 
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
-        final Connection connection = connectionManager.getConnection();
+        final Connection connection = ConnectionManager.getConnection(dataSource);
         try {
             return executeInternalWithConnection(connection, sql, executor, args);
         } finally {
-            connectionManager.closeConnection(connection);
+            ConnectionManager.closeConnection(connection);
         }
     }
 

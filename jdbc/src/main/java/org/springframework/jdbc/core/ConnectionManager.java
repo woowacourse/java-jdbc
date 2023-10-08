@@ -7,13 +7,10 @@ import org.springframework.dao.DataAccessException;
 
 public class ConnectionManager {
 
-    private final DataSource dataSource;
-
-    public ConnectionManager(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    private ConnectionManager() {
     }
 
-    public Connection getConnection() {
+    public static Connection getConnection(final DataSource dataSource) {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -21,7 +18,7 @@ public class ConnectionManager {
         }
     }
 
-    public void closeConnection(final Connection connection) {
+    public static void closeConnection(final Connection connection) {
         if (connection == null) {
             return;
         }
