@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.support.ConnectionManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -28,11 +29,14 @@ public class JdbcTemplate {
         this.statementExecutor = statementExecutor;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public void update(final String sql,
+                       final Object... parameters) {
         query(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final ResultSetMapper<T> rowMapper, final Object... parameters) {
+    public <T> Optional<T> queryForObject(final String sql,
+                                          final ResultSetMapper<T> rowMapper,
+                                          final Object... parameters) {
         final List<T> results = query(sql, statement -> statementExecutor.execute(statement, rowMapper), parameters);
         if (results.size() > 1) {
             throw new DataAccessException("2개 이상의 결과를 반환할 수 없습니다.");
@@ -44,14 +48,16 @@ public class JdbcTemplate {
         return Optional.ofNullable(results.iterator().next());
     }
 
-    public <T> List<T> queryForList(final String sql, final ResultSetMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> queryForList(final String sql,
+                                    final ResultSetMapper<T> rowMapper,
+                                    final Object... parameters) {
         return query(sql, statement -> statementExecutor.execute(statement, rowMapper), parameters);
     }
 
     private <T> T query(final String sql,
                         final PreparedStatementCallback<T> preparedStatementCallback,
                         final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
+        try (final Connection connection = ConnectionManager.getConnection(dataSource);
              final PreparedStatement preparedStatement = statementCreate(connection, sql, parameters)) {
             return preparedStatementCallback.execute(preparedStatement);
         } catch (final SQLException e) {
