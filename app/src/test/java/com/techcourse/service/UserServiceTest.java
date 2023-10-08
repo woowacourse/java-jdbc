@@ -13,20 +13,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.connection.ConnectionManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionTemplate;
 import javax.sql.DataSource;
 
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private ConnectionManager connectionManager;
 
     @BeforeEach
     void setUp() {
         final DataSource dataSource = DataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
-        connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -36,7 +35,12 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, connectionManager);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+
+        final var connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
+        final var transactionTemplate = new TransactionTemplate(connectionManager);
+
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -51,7 +55,12 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, connectionManager);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+
+        final ConnectionManager connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(connectionManager);
+
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
