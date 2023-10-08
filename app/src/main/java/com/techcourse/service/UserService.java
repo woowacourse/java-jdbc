@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 import javax.sql.DataSource;
@@ -64,7 +65,7 @@ public class UserService {
             connection.rollback();
 
             log.error(ex.getMessage());
-            throw new RuntimeException("실행 중 예외가 발생했습니다.");
+            throw new DataAccessException("실행 중 예외가 발생했습니다.");
         }
     }
 }
