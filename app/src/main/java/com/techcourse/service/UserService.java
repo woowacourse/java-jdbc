@@ -21,8 +21,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
+        return transactionTemplate.execute(() -> userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다.")));
     }
 
     public void insert(final User user) {
@@ -30,7 +30,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(a -> {
+        transactionTemplate.execute(() -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);

@@ -5,7 +5,6 @@ import org.springframework.transaction.support.TransactionExecutor;
 import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class TransactionTemplate {
 
@@ -17,8 +16,8 @@ public class TransactionTemplate {
 
     public <T> T execute(TransactionExecutor<T> transactionExecutor) {
         try {
-            Connection connection = transactionManager.start();
-            T result = transactionExecutor.execute(connection);
+            transactionManager.start();
+            T result = transactionExecutor.execute();
             transactionManager.commit();
             return result;
         } catch (RuntimeException e) {
