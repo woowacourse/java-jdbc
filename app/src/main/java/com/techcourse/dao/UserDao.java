@@ -27,25 +27,26 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final Connection connection, final User user) throws SQLException {
+    public int insert(final Connection connection, final User user) throws SQLException {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
-
         log.debug("query : {}", sql);
+
+        return updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    private void updateQuery(final Connection connection, final String sql, final Object... objects) throws SQLException {
+    private int updateQuery(final Connection connection, final String sql, final Object... objects) throws SQLException {
         final int updatedRows = jdbcTemplate.update(connection, sql, objects);
         if (updatedRows < 1) {
             throw new RuntimeException("저장된 데이터가 없습니다.");
         }
+        return updatedRows;
     }
 
-    public void update(final Connection connection, final User user) throws SQLException {
+    public int update(final Connection connection, final User user) throws SQLException {
         final var sql = "update users set (account, password, email) = (?, ?, ?)";
-        updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
-
         log.debug("query : {}", sql);
+
+        return updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll(final Connection connection) throws SQLException {
