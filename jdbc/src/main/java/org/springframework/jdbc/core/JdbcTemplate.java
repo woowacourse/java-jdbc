@@ -15,7 +15,6 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int SINGLE_SIZE = 1;
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
@@ -98,10 +97,6 @@ public class JdbcTemplate {
     private static <T> void validateResultSize(List<T> result) {
         if (result.isEmpty()) {
             throw new DataAccessException("해당하는 유저가 없습니다.");
-        }
-
-        if(result.size() > SINGLE_SIZE) {
-            throw new DataAccessException("해당하는 유저가 2명 이상입니다.");
         }
     }
 }
