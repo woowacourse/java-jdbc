@@ -40,7 +40,7 @@ public class Transactional {
         }
     }
 
-    public void rollback() {
+    private void rollback() {
         try {
             resource.get().rollback();
         } catch (SQLException e) {
@@ -48,11 +48,11 @@ public class Transactional {
         }
     }
 
-    public void commit() throws SQLException {
+    private void commit() throws SQLException {
         resource.get().commit();
     }
 
-    public void close() {
+    private void close() {
         try {
             resource.get().close();
         } catch (SQLException e) {
@@ -61,6 +61,35 @@ public class Transactional {
             DataSourceUtils.releaseConnection(resource.get(), dataSource.get());
             resource.remove();
             dataSource.remove();
+        }
+    }
+
+    public static <T> T serviceForObject(FunctionForObject<T> function) {
+        final Transactional transactional = getInstance();
+        try {
+            final T result = function.service();
+            transactional.commit();
+            return result;
+        } catch (SQLException e) {
+            transactional.rollback();
+            transactional.close();
+            throw new JdbcException(e);
+        } finally {
+            transactional.close();
+        }
+    }
+
+    public static void service(Function function) {
+        final Transactional transactional = getInstance();
+        try {
+            function.service();
+            transactional.commit();
+        } catch (SQLException e) {
+            transactional.rollback();
+            transactional.close();
+            throw new JdbcException(e);
+        } finally {
+            transactional.close();
         }
     }
 }
