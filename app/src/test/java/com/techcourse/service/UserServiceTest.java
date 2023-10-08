@@ -11,7 +11,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,17 +22,15 @@ class UserServiceTest {
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
     private DataSource dataSource;
-    private Connection con;
 
     @BeforeEach
     void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(jdbcTemplate);
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         dataSource = DataSourceConfig.getInstance();
-        con = dataSource.getConnection();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(con, user);
+        userDao.insert(user);
     }
 
     @Test

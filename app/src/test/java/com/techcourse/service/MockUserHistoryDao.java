@@ -5,8 +5,6 @@ import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.sql.Connection;
-
 public class MockUserHistoryDao extends UserHistoryDao {
 
     public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
@@ -14,8 +12,8 @@ public class MockUserHistoryDao extends UserHistoryDao {
     }
 
     @Override
-    public void log(Connection con, UserHistory userHistory) {
-        super.log(con, userHistory);
+    public void log(UserHistory userHistory) {
+        super.log(userHistory);
         throw new DataAccessException();
     }
 }
