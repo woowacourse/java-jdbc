@@ -1,22 +1,21 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.springframework.transaction.support.TransactionExecutor;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionExecutor executor;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionExecutor executor) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.executor = executor;
     }
 
     public User findById(final long id) {
@@ -32,18 +31,9 @@ public class UserService {
         user.changePassword(newPassword);
         final UserHistory userHistory = new UserHistory(user, createBy);
 
-        try (final Connection connection = DataSourceConfig.getInstance().getConnection()) {
-            try {
-                connection.setAutoCommit(false);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, userHistory);
-                connection.commit();
-            } catch (Exception e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        executor.execute(connection -> {
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, userHistory);
+        });
     }
 }
