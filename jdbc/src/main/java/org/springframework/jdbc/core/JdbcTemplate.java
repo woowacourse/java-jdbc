@@ -8,6 +8,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.support.ConnectionHolder;
 import org.springframework.jdbc.support.TransactionManager;
@@ -54,7 +55,7 @@ public class JdbcTemplate {
             return callback.callback(preparedStatement);
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
