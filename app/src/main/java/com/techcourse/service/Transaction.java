@@ -39,6 +39,14 @@ public class Transaction implements AutoCloseable {
         }
     }
 
+    public void setReadOnly() {
+        try {
+            connection.setReadOnly(true);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     @Override
     public void close() {
         DataSourceUtils.releaseConnection(dataSource);
