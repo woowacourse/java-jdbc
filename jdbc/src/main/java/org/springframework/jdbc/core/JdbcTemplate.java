@@ -30,6 +30,10 @@ public class JdbcTemplate {
         queryTemplate(sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
     }
 
+    public void update(Connection connection, String sql, Object... arguments) {
+        queryTemplate(connection, sql, ps -> ((PreparedStatement) ps).executeUpdate(), arguments);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         return queryTemplate(sql, ps -> {
             ResultSet rs = ((PreparedStatement) ps).executeQuery();
@@ -59,6 +63,19 @@ public class JdbcTemplate {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = StatementCreator.createStatement(conn, sql, arguments)
+        ) {
+            log.debug("query : {}", sql);
+
+            return statementExecutor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw SqlExceptionTranslator.translateException(e);
+        }
+    }
+
+    private <T> T queryTemplate(Connection connection, String sql, StatementExecutor<T> statementExecutor, Object... arguments) {
+        try (
+                PreparedStatement pstmt = StatementCreator.createStatement(connection, sql, arguments)
         ) {
             log.debug("query : {}", sql);
 

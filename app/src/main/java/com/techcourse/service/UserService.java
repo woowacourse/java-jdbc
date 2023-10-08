@@ -4,15 +4,21 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.transaction.support.ConnectionManager;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -27,7 +33,20 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (Exception e) {
+            ConnectionManager.rollback(e, connection);
+        } finally {
+            ConnectionManager.close(connection);
+        }
     }
 }
