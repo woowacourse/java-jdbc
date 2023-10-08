@@ -16,20 +16,20 @@ public class UserService {
     }
 
     public User findById(long id) {
-        return TransactionExecutor.transactionQuery(connection -> userDao.findById(connection, id));
+        return TransactionExecutor.transactionQuery(connection -> userDao.findById(id));
     }
 
     public void insert(User user) {
-        TransactionExecutor.transactionCommand(connection -> userDao.insert(connection, user));
+        TransactionExecutor.transactionCommand(connection -> userDao.insert(user));
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
         TransactionExecutor.transactionCommand(
                 connection -> {
-                    User user = userDao.findById(connection, id);
+                    User user = userDao.findById(id);
                     user.changePassword(newPassword);
-                    userDao.update(connection, user);
-                    userHistoryDao.log(connection, new UserHistory(user, createBy));
+                    userDao.update(user);
+                    userHistoryDao.log(new UserHistory(user, createBy));
                 }
         );
     }
