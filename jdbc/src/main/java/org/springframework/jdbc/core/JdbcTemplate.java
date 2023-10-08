@@ -3,8 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.support.ConnectionHolder;
-import org.springframework.transaction.support.TransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -18,10 +17,10 @@ public class JdbcTemplate {
 
     private static Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final TransactionManager transactionManager;
+    private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
-        this.transactionManager = new TransactionManager(dataSource, ConnectionHolder.getInstance());
+        this.dataSource = dataSource;
     }
 
     public int update(String sql, Object... args) {
@@ -41,7 +40,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... args) {
-        Connection connection = transactionManager.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement statement = getPreparedStatement(sql, connection, args);
         ) {
@@ -51,6 +50,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

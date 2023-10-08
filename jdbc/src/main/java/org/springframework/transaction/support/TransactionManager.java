@@ -1,52 +1,36 @@
 package org.springframework.transaction.support;
 
+import org.springframework.dao.DataAccessException;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class TransactionManager {
 
-    private final ConnectionHolder connectionHolder;
     private final DataSource dataSource;
 
-    public TransactionManager(DataSource dataSource, ConnectionHolder connectionHolder) {
+    public TransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.connectionHolder = connectionHolder;
     }
 
-    public Connection getConnection() {
-        if (connectionHolder.isEmpty()) {
-            return newConnection();
-        }
-        return connectionHolder.getConnection();
-    }
-
-    private Connection newConnection() {
+    public void start() {
         try {
             Connection connection = dataSource.getConnection();
-            connectionHolder.setConnection(connection);
-            return connection;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Connection start() {
-        try {
-            Connection connection = getConnection();
             connection.setAutoCommit(false);
-            connectionHolder.setConnection(connection);
-            return connection;
+            ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+            connectionHolder.setTransaction(true);
+            TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
     public void commit() {
         try {
-            Connection connection = getConnection();
+            ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+            Connection connection = connectionHolder.getConnection();
             connection.commit();
-            remove(connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -54,16 +38,11 @@ public class TransactionManager {
 
     public void rollback() {
         try {
-            Connection connection = getConnection();
+            ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+            Connection connection = connectionHolder.getConnection();
             connection.rollback();
-            remove(connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void remove(Connection connection) throws SQLException {
-        connection.close();
-        connectionHolder.remove();
     }
 }

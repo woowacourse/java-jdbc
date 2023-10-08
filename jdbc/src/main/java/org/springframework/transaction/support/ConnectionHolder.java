@@ -4,32 +4,31 @@ import java.sql.Connection;
 
 public class ConnectionHolder {
 
-    private static final ThreadLocal<Connection> connectionThreadLocal = new ThreadLocal<>();
+    private final Connection connection;
+    private boolean isTransaction;
 
-    private ConnectionHolder() {
+    public ConnectionHolder(Connection connection, boolean isTransaction) {
+        this.connection = connection;
+        this.isTransaction = isTransaction;
     }
 
-    public static ConnectionHolder getInstance() {
-        return SingletonHelper.INSTANCE;
+    public ConnectionHolder(Connection connection) {
+        this(connection, false);
+    }
+
+    public boolean isSameConnection(Connection connection) {
+        return this.connection.equals(connection);
+    }
+
+    public boolean isTransaction() {
+        return isTransaction;
+    }
+
+    public void setTransaction(boolean isTransaction) {
+        this.isTransaction = isTransaction;
     }
 
     public Connection getConnection() {
-        return connectionThreadLocal.get();
-    }
-
-    public void setConnection(Connection connection) {
-        connectionThreadLocal.set(connection);
-    }
-
-    public boolean isEmpty() {
-        return connectionThreadLocal.get() == null;
-    }
-
-    public void remove() {
-        connectionThreadLocal.remove();
-    }
-
-    private static class SingletonHelper {
-        private static final ConnectionHolder INSTANCE = new ConnectionHolder();
+        return connection;
     }
 }
