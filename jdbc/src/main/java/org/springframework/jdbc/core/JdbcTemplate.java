@@ -3,7 +3,8 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.support.ConnectionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -57,12 +58,16 @@ public class JdbcTemplate {
     private <T> T query(final String sql,
                         final PreparedStatementCallback<T> preparedStatementCallback,
                         final Object... parameters) {
-        try (final Connection connection = ConnectionManager.getConnection(dataSource);
-             final PreparedStatement preparedStatement = statementCreate(connection, sql, parameters)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement preparedStatement = statementCreate(connection, sql, parameters)) {
             return preparedStatementCallback.execute(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.isTransactionEnable()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
