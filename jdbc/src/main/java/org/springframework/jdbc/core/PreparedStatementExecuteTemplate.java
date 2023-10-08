@@ -29,10 +29,10 @@ public class PreparedStatementExecuteTemplate {
         return execute(conn, callBack, sql, args);
     }
 
-    private  <T> T execute(final Connection conn,
-                         final PreparedStatementExecute<T> callBack,
-                         final String sql,
-                         final Object... args
+    private <T> T execute(final Connection conn,
+                          final PreparedStatementExecute<T> callBack,
+                          final String sql,
+                          final Object... args
     ) {
         try (final PreparedStatement pstmt = prepareMappedStatement(conn, sql, args);) {
 
