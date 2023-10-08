@@ -21,10 +21,18 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저가 없습니다."));
-    }
+    public User findById(long id) throws SQLException {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+            return userDao.findById(connection, id);
+        } catch (SQLException e) {
+            connection.rollback();
+            throw new RuntimeException(e);
+        } finally {
+            close(connection);
+        }
 
     }
 
@@ -58,6 +66,14 @@ public class UserService {
             throw new RuntimeException(e);
         } finally {
             close(connection);
+        }
+    }
+
+    private void close(Connection connection){
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

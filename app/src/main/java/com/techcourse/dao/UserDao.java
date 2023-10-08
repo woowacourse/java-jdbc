@@ -26,10 +26,10 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(User user) {
+    public void insert(Connection connection, User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.info("[LOG] insert user into users");
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(Connection connection, User user) {
@@ -38,21 +38,21 @@ public class UserDao {
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         String sql = "select id, account, password, email from users";
         log.info("[LOG] select all from users");
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(connection, sql, USER_ROW_MAPPER);
     }
 
-    public Optional<User> findById(Long id) {
+    public User findById(Connection connection, Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.info("[LOG] select user by id");
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
     }
 
-    public Optional<User> findByAccount(String account) {
+    public User findByAccount(Connection connection, String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.info("[LOG] select user by account");
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, account);
     }
 }

@@ -21,15 +21,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(connection, sql, rowMapper, createPreparedStatementSetter(args));
+    }
 
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.run(resultSet));
-            }
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(connection, sql, rowMapper, createPreparedStatementSetter(args));
+    }
 
     public void update(Connection connection, String sql, Object... args) {
         update(connection, sql, createPreparedStatementSetter(args));
@@ -49,14 +47,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+    private <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> list = query(connection, sql, rowMapper, pss);
 
-            if (!resultSet.next()) {
-                return Optional.empty();
-            }
+        if (list.isEmpty()) {
+            throw new DataAccessException("해당하는 유저가 없습니다.");
+        }
+        return list.get(0);
+    }
 
     private void update(Connection connection, String sql, PreparedStatementSetter pss) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -86,6 +84,16 @@ public class JdbcTemplate {
         };
     }
 
-        return preparedStatement;
+    private <T> List<T> mapResultSetToObject(RowMapper<T> rowMapper, PreparedStatement preparedStatement) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            List<T> list = new ArrayList<>();
+            while (resultSet.next()) {
+                list.add(rowMapper.run(resultSet));
+            }
+            return list;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 }

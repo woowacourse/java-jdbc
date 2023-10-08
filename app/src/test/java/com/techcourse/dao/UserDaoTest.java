@@ -33,14 +33,14 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
+        final var users = userDao.findAll(connection);
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L).get();
+        final var user = userDao.findById(connection, 1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -48,18 +48,25 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account).get();
+        final var user = userDao.findByAccount(connection, account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByWrongAccount() {
+        final var account = "gaga";
+        assertThatThrownBy(() -> userDao.findByAccount(connection, account))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
 
-        final var actual = userDao.findById(2L).get();
+        final var actual = userDao.findById(connection, 2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
