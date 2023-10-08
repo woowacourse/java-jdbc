@@ -23,10 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
     public void execute(String sql, Object... args) {
         context(sql, args);
     }
