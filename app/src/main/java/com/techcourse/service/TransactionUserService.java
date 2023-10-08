@@ -12,7 +12,6 @@ public class TransactionUserService implements UserService {
     private final AppUserService appUserService;
     private final DataSource dataSource;
 
-
     public TransactionUserService(final AppUserService appUserService, final DataSource dataSource) {
         this.appUserService = appUserService;
         this.dataSource = dataSource;
