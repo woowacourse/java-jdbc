@@ -1,7 +1,6 @@
 package aop.stage1;
 
 import aop.DataAccessException;
-import aop.common.TransactionHandler;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
@@ -17,7 +16,7 @@ import java.lang.reflect.Method;
  */
 public class TransactionAdvice implements MethodInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionAdvice.class);
 
     private final PlatformTransactionManager transactionManager;
 

@@ -25,7 +25,7 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         final Method targetMethod = target.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes());
-        
+
         if (targetMethod.isAnnotationPresent(Transactional.class)) {
             return invokeWithTransaction(target, method, args);
         }
