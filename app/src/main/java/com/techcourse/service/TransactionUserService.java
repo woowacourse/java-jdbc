@@ -2,13 +2,13 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 import javax.sql.DataSource;
-import org.springframework.transaction.support.TxService;
+import org.springframework.transaction.support.TransactionService;
 
-public class TxUserService extends TxService implements UserService {
+public class TransactionUserService extends TransactionService implements UserService {
 
     private final UserService userService;
 
-    public TxUserService(final UserService userService, final DataSource dataSource) {
+    public TransactionUserService(final UserService userService, final DataSource dataSource) {
         super(dataSource);
         this.userService = userService;
     }

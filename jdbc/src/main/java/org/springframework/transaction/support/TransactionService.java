@@ -7,11 +7,11 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.exception.CommitFailException;
 import org.springframework.transaction.exception.RollbackFailException;
 
-public abstract class TxService {
+public abstract class TransactionService {
 
     private final DataSource dataSource;
 
-    protected TxService(final DataSource dataSource) {
+    protected TransactionService(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
