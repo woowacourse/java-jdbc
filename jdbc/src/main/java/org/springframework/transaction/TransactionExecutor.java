@@ -2,7 +2,6 @@ package org.springframework.transaction;
 
 import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.function.Supplier;
 
 public class TransactionExecutor {
@@ -19,11 +18,7 @@ public class TransactionExecutor {
             runnable.run();
             transactionManager.commit();
         } catch (Exception e) {
-            try {
-                transactionManager.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+            transactionManager.rollback();
             throw new DataAccessException(e);
         }
     }
@@ -35,11 +30,7 @@ public class TransactionExecutor {
             transactionManager.commit();
             return result;
         } catch (Exception e) {
-            try {
-                transactionManager.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+            transactionManager.rollback();
             throw new DataAccessException(e);
         }
     }
