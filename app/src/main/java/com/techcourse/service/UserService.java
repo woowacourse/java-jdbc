@@ -6,6 +6,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,11 +32,10 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = null;
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
 
             final var user = findById(id);
@@ -50,11 +51,8 @@ public class UserService {
                 throw new DataAccessException(er);
             }
         } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new DataAccessException(e);
-            }
+            DataSourceUtils.releaseConnection(connection,dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
