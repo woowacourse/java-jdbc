@@ -12,7 +12,7 @@ public abstract class DataSourceUtils {
     private DataSourceUtils() {
     }
 
-    public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
+    public static Connection getConnection(final DataSource dataSource) throws CannotGetJdbcConnectionException {
         final ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
         if (connectionHolder != null) {
             return connectionHolder.getConnection();
@@ -27,7 +27,7 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(final Connection connection, final DataSource dataSource) {
         final ConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
         if (connectionHolder.isTransactionActive()) {
             return;
