@@ -50,9 +50,6 @@ public class JdbcTemplate {
             throw new DataAccessException();
         }
         if(results.size() > 1) {
-            for (T result : results) {
-                System.out.println("result = " + result);
-            }
             throw new DataAccessException();
         }
         return results.iterator().next();
