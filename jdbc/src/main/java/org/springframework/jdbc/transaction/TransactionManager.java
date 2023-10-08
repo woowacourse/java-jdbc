@@ -28,22 +28,29 @@ public class TransactionManager {
         Connection connection = getConnection();
         try {
             connection.commit();
-            connection.close();
-            connectionInThread.remove();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        init(connection);
     }
 
     public void rollback() {
+        Connection connection = getConnection();
         try {
-            Connection connection = getConnection();
             connection.rollback();
-            connection.close();
-            connectionInThread.remove();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        init(connection);
+    }
+
+    private void init(final Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        connectionInThread.remove();
     }
 
     public Connection getConnection() {
