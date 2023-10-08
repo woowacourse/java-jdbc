@@ -22,6 +22,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void execute(Connection conn, String sql, MyPreparedStatementCallback myPreparedStatementCallback) {
+        try (
+            PreparedStatement pstmt = prepareStatement(conn, sql, new Object[0])
+        ) {
+            myPreparedStatementCallback.execute(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public void execute(String sql, MyPreparedStatementCallback myPreparedStatementCallback) {
         try (
             Connection conn = getConnection();
@@ -65,7 +76,7 @@ public class JdbcTemplate {
         }
     }
 
-    private Connection getConnection() throws SQLException {
+    public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
 
