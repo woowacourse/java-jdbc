@@ -19,10 +19,10 @@ public class PreparedStatementExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql, final Object... objects) {
+    public <T> T execute(final PreparedStatementCallback<T> preparedStatementCallback, final String sql) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try (final PreparedStatement preparedStatement = prepareStatementWithBindingQuery(connection.prepareStatement(sql), objects)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return preparedStatementCallback.call(preparedStatement);
 
@@ -35,10 +35,9 @@ public class PreparedStatementExecutor {
         }
     }
 
-    private PreparedStatement prepareStatementWithBindingQuery(final PreparedStatement preparedStatement, final Object... objects) throws SQLException {
+    public void prepareStatementWithBindingQuery(final PreparedStatement preparedStatement, final Object... objects) throws SQLException {
         for (int i = 0; i < objects.length; i++) {
             preparedStatement.setObject(i + 1, objects[i]);
         }
-        return preparedStatement;
     }
 }
