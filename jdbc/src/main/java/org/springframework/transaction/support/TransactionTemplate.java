@@ -15,12 +15,12 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(Runnable runnable) {
+    public void execute(final Runnable runnable) {
         if (TransactionSynchronizationManager.isTransactionEnable()) {
             runnable.run();
             return;
         }
-        Connection conn = DataSourceUtils.getConnection(dataSource);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         begin(conn);
         try {
             runnable.run();
@@ -33,7 +33,7 @@ public class TransactionTemplate {
         }
     }
 
-    private void begin(Connection connection) {
+    private void begin(final Connection connection) {
         try {
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.begin();
@@ -42,7 +42,7 @@ public class TransactionTemplate {
         }
     }
 
-    private void commit(Connection connection) {
+    private void commit(final Connection connection) {
         try {
             connection.commit();
         } catch (SQLException e) {
@@ -50,7 +50,7 @@ public class TransactionTemplate {
         }
     }
 
-    private void rollback(Connection connection) {
+    private void rollback(final Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException e) {
