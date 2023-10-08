@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.List;
 
 public class UserService {
 
@@ -28,5 +29,9 @@ public class UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+    }
+
+    public List<UserHistory> findLogsByUserId(final long id) {
+        return userHistoryDao.findByUserId(id);
     }
 }

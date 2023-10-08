@@ -1,18 +1,21 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.List;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @Disabled
 class UserServiceTest {
@@ -42,6 +45,26 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void testChangePasswordWithUserHistory() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao);
+
+        final var newPassword = "qqqqq";
+        final var createBy = "gugu";
+        userService.changePassword(1L, newPassword, createBy);
+        final List<UserHistory> logs = userService.findLogsByUserId(1L);
+
+        final var actual = userService.findById(1L);
+
+        SoftAssertions.assertSoftly(
+                soft -> {
+                    soft.assertThat(actual.getPassword()).isEqualTo(newPassword);
+                    soft.assertThat(logs).hasSize(1);
+                }
+        );
     }
 
     @Test
