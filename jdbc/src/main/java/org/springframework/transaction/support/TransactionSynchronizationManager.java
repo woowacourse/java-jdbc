@@ -37,6 +37,11 @@ public abstract class TransactionSynchronizationManager {
         return map;
     }
 
+    public static boolean hasConnection(DataSource key) {
+        Map<DataSource, Connection> map = resources.get();
+        return map != null && map.containsKey(key);
+    }
+
     public static void bindResource(DataSource key, Connection value) {
         Map<DataSource, Connection> map = resources.get();
         map.put(key, value);

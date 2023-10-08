@@ -20,10 +20,11 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
-        DataSource dataSource = DataSourceConfig.getInstance();
+        dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
@@ -33,9 +34,9 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void testChangePassword() throws SQLException {
         var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        var userService = new AppUserService(userDao, userHistoryDao);
+        var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         var newPassword = "qqqqq";
         var createBy = "gugu";

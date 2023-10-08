@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -20,11 +21,16 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) throws SQLException {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        connection.setAutoCommit(false);
+        Connection connection = null;
         try {
+            if (TransactionSynchronizationManager.hasConnection(dataSource)) {
+                return userService.findById(id);
+            }
+            connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
             User user = userService.findById(id);
             connection.commit();
+            DataSourceUtils.releaseConnection(connection, dataSource);
             return user;
         } catch (SQLException e) {
             connection.rollback();
@@ -34,9 +40,14 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(User user) throws SQLException {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        connection.setAutoCommit(false);
+        Connection connection = null;
         try {
+            if (TransactionSynchronizationManager.hasConnection(dataSource)) {
+                userService.insert(user);
+                return;
+            }
+            connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
             userService.insert(user);
             connection.commit();
         } catch (SQLException e) {
