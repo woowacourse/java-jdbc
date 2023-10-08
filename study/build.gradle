@@ -23,7 +23,7 @@ dependencies {
     implementation "org.testcontainers:mysql:1.17.3"
 
     implementation "org.reflections:reflections:0.10.2"
-    implementation "ch.qos.logback:logback-classic:1.2.12"
+    implementation "ch.qos.logback:logback-core:1.2.12"
     implementation "org.apache.commons:commons-lang3:3.13.0"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test:2.7.14"
