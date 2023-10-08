@@ -22,9 +22,22 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementCallback preparedStatementCallback,
-                         final ExecutionCallback<T> executionCallback) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementCallback.prepareStatement(connection)) {
+                          final ExecutionCallback<T> executionCallback) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return executeWithConnection(connection, preparedStatementCallback, executionCallback);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return executeWithConnection(connection, conn -> prepareStatement(sql, conn, args), PreparedStatement::executeUpdate);
+    }
+
+    private <T> T executeWithConnection(final Connection connection,
+                                        final PreparedStatementCallback preparedStatementCallback,
+                                        final ExecutionCallback<T> executionCallback) {
+        try (final PreparedStatement pstmt = preparedStatementCallback.prepareStatement(connection)) {
             return executionCallback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -49,7 +62,7 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new DataAccessException();
         }
-        if(results.size() > 1) {
+        if (results.size() > 1) {
             throw new DataAccessException();
         }
         return results.iterator().next();
