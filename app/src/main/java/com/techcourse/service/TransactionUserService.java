@@ -5,6 +5,7 @@ import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionUserService implements UserService {
 
@@ -19,45 +20,61 @@ public class TransactionUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        Transaction transaction = Transaction.start(dataSource);
-        transaction.setReadOnly();
-        try {
-            User user = appUserService.findById(id);
-            transaction.commit();
-            return user;
-        } catch (SQLException | RuntimeException e) {
-            transaction.rollback();
-            throw new DataAccessException(e);
-        } finally {
-            transaction.close();
-        }
+        return new TransactionExecutor()
+                .setDataSource(dataSource)
+                .setReadOnlyTrue()
+                .executeTransactionWithSupplier(() -> appUserService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        Transaction transaction = Transaction.start(dataSource);
-        try {
-            appUserService.insert(user);
-            transaction.commit();
-        } catch (SQLException | RuntimeException e) {
-            transaction.rollback();
-            throw new DataAccessException(e);
-        } finally {
-            transaction.close();
-        }
+        new TransactionExecutor()
+                .setDataSource(dataSource)
+                .executeTransactionWithRunnable(() -> appUserService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Transaction transaction = Transaction.start(dataSource);
-        try {
-            appUserService.changePassword(id, newPassword, createBy);
-            transaction.commit();
-        } catch (SQLException | RuntimeException e) {
-            transaction.rollback();
-            throw new DataAccessException(e);
-        } finally {
-            transaction.close();
+        new TransactionExecutor()
+                .setDataSource(dataSource)
+                .executeTransactionWithRunnable(() -> appUserService.changePassword(id, newPassword, createBy));
+    }
+
+    static class TransactionExecutor {
+
+        private DataSource dataSource;
+        private boolean readOnly = false;
+
+        private TransactionExecutor setReadOnlyTrue() {
+            this.readOnly = true;
+            return this;
+        }
+
+        private TransactionExecutor setDataSource(final DataSource dataSource) {
+            this.dataSource = dataSource;
+            return this;
+        }
+
+        private void executeTransactionWithRunnable(final Runnable runnable) {
+            executeTransactionWithSupplier(() -> {
+                runnable.run();
+                return null;
+            });
+        }
+
+        private <T> T executeTransactionWithSupplier(Supplier<T> supplier) {
+            Transaction transaction = Transaction.start(dataSource);
+            transaction.setReadOnly(readOnly);
+            try {
+                T result = supplier.get();
+                transaction.commit();
+                return result;
+            } catch (SQLException | RuntimeException e) {
+                transaction.rollback();
+                throw new DataAccessException(e);
+            } finally {
+                transaction.close();
+            }
         }
     }
 }

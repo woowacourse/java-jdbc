@@ -39,9 +39,9 @@ public class Transaction implements AutoCloseable {
         }
     }
 
-    public void setReadOnly() {
+    public void setReadOnly(final boolean readOnly) {
         try {
-            connection.setReadOnly(true);
+            connection.setReadOnly(readOnly);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
