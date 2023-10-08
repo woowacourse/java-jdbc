@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,17 +28,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... obj) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn)) {
-            log.debug("query : {}", sql);
-            pstmt.execute();
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception);
-        }
-    }
-
-    public void update(final Connection conn, final String sql, final Object... obj) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn)) {
             log.debug("query : {}", sql);
             pstmt.execute();
@@ -57,8 +48,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> tryCatchTemplate(final StatementExecutor<List<T>> executor, final String sql, final Object... obj) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = getPreparedStatement(sql, obj, conn);
              final ResultSet rs = pstmt.executeQuery()) {
             return executor.execute(rs);
         } catch (final SQLException exception) {

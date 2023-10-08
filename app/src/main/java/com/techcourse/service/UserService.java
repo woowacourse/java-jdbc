@@ -30,13 +30,13 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.executeInTransaction(conn -> {
+        transactionManager.executeInTransaction(() -> {
             final var user = findById(id);
             if (user.isPresent()) {
                 final User presentUser = user.get();
                 presentUser.changePassword(newPassword);
-                userDao.update(conn, presentUser);
-                userHistoryDao.log(conn, new UserHistory(presentUser, createBy));
+                userDao.update(presentUser);
+                userHistoryDao.log(new UserHistory(presentUser, createBy));
             }
         });
     }
