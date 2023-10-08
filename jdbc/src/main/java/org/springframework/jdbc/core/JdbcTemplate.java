@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.exception.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,6 +24,10 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return preparedStatementExecutor.execute(PreparedStatement::executeUpdate, sql, args);
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return preparedStatementExecutor.execute(connection, PreparedStatement::executeUpdate, sql, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
