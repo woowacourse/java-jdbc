@@ -2,7 +2,6 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,8 +23,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, preparedStatement -> {
+    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... parameters) throws SQLException {
+        return execute(connection, sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
@@ -37,8 +36,8 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        return execute(sql, preparedStatement -> {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper) throws SQLException {
+        return execute(connection, sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
@@ -49,19 +48,14 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final String sql, final Object... parameters) {
-        return execute(sql, PreparedStatement::executeUpdate, parameters);
+    public int update(final Connection connection, final String sql, final Object... parameters) throws SQLException {
+        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> T execute(final String sql, final executeQueryCallback<T> callBack, final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            setPreparedStatement(preparedStatement, objects);
-            return callBack.execute(preparedStatement);
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
-        }
+    public <T> T execute(final Connection connection, final String sql, final executeQueryCallback<T> callBack, final Object... objects) throws SQLException {
+        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        setPreparedStatement(preparedStatement, objects);
+        return callBack.execute(preparedStatement);
     }
 
     private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
