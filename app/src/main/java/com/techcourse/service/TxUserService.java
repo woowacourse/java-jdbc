@@ -15,12 +15,12 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public User findById(long id) {
+    public User findById(final long id) {
         return userService.findById(id);
     }
 
     @Override
-    public void insert(User user) {
+    public void insert(final User user) {
         transactionManager.run(() -> userService.insert(user));
     }
 
