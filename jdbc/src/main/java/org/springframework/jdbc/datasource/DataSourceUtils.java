@@ -13,9 +13,9 @@ public abstract class DataSourceUtils {
     }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        final SimpleConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
-        if (connectionHolder != null) {
-            return connectionHolder.getConnection();
+        final SimpleConnectionHolder simpleConnectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (simpleConnectionHolder != null) {
+            return simpleConnectionHolder.getConnection();
         }
 
         try {
@@ -28,8 +28,8 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        final SimpleConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
-        if (connectionHolder.isTransactionActive()) {
+        final SimpleConnectionHolder simpleConnectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (simpleConnectionHolder.isTransactionActive()) {
             return;
         }
         try {

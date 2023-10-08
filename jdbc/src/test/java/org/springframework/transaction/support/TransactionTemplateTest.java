@@ -33,7 +33,7 @@ class TransactionTemplateTest {
         // given
         final Connection connection = mock(Connection.class);
         given(dataSource.getConnection()).willReturn(connection);
-        final TransactionCallback throwException = () -> {
+        final Runnable throwException = () -> {
             throw new IllegalArgumentException();
         };
 
@@ -52,7 +52,7 @@ class TransactionTemplateTest {
         // given
         final Connection connection = mock(Connection.class);
         given(dataSource.getConnection()).willReturn(connection);
-        final TransactionCallback emptyTransactionCallback = () -> {
+        final Runnable emptyTransactionCallback = () -> {
         };
 
         // when

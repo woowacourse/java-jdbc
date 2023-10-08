@@ -1,33 +1,43 @@
 package org.springframework.transaction.support;
 
-import java.sql.Connection;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 
 public class TransactionTemplate {
 
-    private final ConnectionManager connectionManager;
+    private final TransactionManager transactionManager;
 
     public TransactionTemplate(final DataSource dataSource) {
-        this(new ConnectionManager(dataSource));
+        this(new TransactionManager(dataSource));
     }
 
-    public TransactionTemplate(final ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    TransactionTemplate(final TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 
-    public void execute(final TransactionCallback transactionCallback) {
-        Connection connection = null;
+    private <R> R run(final Supplier<R> supplier) {
         try {
-            connection = connectionManager.initializeConnection();
-            connection.setAutoCommit(false);
-            transactionCallback.execute();
-            connection.commit();
+            transactionManager.initialize();
+            final R result = supplier.get();
+            transactionManager.commit();
+            return result;
         } catch (final Exception e) {
-            connectionManager.rollback(connection);
+            transactionManager.rollback();
             throw new DataAccessException(e);
         } finally {
-            connectionManager.close(connection);
+            transactionManager.close();
         }
+    }
+
+    public void execute(final Runnable transactionCallback) {
+        run(() -> {
+            transactionCallback.run();
+            return null;
+        });
+    }
+
+    public <R> R executeWithResult(final Supplier<R> transactionCallback) {
+        return run(transactionCallback);
     }
 }
