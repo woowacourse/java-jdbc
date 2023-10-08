@@ -1,4 +1,4 @@
-package org.springframework.jdbc.core;
+package org.springframework.transaction.support;
 
 import java.sql.Connection;
 import java.sql.SQLException;
