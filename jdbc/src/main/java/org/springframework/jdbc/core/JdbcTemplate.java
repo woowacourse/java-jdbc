@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 public class JdbcTemplate {
@@ -22,56 +23,46 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    public int update(final String sql, boolean closeResources,  Object... args) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(pstmt);
-
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(sql, e);
+        } finally {
+            if (closeResources) {
+                DataSourceUtils.releaseConnection(dataSource);
+            }
         }
     }
 
-    public int update(final Connection conn, final String sql, Object... args) {
-        try (
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(pstmt);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw SQLExceptionTranslator.translate(sql, e);
-        }
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, boolean closeResources, Object... args) {
         log.debug("query : {}", sql);
 
         PreparedStatementCallback<T> callback = pstmt -> {
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
             List<T> results = extractResultSet(pstmt.executeQuery(), rowMapper);
             if (results.size() == 1) {
                 return results.get(0);
             }
             throw new IncorrectResultSizeDataAccessException(results.size());
         };
-        return executeQuery(callback, sql, args);
+        return executeQuery(callback, sql, closeResources, args);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        PreparedStatementCallback<List<T>> callBack = pstmt ->
-                extractResultSet(pstmt.executeQuery(), rowMapper);
-        return executeQuery(callBack, sql, args);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, boolean closeResource, Object... args) {
+        PreparedStatementCallback<List<T>> callBack = pstmt -> {
+            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+            pss.setValues(pstmt);
+            return extractResultSet(pstmt.executeQuery(), rowMapper);
+        };
+        return executeQuery(callBack, sql, closeResource, args);
     }
 
     private <T> List<T> extractResultSet(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
@@ -83,17 +74,19 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(pstmt);
+    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, boolean closeResources, Object... args) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(sql, e);
+        } finally {
+            if (closeResources) {
+                DataSourceUtils.releaseConnection(dataSource);
+            }
         }
     }
 }
