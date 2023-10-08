@@ -24,24 +24,35 @@ public class TxUserService implements UserService {
 
     @Override
     public User findbyId(long id) {
-        return userService.findbyId(id);
+        return executeTransaction(() -> userService.findbyId(id));
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        executeTransaction(() -> {
+            userService.insert(user);
+            return null;
+        });
     }
 
     @Override
-    public void changePassword(long id, String newPassword, String createBy) throws SQLException {
+    public void changePassword(long id, String newPassword, String createBy) {
+        executeTransaction(() -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
+    }
+
+    public <T> T executeTransaction(TransactionExecutor<T> transactionExecutor) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        connection.setAutoCommit(false);
-
         try {
-            userService.changePassword(id, newPassword, createBy);
+            connection.setAutoCommit(false);
+            T result = transactionExecutor.execute();
             connection.commit();
+            
+            return result;
         } catch (SQLException e) {
             try {
                 connection.rollback();
