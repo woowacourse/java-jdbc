@@ -16,8 +16,12 @@ public abstract class DataSourceUtils {
             return connection;
         }
 
+        return getNewConnection(dataSource);
+    }
+
+    private static Connection getNewConnection(DataSource dataSource) {
         try {
-            connection = dataSource.getConnection();
+            Connection connection = dataSource.getConnection();
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             return connection;
         } catch (SQLException ex) {
