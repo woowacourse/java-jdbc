@@ -1,7 +1,7 @@
 package org.springframework.transaction.support;
 
 @FunctionalInterface
-public interface BusinessLogicProcessor {
+public interface BusinessLogicProcessor<T> {
 
-    void process();
+    T process();
 }

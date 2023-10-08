@@ -15,16 +15,16 @@ public class TransactionalExecutor {
         this.dataSource = dataSource;
     }
 
-    public void execute(BusinessLogicProcessor businessLogicProcessor) {
+    public <T> T execute(BusinessLogicProcessor<T> businessLogicProcessor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-
-            businessLogicProcessor.process();
-
+            final T result = businessLogicProcessor.process();
             connection.commit();
+            return result;
         } catch (Exception e) {
             rollbackAndThrowException(connection, e);
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
@@ -37,6 +37,5 @@ public class TransactionalExecutor {
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
         }
-        throw new DataAccessException(e);
     }
 }
