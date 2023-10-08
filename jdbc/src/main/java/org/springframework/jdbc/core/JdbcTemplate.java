@@ -5,6 +5,7 @@ import org.springframework.exception.EmptyResultException;
 import org.springframework.exception.WrongResultSizeException;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,6 +24,15 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... parameters) {
         return preparedStatementExecutor.execute(
+                PreparedStatement::executeUpdate,
+                sql,
+                parameters
+        );
+    }
+
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return preparedStatementExecutor.execute(
+                connection,
                 PreparedStatement::executeUpdate,
                 sql,
                 parameters
@@ -54,7 +64,7 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    private <T> void validateResultSize(final int size) {
+    private void validateResultSize(final int size) {
         if (size > SINGLE_RESULT_SIZE) {
             throw new WrongResultSizeException("Result Count is Not Only 1. ResultCount=" + size);
         }
