@@ -28,6 +28,10 @@ public class JdbcTemplate {
         execute(sql, args, PreparedStatement::executeUpdate);
     }
 
+    public void update(final Connection conn, final String sql, final Object... args) {
+        execute(conn, sql, args, PreparedStatement::executeUpdate);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(sql, rowMapper, args);
         if (result.size() > 1) {
@@ -63,10 +67,6 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
-    }
-
-    public void update(final Connection conn, final String sql, final Object... args) {
-        execute(conn, sql, args, PreparedStatement::executeUpdate);
     }
 
     private <T> T execute(final Connection conn, final String sql, final Object[] args, final PreparedStatementFunction<T> preparedStatementExecutor) {
