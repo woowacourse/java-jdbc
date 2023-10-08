@@ -7,31 +7,37 @@ import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.SimpleConnectionHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
     private DataSourceUtils() {
     }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        final SimpleConnectionHolder simpleConnectionHolder = TransactionSynchronizationManager.getResource(dataSource);
-        if (simpleConnectionHolder != null) {
-            return simpleConnectionHolder.getConnection();
+        final SimpleConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (connectionHolder != null) {
+            return connectionHolder.getConnection();
         }
 
         try {
             final Connection connection = dataSource.getConnection();
             TransactionSynchronizationManager.bindResource(dataSource, new SimpleConnectionHolder(connection));
             return connection;
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        final SimpleConnectionHolder connectionHolder = TransactionSynchronizationManager.getResource(dataSource);
+        if (connectionHolder.isTransactionActive()) {
+            return;
+        }
         try {
-            connection.close();
-        } catch (SQLException ex) {
+            final SimpleConnectionHolder unbindResource = TransactionSynchronizationManager.unbindResource(dataSource);
+            if (unbindResource.isSameConnection(connection)) {
+                connection.close();
+            }
+        } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
