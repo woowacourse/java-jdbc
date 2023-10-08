@@ -1,4 +1,4 @@
-package org.springframework.dao;
+package org.springframework.transaction.exception;
 
 public class TransactionAutoCommitException extends RuntimeException {
 

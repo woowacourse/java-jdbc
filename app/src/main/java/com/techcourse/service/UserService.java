@@ -9,11 +9,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import javax.sql.DataSource;
-import org.springframework.dao.ConnectionCloseException;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.TransactionAutoCommitException;
-import org.springframework.dao.TransactionCommitException;
-import org.springframework.dao.TransactionRollbackException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.exception.TransactionAutoCommitException;
+import org.springframework.transaction.exception.TransactionCommitException;
+import org.springframework.transaction.exception.TransactionRollbackException;
 
 public class UserService {
 
@@ -35,29 +35,29 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
-        try {
-            final DataSource dataSource = DataSourceConfig.getInstance();
-            conn = dataSource.getConnection();
-            setAutoCommit(false, conn);
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        setAutoCommit(false, conn);
 
+        try {
             final User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             commit(conn);
-        } catch (final RuntimeException | SQLException e) {
+        } catch (final RuntimeException e) {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            close(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     private void setAutoCommit(final boolean autoCommit, final Connection conn) {
         try {
             conn.setAutoCommit(autoCommit);
+            System.out.println("conn.getAutoCommit() = " + conn.getAutoCommit());
         } catch (final SQLException e) {
             throw new TransactionAutoCommitException(e);
         }
@@ -74,16 +74,9 @@ public class UserService {
     private void rollback(final Connection conn) {
         try {
             conn.rollback();
+            System.out.println("conn.getAutoCommit() in rollback = " + conn.getAutoCommit());
         } catch (final SQLException e) {
             throw new TransactionRollbackException(e);
-        }
-    }
-
-    private void close(final Connection conn) {
-        try {
-            conn.close();
-        } catch (final SQLException e) {
-            throw new ConnectionCloseException(e);
         }
     }
 }

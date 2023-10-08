@@ -1,4 +1,4 @@
-package org.springframework.dao;
+package org.springframework.jdbc.exception;
 
 public class ConnectionCloseException extends RuntimeException {
 
