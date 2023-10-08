@@ -23,10 +23,8 @@ public abstract class TransactionSynchronizationManager {
         RESOURCES.get().put(key, value);
     }
 
-    public static Connection unbindResource(final DataSource key) {
+    public static void unbindResource(final DataSource key) {
         final Map<DataSource, Connection> dataSourceConnectionMap = RESOURCES.get();
-        final Connection result = dataSourceConnectionMap.get(key);
         dataSourceConnectionMap.remove(key);
-        return result;
     }
 }
