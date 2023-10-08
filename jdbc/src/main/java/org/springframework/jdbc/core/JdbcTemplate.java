@@ -64,4 +64,23 @@ public class JdbcTemplate {
             throw new DataAccessException(e);
         }
     }
+
+    public void update(final Connection conn, final String sql, final Object... args) {
+        execute(conn, sql, args, PreparedStatement::executeUpdate);
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final Object[] args, final PreparedStatementFunction<T> preparedStatementExecutor) {
+        try {
+            final PreparedStatement pstmt = conn.prepareStatement(sql);
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            return preparedStatementExecutor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 }
