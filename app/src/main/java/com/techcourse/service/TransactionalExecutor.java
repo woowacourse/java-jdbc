@@ -1,0 +1,37 @@
+package com.techcourse.service;
+
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class TransactionalExecutor {
+
+    public void execute(BusinessLogicProcessor businessLogicProcessor, DataSource dataSource) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+
+            businessLogicProcessor.process();
+
+            connection.commit();
+        } catch (Exception e) {
+            rollbackAndThrowException(connection, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void rollbackAndThrowException(final Connection connection, final Exception e) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new DataAccessException(ex);
+        }
+        throw new DataAccessException(e);
+    }
+}
