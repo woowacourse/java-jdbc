@@ -3,6 +3,7 @@ package org.springframework.transaction.support;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 public interface TransactionManager {
 
@@ -13,4 +14,6 @@ public interface TransactionManager {
             throw new RuntimeException(e);
         }
     }
+
+    void execute(DataSource dataSource, Consumer<Connection> consumer);
 }
