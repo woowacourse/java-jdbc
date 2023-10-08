@@ -1,13 +1,13 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.dao.JdbcUserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-public class MockUserHistoryDao extends UserHistoryDao {
+public class MockJdbcUserHistoryDao extends JdbcUserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public MockJdbcUserHistoryDao(final JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
