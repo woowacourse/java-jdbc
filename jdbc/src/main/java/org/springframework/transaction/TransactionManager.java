@@ -17,25 +17,28 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T run(final TransactionExecutor<T> transactionExecutor) {
+    public void run(final TransactionExecutor transactionExecutor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
 
-            final T action = transactionExecutor.action();
+            transactionExecutor.action();
 
             connection.commit();
-            return action;
         } catch (final SQLException e) {
-            try {
-                connection.rollback();
-            } catch (final SQLException rollbackException) {
-                throw new DataAccessException(rollbackException);
-            }
+            rollBackConnection(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private static void rollBackConnection(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
