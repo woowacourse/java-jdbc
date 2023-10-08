@@ -22,7 +22,7 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -33,9 +33,9 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        var userService = new UserService(userDao, userHistoryDao);
+        var userService = new AppUserService(userDao, userHistoryDao);
 
         var newPassword = "qqqqq";
         var createBy = "gugu";
@@ -49,16 +49,19 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService);
 
-        var newPassword = "newPassword";
-        var createBy = "gugu";
+        final var newPassword = "newPassword";
+        final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        var actual = userService.findById(1L);
+        final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
