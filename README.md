@@ -82,6 +82,6 @@
     - [x] DataSourceUtils 사용
     - [x] TransactionSynchronizationManager 구현
 
-- [ ] Transaction Service 추상화
-    - [ ] Transaction을 다루는 Service 따로 만들기
-    - [ ] testTransactionRollback() 테스트 통과
+- [x] Transaction Service 추상화
+    - [x] Transaction을 다루는 Service 따로 만들기
+    - [x] testTransactionRollback() 테스트 통과
