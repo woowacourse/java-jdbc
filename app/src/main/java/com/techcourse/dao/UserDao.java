@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -40,6 +41,13 @@ public class UserDao {
     public void update(final User user) {
         final String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+
+        log.info("update(): {}", user);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
 
         log.info("update(): {}", user);
     }

@@ -38,6 +38,24 @@ public class JdbcExecutor {
         }
     }
 
+    public <T> T execute(
+            final Connection connection,
+            final String sql,
+            final Object[] args,
+            final Function<PreparedStatement, T> action) {
+
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            processPreparedStatementParameter(pstmt, args);
+
+            return action.apply(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private void processPreparedStatementParameter(
             final PreparedStatement pstmt,
             final Object[] args
