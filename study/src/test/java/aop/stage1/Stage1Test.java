@@ -5,10 +5,12 @@ import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,8 +43,20 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        //1. 프록시팩토리빈 생성 및, 타겟 설정
+        final var proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
 
+        //2. 클래스 대상으로 프록시 만들 때 필요한 설정= JDK대신 CGLib를 사용한다.
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        //3. 포인트 컷과 어드바이스로 이뤄진 어드바이서 생성
+        final var pointCut = new TransactionPointcut();
+        final var advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointCut, advice));
+
+        //4. 유저서비스는 인터페이스가 아니라 구현클래스로 변경
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -54,7 +68,20 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        //1. 프록시팩토리빈 생성 및, 타겟 설정
+        final var proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
+
+        //2. 클래스 대상으로 프록시 만들 때 필요한 설정= JDK대신 CGLib를 사용한다.
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        //3. 포인트 컷과 어드바이스로 이뤄진 어드바이서 생성
+        final var pointCut = new TransactionPointcut();
+        final var advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointCut, advice));
+
+        //4. 유저서비스는 인터페이스가 아니라 구현클래스로 변경
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

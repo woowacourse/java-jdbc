@@ -32,5 +32,6 @@ public class UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+        throw new RuntimeException();
     }
 }
