@@ -36,14 +36,14 @@ public class TransactionExecutor {
         }
     }
 
-    public <T> T execute(final ServiceCallback<T> serviceExecutor, boolean isReadOnly) {
+    public <T> T execute(final ServiceCallback<T> serviceCallback, boolean isReadOnly) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
             connection.setReadOnly(isReadOnly);
 
-            T result = serviceExecutor.doInAction();
+            T result = serviceCallback.doInAction();
 
             connection.commit();
             return result;
