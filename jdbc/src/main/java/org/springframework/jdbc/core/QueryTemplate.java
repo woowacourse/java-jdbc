@@ -17,14 +17,24 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T service(final String sql, final QueryCallback<T> callback, final Object... args) {
+    public <T> T service(final Connection conn, final String sql, final QueryCallback<T> callback,
+                         final Object... args) {
         try (
-            final Connection conn = dataSource.getConnection();
             final PreparedStatement prepareStatement = setUpPreparedStatement(conn, sql, args);
         ) {
             return callback.execute(prepareStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T service(final String sql, final QueryCallback<T> callback, final Object... args) {
+        try (
+            final Connection conn = dataSource.getConnection();
+        ) {
+            return service(conn, sql, callback, args);
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
