@@ -39,7 +39,8 @@ public abstract class TransactionSynchronizationManager {
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            return dataSourceConnectionMap.remove(key);
         }
-        return connection;
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 public class TransactionTemplate {
 
-    public void execute(final TransactionCallBack callBack){
+    public void execute(final TransactionCallBack callBack) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
@@ -25,6 +25,7 @@ public class TransactionTemplate {
             }
             throw new DataAccessException();
         } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }

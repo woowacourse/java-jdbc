@@ -1,13 +1,9 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
-import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserDao {
 
@@ -24,12 +20,9 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = DataSourceUtils.getConnection(dataSource);
         final String sql = "update users set id = ?, account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(connection,
-                sql,
+        jdbcTemplate.update(sql,
                 user.getId(),
                 user.getAccount(),
                 user.getPassword(),
