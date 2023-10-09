@@ -5,83 +5,40 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
+import org.springframework.transaction.support.Transaction;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final Transaction transaction;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = DataSourceConfig.getInstance();
+        this.transaction = new Transaction(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
+        return transaction.run(() -> userDao.findById(id));
 
-            final User user = userDao.findById(id);
-
-            conn.commit();
-            return user;
-        } catch (Exception e) {
-            rollback(conn);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
-    }
-
-    private void rollback(Connection conn) {
-        try {
-            conn.rollback();
-            System.out.println("rollback completed");
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     public void insert(final User user) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-
+        transaction.run(() -> {
             userDao.insert(user);
-
-            conn.commit();
-        } catch (Exception e) {
-            rollback(conn);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
+            return null;
+        });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-
+        transaction.run(() -> {
             final var user = userDao.findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
+            return null;
+        });
 
-            conn.commit();
-        } catch (Exception e) {
-            rollback(conn);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
     }
 }
