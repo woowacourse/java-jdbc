@@ -15,8 +15,7 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     public int executeUpdate(final Connection connection, final String query, final Object... parameters) {
-        PreparedStatementCallback<Integer> preparedStatementCallback = PreparedStatement::executeUpdate;
-        return execute(connection, query, preparedStatementCallback, parameters);
+        return execute(connection, query, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T executeQueryForObject(
@@ -41,15 +40,13 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... parameters
     ) {
-        final ResultSetExtractor<List<T>> resultSetExtractor = resultSet -> {
+        return executeQuery(connection, query, resultSet -> {
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        };
-
-        return executeQuery(connection, query, resultSetExtractor, parameters);
+        }, parameters);
     }
 
     public <T> T executeQuery(
