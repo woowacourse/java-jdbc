@@ -22,5 +22,5 @@
 - [x] Transaction synchronization 적용
   - [x] DataSourceUtils를 사용해 connection 객체를 가져온다.
   - [x] TransactionSynchronizationManager가 잘 동작하도록 구현한다.
-- [ ] 트랜잭션 서비스 추상화
-  - [ ] 비즈니스 로직과 데이터 액세스 로직 분리
+- [x] 트랜잭션 서비스 추상화
+  - [x] 비즈니스 로직과 데이터 액세스 로직 분리
