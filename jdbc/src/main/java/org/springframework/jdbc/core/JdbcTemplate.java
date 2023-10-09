@@ -23,15 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) throws DataAccessException {
+    public int update(String sql, Object... args) {
         return execute(sql, (pstmt) -> {
             prepareStatement(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... args)
-            throws DataAccessException {
+    public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
         return execute(sql, (pstmt) -> {
             prepareStatement(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -48,7 +47,7 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return execute(sql, (pstmt) -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
