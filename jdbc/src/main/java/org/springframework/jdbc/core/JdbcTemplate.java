@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.DatabaseExecuteException;
 import org.springframework.jdbc.exception.EmptyResultException;
 import org.springframework.jdbc.exception.NotSingleResultException;
@@ -24,23 +25,15 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, Object...parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameterIfExist(preparedStatement, parameters);
             log.info("JDBC EXECUTE SQL = {}", sql);
             preparedStatement.execute();
         } catch (SQLException e) {
             throw new DatabaseExecuteException(e.getMessage());
-        }
-    }
-
-    public void executeWithTransaction(Connection connection, String sql, Object...parameters) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameterIfExist(preparedStatement, parameters);
-            log.info("JDBC EXECUTE WITH TRANSACTION SQL = {}", sql);
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            throw new DatabaseExecuteException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

@@ -8,8 +8,10 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.ConnectionException;
 import org.springframework.jdbc.exception.RollbackFailException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class UserService {
 
@@ -27,7 +29,7 @@ public class UserService {
 
     public void insert(final User user) {
         executeWithTransaction(connection -> {
-            userDao.insert(connection, user);
+            userDao.insert(user);
             return null;
         });
     }
@@ -36,8 +38,8 @@ public class UserService {
         final var user = findById(id);
         executeWithTransaction(connection -> {
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             return null;
         });
     }
@@ -46,6 +48,7 @@ public class UserService {
         Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.setActualTransactionActive(true);
             T result = transactionExecutor.execute(connection);
             connection.commit();
             return result;
@@ -60,11 +63,7 @@ public class UserService {
     }
 
     private Connection getConnection() {
-        try {
-            return DataSourceConfig.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new ConnectionException(e.getMessage());
-        }
+        return DataSourceUtils.getConnection(DataSourceConfig.getInstance());
     }
 
     private void rollback(Connection connection) {
@@ -79,7 +78,9 @@ public class UserService {
         if (connection != null) {
             try {
                 connection.setAutoCommit(true);
-                connection.close();
+                DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
+                TransactionSynchronizationManager.setActualTransactionActive(false);
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
             } catch (SQLException e) {
                 throw new ConnectionException(e.getMessage());
             }

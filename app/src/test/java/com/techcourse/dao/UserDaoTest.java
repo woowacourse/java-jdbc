@@ -6,8 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,17 +26,15 @@ class UserDaoTest {
 
     @AfterEach
     void tearDown() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
         jdbcTemplate.execute("truncate table users restart identity");
     }
 
     @Test
-    void findAll() throws SQLException {
-        Connection connection = DataSourceConfig.getInstance().getConnection();
+    void findAll() {
         User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         List<User> users = userDao.findAll();
 
@@ -46,10 +42,9 @@ class UserDaoTest {
     }
 
     @Test
-    void findById() throws SQLException {
-        Connection connection = DataSourceConfig.getInstance().getConnection();
+    void findById() {
         User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         User findUser = userDao.findById(1L);
 
@@ -64,11 +59,10 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccount() throws SQLException {
-        Connection connection = DataSourceConfig.getInstance().getConnection();
+    void findByAccount() {
         String account = "gugu";
         User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         User findUser = userDao.findByAccount(account);
 
@@ -76,11 +70,10 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() throws SQLException {
-        Connection connection = DataSourceConfig.getInstance().getConnection();
+    void insert() {
         String account = "insert-gugu";
         User user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         User insertUser = userDao.findByAccount(account);
 
@@ -88,16 +81,14 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
-        Connection connectionA = DataSourceConfig.getInstance().getConnection();
+    void update() {
         User user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connectionA, user);
+        userDao.insert(user);
         String newPassword = "password99";
         User findUser = userDao.findByAccount("gugu");
 
-        Connection connectionB = DataSourceConfig.getInstance().getConnection();
         findUser.changePassword(newPassword);
-        userDao.update(connectionB, findUser);
+        userDao.update(findUser);
 
         User actual = userDao.findByAccount("gugu");
 
