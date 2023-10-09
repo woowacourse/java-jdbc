@@ -98,7 +98,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void connection을_전달하지_않는_경우_내부에서_트랜잭션이_설정된다() throws SQLException {
+    void JdbcTemplate에서_트랜잭션을_관리하지_않는다() throws SQLException {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
@@ -109,50 +109,6 @@ class JdbcTemplateTest {
                 .thenReturn(TestDataSourceConfig.getInstance().getConnection().prepareStatement(sql));
 
         mockJdbcTemplate.find(sql,
-                (rs) -> new TestMember(
-                        rs.getLong("id"),
-                        rs.getString("name")
-                ));
-
-        assertAll(
-                () -> verify(mockConnection, times(1)).setAutoCommit(false),
-                () -> verify(mockConnection, times(1)).setAutoCommit(true),
-                () -> verify(mockConnection, never()).rollback()
-        );
-    }
-
-    @Test
-    void connection을_전달하지_않는_경우_예외가_발생하면_롤백이_호출된다() throws SQLException {
-        DataSource mockDataSource = mock(DataSource.class);
-        Connection mockConnection = mock(Connection.class);
-        JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
-
-        String sql = "insert into member (name) values ('kong');";
-        when(mockDataSource.getConnection()).thenReturn(mockConnection);
-        when(mockConnection.prepareStatement(sql)).thenThrow(new DatabaseAccessException("공습 경보! 공습 경보!"));
-
-        assertThatThrownBy(() -> mockJdbcTemplate.execute(sql))
-                .isInstanceOf(JdbcTemplateException.class);
-
-        assertAll(
-                () -> verify(mockConnection, times(1)).setAutoCommit(false),
-                () -> verify(mockConnection, times(1)).setAutoCommit(true),
-                () -> verify(mockConnection, times(1)).rollback()
-        );
-    }
-
-    @Test
-    void connection을_전달하는_경우_트랜잭션이_걸리지_않고_autocommit이_유지된다() throws SQLException {
-        DataSource mockDataSource = mock(DataSource.class);
-        Connection mockConnection = mock(Connection.class);
-        JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
-
-        String sql = "select id, name from member where name = '콩하나';";
-        when(mockConnection.prepareStatement(sql))
-                .thenReturn(TestDataSourceConfig.getInstance().getConnection().prepareStatement(sql));
-
-        mockJdbcTemplate.find(mockConnection,
-                sql,
                 (rs) -> new TestMember(
                         rs.getLong("id"),
                         rs.getString("name")
