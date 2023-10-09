@@ -24,7 +24,7 @@ public abstract class TransactionSynchronizationManager {
         resources.get().put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static Connection unbindResource(final DataSource key) {
+        return resources.get().remove(key);
     }
 }

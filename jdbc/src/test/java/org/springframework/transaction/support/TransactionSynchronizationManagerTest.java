@@ -1,12 +1,10 @@
 package org.springframework.transaction.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import org.h2.mvstore.tx.Transaction;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.test_supporter.DataSourceConfig;
@@ -38,5 +36,19 @@ class TransactionSynchronizationManagerTest {
         final Connection foundConnection = TransactionSynchronizationManager.getResource(ds);
         assertThat(foundConnection)
             .isEqualTo(connection);
+    }
+
+    @Test
+    @DisplayName("key값에 해당하는 tuple을 제거한다.")
+    void unbindResource() throws SQLException {
+        final DataSource ds = DataSourceConfig.getInstance();
+        final Connection connection = ds.getConnection();
+        TransactionSynchronizationManager.bindResource(ds, connection);
+
+        TransactionSynchronizationManager.unbindResource(ds);
+
+        final Connection newConnection = TransactionSynchronizationManager.getResource(ds);
+        assertThat(newConnection)
+            .isNotEqualTo(connection);
     }
 }
