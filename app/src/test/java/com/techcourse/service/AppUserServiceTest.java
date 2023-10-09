@@ -8,14 +8,11 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceImplTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -33,7 +30,7 @@ class UserServiceImplTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserServiceImpl(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -42,30 +39,5 @@ class UserServiceImplTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
-    }
-
-    @Test
-    void testTransactionRollback() {
-        // given
-        final var mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserServiceImpl(userDao, mockUserHistoryDao);
-
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
-
-        // when
-        try {
-            userService.changePassword(1L, newPassword, createBy);
-        } catch (final Exception e) {
-            // do nothing
-        }
-
-        // then
-        final var actual = userService.findById(1L);
-        assertAll(
-                () -> assertThrows(DataAccessException.class,
-                        () -> userService.changePassword(1L, newPassword, createBy)),
-                () -> assertThat(actual.getPassword()).isNotEqualTo(newPassword)
-        );
     }
 }
