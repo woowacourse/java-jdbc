@@ -10,11 +10,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.support.TransactionManager;
+
+import java.sql.Connection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
+//@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -59,5 +62,9 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private Connection getConnection() {
+        return TransactionManager.getConnection(DataSourceConfig.getInstance());
     }
 }

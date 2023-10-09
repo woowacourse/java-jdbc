@@ -1,16 +1,17 @@
 package org.springframework.jdbc.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.exception.IncorrectQueryArgumentException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.exception.IncorrectQueryArgumentException;
-import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -26,8 +27,24 @@ public class JdbcTemplate {
         return manageData(PreparedStatement::executeUpdate, sql, args);
     }
 
+    public int execute(final Connection conn, final String sql, final Object... args) {
+        return manageData(conn, PreparedStatement::executeUpdate, sql, args);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return manageData(pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                final List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
+                return result;
+            }
+        }, sql, args);
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return manageData(conn, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> result = new ArrayList<>();
                 while (rs.next()) {
@@ -46,11 +63,29 @@ public class JdbcTemplate {
         }, sql, args);
     }
 
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return manageData(conn, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return getOneResult(rs, rowMapper);
+            }
+        }, sql, args);
+    }
+
     private <T> T manageData(final PreparedStatementImpl<T> qm, final String sql, final Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = setPreparedStatement(conn, sql, args);) {
+             PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
-            return qm.implement(pstmt);
+            return qm.callback(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T manageData(final Connection conn, final PreparedStatementImpl<T> qm, final String sql, final Object... args) {
+        try (PreparedStatement pstmt = setPreparedStatement(conn, sql, args)) {
+            log.debug("query : {}", sql);
+            return qm.callback(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
