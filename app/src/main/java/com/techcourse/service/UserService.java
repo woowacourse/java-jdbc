@@ -1,11 +1,12 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -15,10 +16,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -30,36 +33,30 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final Connection connection = getConnection();
-        try (connection) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
 
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException e) {
-            rollbackConnection(e, connection);
+            rollbackConnection(connection);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
-    private Connection getConnection() {
-        try {
-            final DataSource dataSource = DataSourceConfig.getInstance();
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private void rollbackConnection(final SQLException e, final Connection connection) {
+    private void rollbackConnection(final Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException ex) {
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(ex.getMessage(), ex);
         }
     }
 }

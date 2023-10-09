@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -24,16 +25,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args)) {
-            log.debug("query : {}", sql);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
+        final Connection connection = getConnection();
         try (final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args)) {
             log.debug("query : {}", sql);
             return preparedStatement.executeUpdate();
@@ -43,8 +35,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args);
+        final Connection connection = getConnection();
+        try (final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
             log.debug("query : {}", sql);
             final List<T> list = new ArrayList<>();
@@ -72,5 +64,9 @@ public class JdbcTemplate {
             preparedStatement.setObject(i + 1, args[i]);
         }
         return preparedStatement;
+    }
+
+    private Connection getConnection() {
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
