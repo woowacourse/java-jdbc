@@ -3,10 +3,9 @@ package org.springframework.transaction.support;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class DataSourceTransactionManager {
-
-    private static final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
 
     private final DataSource dataSource;
 
@@ -14,64 +13,38 @@ public class DataSourceTransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void startTransaction() {
+    public void doGetTransaction() {
         try {
-            var connection = getConnection();
+            var connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            connectionHolder.set(connection);
+            TransactionSynchronizationManager.setActualTransactionActive(true);
         } catch (SQLException e) {
             throw new RuntimeException("트랜잭션 시작 실패", e);
         }
     }
 
-    public Connection getConnection() {
-        var connection = connectionHolder.get();
-        if (connection != null) {
-            return connection;
-        }
-
+    public void doCommit() {
         try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException("커넥션 획득 실패", e);
-        }
-    }
-
-    public void commit() {
-        try {
-            var connection = getConnection();
+            var connection = DataSourceUtils.getConnection(dataSource);
             connection.commit();
-            close(connection, true);
+            release(connection);
         } catch (SQLException e) {
             throw new RuntimeException("커밋 실패", e);
         }
     }
 
-    public void rollback() {
+    public void doRollback() {
         try {
-            var connection = getConnection();
+            var connection = DataSourceUtils.getConnection(dataSource);
             connection.rollback();
-            close(connection, true);
+            release(connection);
         } catch (SQLException e) {
             throw new RuntimeException("롤백 실패", e);
         }
     }
 
-    public void release(Connection connection) {
-        if (connectionHolder.get() != connection) {
-            close(connection, false);
-        }
-    }
-
-    private void close(Connection connection, boolean clear) {
-        if (clear) {
-            connectionHolder.remove();
-        }
-
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException("커넥션 종료 실패", e);
-        }
+    private void release(Connection connection) {
+        TransactionSynchronizationManager.setActualTransactionActive(false);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
