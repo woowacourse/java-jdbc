@@ -22,4 +22,8 @@ public class ConnectionHolder {
     public static void clean() {
         HOLDER.remove();
     }
+
+    public static boolean hasSame(final Connection connection) {
+        return HOLDER.get() == connection;
+    }
 }

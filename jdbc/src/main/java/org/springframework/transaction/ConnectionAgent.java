@@ -17,12 +17,9 @@ public class ConnectionAgent {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() {
-        Connection connection = ConnectionHolder.getConnection();
-        if (isNull(connection)) {
-            connection = createConnection();
-            ConnectionHolder.setConnection(connection);
-        }
+    public Connection getConnectionAndSave() {
+        final Connection connection = createConnection();
+        ConnectionHolder.setConnection(connection);
         return connection;
     }
 
@@ -30,6 +27,30 @@ public class ConnectionAgent {
         try {
             return dataSource.getConnection();
         } catch (SQLException exception) {
+            throw new DataAccessException();
+        }
+    }
+
+    public Connection getConnection() {
+        Connection connection = ConnectionHolder.getConnection();
+        if (isNull(connection)) {
+            connection = createConnection();
+        }
+        return connection;
+    }
+
+    public void release(final Connection connection) {
+        if(ConnectionHolder.hasSame(connection)) {
+            return;
+        }
+        close(connection);
+    }
+
+    public void close(final Connection connection) {
+        try {
+            connection.close();
+            ConnectionHolder.clean();
+        } catch(SQLException exception) {
             throw new DataAccessException();
         }
     }

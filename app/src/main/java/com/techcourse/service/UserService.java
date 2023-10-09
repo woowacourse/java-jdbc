@@ -1,10 +1,5 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.ConnectionAgent;
 import org.springframework.transaction.TransactionManager;
 
 import com.techcourse.dao.UserDao;

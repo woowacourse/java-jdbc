@@ -61,6 +61,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            connectionAgent.release(conn);
         }
     }
 

@@ -17,7 +17,7 @@ public class TransactionManager {
     public void transact(final Runnable runnable) {
         Connection connection = null;
         try {
-            connection = connectionAgent.getConnection();
+            connection = connectionAgent.getConnectionAndSave();
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
@@ -25,7 +25,7 @@ public class TransactionManager {
             rollback(connection);
             throw new DataAccessException();
         } finally {
-            close(connection);
+            connectionAgent.close(connection);
         }
     }
 
@@ -33,15 +33,6 @@ public class TransactionManager {
         try {
             connection.rollback();
         } catch (SQLException exception) {
-            throw new DataAccessException();
-        }
-    }
-
-    private void close(final Connection connection) {
-        try {
-            connection.close();
-            ConnectionHolder.clean();
-        } catch(SQLException exception) {
             throw new DataAccessException();
         }
     }
