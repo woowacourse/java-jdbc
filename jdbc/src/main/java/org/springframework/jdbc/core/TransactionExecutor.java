@@ -1,8 +1,10 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.function.Supplier;
 
 public class TransactionExecutor {
@@ -20,11 +22,19 @@ public class TransactionExecutor {
             T result = operation.get();
             transaction.commit();
             return result;
-        } catch (RuntimeException exception) {
-            transaction.rollback();
-            throw exception;
+        } catch (Exception exception) {
+            safeRollback(transaction);
+            throw new DataAccessException(exception);
         } finally {
             DataSourceUtils.releaseConnectionOf(dataSource);
+        }
+    }
+
+    private void safeRollback(Transaction transaction) {
+        try {
+            transaction.rollback();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
         }
     }
 
@@ -34,9 +44,9 @@ public class TransactionExecutor {
             transaction.begin();
             operation.run();
             transaction.commit();
-        } catch (RuntimeException exception) {
-            transaction.rollback();
-            throw exception;
+        } catch (Exception exception) {
+            safeRollback(transaction);
+            throw new DataAccessException(exception);
         } finally {
             DataSourceUtils.releaseConnectionOf(dataSource);
         }
