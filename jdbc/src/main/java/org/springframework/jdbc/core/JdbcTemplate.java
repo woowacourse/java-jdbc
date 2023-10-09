@@ -12,7 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcAccessor;
 
-public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
+public class JdbcTemplate extends JdbcAccessor {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -24,7 +24,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         return DataSourceUtils.getConnection(getDataSource());
     }
 
-    @Override
     public <T> T execute(final StatementCallback<T> callback, final String sql) throws DataAccessException {
         log.info("execute: {}", sql);
         final var connection = getConnection();
@@ -45,7 +44,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         return connection.prepareStatement(sql);
     }
 
-    @Override
     public void execute(final String sql) throws DataAccessException {
         execute(statement -> {
             statement.execute(sql);
@@ -53,7 +51,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         }, sql);
     }
 
-    @Override
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args)
         throws DataAccessException {
         final SingleRowMapperResultSetExtractor<T> extractor = new SingleRowMapperResultSetExtractor<>(
@@ -67,7 +64,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         }, sql);
     }
 
-    @Override
     public <T> T query(final String sql, final ResultSetExtractor<T> extractor) throws DataAccessException {
         return execute(statement -> {
             final ResultSet resultSet = statement.executeQuery(sql);
@@ -75,12 +71,10 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         }, sql);
     }
 
-    @Override
     public <T> T query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
         return query(sql, new SingleRowMapperResultSetExtractor<>(rowMapper));
     }
 
-    @Override
     public int update(final String sql, final Object... args) throws DataAccessException {
         return execute(statement -> {
             final PreparedStatement preparedStatement = createPreparedStatement(statement.getConnection(), sql);
@@ -96,7 +90,6 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
         }
     }
 
-    @Override
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
         return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
     }
