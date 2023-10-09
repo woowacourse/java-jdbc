@@ -17,11 +17,11 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.execute(
                 sql,
@@ -31,7 +31,7 @@ public class UserDao {
         );
     }
 
-    public void update(final User user) {
+    public void update(User user) {
         String sql = "update users set account=?, password=?, email=? where id = ?";
         jdbcTemplate.execute(
                 sql,
@@ -47,12 +47,12 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
