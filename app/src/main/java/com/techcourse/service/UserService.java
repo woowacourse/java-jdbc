@@ -37,11 +37,11 @@ public class UserService {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
-            } catch (SQLException e) {
+            } catch (SQLException | DataAccessException e) {
                 connection.rollback();
                 throw new DataAccessException(e);
             }
-        } catch (SQLException e) {
+        } catch (SQLException | DataAccessException e) {
             throw new DataAccessException(e);
         }
     }
