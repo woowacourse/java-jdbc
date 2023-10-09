@@ -14,7 +14,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.TransactionManager;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -32,8 +32,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,8 +47,10 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService, new TransactionManager(jdbcTemplate.getDataSource()));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
