@@ -2,6 +2,7 @@
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
@@ -14,6 +15,17 @@ public class TransactionManager {
     public TransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
     }
+
+    public <T> T execute(Callable<T> callable) {
+        return executeTemplate(() -> {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
 
     public void execute(Runnable runnable) {
         executeTemplate(() -> {
