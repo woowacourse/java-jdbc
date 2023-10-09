@@ -7,32 +7,31 @@ import com.techcourse.domain.UserHistory;
 import org.springframework.jdbc.core.TransactionTemplate;
 
 import javax.sql.DataSource;
-import java.sql.SQLException;
 
-public class UserService {
+public class TxUserService implements UserServiceInter {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
     private final TransactionTemplate transactionTemplate;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, DataSource dataSource) {
+    public TxUserService(final UserDao userDao, final UserHistoryDao userHistoryDao, DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
-    public User findById(final long id) throws SQLException {
+    public User findById(final long id) {
         return transactionTemplate.transaction(() -> userDao.findById(id));
     }
 
-    public void insert(final User user) throws SQLException {
+    public void insert(final User user) {
         transactionTemplate.transaction(() -> {
             userDao.insert(user);
             return user;
         });
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionTemplate.transaction(() -> {
             User user = userDao.findById(id);
             user.changePassword(newPassword);

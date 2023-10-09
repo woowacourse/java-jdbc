@@ -16,7 +16,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private DataSource dataSource;
@@ -36,7 +36,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var userService = new TxUserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -51,7 +51,7 @@ class UserServiceTest {
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var userService = new TxUserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

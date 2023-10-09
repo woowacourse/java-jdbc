@@ -15,21 +15,29 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T transaction(TransactionExecutor<T> transactionExecutor) throws SQLException {
+    public <T> T transaction(TransactionExecutor<T> transactionExecutor) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
-        conn.setAutoCommit(false);
         try {
+            conn.setAutoCommit(false);
             T result = transactionExecutor.execute();
             conn.commit();
             conn.setAutoCommit(true);
             return result;
         } catch (SQLException | DataAccessException e) {
             e.printStackTrace();
-            conn.rollback();
-            conn.setAutoCommit(true);
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private void rollback(Connection conn) {
+        try {
+            conn.rollback();
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
