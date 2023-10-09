@@ -34,9 +34,10 @@ class TxUserServiceTest {
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new TxUserService(userDao, userHistoryDao, dataSource);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -51,7 +52,8 @@ class TxUserServiceTest {
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new TxUserService(userDao, userHistoryDao, dataSource);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

@@ -1,43 +1,35 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 import org.springframework.jdbc.core.TransactionTemplate;
 
 import javax.sql.DataSource;
 
-public class TxUserService implements UserServiceInter {
+public class TxUserService implements UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+    private final AppUserService appUserService;
     private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(final UserDao userDao, final UserHistoryDao userHistoryDao, DataSource dataSource) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
+    public TxUserService(AppUserService appUserService, DataSource dataSource) {
+        this.appUserService = appUserService;
         this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     public User findById(final long id) {
-        return transactionTemplate.transaction(() -> userDao.findById(id));
+        return transactionTemplate.transaction(() -> appUserService.findById(id));
     }
 
     public void insert(final User user) {
         transactionTemplate.transaction(() -> {
-            userDao.insert(user);
-            return user;
+            appUserService.insert(user);
+            return null;
         });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionTemplate.transaction(() -> {
-            User user = userDao.findById(id);
-            user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-            return user;
+            appUserService.changePassword(id, newPassword, createBy);
+            return null;
         });
     }
 }
