@@ -32,7 +32,7 @@ public class TransactionalExecutor {
         try {
             con.setAutoCommit(status);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
