@@ -44,7 +44,7 @@ public class UserService {
     private void rollback(Connection conn) {
         try {
             conn.rollback();
-            System.out.println("rollback completerd");
+            System.out.println("rollback completed");
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
         }
