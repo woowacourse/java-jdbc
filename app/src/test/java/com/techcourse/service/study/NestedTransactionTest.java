@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class NestedTransactionTest {
@@ -33,6 +34,7 @@ public class NestedTransactionTest {
         userDao.insert(user);
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
         transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
+        TransactionSynchronizationManager.clear();
     }
 
     @Test

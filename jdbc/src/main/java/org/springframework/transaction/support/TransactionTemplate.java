@@ -15,7 +15,7 @@ public class TransactionTemplate {
     }
 
     private <T> T execute(final Supplier<T> target) {
-        if (TransactionSynchronizationManager.transactionEnable(dataSource)) {
+        if (TransactionSynchronizationManager.isTransactionActive(dataSource)) {
             return target.get();
         }
         final Connection connection = beginTransaction(dataSource);
