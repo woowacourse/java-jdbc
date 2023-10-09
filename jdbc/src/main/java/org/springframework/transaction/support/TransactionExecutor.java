@@ -3,6 +3,7 @@ package org.springframework.transaction.support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -19,7 +20,7 @@ public class TransactionExecutor {
     }
 
     public void execute(final TransactionExecuteStrategy executeStrategy) {
-        final Connection connection = getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
@@ -32,7 +33,8 @@ public class TransactionExecutor {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
