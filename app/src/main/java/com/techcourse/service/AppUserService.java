@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.dao.DataAccessException;
 
 import java.util.Optional;
 
@@ -29,7 +30,8 @@ public class AppUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final User user = userDao.findById(id).orElseThrow();
+        final User user = userDao.findById(id)
+                .orElseThrow(() -> new DataAccessException("해당 유저가 존재하지 않습니다."));
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
