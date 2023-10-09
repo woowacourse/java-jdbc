@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class UserServiceImplTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -33,7 +33,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserServiceImpl(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,7 +48,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // given
         final var mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, mockUserHistoryDao);
+        final var userService = new UserServiceImpl(userDao, mockUserHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

@@ -38,9 +38,16 @@
 
 ## 3단계
 
-- [ ] User 비밀번호 변경 기능
-  - [ ] 비밀번호 변경 기능을 구현한다. (UserDao.changePassword())
-    - [ ] 누가, 언제, 어떤 비밀번호로 바꿨는지 이력을 남겨야한다.
-  - [ ] changePassword 원자성을 보장한다
+- [x] User 비밀번호 변경 기능
+  - [x] 비밀번호 변경 기능을 구현한다. (UserDao.changePassword())
+    - [x] 누가, 언제, 어떤 비밀번호로 바꿨는지 이력을 남겨야한다.
+  - [x] changePassword 원자성을 보장한다
     - 트랜잭션을 설정한다.
     - userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경
+
+## 4단계
+- [x] UserService 인터페이스를 만든다.
+- [ ] DataSourceUtils 를 사용해서 Connection을 가져온다.
+  - [ ] TransactionSynchronizationManager 에 보관된 Connection 객체를 가져온다.
+- [ ] TransactionSynchronizationManager를 구현한다.
+  - [ ] 트랜잭션을 시작하기 위한 Connection 객체를 보관한다.
