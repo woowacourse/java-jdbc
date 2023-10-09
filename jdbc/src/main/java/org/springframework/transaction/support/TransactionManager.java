@@ -3,7 +3,6 @@ package org.springframework.transaction.support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -60,8 +59,6 @@ public class TransactionManager {
     }
 
     public void finalizeConnection() {
-        final Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         TransactionSynchronizationManager.unbindResource(dataSource);
-        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }
