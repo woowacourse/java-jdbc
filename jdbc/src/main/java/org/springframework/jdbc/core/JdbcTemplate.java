@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.preparestatement.ArgumentsPrepareStatementSetter;
+import org.springframework.jdbc.core.preparestatement.PrepareStatementExecutor;
 import org.springframework.jdbc.core.preparestatement.PrepareStatementManager;
 import org.springframework.jdbc.core.result.ResultMaker;
 import org.springframework.jdbc.core.result.ResultValidator;
@@ -26,15 +27,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        final PrepareStatementManager prepareStatementManager = new PrepareStatementManager(new ArgumentsPrepareStatementSetter(args));
-        try (final PreparedStatement preparedStatement = prepareStatementManager.generate(
-                DataSourceUtils.getConnection(dataSource),
-                sql)) {
-            prepareStatementManager.setValue(preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -44,14 +37,19 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, @Nullable final Object... args) {
+        return execute(sql, preparedStatement -> {
+            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
+            return resultMaker.extractData(rowMapper);
+        }, args);
+    }
+
+    private <T> T execute(final String sql, PrepareStatementExecutor<T> prepareStatementExecutor, @Nullable final Object... args) {
         final PrepareStatementManager prepareStatementManager = new PrepareStatementManager(new ArgumentsPrepareStatementSetter(args));
         try (final PreparedStatement preparedStatement = prepareStatementManager.generate(
                 DataSourceUtils.getConnection(dataSource),
                 sql)) {
             prepareStatementManager.setValue(preparedStatement);
-
-            final ResultMaker resultMaker = new ResultMaker(preparedStatement);
-            return resultMaker.extractData(rowMapper);
+            return prepareStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
