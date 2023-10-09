@@ -12,10 +12,10 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        if (resources.get() == null) {
+        Map<DataSource, Connection> connectionMap = resources.get();
+        if (connectionMap == null) {
             return null;
         }
-        Map<DataSource, Connection> connectionMap = resources.get();
         return connectionMap.get(key);
     }
 
