@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -13,29 +12,30 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final TransactionManager transactionManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao,
+                       TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
-        return transactionManager.execute(connection -> userDao.findById(connection, id));
+        return transactionManager.execute(() -> userDao.findById(id));
     }
 
     public void insert(final User user) {
-        transactionManager.execute(connection -> {
-            userDao.insert(connection, user);
+        transactionManager.execute(() -> {
+            userDao.insert(user);
             return null;
         });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.execute(connection -> {
-                    final var user = userDao.findById(connection, id);
+        transactionManager.execute(() -> {
+                    final var user = userDao.findById(id);
                     user.changePassword(newPassword);
-                    userDao.update(connection, user);
-                    userHistoryDao.log(connection, new UserHistory(user, createBy));
+                    userDao.update(user);
+                    userHistoryDao.log(new UserHistory(user, createBy));
                     return null;
                 }
         );

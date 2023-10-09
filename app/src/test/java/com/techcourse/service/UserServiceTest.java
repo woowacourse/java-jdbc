@@ -15,28 +15,29 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionManager;
 
 class UserServiceTest {
 
+    private final DataSource dataSource = DataSourceConfig.getInstance();
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = DataSourceConfig.getInstance();
-        final Connection connection = dataSource.getConnection();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final TransactionManager transactionManager = new TransactionManager(dataSource);
+        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -51,7 +52,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final TransactionManager transactionManager = new TransactionManager(dataSource);
+        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
