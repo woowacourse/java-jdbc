@@ -16,26 +16,12 @@ public abstract class DataSourceUtils {
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {
-            if (isOpen(connection)) {
-                return connection;
-            }
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            Connection newConnection = newConnection(dataSource);
-            TransactionSynchronizationManager.bindResource(dataSource, newConnection);
-            return newConnection;
+            return connection;
         }
 
         connection = newConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
         return connection;
-    }
-
-    private static boolean isOpen(Connection connection) {
-        try {
-            return !connection.isClosed();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 
     private static Connection newConnection(DataSource dataSource) {
