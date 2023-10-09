@@ -14,8 +14,11 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void start() {
-        transactionTemplate.execute(connection -> connection.setAutoCommit(false));
+    public void start(boolean readOnly) {
+        transactionTemplate.execute(connection -> {
+            connection.setAutoCommit(false);
+            connection.setReadOnly(readOnly);
+        });
     }
 
     public void commit() {
@@ -23,7 +26,7 @@ public class TransactionManager {
         close();
     }
 
-    private void close() {
+    public void close() {
         transactionTemplate.execute(connection -> DataSourceUtils.releaseConnection(connection, dataSource));
     }
 

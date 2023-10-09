@@ -16,12 +16,18 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return appUserService.findById(id);
+        transactionManager.start(true);
+
+        User user = appUserService.findById(id);
+
+        transactionManager.close();
+
+        return user;
     }
 
     @Override
     public void insert(User user) {
-        transactionManager.start();
+        transactionManager.start(false);
         try {
             appUserService.insert(user);
 
@@ -35,7 +41,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        transactionManager.start();
+        transactionManager.start(false);
         try {
             appUserService.changePassword(id, newPassword, createBy);
 
