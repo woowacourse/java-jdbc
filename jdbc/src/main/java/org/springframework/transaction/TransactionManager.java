@@ -15,11 +15,11 @@ public class TransactionManager {
 
     private final DataSource dataSource;
 
-    public TransactionManager(DataSource dataSource) {
+    public TransactionManager(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(final ConnectionAction<T> action) {
+    public <T> T execute(final TransactionAction<T> action) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             return executeAction(action, connection);
@@ -31,7 +31,7 @@ public class TransactionManager {
         }
     }
 
-    private <T> T executeAction(final ConnectionAction<T> action,
+    private <T> T executeAction(final TransactionAction<T> action,
                                 final Connection connection) throws SQLException {
         try {
             return commit(action, connection);
@@ -41,7 +41,7 @@ public class TransactionManager {
         }
     }
 
-    private <T> T commit(final ConnectionAction<T> action,
+    private <T> T commit(final TransactionAction<T> action,
                          final Connection connection) throws SQLException {
         connection.setAutoCommit(false);
         final T result = action.execute();

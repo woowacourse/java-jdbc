@@ -49,7 +49,7 @@ public class JdbcTemplate {
         }
 
         if (results.size() > 1) {
-            throw new DataAccessException("조회된 데이터 수가 1을 초과합니다");
+            throw new DataAccessException("조회된 데이터 수가 1을 초과합니다. count: " + results.size());
         }
 
         return results.get(0);

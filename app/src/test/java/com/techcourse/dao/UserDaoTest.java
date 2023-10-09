@@ -30,14 +30,13 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.execute(INIT_USER_TABLE_SQL);
 
         DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(dataSource);
 
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 

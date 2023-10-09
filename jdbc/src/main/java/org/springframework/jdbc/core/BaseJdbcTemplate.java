@@ -15,7 +15,7 @@ public class BaseJdbcTemplate {
 
     private final DataSource dataSource;
 
-    public BaseJdbcTemplate(DataSource dataSource) {
+    public BaseJdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

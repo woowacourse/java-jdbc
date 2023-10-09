@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class UserHistoryDaoTest {
 
-    public static final UserHistory USER_HISTORY = new UserHistory(1L,
+    private static final UserHistory USER_HISTORY = new UserHistory(1L,
             1L,
             "joy",
             "joy1234",

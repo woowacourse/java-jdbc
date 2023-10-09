@@ -13,14 +13,14 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final JdbcTemplate jdbcTemplate;
-
     private static final RowMapper<User> userRowMapper = (resultSet, rowNum) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email")
     );
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
