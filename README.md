@@ -18,7 +18,7 @@
   - [x] jdbcTemplate에 connection을 받는 update메소드 오버라이드하기
 ## 트랜잭션 synchronization 적용하기
 - [ ] Transaction synchronization 적용하기
-  - [ ] TransactionSynchronizationManager 구현하기
+  - [x] TransactionSynchronizationManager 구현하기
   - [ ] Dao에 connection 인자 제거하기
 - [ ] 트랜잭션 서비스 추상화하기
 
