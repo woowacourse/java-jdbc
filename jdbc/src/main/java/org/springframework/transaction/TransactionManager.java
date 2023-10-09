@@ -1,6 +1,7 @@
 package org.springframework.transaction;
 
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -22,6 +23,22 @@ public class TransactionManager {
             connectionManager.activeTransaction();
             runnable.run();
             connectionManager.commit();
+        } catch (SQLException | DataAccessException exception) {
+            rollback(connectionManager);
+            throw new DataAccessException();
+        } finally {
+            connectionManager.inactiveTransaction();
+            DataSourceUtils.releaseConnection(connectionManager, dataSource);
+        }
+    }
+
+    public <T> T transact(final Supplier<T> supplier) {
+        final ConnectionManager connectionManager = DataSourceUtils.getConnection(dataSource);
+        try {
+            connectionManager.activeTransaction();
+            final T result = supplier.get();
+            connectionManager.commit();
+            return result;
         } catch (SQLException | DataAccessException exception) {
             rollback(connectionManager);
             throw new DataAccessException();
