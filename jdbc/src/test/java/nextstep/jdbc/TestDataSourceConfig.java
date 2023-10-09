@@ -15,7 +15,7 @@ public class TestDataSourceConfig {
         return INSTANCE;
     }
 
-    private static JdbcDataSource createJdbcDataSource() {
+    public static JdbcDataSource createJdbcDataSource() {
         final var jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
