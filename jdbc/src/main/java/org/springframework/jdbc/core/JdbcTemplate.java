@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.DataAccessException;
 import org.springframework.jdbc.exception.PreparedStatementExecuteException;
 
@@ -23,25 +24,25 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection conn, String sql, Object... args) {
-        execute(conn, sql, PreparedStatement::execute, args);
+    public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::execute, args);
         log.debug("query : {}", sql);
     }
 
-    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeForObject(conn, sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeForObject(sql, rowMapper, args);
     }
 
-    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
-        return executeForObjects(conn, sql, rowMapper, args);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return executeForObjects(sql, rowMapper, args);
     }
 
-    private <T> List<T> executeForObjects(Connection conn, String sql, RowMapper<T> rowMapper, Object[] args) {
-        return execute(conn, sql, preparedStatement -> getObjects(preparedStatement, rowMapper), args);
+    private <T> List<T> executeForObjects(String sql, RowMapper<T> rowMapper, Object[] args) {
+        return execute(sql, preparedStatement -> getObjects(preparedStatement, rowMapper), args);
     }
 
-    private <T> T executeForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object[] args) {
-        return execute(conn, sql, preparedStatement -> getObject(preparedStatement, rowMapper), args);
+    private <T> T executeForObject(String sql, RowMapper<T> rowMapper, Object[] args) {
+        return execute(sql, preparedStatement -> getObject(preparedStatement, rowMapper), args);
     }
 
     private <T> T getObject(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
@@ -63,11 +64,11 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(
-            Connection conn,
             String sql,
             PreparedStatementExecutor<T> preparedStatementExecutor,
             Object... args
     ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (var pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, args);
 
@@ -75,6 +76,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new PreparedStatementExecuteException();
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

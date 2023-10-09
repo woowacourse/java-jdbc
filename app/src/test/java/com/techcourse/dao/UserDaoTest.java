@@ -35,19 +35,19 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(conn, user);
+        userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll(conn);
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(conn, 1L);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -55,7 +55,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(conn, account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -64,9 +64,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(conn, user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(conn, 2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -74,29 +74,29 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(conn, 1L);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(conn, user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(conn, 1L);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
     void deleteAll() {
-        userDao.deleteAll(conn);
+        userDao.deleteAll();
 
-        List<User> users = userDao.findAll(conn);
+        List<User> users = userDao.findAll();
         assertThat(users).isEmpty();
     }
 
     @Test
     void findObjectReturnNull() {
-        userDao.deleteAll(conn);
+        userDao.deleteAll();
 
-        assertThatThrownBy(() -> userDao.findById(conn, 1L))
+        assertThatThrownBy(() -> userDao.findById(1L))
                 .isInstanceOf(DataAccessException.class);
     }
 }
