@@ -32,7 +32,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final TransactionManager transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
+        final var transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
         final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "qqqqq";
@@ -48,7 +48,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final TransactionManager transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
+        final var transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
         final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "newPassword";
