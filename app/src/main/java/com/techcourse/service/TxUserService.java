@@ -9,8 +9,8 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final TransactionExecutor transactionExecutor;
 
-    public TxUserService(final UserService userService) {
-        this.userService = userService;
+    public TxUserService(final AppUserService appUserService) {
+        this.userService = appUserService;
         this.transactionExecutor = new TransactionExecutor(DataSourceConfig.getInstance());
     }
 
