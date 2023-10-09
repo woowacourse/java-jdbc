@@ -13,19 +13,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.TransactionManager;
+import org.springframework.jdbc.core.TransactionExecutor;
 
 class AppUserServiceTest {
 
     private DataSource dataSource;
-    private TransactionManager transactionManager;
+    private TransactionExecutor transactionExecutor;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
-        this.transactionManager = new TransactionManager(dataSource);
+        this.transactionExecutor = new TransactionExecutor(dataSource);
         this.jdbcTemplate = new JdbcTemplate();
         this.userDao = new UserDao(dataSource, jdbcTemplate);
 
@@ -53,7 +53,7 @@ class AppUserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(dataSource, jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var userService = new TxUserService(transactionExecutor, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

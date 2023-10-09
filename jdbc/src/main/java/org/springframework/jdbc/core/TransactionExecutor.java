@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
-public class TransactionManager {
+public class TransactionExecutor {
 
-    private final Logger log = LoggerFactory.getLogger(TransactionManager.class);
+    private final Logger log = LoggerFactory.getLogger(TransactionExecutor.class);
     private final DataSource dataSource;
 
-    public TransactionManager(final DataSource dataSource) {
+    public TransactionExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
