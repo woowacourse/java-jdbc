@@ -45,8 +45,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final ResultSetMapper<T> resultSetMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement ps = connection.prepareStatement(sql);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement ps = connection.prepareStatement(sql);
              final ResultSet resultSet = ps.executeQuery()
         ) {
             log.debug("query: {}", sql);

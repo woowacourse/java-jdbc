@@ -23,7 +23,6 @@ public class TransactionTemplate {
             transactionCallback.doInTransaction(connection);
             connection.commit();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
             rollback(connection);
             throw new DataAccessException("transaction 설정에 오류가 발생했습니다.");
         } finally {
