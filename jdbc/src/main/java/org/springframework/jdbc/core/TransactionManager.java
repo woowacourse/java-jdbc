@@ -5,22 +5,24 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
     private final Logger log = LoggerFactory.getLogger(TransactionManager.class);
-    private final ConnectionManager connectionManager;
+    private final DataSource dataSource;
 
-    public TransactionManager(final ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public TransactionManager(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public <T> T save(final BiConsumer<Connection, T> consumer, final T entity) {
-        final var connection = connectionManager.getConnection();
-        try (connection) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
             consumer.accept(connection, entity);
             connection.commit();
@@ -35,6 +37,7 @@ public class TransactionManager {
         } finally {
             try {
                 connection.setAutoCommit(true);
+                DataSourceUtils.releaseConnection(connection, dataSource);
             } catch (SQLException ignored) {
                 log.warn("fail to set auto commit true due to {}", ignored.getMessage());
                 log.warn(Arrays.toString(ignored.getStackTrace()));
@@ -42,9 +45,9 @@ public class TransactionManager {
         }
     }
 
-    public <T> T find(final BiFunction<Connection, Object[], T> function, final Object... parameters) {
-        final var connection = connectionManager.getConnection();
-        try (connection) {
+    public <T> T find(final BiFunction<Connection, Object[], T> function, Object... parameters) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
             final var result = function.apply(connection, parameters);
             connection.commit();
@@ -59,10 +62,12 @@ public class TransactionManager {
         } finally {
             try {
                 connection.setAutoCommit(true);
+                DataSourceUtils.releaseConnection(connection, dataSource);
             } catch (SQLException ignored) {
                 log.warn("fail to set auto commit true due to {}", ignored.getMessage());
                 log.warn(Arrays.toString(ignored.getStackTrace()));
             }
         }
     }
+
 }
