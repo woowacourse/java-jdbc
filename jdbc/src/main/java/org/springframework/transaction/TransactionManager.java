@@ -1,37 +1,48 @@
 package org.springframework.transaction;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.ConnectionManager;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
-    private final ConnectionAgent connectionAgent;
+    private final DataSource dataSource;
 
     public TransactionManager(final DataSource dataSource) {
-        this.connectionAgent = new ConnectionAgent(dataSource);
+        this.dataSource = dataSource;
     }
 
     public void transact(final Runnable runnable) {
-        Connection connection = null;
+        final ConnectionManager connectionManager = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = connectionAgent.getConnectionAndSave();
-            connection.setAutoCommit(false);
+            connectionManager.activeTransaction();
             runnable.run();
-            connection.commit();
+            connectionManager.commit();
         } catch (SQLException | DataAccessException exception) {
-            rollback(connection);
+            rollback(connectionManager);
             throw new DataAccessException();
         } finally {
-            connectionAgent.close(connection);
+            connectionManager.inactiveTransaction();
+            DataSourceUtils.releaseConnection(connectionManager, dataSource);
         }
     }
 
-    private void rollback(final Connection connection) {
+    private void close() {
         try {
-            connection.rollback();
+            final ConnectionManager connectionManager = TransactionSynchronizationManager.unbindResource(dataSource);
+            connectionManager.close();
+        } catch (SQLException exception) {
+            throw new DataAccessException();
+        }
+    }
+
+    private void rollback(final ConnectionManager connectionManager) {
+        try {
+            connectionManager.rollback();
         } catch (SQLException exception) {
             throw new DataAccessException();
         }
