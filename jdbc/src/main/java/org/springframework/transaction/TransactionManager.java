@@ -3,6 +3,8 @@ package org.springframework.transaction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
 
@@ -13,7 +15,7 @@ public class TransactionManager {
     }
 
     public void execute(TransactionExecutor transactionExecutor) {
-        Connection connection = getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
             transactionExecutor.execute(connection);
@@ -22,29 +24,14 @@ public class TransactionManager {
             rollback(connection);
             throw new RuntimeException(e);
         } finally {
-            close(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
     private void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void close(Connection connection) {
-        try {
-            connection.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
