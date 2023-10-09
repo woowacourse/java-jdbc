@@ -16,7 +16,7 @@ import java.util.Optional;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int FIRST_PARAMETER_INDEX = 1;
+    private static final int PARAMETER_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -24,8 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, preparedStatement -> {
+    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(connection, sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
@@ -37,8 +37,8 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        return execute(sql, preparedStatement -> {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
+        return execute(connection, sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
@@ -49,24 +49,23 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final String sql, final Object... parameters) {
-        return execute(sql, PreparedStatement::executeUpdate, parameters);
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> T execute(final String sql, final executeQueryCallback<T> callBack, final Object... objects) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
+    public <T> T execute(final Connection connection, final String sql, final executeQueryCallback<T> callBack, final Object... objects) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, objects);
             return callBack.execute(preparedStatement);
-        } catch (SQLException e) {
+        } catch (SQLException ex) {
+            log.error(ex.getMessage());
             throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
         }
     }
 
     private void setPreparedStatement(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
         for (int parameterIndex = 0; parameterIndex < parameters.length; parameterIndex++) {
-            preparedStatement.setObject(FIRST_PARAMETER_INDEX, parameters[parameterIndex]);
+            preparedStatement.setObject(PARAMETER_OFFSET + parameterIndex, parameters[parameterIndex]);
         }
     }
 }
