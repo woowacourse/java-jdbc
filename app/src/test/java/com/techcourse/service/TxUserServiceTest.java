@@ -1,13 +1,14 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
@@ -65,5 +66,12 @@ class TxUserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @AfterAll
+    static void truncate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final String truncate = "TRUNCATE TABLE users RESTART IDENTITY";
+        jdbcTemplate.update(truncate);
     }
 }

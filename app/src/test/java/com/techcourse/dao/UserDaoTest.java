@@ -1,12 +1,16 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.spliterator;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserDaoTest {
 
@@ -41,6 +45,7 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+        System.out.println(user.getId());
     }
 
     @Test
@@ -65,5 +70,12 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @AfterAll
+    static void truncate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final String truncate = "TRUNCATE TABLE users RESTART IDENTITY";
+        jdbcTemplate.update(truncate);
     }
 }
