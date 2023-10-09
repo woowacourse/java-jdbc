@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.TransactionManager;
 
 public class TxUserService implements UserService {
@@ -16,39 +15,22 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        transactionManager.start(true);
-
-        User user = appUserService.findById(id);
-
-        transactionManager.close();
-
-        return user;
+        return transactionManager.execute(() -> appUserService.findById(id), true);
     }
 
     @Override
     public void insert(User user) {
-        transactionManager.start(false);
-        try {
+        transactionManager.execute(() -> {
             appUserService.insert(user);
-
-            transactionManager.commit();
-        } catch (DataAccessException e) {
-            transactionManager.rollback();
-            throw e;
-        }
-
+            return null;
+        }, false);
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        transactionManager.start(false);
-        try {
+        transactionManager.execute(() -> {
             appUserService.changePassword(id, newPassword, createBy);
-
-            transactionManager.commit();
-        } catch (DataAccessException e) {
-            transactionManager.rollback();
-            throw e;
-        }
+            return null;
+        }, false);
     }
 }
