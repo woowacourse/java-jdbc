@@ -23,15 +23,17 @@ public class TransactionManager {
     }
 
     private <T> T withTransaction(Supplier<T> supplier) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            conn.setAutoCommit(false);
             T result = supplier.get();
-            connection.commit();
+            conn.commit();
             return result;
         } catch (SQLException e) {
-            rollback(connection);
+            rollback(conn);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
