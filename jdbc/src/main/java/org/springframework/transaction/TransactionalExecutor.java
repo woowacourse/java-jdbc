@@ -19,12 +19,11 @@ public class TransactionalExecutor {
         setAutoCommit(con, false);
         try {
             transactionTask.execute(con);
-            setAutoCommit(con, true);
         } catch (Exception e) {
             rollback(con);
             throw e;
         } finally {
-            DataSourceUtils.releaseConnection(con, dataSource);
+            close(con);
         }
     }
 
@@ -42,5 +41,10 @@ public class TransactionalExecutor {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private void close(Connection con) {
+        setAutoCommit(con, true);
+        DataSourceUtils.releaseConnection(con, dataSource);
     }
 }
