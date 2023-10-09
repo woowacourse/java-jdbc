@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class PreparedStatementExecutor {
     private static final Logger log = LoggerFactory.getLogger(PreparedStatementExecutor.class);
@@ -18,8 +19,9 @@ public class PreparedStatementExecutor {
     }
 
     public <T> T execute(final String sql, final PreparedStatementFunction<T> pstmtFunction, final Object... params) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (
+                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setPreparedStatement(pstmt, params);
