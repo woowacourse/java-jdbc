@@ -5,9 +5,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import java.sql.SQLException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class UserServiceImpl implements UserService {
 
@@ -22,10 +23,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findById(final long id) {
         return userDao.findById(id);
-    }
-
-    public User findById(final Connection connection, final long id) {
-        return userDao.findById(connection, id);
     }
 
     @Override
@@ -43,20 +40,22 @@ public class UserServiceImpl implements UserService {
     }
 
     private void hi(final long id, final String newPassword, final String createBy) throws SQLException {
-        final var connection = DataSourceConfig.getInstance().getConnection();
+        final var dataSource = DataSourceConfig.getInstance();
+        final var connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            final var user = findById(connection, id);
+            final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (final Exception e) {
             connection.rollback();
             throw new DataAccessException(e);
         } finally {
-            connection.close();
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
