@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.springframework.jdbc.support.TransactionManager;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int QUERY_PARAMETER_STEP = 1;
 
     private final DataSource dataSource;
 
@@ -50,12 +52,25 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         try (final ConnectionHolder connectionHolder = TransactionManager.getConnectionHolder(dataSource);
-             final PreparedStatement preparedStatement = connectionHolder.createPrepareStatement(sql, parameters);
+             final PreparedStatement preparedStatement = createPrepareStatement(connectionHolder, sql, parameters);
         ) {
             return callback.callback(preparedStatement);
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public PreparedStatement createPrepareStatement(
+            final ConnectionHolder connectionHolder,
+            final String sql, final Object[] parameters
+    ) throws SQLException {
+        final PreparedStatement preparedStatement = connectionHolder.getConnection().prepareStatement(sql);
+
+        for (int index = 0; index < parameters.length; index++) {
+            preparedStatement.setObject(index + QUERY_PARAMETER_STEP, parameters[index]);
+        }
+
+        return preparedStatement;
     }
 }
