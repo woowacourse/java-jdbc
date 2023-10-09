@@ -14,22 +14,42 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(final TransactionExecutor executor) {
+    public void execute(final TransactionCallback executor) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-
         try {
             connection.setAutoCommit(false);
             executor.doGetTransaction();
             connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+        } catch (Exception e) {
+            rollback(connection);
+            throw new DataAccessException();
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    public <T> T execute(final TransactionExecutor<T> executor) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+            final T result = executor.doGetTransaction();
+            connection.commit();
+            return result;
+        } catch (Exception e) {
+            rollback(connection);
+            throw new DataAccessException();
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private static void rollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new DataAccessException(ex);
         }
     }
 }
