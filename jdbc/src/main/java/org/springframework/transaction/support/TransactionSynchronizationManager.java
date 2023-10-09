@@ -21,19 +21,23 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> connections = new ConcurrentHashMap<>();
-        connections.put(key, value);
+        if (resources.get() == null) {
+            Map<DataSource, Connection> connections = new ConcurrentHashMap<>();
+            connections.put(key, value);
 
-        resources.set(connections);
+            resources.set(connections);
+
+            return;
+        }
+
+        Map<DataSource, Connection> connections = resources.get();
+        connections.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
         Map<DataSource, Connection> connections = resources.get();
 
-        Connection removedConnection = connections.remove(key);
-        resources.remove();
-
-        return removedConnection;
+        return connections.remove(key);
     }
 
 }
