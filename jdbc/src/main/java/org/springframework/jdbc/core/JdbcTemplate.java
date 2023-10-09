@@ -40,8 +40,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters);
             ResultSet rs = pstmt.executeQuery()
         ) {
@@ -54,12 +54,14 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-            Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = createPrepareStatement(sql, conn, parameters);
             ResultSet rs = pstmt.executeQuery()
         ) {
@@ -67,6 +69,8 @@ public class JdbcTemplate {
             return getSingleObject(rowMapper, rs);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
