@@ -31,8 +31,8 @@ public class TransactionExecutor {
                 throw new DataAccessException(ex);
             }
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -54,8 +54,8 @@ public class TransactionExecutor {
                 throw new DataAccessException(ex);
             }
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
         return null;
     }
