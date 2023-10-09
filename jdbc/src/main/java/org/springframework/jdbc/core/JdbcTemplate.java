@@ -6,7 +6,6 @@ import org.springframework.dao.JdbcException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import javax.xml.crypto.OctetStreamData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,54 +24,35 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (
-                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args)
-        ) {
-            log.debug("run sql {}", sql);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException(e);
-        }
+        return executeExecution(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (
-                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
-                final ResultSet resultSet = pstmt.executeQuery()
-        ) {
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.map(resultSet));
-            }
-            log.debug("run sql {}", sql);
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException(e);
-        }
+        return executeExecution(sql, pstm -> {
+                    final ResultSet resultSet = pstm.executeQuery();
+                    final List<T> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        results.add(rowMapper.map(resultSet));
+                    }
+                    log.debug("run sql {}", sql);
+                    return results;
+                },
+                args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (
-                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
-                final ResultSet resultSet = pstmt.executeQuery()
-        ) {
-            log.debug("run sql {}", sql);
-            if (resultSet.next()) {
-                final T result = rowMapper.map(resultSet);
-                validateIsOnlyResult(resultSet);
-                return result;
-            }
-            logAndThrowNoDataFoundException();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException(e);
-        }
-        return null;
+        return executeExecution(sql, pstm -> {
+                    final ResultSet resultSet = pstm.executeQuery();
+                    log.debug("run sql {}", sql);
+                    if (resultSet.next()) {
+                        final T result = rowMapper.map(resultSet);
+                        validateIsOnlyResult(resultSet);
+                        return result;
+                    }
+                    logAndThrowNoDataFoundException();
+                    return null;
+                },
+                args);
     }
 
     private void validateIsOnlyResult(ResultSet resultSet) throws SQLException {
@@ -85,6 +65,18 @@ public class JdbcTemplate {
     private static void logAndThrowNoDataFoundException() {
         log.error("no data found");
         throw new JdbcException("no data found");
+    }
+
+    private <T> T executeExecution(final String sql, final JdbcExecution<T> execution, final Object[] args) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (
+                final PreparedStatement pstmt = getPrepareStatement(conn, sql, args);
+        ) {
+            return execution.excute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new JdbcException(e);
+        }
     }
 
     private PreparedStatement getPrepareStatement(final Connection connection, final String sql, final Object[] args) throws SQLException {
