@@ -4,7 +4,7 @@ import com.techcourse.domain.User;
 
 public interface UserService {
 
-    User findbyId(final long id);
+    User findById(final long id);
 
     void insert(final User user);
 

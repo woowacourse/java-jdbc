@@ -20,7 +20,7 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public User findbyId(long id) {
+    public User findById(long id) {
         return userDao.findById(id);
     }
 
@@ -31,7 +31,7 @@ public class AppUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        final var user = findbyId(id);
+        final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));

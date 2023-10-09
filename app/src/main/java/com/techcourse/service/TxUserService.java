@@ -19,8 +19,8 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public User findbyId(long id) {
-        return transactionExecutor.executeTransaction(() -> userService.findbyId(id));
+    public User findById(long id) {
+        return transactionExecutor.executeTransaction(() -> userService.findById(id));
     }
 
     @Override
