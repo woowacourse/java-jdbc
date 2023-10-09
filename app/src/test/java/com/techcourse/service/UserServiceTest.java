@@ -26,8 +26,7 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
-        Transactional.service(() -> userDao.insert(user));
+        Transactional.serviceForUpdate(() -> userDao.insert(user));
     }
 
     @Test

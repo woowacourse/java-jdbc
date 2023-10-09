@@ -79,10 +79,10 @@ public class Transactional {
         }
     }
 
-    public static void service(Service service) {
+    public static void serviceForUpdate(ServiceForUpdate serviceForUpdate) {
         final Transactional transactional = getInstance();
         try {
-            service.service();
+            serviceForUpdate.service();
             transactional.commit();
         } catch (SQLException e) {
             transactional.rollback();

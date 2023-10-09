@@ -1,7 +1,7 @@
 package org.springframework.transaction.support;
 
 @FunctionalInterface
-public interface Service {
+public interface ServiceForUpdate {
 
     void service();
 }
