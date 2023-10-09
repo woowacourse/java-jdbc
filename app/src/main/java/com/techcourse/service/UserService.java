@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -12,10 +13,10 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final TransactionExecutor executor;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionExecutor executor) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.executor = executor;
+        this.executor = new TransactionExecutor(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
@@ -31,9 +32,9 @@ public class UserService {
         user.changePassword(newPassword);
         final UserHistory userHistory = new UserHistory(user, createBy);
 
-        executor.execute(connection -> {
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, userHistory);
+        executor.execute(() -> {
+            userDao.update(user);
+            userHistoryDao.log( userHistory);
         });
     }
 }
