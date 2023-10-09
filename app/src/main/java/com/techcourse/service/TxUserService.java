@@ -43,7 +43,6 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException();
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
