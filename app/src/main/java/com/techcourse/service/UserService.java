@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.DataAccessException;
 import org.springframework.jdbc.exception.RollbackFailException;
 
@@ -16,10 +17,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = DataSourceConfig.getInstance();
     }
 
     public User findById(final long id) {
@@ -31,19 +34,18 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        final DataSource dataSource = DataSourceConfig.getInstance();
-        final Connection connection = dataSource.getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
         try {
-            connection.setAutoCommit(false);
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             rollback(connection);
         } finally {
-            connection.close();
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
