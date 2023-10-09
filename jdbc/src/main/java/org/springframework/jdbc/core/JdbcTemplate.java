@@ -64,21 +64,14 @@ public class JdbcTemplate {
     }
 
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        return query(sql, rs -> {
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
-            }
-            throw new SQLException("No data found");
-        }, preparedStatementSetter);
-    }
-
-    private <T> T query(final String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws DataAccessException {
-        return execute(sql, pstmt -> {
-            pss.setValues(pstmt);
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                return rse.extractData(rs);
-            }
-        });
+        final List<T> result = queryForList(sql, rowMapper, preparedStatementSetter);
+        if (result.isEmpty()) {
+            throw new DataAccessException("No results");
+        }
+        if (result.size() > 1) {
+            throw new DataAccessException("Too many results");
+        }
+        return result.get(0);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
@@ -95,6 +88,15 @@ public class JdbcTemplate {
         return query(sql, rse, pstmt -> {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    private <T> T query(final String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws DataAccessException {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rse.extractData(rs);
             }
         });
     }
