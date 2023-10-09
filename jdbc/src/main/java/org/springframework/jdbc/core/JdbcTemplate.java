@@ -76,6 +76,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException(e);
+        } finally {
+            closeConnectionIfAutoCommited(conn);
         }
     }
 
@@ -88,6 +90,17 @@ public class JdbcTemplate {
     private void setSqlParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
             pstmt.setObject(parameterIndex + 1, args[parameterIndex]);
+        }
+    }
+
+    private void closeConnectionIfAutoCommited(final Connection conn) {
+        try {
+            if (conn.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }
