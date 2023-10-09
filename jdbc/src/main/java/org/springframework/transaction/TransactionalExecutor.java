@@ -16,10 +16,10 @@ public class TransactionalExecutor {
 
     public void execute(TransactionTask transactionTask) {
         Connection con = DataSourceUtils.getConnection(dataSource);
-        changeAutoCommitStatus(con, false);
+        setAutoCommit(con, false);
         try {
             transactionTask.execute(con);
-            changeAutoCommitStatus(con, true);
+            setAutoCommit(con, true);
         } catch (Exception e) {
             rollback(con);
             throw e;
@@ -28,7 +28,7 @@ public class TransactionalExecutor {
         }
     }
 
-    private void changeAutoCommitStatus(Connection con, boolean status) {
+    private void setAutoCommit(Connection con, boolean status) {
         try {
             con.setAutoCommit(status);
         } catch (SQLException e) {
