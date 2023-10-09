@@ -25,16 +25,20 @@ public class TransactionExecutor {
             connection.commit();
 
             return result;
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackException) {
-                throw new DataAccessException(rollbackException.getMessage());
-            }
+        } catch (SQLException | DataAccessException e) {
+            rollback(connection);
             throw new DataAccessException(e.getMessage());
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            throw new DataAccessException(rollbackException.getMessage());
         }
     }
 }
