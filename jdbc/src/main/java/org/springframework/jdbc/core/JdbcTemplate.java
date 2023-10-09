@@ -29,7 +29,7 @@ public class JdbcTemplate {
             return executionCallback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        } //todo: AutoCommit이 true면 커넥션 해제
+        }
     }
 
     private PreparedStatement prepareStatement(final String sql, final Connection connection, final Object[] args)
