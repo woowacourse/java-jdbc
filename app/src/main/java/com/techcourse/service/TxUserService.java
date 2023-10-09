@@ -4,10 +4,10 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.SQLException;
 
 public class TxUserService implements UserService {
 
@@ -39,18 +39,10 @@ public class TxUserService implements UserService {
 
             connection.commit();
         } catch (final Exception e) {
-            rollback(connection);
+            TransactionSynchronizationManager.rollback(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-        }
-    }
-
-    public void rollback(final Connection connection) {
-        try {
-            connection.rollback();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
         }
     }
 }

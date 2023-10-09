@@ -1,8 +1,11 @@
 package org.springframework.transaction.support;
 
+import org.springframework.dao.DataAccessException;
+
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +19,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     @Nullable
-    public static Connection getResource(DataSource key) {
+    public static Connection getResource(final DataSource key) {
         final Map<DataSource, Connection> connections = getConnections();
         return connections.get(key);
     }
@@ -32,7 +35,7 @@ public abstract class TransactionSynchronizationManager {
         return connections;
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    public static void bindResource(final DataSource key, final Connection value) {
         final Map<DataSource, Connection> connections = getConnections();
 
         if (connections.containsKey(key)) {
@@ -41,7 +44,7 @@ public abstract class TransactionSynchronizationManager {
         connections.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) {
+    public static Connection unbindResource(final DataSource key) {
         final Map<DataSource, Connection> connections = getConnections();
         final Connection connection = connections.get(key);
 
@@ -55,5 +58,13 @@ public abstract class TransactionSynchronizationManager {
         }
 
         return connection;
+    }
+
+    public static void rollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
