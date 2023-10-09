@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.support.ConnectionManager;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
     private final DataSource dataSource;
@@ -18,25 +17,21 @@ public class TransactionManager {
     }
 
     public void transact(final Runnable runnable) {
-        final ConnectionManager connectionManager = DataSourceUtils.getConnection(dataSource);
-        try {
-            connectionManager.activeTransaction();
+        execute(() -> {
             runnable.run();
-            connectionManager.commit();
-        } catch (SQLException | DataAccessException exception) {
-            rollback(connectionManager);
-            throw new DataAccessException();
-        } finally {
-            connectionManager.inactiveTransaction();
-            DataSourceUtils.releaseConnection(connectionManager, dataSource);
-        }
+            return null;
+        });
     }
 
     public <T> T transact(final Supplier<T> supplier) {
+        return execute(supplier);
+    }
+
+    private <R> R execute(final Supplier<R> transactionSupplier) {
         final ConnectionManager connectionManager = DataSourceUtils.getConnection(dataSource);
         try {
             connectionManager.activeTransaction();
-            final T result = supplier.get();
+            final R result = transactionSupplier.get();
             connectionManager.commit();
             return result;
         } catch (SQLException | DataAccessException exception) {
@@ -45,15 +40,6 @@ public class TransactionManager {
         } finally {
             connectionManager.inactiveTransaction();
             DataSourceUtils.releaseConnection(connectionManager, dataSource);
-        }
-    }
-
-    private void close() {
-        try {
-            final ConnectionManager connectionManager = TransactionSynchronizationManager.unbindResource(dataSource);
-            connectionManager.close();
-        } catch (SQLException exception) {
-            throw new DataAccessException();
         }
     }
 
