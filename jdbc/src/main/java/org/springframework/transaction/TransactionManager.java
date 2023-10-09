@@ -21,7 +21,7 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
-        } catch (SQLException exception) {
+        } catch (SQLException | DataAccessException exception) {
             rollback(connection);
             throw new DataAccessException();
         } finally {
