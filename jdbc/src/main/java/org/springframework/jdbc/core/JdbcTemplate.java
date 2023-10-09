@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,10 +27,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final Connection conn, final String query, final Object... args) {
-        return execute(conn, this::executeUpdate, query, args);
-    }
-
     public int update(final String query, final Object... args) {
         return execute(this::executeUpdate, query, args);
     }
@@ -42,18 +39,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final Connection conn, final Function<PreparedStatement, T> function, final String query, final Object... args) {
-        try (final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
-            return function.apply(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     private <T> T execute(final Function<PreparedStatement, T> function, final String query, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = getPreparedStatement(conn, query, args)) {
             return function.apply(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
