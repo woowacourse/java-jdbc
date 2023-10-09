@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionExecutor {
 
@@ -20,6 +21,7 @@ public class TransactionExecutor {
     public void execute(final Runnable runnable) {
         final var connection = DataSourceUtils.getConnection(dataSource);
         try {
+            TransactionSynchronizationManager.setActualTransactionActive(true);
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
@@ -32,6 +34,7 @@ public class TransactionExecutor {
             }
         } finally {
             try {
+                TransactionSynchronizationManager.setActualTransactionActive(false);
                 connection.setAutoCommit(true);
                 DataSourceUtils.releaseConnection(connection, dataSource);
             } catch (SQLException ignored) {

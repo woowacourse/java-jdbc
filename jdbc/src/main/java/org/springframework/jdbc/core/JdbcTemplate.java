@@ -79,9 +79,9 @@ public class JdbcTemplate {
             return callback.doInConnection(preparedStatement);
         } catch (SQLException exception) {
             throw new SqlQueryException(exception.getMessage(), query);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
-        // TODO TransactionExecutor를 거치지 않을 때도 connection을 닫고 unbind 해주어야한다.
-        // 하지만 논리적 트랜잭션으로 묶여있다면 여기서 해주면 안된다.
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... parameters)

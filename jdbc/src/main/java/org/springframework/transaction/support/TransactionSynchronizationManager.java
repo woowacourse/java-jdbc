@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Boolean> isActualTransactionActive = ThreadLocal.withInitial(() -> false);
 
     private TransactionSynchronizationManager() {
     }
@@ -28,4 +29,13 @@ public abstract class TransactionSynchronizationManager {
 
         return connection;
     }
+
+    public static void setActualTransactionActive(boolean active) {
+        isActualTransactionActive.set(active);
+    }
+
+    public static boolean isActualTransactionActive() {
+        return isActualTransactionActive.get();
+    }
+
 }
