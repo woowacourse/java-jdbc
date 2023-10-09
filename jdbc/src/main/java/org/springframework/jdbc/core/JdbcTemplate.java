@@ -39,6 +39,17 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new DataAccessException(exception);
+        } finally {
+            releaseConnectionIfInactiveTransaction(conn);
+        }
+    }
+
+    private void releaseConnectionIfInactiveTransaction(final Connection conn) {
+        try {
+            if (conn.getAutoCommit())
+                DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
