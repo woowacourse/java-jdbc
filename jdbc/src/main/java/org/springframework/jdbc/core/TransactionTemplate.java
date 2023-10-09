@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,19 +15,21 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void transaction(TransactionExecutor transactionExecutor) throws SQLException {
-        Connection conn = dataSource.getConnection();
+    public <T> T transaction(TransactionExecutor<T> transactionExecutor) throws SQLException {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         conn.setAutoCommit(false);
         try {
-            transactionExecutor.execute(conn);
+            T result = transactionExecutor.execute();
             conn.commit();
             conn.setAutoCommit(true);
+            return result;
         } catch (SQLException | DataAccessException e) {
+            e.printStackTrace();
             conn.rollback();
             conn.setAutoCommit(true);
             throw new DataAccessException(e);
         } finally {
-            conn.close();
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }

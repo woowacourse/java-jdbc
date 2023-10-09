@@ -23,14 +23,14 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
         this.dataSource = DataSourceConfig.getInstance();
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
@@ -48,7 +48,7 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
+    void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao, dataSource);

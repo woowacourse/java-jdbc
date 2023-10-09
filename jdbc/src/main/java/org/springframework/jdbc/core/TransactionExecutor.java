@@ -1,10 +1,9 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface TransactionExecutor {
+public interface TransactionExecutor<T> {
 
-    void execute(Connection connection) throws SQLException;
+    T execute() throws SQLException;
 }
