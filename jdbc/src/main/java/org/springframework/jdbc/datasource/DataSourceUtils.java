@@ -33,4 +33,19 @@ public abstract class DataSourceUtils {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
+
+    public static void closeNotTransactional(final DataSource dataSource, final Connection connection) {
+        if (isTransactional(dataSource, connection)) {
+            return;
+        }
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        releaseConnection(connection);
+    }
+
+    private static boolean isTransactional(final DataSource dataSource, final Connection connection) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return TransactionSynchronizationManager.getResource(dataSource) == connection;
+        }
+        return false;
+    }
 }

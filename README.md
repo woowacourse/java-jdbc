@@ -57,4 +57,19 @@
 - [x] TransactionTemplate 반환값 없는 메서드 만들기
 - [x] Nullable TypeQualifierNickname 어떤 효과?
 - [x] TransactionSyncrhonizationManager 중복되는 get() 제거
-- [ ] ConnectionManager 제거 리팩토링
+- [x] ConnectionManager 제거 리팩토링
+  - 현재 흐름
+    - Transaction
+      1. TransactionTemplate에게 요청
+      2. DataSourceUtils -> Connection 생성 및 ThreadLocal 등록
+      3. TransactionTemplate 트랜잭션 시작하며 로직 수행 -> JdbcTemplate 호출
+      4. JdbcTemplate은 ConnectionManager에게 Connection 요청
+      5. ConnectionManager는 ThreadLocal의 Connection 반환
+      6. JdbcTemplate DB 접근 끝
+      7. TransactionTemplate 로직 끝 -> 커밋
+      8. DataSourceUtils 통해 Connection 자원 반환, ThreadLocal에서도 제거
+    - Transaction X
+      1. JdbcTemplate은 ConnectionManager에게 Connection 요청
+      2. ConnectionManager는 Connection 새로 생성해서 반환
+      3. JdbcTemplate DB 접근 끝 
+      4. ConnectionManager가 Connection 자원 반환

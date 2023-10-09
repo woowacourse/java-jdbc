@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -17,10 +18,10 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator();
-    private final ConnectionManager connectionManager;
+    private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.connectionManager = new ConnectionManager(dataSource);
+        this.dataSource = dataSource;
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -28,14 +29,14 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final SqlExecutor<T> executor, final Object... args) {
-        final Connection connection = connectionManager.getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection, sql, args)) {
             return executor.execute(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            connectionManager.closeNotTransactional(connection);
+            DataSourceUtils.closeNotTransactional(dataSource, connection);
         }
     }
 
