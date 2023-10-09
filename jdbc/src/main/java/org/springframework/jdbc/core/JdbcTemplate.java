@@ -44,6 +44,8 @@ public class JdbcTemplate {
             return rowMapperResultsetExtractor.extractData(resultSet);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 
@@ -57,6 +59,8 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 }

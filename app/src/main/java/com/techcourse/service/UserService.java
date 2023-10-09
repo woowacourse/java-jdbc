@@ -49,7 +49,7 @@ public class UserService {
                 throw new DataAccessException(e2);
             }
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 }
