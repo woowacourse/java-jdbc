@@ -1,10 +1,12 @@
 package org.springframework.jdbc.datasource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.h2.jdbc.JdbcSQLNonTransientException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,5 +40,17 @@ class DataSourceUtilsTest {
             assertThat(connection)
                 .isNotNull();
         }
+    }
+
+    @Test
+    @DisplayName("connection을 close한다.")
+    void releaseConnection() {
+        final DataSource ds = DataSourceConfig.getInstance();
+        final Connection connection = DataSourceUtils.getConnection(ds);
+
+        DataSourceUtils.releaseConnection(connection, ds);
+
+        assertThatThrownBy(connection::commit)
+            .isInstanceOf(JdbcSQLNonTransientException.class);
     }
 }
