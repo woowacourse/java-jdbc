@@ -19,8 +19,8 @@
   - [x] dao의 메소드를 호출할 때 커넥션을 전달한다.
 
 ## 4.Transaction synchronization 적용하기
-- [ ] Transaction synchronization 적용
-  - [ ] DataSourceUtils를 사용해 connection 객체를 가져온다.
+- [x] Transaction synchronization 적용
+  - [x] DataSourceUtils를 사용해 connection 객체를 가져온다.
   - [x] TransactionSynchronizationManager가 잘 동작하도록 구현한다.
 - [ ] 트랜잭션 서비스 추상화
   - [ ] 비즈니스 로직과 데이터 액세스 로직 분리

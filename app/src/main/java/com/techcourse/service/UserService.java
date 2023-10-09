@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplateException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserService {
 
@@ -27,7 +28,7 @@ public class UserService {
 
     private <T> T doService(final TransactionalDaoExecutor<T> executor) {
         try {
-            Connection connection = dataSource.getConnection();
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             return doDaoWithTransaction(executor, connection);
         } catch (SQLException e) {
             throw new DataBaseAccessException(e.getMessage());
@@ -44,6 +45,7 @@ public class UserService {
             throw new DataBaseAccessException(e.getMessage());
         } finally {
             connection.setAutoCommit(true);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
