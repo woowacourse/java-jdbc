@@ -22,17 +22,11 @@ public class TxAppUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        transactionExecutor.execute(() -> {
-            appUserService.insert(user);
-            return null;
-        });
+        transactionExecutor.execute(() -> appUserService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionExecutor.execute(() -> {
-            appUserService.changePassword(id, newPassword, createBy);
-            return null;
-        });
+        transactionExecutor.execute(() -> appUserService.changePassword(id, newPassword, createBy));
     }
 }
