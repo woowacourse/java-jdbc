@@ -31,6 +31,8 @@ public class TransactionTemplate {
         } catch (DataAccessException e) {
             transactionManager.rollback();
             throw new DataAccessException(e);
+        } finally {
+            transactionManager.finalizeConnection();
         }
     }
 

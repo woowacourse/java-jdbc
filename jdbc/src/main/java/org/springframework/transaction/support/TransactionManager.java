@@ -36,9 +36,6 @@ public class TransactionManager {
             conn.commit();
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -59,9 +56,12 @@ public class TransactionManager {
         } catch (SQLException e) {
             log.warn("Transaction Error, Rollback", e);
             throw new DataAccessException(e);
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(conn, dataSource);
         }
+    }
+
+    public void finalizeConnection() {
+        final Connection conn = TransactionSynchronizationManager.getResource(dataSource);
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }
