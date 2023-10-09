@@ -23,16 +23,14 @@ public class TransactionExecutor {
 
     public void execute(Runnable action) {
         try {
-            try {
-                transactionStart();
-                action.run();
-                transactionCommit();
-            } catch (Exception e) {
-                transactionRollback();
-                throw e;
-            }
+            transactionStart();
+            action.run();
+            transactionCommit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } catch (RuntimeException e) {
+            transactionRollback();
+            throw e;
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
@@ -40,17 +38,15 @@ public class TransactionExecutor {
 
     public <T> T execute(Supplier<T> action) {
         try {
-            try {
-                transactionStart();
-                final T returnValue = action.get();
-                transactionCommit();
-                return returnValue;
-            } catch (Exception e) {
-                transactionRollback();
-                throw e;
-            }
+            transactionStart();
+            final T returnValue = action.get();
+            transactionCommit();
+            return returnValue;
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } catch (RuntimeException e) {
+            transactionRollback();
+            throw e;
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
@@ -66,8 +62,12 @@ public class TransactionExecutor {
         log.info("transaction commit");
     }
 
-    private void transactionRollback() throws SQLException {
-        connection.rollback();
-        log.info("transaction rollback");
+    private void transactionRollback() {
+        try {
+            connection.rollback();
+            log.info("transaction rollback");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
