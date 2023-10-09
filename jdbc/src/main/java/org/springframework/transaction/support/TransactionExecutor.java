@@ -37,7 +37,6 @@ public class TransactionExecutor {
     private void setAutoCommit(final boolean autoCommit, final Connection conn) {
         try {
             conn.setAutoCommit(autoCommit);
-            System.out.println("conn.getAutoCommit() = " + conn.getAutoCommit());
         } catch (final SQLException e) {
             throw new TransactionAutoCommitException(e);
         }
@@ -54,7 +53,6 @@ public class TransactionExecutor {
     private void rollback(final Connection conn) {
         try {
             conn.rollback();
-            System.out.println("conn.getAutoCommit() in rollback = " + conn.getAutoCommit());
         } catch (final SQLException e) {
             throw new TransactionRollbackException(e);
         }
