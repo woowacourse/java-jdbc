@@ -6,10 +6,10 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class TransactionManager {
+public class JdbcTransactionManager {
     private final DataSource dataSource;
 
-    public TransactionManager(final DataSource dataSource) {
+    public JdbcTransactionManager(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

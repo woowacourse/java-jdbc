@@ -3,23 +3,36 @@ package org.springframework.transaction.support;
 import javax.sql.DataSource;
 
 public class TransactionTemplate {
-    private final TransactionManager transactionManager;
+    private final JdbcTransactionManager jdbcTransactionManager;
 
     public TransactionTemplate(final DataSource dataSource) {
-        transactionManager = new TransactionManager(dataSource);
+        jdbcTransactionManager = new JdbcTransactionManager(dataSource);
     }
 
     public <T> T execute(final TransactionCallback<T> transactionCallback) {
         try {
-            transactionManager.startTransaction();
+            jdbcTransactionManager.startTransaction();
             T result = transactionCallback.doBizLogic();
-            transactionManager.commit();
+            jdbcTransactionManager.commit();
             return result;
         } catch (final RuntimeException e) {
-            transactionManager.rollback();
+            jdbcTransactionManager.rollback();
             throw e;
         } finally {
-            transactionManager.cleanUp();
+            jdbcTransactionManager.cleanUp();
+        }
+    }
+
+    public void executeWithoutResult(final TransactionCallbackWithoutResult transactionCallback) {
+        try {
+            jdbcTransactionManager.startTransaction();
+            transactionCallback.doBizLogic();
+            jdbcTransactionManager.commit();
+        } catch (final RuntimeException e) {
+            jdbcTransactionManager.rollback();
+            throw e;
+        } finally {
+            jdbcTransactionManager.cleanUp();
         }
     }
 }
