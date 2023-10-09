@@ -12,13 +12,13 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(UserService userService, DataSource dataSource) {
+    public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
         this.dataSource = dataSource;
     }
 
     @Override
-    public User findById(long id) {
+    public User findById(final long id) {
         return doService(() -> userService.findById(id));
     }
 
@@ -45,7 +45,7 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public void insert(User user) {
+    public void insert(final User user) {
         doService(() -> {
             userService.insert(user);
             return null;
@@ -53,7 +53,7 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public void changePassword(long id, String newPassword, String createBy) {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         doService(() -> {
             userService.changePassword(id, newPassword, createBy);
             return null;
