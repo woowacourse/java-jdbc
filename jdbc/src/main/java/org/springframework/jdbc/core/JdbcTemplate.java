@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 
 import javax.annotation.Nullable;
@@ -24,18 +25,26 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = newArgPreparedStatementSetter(connection, sql, args)) {
+             final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args)) {
             log.debug("query : {}", sql);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        try (final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args)) {
+            log.debug("query : {}", sql);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = newArgPreparedStatementSetter(connection, sql, args);
+             final PreparedStatement preparedStatement = createPreparedStatementSetter(connection, sql, args);
              final ResultSet resultSet = preparedStatement.executeQuery()) {
             log.debug("query : {}", sql);
             final List<T> list = new ArrayList<>();
@@ -44,21 +53,20 @@ public class JdbcTemplate {
             }
             return list;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException(1);
         }
         return results.iterator().next();
     }
 
-    private PreparedStatement newArgPreparedStatementSetter(final Connection connection, final String sql, final Object[] args) throws SQLException {
+    private PreparedStatement createPreparedStatementSetter(final Connection connection, final String sql, final Object[] args) throws SQLException {
         final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
