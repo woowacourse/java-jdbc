@@ -28,7 +28,7 @@ class UserDaoTest {
         userDao = new UserDao(dataSource);
         connection = dataSource.getConnection();
         final var user = new User("hongsil", "486", "gurwns9325@gmail.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
@@ -54,7 +54,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "mylove_hongsil";
-        userDao.insert(connection, new User(account, "비밀번호486", "love@with.you"));
+        userDao.insert(new User(account, "비밀번호486", "love@with.you"));
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -63,8 +63,8 @@ class UserDaoTest {
     @Test
     void findByAccount_make_exception_when_multiple_result() {
         final var user = new User("ditoo", "password", "ditoo@gmail.com");
-        userDao.insert(connection, user);
-        userDao.insert(connection, user);
+        userDao.insert(user);
+        userDao.insert(user);
         assertThatThrownBy(() -> userDao.findByAccount(user.getAccount()))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
@@ -73,7 +73,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
@@ -86,7 +86,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
