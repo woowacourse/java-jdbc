@@ -25,12 +25,13 @@ public class UserService {
     public void insert(final User user) {
         final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         try {
-            userDao.insert(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, "system"));
+            userDao.insert(user);
+            userHistoryDao.log(new UserHistory(user, "system"));
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
+            TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
         }
     }
 
@@ -40,8 +41,8 @@ public class UserService {
         final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         try {
             connection.setAutoCommit(false);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (final Exception e) {
             try {

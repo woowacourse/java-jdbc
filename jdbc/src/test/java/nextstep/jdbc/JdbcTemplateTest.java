@@ -37,7 +37,7 @@ class JdbcTemplateTest {
         //given
         //when
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
+        jdbcTemplate.update(sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");
@@ -64,12 +64,12 @@ class JdbcTemplateTest {
     public void queryList() {
         //given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
+        jdbcTemplate.update(sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");
         });
-        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
+        jdbcTemplate.update(sql, preparedStatement -> {
             preparedStatement.setString(1, "account2");
             preparedStatement.setString(2, "password2");
             preparedStatement.setString(3, "email2");
@@ -95,7 +95,7 @@ class JdbcTemplateTest {
     void vargsQuery() {
         //given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(jdbcTemplate.getConnection(), sql, preparedStatement -> {
+        jdbcTemplate.update(sql, preparedStatement -> {
             preparedStatement.setString(1, "account");
             preparedStatement.setString(2, "password");
             preparedStatement.setString(3, "email");

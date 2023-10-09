@@ -10,7 +10,8 @@ import java.sql.SQLException;
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
