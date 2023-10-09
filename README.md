@@ -20,5 +20,5 @@
 - [x] Transaction synchronization 적용하기
   - [x] TransactionSynchronizationManager 구현하기
   - [x] Dao에 connection 인자 제거하기
-- [ ] 트랜잭션 서비스 추상화하기
+- [x] 트랜잭션 서비스 추상화하기
 
