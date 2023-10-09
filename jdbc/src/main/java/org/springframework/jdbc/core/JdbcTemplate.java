@@ -2,6 +2,9 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,8 +18,14 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final DataSource dataSource;
 
-    public <T> T query(final Connection connection, final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor, final Object... arguments) {
+    public JdbcTemplate(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public <T> T query(final String sql, final PreparedStatementExecutor<T> preparedStatementExecutor, final Object... arguments) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -25,7 +34,7 @@ public class JdbcTemplate {
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -35,9 +44,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
-        return query(connection, sql, preparedStatement -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery();) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
+        return query(sql, preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return getObjects(rowMapper, resultSet);
             }
         });
@@ -52,8 +61,8 @@ public class JdbcTemplate {
         return result;
     }
 
-    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        final List<T> results = query(connection, sql, preparedStatement -> {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
+        final List<T> results = query(sql, preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return getObjects(rowMapper, resultSet);
             }
@@ -62,7 +71,7 @@ public class JdbcTemplate {
         return iterator.hasNext() ? Optional.of(iterator.next()) : Optional.empty();
     }
 
-    public void update(final Connection connection, final String sql, final Object... arguments) {
-        query(connection, sql, PreparedStatement::executeUpdate, arguments);
+    public void update(final String sql, final Object... arguments) {
+        query(sql, PreparedStatement::executeUpdate, arguments);
     }
 }

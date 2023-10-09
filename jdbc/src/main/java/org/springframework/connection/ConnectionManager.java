@@ -1,5 +1,7 @@
 package org.springframework.connection;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,21 +14,13 @@ public class ConnectionManager {
         this.dataSource = dataSource;
     }
 
-    public Connection getAutoCommittedConnection() {
+    public Connection getConnection(final boolean autoCommit) {
         try {
-            return dataSource.getConnection();
-        } catch (final SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Connection getNotAutoCommittedConnection() {
-        try {
-            final Connection connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(autoCommit);
             return connection;
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -34,15 +28,11 @@ public class ConnectionManager {
         try {
             connection.rollback();
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
     public void close(final Connection connection) {
-        try {
-            connection.close();
-        } catch (final SQLException e) {
-            throw new RuntimeException(e);
-        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
