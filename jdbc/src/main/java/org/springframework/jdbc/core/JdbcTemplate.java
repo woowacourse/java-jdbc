@@ -55,9 +55,12 @@ public class JdbcTemplate {
              final PreparedStatement preparedStatement = createPrepareStatement(connectionHolder, sql, parameters);
         ) {
             return callback.callback(preparedStatement);
-        } catch (final Exception e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } catch (final Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
