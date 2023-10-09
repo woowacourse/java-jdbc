@@ -1,15 +1,17 @@
-package aop.service;
+package aop.stage2;
 
 import aop.common.Transactional;
 import aop.domain.User;
 import aop.domain.UserHistory;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+    private UserHistoryDao userHistoryDao;
 
     public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
@@ -32,5 +34,9 @@ public class AppUserService implements UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+    }
+
+    public void setUserHistoryDao(final UserHistoryDao userHistoryDao) {
+        this.userHistoryDao = userHistoryDao;
     }
 }

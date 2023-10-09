@@ -1,35 +1,36 @@
-package aop.stage1;
+package aop.common;
 
 import aop.DataAccessException;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-/**
- * 어드바이스(advice). 부가기능을 담고 있는 클래스
- */
-public class TransactionAdvice implements MethodInterceptor {
+public class TransactionHandler implements InvocationHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionAdvice.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionHandler.class);
 
     private final PlatformTransactionManager transactionManager;
+    private final Object target;
 
-    public TransactionAdvice(final PlatformTransactionManager transactionManager) {
+    public TransactionHandler(final PlatformTransactionManager transactionManager, final Object target) {
         this.transactionManager = transactionManager;
+        this.target = target;
     }
 
     @Override
-    public Object invoke(final MethodInvocation invocation) throws Throwable {
-        final Object target = invocation.getThis();
-        final Method method = invocation.getMethod();
+    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        final Method targetMethod = target.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes());
 
-        return invokeWithTransaction(target, method, invocation.getArguments());
+        if (targetMethod.isAnnotationPresent(Transactional.class)) {
+            return invokeWithTransaction(target, method, args);
+        }
+
+        return method.invoke(target, args);
     }
 
     private Object invokeWithTransaction(final Object target, final Method method, final Object[] args) {
