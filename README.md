@@ -21,6 +21,6 @@
 ## 4.Transaction synchronization 적용하기
 - [ ] Transaction synchronization 적용
   - [ ] DataSourceUtils를 사용해 connection 객체를 가져온다.
-  - [ ] TransactionSynchronizationManager가 잘 동작하도록 구현한다.
+  - [x] TransactionSynchronizationManager가 잘 동작하도록 구현한다.
 - [ ] 트랜잭션 서비스 추상화
   - [ ] 비즈니스 로직과 데이터 액세스 로직 분리
