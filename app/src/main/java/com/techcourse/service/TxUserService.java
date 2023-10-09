@@ -10,7 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class TxUserService implements UserService {
-    private UserService userService;
+    private final UserService userService;
 
     public TxUserService(final UserService userService) {
         this.userService = userService;
