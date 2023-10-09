@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
 
@@ -13,20 +15,25 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> Object service(TransactionExecutor<T> transactionExecutor) throws SQLException {
-        Connection conn = dataSource.getConnection();
-        conn.setAutoCommit(false);
-        try {
-            T result = transactionExecutor.execute();
+    public void service(TransactionExecutor transactionExecutor) {
+        try (final var conn = DataSourceUtils.getConnection(dataSource)) {
+            TransactionSynchronizationManager.bindResource(dataSource, conn);
+            conn.setAutoCommit(false);
+            transactionExecutor.execute();
             conn.commit();
-            conn.setAutoCommit(true);
-            return result;
-        } catch (SQLException | DataAccessException e) {
-            conn.rollback();
-            conn.setAutoCommit(true);
-            throw new DataAccessException(e);
+        } catch (final SQLException e) {
+            rollBack(e, TransactionSynchronizationManager.getResource(dataSource));
         } finally {
-            conn.close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void rollBack(final SQLException e, final Connection connection) {
+        try {
+            connection.rollback();
+            throw new DataAccessException(e);
+        } catch (final SQLException exception) {
+            throw new DataAccessException(exception);
         }
     }
 }

@@ -1,7 +1,7 @@
 package org.springframework.transaction;
 
 @FunctionalInterface
-public interface TransactionExecutor<T> {
+public interface TransactionExecutor {
 
-    T execute();
+    void execute();
 }
