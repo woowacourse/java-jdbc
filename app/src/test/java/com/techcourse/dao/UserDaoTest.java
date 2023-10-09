@@ -25,19 +25,19 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
     void findAll() throws SQLException {
-        final var users = userDao.findAll(dataSource.getConnection());
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() throws SQLException {
-        final var user = userDao.findById(dataSource.getConnection(), 1L);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -45,7 +45,7 @@ class UserDaoTest {
     @Test
     void findByAccount() throws SQLException {
         final var account = "gugu";
-        final var user = userDao.findByAccount(dataSource.getConnection(), account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -55,9 +55,9 @@ class UserDaoTest {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         final Connection connection = dataSource.getConnection();
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(connection, 2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -66,12 +66,12 @@ class UserDaoTest {
     void update() throws SQLException {
         final var newPassword = "password99";
         final Connection connection = dataSource.getConnection();
-        final var user = userDao.findById(connection, 1L);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(connection, 1L);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

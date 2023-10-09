@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,8 +25,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(connection, sql, preparedStatement -> {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
@@ -37,8 +38,8 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
-        return execute(connection, sql, preparedStatement -> {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql, preparedStatement -> {
             final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
@@ -49,12 +50,15 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
+    public int update(final String sql, final Object... parameters) {
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> T execute(final Connection connection, final String sql, final ExecuteQueryCallback<T> callBack, final Object... objects) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    public <T> T execute(final String sql, final ExecuteQueryCallback<T> callBack, final Object... objects) {
+        try {
+            final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
             setPreparedStatement(preparedStatement, objects);
             return callBack.execute(preparedStatement);
         } catch (SQLException ex) {

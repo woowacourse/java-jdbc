@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -27,40 +25,40 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public int insert(final Connection connection, final User user) throws SQLException {
+    public int insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         log.debug("query : {}", sql);
 
-        return updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    private int updateQuery(final Connection connection, final String sql, final Object... objects) throws SQLException {
-        final int updatedRows = jdbcTemplate.update(connection, sql, objects);
+    private int updateQuery(final String sql, final Object... objects) {
+        final int updatedRows = jdbcTemplate.update(sql, objects);
         if (updatedRows < 1) {
             throw new RuntimeException("저장된 데이터가 없습니다.");
         }
         return updatedRows;
     }
 
-    public int update(final Connection connection, final User user) throws SQLException {
+    public int update(final User user) {
         final var sql = "update users set (account, password, email) = (?, ?, ?)";
         log.debug("query : {}", sql);
 
-        return updateQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return updateQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public List<User> findAll(final Connection connection) throws SQLException {
+    public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final List<User> users = jdbcTemplate.query(connection, sql, userRowMapper);
+        final List<User> users = jdbcTemplate.query(sql, userRowMapper);
 
         log.debug("query : {}", sql);
 
         return users;
     }
 
-    public User findById(final Connection connection, final Long id) throws SQLException {
+    public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final User user = jdbcTemplate.queryForObject(connection, sql, userRowMapper, id)
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, id)
                                       .orElseThrow(() -> new RuntimeException("찾는 사용자가 존재하지 않습니다."));
 
         log.debug("query : {}", sql);
@@ -68,9 +66,9 @@ public class UserDao {
         return user;
     }
 
-    public User findByAccount(final Connection connection, final String account) throws SQLException {
+    public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final User user = jdbcTemplate.queryForObject(connection, sql, userRowMapper, account)
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account)
                                       .orElseThrow(() -> new RuntimeException("찾는 사용자가 존재하지 않습니다."));
 
         log.debug("query : {}", sql);
