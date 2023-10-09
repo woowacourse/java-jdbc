@@ -18,7 +18,13 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
-        resources.set(new ConcurrentHashMap<>(Map.of(key, value)));
+        if (resources.get() == null) {
+            resources.set(new ConcurrentHashMap<>());
+        }
+
+        final Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
+
+        dataSourceConnectionMap.put(key, value);
     }
 
     public static Connection unbindResource(final DataSource key) {
