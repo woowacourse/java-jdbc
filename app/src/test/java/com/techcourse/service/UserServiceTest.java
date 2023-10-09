@@ -34,7 +34,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionExecutor);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionExecutor);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -49,7 +50,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionExecutor);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionExecutor);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -65,7 +67,8 @@ class UserServiceTest {
     @Test
     void 비밀번호를_바꾸면_로그가_쌓인다() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionExecutor);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionExecutor);
         int historyCountBefore = countHistories();
 
         final var newPassword = "qqqqq";
@@ -79,7 +82,8 @@ class UserServiceTest {
     void 비밀번호_변경_작업_실패시_로그가_없다() {
         final var userDao = new MockUserDao(jdbcTemplate);
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionExecutor);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionExecutor);
         int historyCountBefore = countHistories();
 
         final var newPassword = "newPassword";

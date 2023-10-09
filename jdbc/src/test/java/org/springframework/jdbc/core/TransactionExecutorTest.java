@@ -33,8 +33,7 @@ class TransactionExecutorTest {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionExecutor transactionExecutor = new TransactionExecutor(dataSource);
 
-        transactionExecutor.execute(transaction -> {
-        });
+        transactionExecutor.execute(() -> {});
 
         assertThat(connection.isClosed()).isTrue();
     }
@@ -42,12 +41,12 @@ class TransactionExecutorTest {
     @Test
     void 트랜잭션_중에_예외가_발생하면_모두_롤백되어_원자성을_보장한다() {
         TransactionExecutor transactionExecutor = new TransactionExecutor(dataSource);
-        assertThatThrownBy(() -> transactionExecutor.execute(transaction -> {
+        assertThatThrownBy(() -> transactionExecutor.execute(() -> {
             testUserDao.insert("hi");
             testUserDao.fail();
         }));
 
-        transactionExecutor.execute(transaction -> {
+        transactionExecutor.execute(() -> {
             assertThat(testUserDao.hasUser("hi")).isFalse();
         });
     }
