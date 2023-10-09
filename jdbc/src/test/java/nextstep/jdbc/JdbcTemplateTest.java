@@ -27,7 +27,6 @@ public class JdbcTemplateTest {
 
     @Test
     void resultSetIsClosed() throws SQLException {
-        //given
         final String sql = "select id, account from users";
         final ResultSet resultSet;
         try (final Connection connection = dataSource.getConnection();
