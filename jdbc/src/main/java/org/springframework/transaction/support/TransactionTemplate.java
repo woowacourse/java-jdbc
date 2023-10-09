@@ -17,21 +17,44 @@ public class TransactionTemplate {
     private <T> T execute(final Supplier<T> target) {
         Connection connection = null;
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
+            connection = beginTransaction(dataSource);
+
             final T result = target.get();
-            connection.commit();
+
+            commit(connection);
             return result;
         } catch (final Exception e) {
-            try {
-                connection.rollback();
-                throw e;
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
+            rollback(connection);
+            throw e;
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private static void commit(final Connection connection) {
+        try {
+            connection.commit();
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Connection beginTransaction(final DataSource dataSource) {
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
+            return connection;
+        } catch (final SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void rollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (final SQLException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
