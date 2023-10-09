@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -23,7 +24,7 @@ public class PreparedStatementExecutor {
             final String sql,
             final Object... args
     ) {
-        try (final Connection connection = dataSource.getConnection()) {
+        try (final Connection connection = DataSourceUtils.getConnection(dataSource)) {
             return execute(connection, executeStrategy, sql, args);
         } catch (SQLException e) {
             log.error("exception : {}", e);

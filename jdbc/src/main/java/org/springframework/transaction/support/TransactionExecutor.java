@@ -19,31 +19,23 @@ public class TransactionExecutor {
         this.dataSource = dataSource;
     }
 
-    public void execute(final TransactionExecuteStrategy executeStrategy) {
+    public <T> T execute(final TransactionExecuteStrategy<T> executeStrategy) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
 
-            executeStrategy.strategy(connection);
+            final T result = executeStrategy.strategy();
 
             connection.commit();
+
+            return result;
         } catch (Exception e) {
             log.error("execute exception : {}", e);
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
-    }
-
-    public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error("getConnection exception : {}", e);
-            throw new DataAccessException(e);
         }
     }
 
@@ -52,15 +44,6 @@ public class TransactionExecutor {
             connection.rollback();
         } catch (SQLException e) {
             log.error("rollback exception : {}", e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public void close(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.error("close exception : {}", e);
             throw new DataAccessException(e);
         }
     }
