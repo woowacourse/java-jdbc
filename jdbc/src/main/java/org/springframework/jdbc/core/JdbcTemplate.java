@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,9 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final Connection conn, final String sql, final Object... args) {
-        executeQuery(conn, sql, PreparedStatement::executeUpdate, args);
-    }
 
     public void update(final String sql, final Object... args) {
         executeQuery(sql, PreparedStatement::executeUpdate, args);
@@ -54,31 +52,12 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(
-            final Connection conn,
             final String sql,
             final PreparedStatementExecutor<T> executor,
             final Object... args
     ) {
-        try (
-                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)
-        ) {
-            log.debug("query : {}", sql);
-
-            return executor.execute(pstmt);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T executeQuery(
-            final String sql,
-            final PreparedStatementExecutor<T> executor,
-            final Object... args
-    ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = processPreparedStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
 
             return executor.execute(pstmt);
