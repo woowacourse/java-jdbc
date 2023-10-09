@@ -25,10 +25,10 @@ public class TransactionTemplate {
         } catch (final Exception e) {
             try {
                 connection.rollback();
+                throw e;
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
-            throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
