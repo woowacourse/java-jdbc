@@ -1,10 +1,10 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import javax.sql.DataSource;
 import org.springframework.transaction.TransactionManager;
 
 public class UserService {
@@ -13,10 +13,10 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final TransactionManager transactionManager;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        transactionManager = new TransactionManager(DataSourceConfig.getInstance());
+        transactionManager = new TransactionManager(dataSource);
     }
 
     public User findById(final long id) {
