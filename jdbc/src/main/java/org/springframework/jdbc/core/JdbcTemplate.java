@@ -60,8 +60,11 @@ public class JdbcTemplate {
             final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
             setPreparedStatement(preparedStatement, objects);
-            return callBack.execute(preparedStatement);
+
+            return TransactionSynchronizationManager.commit(callBack, preparedStatement, dataSource);
         } catch (SQLException ex) {
+            TransactionSynchronizationManager.rollback(dataSource);
+
             log.error(ex.getMessage());
             throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
         }

@@ -1,5 +1,10 @@
 package org.springframework.transaction.support;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.ExecuteQueryCallback;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,6 +34,61 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection unbindResource(DataSource key) {
-        return null;
+        return resources.get().remove(key);
+    }
+
+    public static void startTransaction() {
+        isActive.set(true);
+    }
+
+    public static void finishTransaction() {
+        isActive.set(false);
+    }
+
+    public static <T> T commit(final ExecuteQueryCallback<T> callBack, final PreparedStatement preparedStatement, final DataSource dataSource) {
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
+
+            final T result = callBack.execute(preparedStatement);
+
+            commitTransaction(dataSource, connection);
+
+            return result;
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
+        }
+    }
+
+    private static void commitTransaction(final DataSource dataSource, final Connection connection) {
+        try {
+            connection.commit();
+
+            clear(connection, dataSource);
+        } catch (Exception ex) {
+            rollback(dataSource);
+
+            throw new DataAccessException("실행 중 예외가 발생했습니다.");
+        }
+    }
+
+    public static void rollback(final DataSource dataSource) {
+        try {
+            final Connection connection = resources.get().get(dataSource);
+            connection.rollback();
+
+            clear(connection, dataSource);
+        } catch (SQLException ex) {
+            throw new DataAccessException("트랜잭션 롤백 중 예외가 발생했습니다.");
+        }
+    }
+
+    private static void clear(final Connection connection, final DataSource dataSource) {
+        try {
+            connection.close();
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException("실행 중 예외가 발생했습니다.");
+        }
     }
 }
