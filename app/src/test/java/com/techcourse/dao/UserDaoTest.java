@@ -17,7 +17,7 @@ class UserDaoTest {
     void setup() {
         final var dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        userDao = new UserDao(dataSource, new JdbcTemplate());
+        userDao = new UserDao(new JdbcTemplate(dataSource));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
