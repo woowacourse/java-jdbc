@@ -2,6 +2,7 @@ package org.springframework.transaction.support;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -29,7 +30,7 @@ public class TransactionExecutor {
         } catch (Exception e) {
             log.error("execute exception : {}", e);
             rollback(connection);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             close(connection);
         }
@@ -40,7 +41,7 @@ public class TransactionExecutor {
             return dataSource.getConnection();
         } catch (SQLException e) {
             log.error("getConnection exception : {}", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -49,7 +50,7 @@ public class TransactionExecutor {
             connection.rollback();
         } catch (SQLException e) {
             log.error("rollback exception : {}", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -58,7 +59,7 @@ public class TransactionExecutor {
             connection.close();
         } catch (SQLException e) {
             log.error("close exception : {}", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
