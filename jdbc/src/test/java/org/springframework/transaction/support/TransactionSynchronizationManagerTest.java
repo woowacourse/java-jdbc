@@ -71,4 +71,18 @@ class TransactionSynchronizationManagerTest {
                 .isInstanceOf(ConnectionBindingException.class)
                 .hasMessage("바인딩 된 커넥션이 존재하지 않습니다.");
     }
+
+    @Test
+    void 트랜잭션이_진행_중이면_true_반환한다() {
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+
+        assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+    }
+
+    @Test
+    void 트랜잭션이_진행_중이지_않으면_false_반환한다() {
+        TransactionSynchronizationManager.setActualTransactionActive(false);
+
+        assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+    }
 }
