@@ -4,7 +4,6 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -40,7 +39,6 @@ public class TxUserService implements UserService {
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
