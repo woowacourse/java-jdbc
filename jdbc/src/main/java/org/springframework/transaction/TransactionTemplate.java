@@ -1,43 +1,41 @@
 package org.springframework.transaction;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.function.Consumer;
 
 public class TransactionTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
-
-    private final DataSource dataSource;
+    private TransactionManager transactionManager;
 
     public TransactionTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
-    public void doTransaction(final Consumer<Connection> consumer) {
-        try (final Connection conn = dataSource.getConnection();) {
-            doInternalTransaction(consumer, conn);
-        } catch (SQLException | DataAccessException e) {
-            throw new DataAccessException(e);
-        }
+    public <T> T doTransaction(final TransactionCallback<T> transactionCallback) {
+        return doInternalTransaction(transactionCallback::execute);
     }
 
-    private void doInternalTransaction(final Consumer<Connection> consumer, final Connection conn) throws SQLException {
+    private <T> T doInternalTransaction(final TransactionCallback<T> transactionCallback) {
         try {
-            conn.setAutoCommit(false);
+            transactionManager.begin();
+            final T result = transactionCallback.execute();
+            transactionManager.commit();
 
-            consumer.accept(conn);
-
-            conn.commit();
-        } catch (SQLException | DataAccessException e) {
-            conn.rollback();
-            log.warn("트랜잭션 내에서 오류가 발생하여 롤백합니다.", e);
+            return result;
+        } catch (DataAccessException e) {
+            transactionManager.rollback();
             throw new DataAccessException(e);
+        } finally {
+            transactionManager.finalizeConnection();
         }
+    }
+
+    public void doTransaction(final TransactionCallbackReturnVoid transactionCallbackReturnVoid) {
+        doInternalTransaction(() -> {
+            transactionCallbackReturnVoid.execute();
+            return null;
+        });
     }
 }
