@@ -34,6 +34,12 @@ public abstract class TransactionSynchronizationManager {
         if (resource == null) {
             return null;
         }
-        return resource.remove(key);
+        final Connection conn = resource.remove(key);
+
+        if (resource.isEmpty()) {
+            resources.remove();
+        }
+
+        return conn;
     }
 }
