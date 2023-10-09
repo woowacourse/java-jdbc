@@ -13,7 +13,7 @@ public class UserService {
     private final TransactionManager transactionManager;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao,
-                       TransactionManager transactionManager) {
+                       final TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.transactionManager = transactionManager;

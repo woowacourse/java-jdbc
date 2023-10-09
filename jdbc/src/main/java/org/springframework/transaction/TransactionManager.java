@@ -31,7 +31,8 @@ public class TransactionManager {
         }
     }
 
-    private <T> T executeAction(final ConnectionAction<T> action, final Connection connection) throws SQLException {
+    private <T> T executeAction(final ConnectionAction<T> action,
+                                final Connection connection) throws SQLException {
         try {
             return commit(action, connection);
         } catch (SQLException e) {
@@ -40,7 +41,8 @@ public class TransactionManager {
         }
     }
 
-    private <T> T commit(final ConnectionAction<T> action, final Connection connection) throws SQLException {
+    private <T> T commit(final ConnectionAction<T> action,
+                         final Connection connection) throws SQLException {
         connection.setAutoCommit(false);
         final T result = action.execute();
         connection.commit();
