@@ -2,5 +2,5 @@ package org.springframework.transaction;
 
 public interface TransactionalOperation {
 
-    void execute() throws Exception;
+    void execute();
 }
