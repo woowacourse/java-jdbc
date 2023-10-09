@@ -14,11 +14,7 @@ public class TransactionTemplate {
     }
 
     public <T> T doTransaction(final TransactionCallback<T> transactionCallback) {
-        try {
-            return doInternalTransaction(() -> transactionCallback.execute());
-        } catch (DataAccessException e) {
-            throw new DataAccessException(e);
-        }
+        return doInternalTransaction(transactionCallback::execute);
     }
 
     private <T> T doInternalTransaction(final TransactionCallback<T> transactionCallback) {
