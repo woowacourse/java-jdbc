@@ -58,7 +58,6 @@ public class TransactionExecutor {
         try {
             transaction.rollback();
         } catch (SQLException e) {
-            safeRollback(transaction);
             log.error("트랜잭션 롤백 중 오류 발생", e);
             throw new DataAccessException(e);
         }
