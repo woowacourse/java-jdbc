@@ -28,7 +28,7 @@ class DataSourceUtilsTest {
     }
 
     @Test
-    void closeConnectionAndUnbindResourceWhenReleaseConnection() throws SQLException {
+    void closeConnectionAndUnbindResourceWhenAutoCommitTrue() throws SQLException {
         // given
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = DataSourceUtils.getConnection(dataSource);
@@ -40,4 +40,20 @@ class DataSourceUtilsTest {
         assertThat(connection.isClosed()).isTrue();
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
+
+    @Test
+    void dontCloseConnectionAndUnbindResourceWhenAutoCommitFalse() throws SQLException {
+        // given
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
+
+        // when
+        DataSourceUtils.releaseConnection(connection, dataSource);
+
+        // then
+        assertThat(connection.isClosed()).isFalse();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNotNull();
+    }
+
 }

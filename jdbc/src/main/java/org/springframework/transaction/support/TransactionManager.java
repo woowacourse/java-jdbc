@@ -27,9 +27,9 @@ public class TransactionManager {
         try {
             conn.setAutoCommit(false);
             T result = supplier.get();
-            conn.commit();
+            commit(conn);
             return result;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
@@ -37,9 +37,18 @@ public class TransactionManager {
         }
     }
 
+    private void commit(Connection connection){
+        try{
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void rollback(Connection conn) {
         try {
             conn.rollback();
+            conn.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
