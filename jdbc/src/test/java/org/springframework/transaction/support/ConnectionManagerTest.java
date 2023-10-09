@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -72,6 +73,8 @@ class ConnectionManagerTest {
         connectionManager.close();
 
         verify(conn, times(1)).close();
+        //tearDown에서 NPE를 피하기 위해 생성
+        connectionManager.getConnection(datasource);
     }
 
     @Test
@@ -92,5 +95,10 @@ class ConnectionManagerTest {
         connectionManager.rollback();
 
         verify(conn, times(1)).rollback();
+    }
+
+    @AfterEach
+    void tearDown() {
+        connectionManager.close();
     }
 }
