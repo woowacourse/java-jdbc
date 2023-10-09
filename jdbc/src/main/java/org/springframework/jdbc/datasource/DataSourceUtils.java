@@ -30,7 +30,6 @@ public abstract class DataSourceUtils {
             return;
         }
         try {
-            System.out.println("release connection: " + connection);
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
