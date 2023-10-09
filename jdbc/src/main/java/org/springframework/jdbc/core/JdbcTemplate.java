@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -50,11 +51,11 @@ public class JdbcTemplate {
     }
 
     private <T> T executeInternal(final String sql, final QueryExecutor<T> executor, final Object... args) {
-        final Connection connection = ConnectionManager.getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             return executeInternalWithConnection(connection, sql, executor, args);
         } finally {
-            ConnectionManager.closeConnection(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
