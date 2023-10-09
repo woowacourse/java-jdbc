@@ -15,7 +15,8 @@ public class TransactionExecutor {
     }
 
     public void execute(final TransactionWorker worker) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = getTransactionalConnection();
+
         try {
             connection.setAutoCommit(false);
 
@@ -28,6 +29,15 @@ public class TransactionExecutor {
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    private Connection getTransactionalConnection() {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        connectionHolder.setTransactionActive(true);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
+
+        return connection;
     }
 
     private void rollback(final Connection connection) {

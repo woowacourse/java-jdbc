@@ -1,38 +1,37 @@
 package org.springframework.transaction.support;
 
 import java.util.HashMap;
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, ConnectionHolder>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {}
 
-    public static Connection getResource(DataSource key) {
-        final Map<DataSource, Connection> connections = resources.get();
-        if (connections == null) {
+    public static ConnectionHolder getResource(DataSource key) {
+        final Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
+        if (connectionHolders == null) {
             return null;
         }
-        return connections.get(key);
+        return connectionHolders.get(key);
     }
 
-    public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> connections = resources.get();
-        if (connections == null) {
-            connections = new HashMap<>();
-            resources.set(connections);
+    public static void bindResource(DataSource key, ConnectionHolder value) {
+        Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
+        if (connectionHolders == null) {
+            connectionHolders = new HashMap<>();
+            resources.set(connectionHolders);
         }
-        connections.put(key, value);
+        connectionHolders.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) {
-        final Map<DataSource, Connection> connections = resources.get();
-        if (connections == null) {
+    public static ConnectionHolder unbindResource(DataSource key) {
+        final Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
+        if (connectionHolders == null) {
             return null;
         }
-        return connections.remove(key);
+        return connectionHolders.remove(key);
     }
 }
