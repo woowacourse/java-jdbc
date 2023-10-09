@@ -70,9 +70,8 @@ public class TransactionManager {
         action(() -> {
             if (connections.get().containsKey(dataSource)) {
                 connections.get().get(dataSource).commit();
+                clear(dataSource);
             }
-
-            clear(dataSource);
         }, e -> new CannotCommitException(e.getMessage()));
     }
 
