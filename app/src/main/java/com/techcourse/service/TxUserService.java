@@ -21,7 +21,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        appUserService.insert(user);
+        transactionExecutor.execute(() -> appUserService.insert(user));
     }
 
     @Override
