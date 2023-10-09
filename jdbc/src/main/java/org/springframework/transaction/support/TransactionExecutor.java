@@ -18,7 +18,6 @@ public class TransactionExecutor {
 
     public TransactionExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.connection = DataSourceUtils.getConnection(dataSource);
     }
 
     public void execute(Runnable action) {
