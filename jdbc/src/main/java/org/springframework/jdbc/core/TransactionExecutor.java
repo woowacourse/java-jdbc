@@ -1,9 +1,9 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.util.function.Supplier;
 
 public class TransactionExecutor {
 
@@ -13,30 +13,30 @@ public class TransactionExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(Supplier<T> operation) {
+    public <T> T execute(TransactionalOperationWithReturn<T> operation) {
         Transaction transaction = getTransaction();
         try {
             transaction.begin();
-            T result = operation.get();
+            T result = operation.execute();
             transaction.commit();
             return result;
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             transaction.rollback();
-            throw exception;
+            throw new DataAccessException(exception);
         } finally {
             DataSourceUtils.releaseConnectionOf(dataSource);
         }
     }
 
-    public void execute(Runnable operation) {
+    public void execute(TransactionalOperation operation) {
         Transaction transaction = getTransaction();
         try {
             transaction.begin();
-            operation.run();
+            operation.execute();
             transaction.commit();
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             transaction.rollback();
-            throw exception;
+            throw new DataAccessException(exception);
         } finally {
             DataSourceUtils.releaseConnectionOf(dataSource);
         }
