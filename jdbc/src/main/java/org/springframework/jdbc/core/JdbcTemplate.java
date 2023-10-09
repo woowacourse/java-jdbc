@@ -3,9 +3,9 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -23,9 +23,6 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... objects) {
         execute(sql, PreparedStatement::executeUpdate, objects);
-    }
-    public void update(final Connection connection, final String sql, final Object... objects) {
-        execute(connection, sql, PreparedStatement::executeUpdate, objects);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
@@ -60,18 +57,7 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback,
                           final Object... objects) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = prepareStatement(connection.prepareStatement(sql), objects)) {
-            log.debug("query : {}", sql);
-            return preparedStatementCallback.callback(preparedStatement);
-        } catch (SQLException e) {
-            log.error("쿼리 실행 과정에서 오류가 발생했습니다. - query : {}, parameters : {}", sql, objects);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> preparedStatementCallback,
-                          final Object... objects) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = prepareStatement(connection.prepareStatement(sql), objects)) {
             log.debug("query : {}", sql);
             return preparedStatementCallback.callback(preparedStatement);
