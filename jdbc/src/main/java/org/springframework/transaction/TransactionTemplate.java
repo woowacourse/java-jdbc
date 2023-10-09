@@ -1,49 +1,43 @@
 package org.springframework.transaction;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionManager;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 public class TransactionTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
-
-    private final DataSource dataSource;
+    private TransactionManager transactionManager;
 
     public TransactionTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
-    public void doTransaction(final TransactionCallback transactionCallback) {
+    public <T> T doTransaction(final TransactionCallback<T> transactionCallback) {
         try {
-            doInternalTransaction(transactionCallback);
-        } catch (SQLException | DataAccessException e) {
+            return doInternalTransaction(() -> transactionCallback.execute());
+        } catch (DataAccessException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void doInternalTransaction(final TransactionCallback transactionCallback) throws SQLException {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-
+    private <T> T doInternalTransaction(final TransactionCallback<T> transactionCallback) {
         try {
-            conn.setAutoCommit(false);
+            transactionManager.begin();
+            final T result = transactionCallback.execute();
+            transactionManager.commit();
 
-            transactionCallback.execute();
-
-            conn.commit();
-        } catch (SQLException | DataAccessException e) {
-            conn.rollback();
-            log.warn("트랜잭션 내에서 오류가 발생하여 롤백합니다.", e);
+            return result;
+        } catch (DataAccessException e) {
+            transactionManager.rollback();
             throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
+    }
+
+    public void doTransaction(final TransactionCallbackReturnVoid transactionCallbackReturnVoid) {
+        doInternalTransaction(() -> {
+            transactionCallbackReturnVoid.execute();
+            return null;
+        });
     }
 }
