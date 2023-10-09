@@ -49,6 +49,18 @@ public class JdbcTemplate {
             return results;
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            releaseIfAutoCommit(conn);
+        }
+    }
+
+    private void releaseIfAutoCommit(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
@@ -78,6 +90,8 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            releaseIfAutoCommit(connection);
         }
     }
 }
