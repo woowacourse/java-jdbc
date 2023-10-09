@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.SizeException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,7 +48,7 @@ class JdbcTemplateTest {
             //expect
             assertThatThrownBy(
                     () -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Integer(1), params))
-                    .isInstanceOf(SizeException.class);
+                    .isInstanceOf(DataAccessException.class);
         }
 
         @Test
@@ -64,7 +63,7 @@ class JdbcTemplateTest {
             //then
             assertThatThrownBy(
                     () -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Integer(1), params))
-                    .isInstanceOf(SizeException.class);
+                    .isInstanceOf(DataAccessException.class);
         }
 
         @Test

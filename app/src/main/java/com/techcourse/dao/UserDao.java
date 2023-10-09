@@ -31,11 +31,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set password = ?, email = ?, account = ? where id = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount(), user.getId());
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
