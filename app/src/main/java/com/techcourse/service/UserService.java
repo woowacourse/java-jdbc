@@ -1,37 +1,12 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
-import org.springframework.transaction.TransactionalExecutor;
 
-public class UserService {
+public interface UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
-    private final TransactionalExecutor transactionalExecutor;
+    User findById(final long id);
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionalExecutor transactionalExecutor) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-        this.transactionalExecutor = transactionalExecutor;
-    }
+    void insert(final User user);
 
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
-
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        transactionalExecutor.execute((con) -> {
-            userDao.update(user, con);
-            userHistoryDao.log(new UserHistory(user, createBy), con);
-        });
-    }
+    void changePassword(final long id, final String newPassword, final String createBy);
 }
