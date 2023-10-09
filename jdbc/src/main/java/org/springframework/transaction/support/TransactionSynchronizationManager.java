@@ -27,10 +27,10 @@ public abstract class TransactionSynchronizationManager {
 
         if (dataSourceConnection == null) {
             dataSourceConnection = new HashMap<>();
+            resources.set(dataSourceConnection);
         }
 
         dataSourceConnection.put(key, value);
-        resources.set(dataSourceConnection);
     }
 
     public static Connection unbindResource(final DataSource key) {
