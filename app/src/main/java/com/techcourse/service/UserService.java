@@ -24,7 +24,7 @@ public class UserService {
 
     public void insert(final User user) {
         transactionExecutor.execute(transaction ->
-                userDao.insert(transaction, user)
+                userDao.insert(user)
         );
     }
 
@@ -33,8 +33,8 @@ public class UserService {
             final var user = findById(id);
             user.changePassword(newPassword);
 
-            userHistoryDao.log(transaction, new UserHistory(user, createBy));
-            userDao.update(transaction, user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            userDao.update(user);
         });
     }
 }

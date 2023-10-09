@@ -1,9 +1,8 @@
 package org.springframework.jdbc.core;
 
-import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.SQLException;
 
 public class TransactionExecutor {
 
@@ -19,17 +18,15 @@ public class TransactionExecutor {
             transaction.begin();
             operation.run(transaction);
             transaction.commit();
-        } catch (RuntimeException exception){
+        } catch (RuntimeException exception) {
             transaction.rollback();
             throw exception;
+        } finally {
+            DataSourceUtils.releaseConnectionOf(dataSource);
         }
     }
 
     private Transaction getTransaction() {
-        try {
-            return new Transaction(dataSource.getConnection());
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return new Transaction(DataSourceUtils.getConnection(dataSource));
     }
 }
