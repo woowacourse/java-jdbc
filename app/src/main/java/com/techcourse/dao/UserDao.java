@@ -19,7 +19,7 @@ public class UserDao {
     );
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -50,6 +50,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.executeQueryForObject(sql, userRowMapper, account)
-                .orElseThrow(() -> new UserNotFoundException("지정한 account에 대한 User를 찾을 수 없습니다. input account = " + account));
+                .orElseThrow(
+                        () -> new UserNotFoundException("지정한 account에 대한 User를 찾을 수 없습니다. input account = " + account));
     }
 }
