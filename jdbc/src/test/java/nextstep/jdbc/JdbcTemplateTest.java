@@ -86,6 +86,8 @@ class JdbcTemplateTest {
         final ResultSet mockResultSet = mock(ResultSet.class);
         when(preparedStatement.executeQuery())
             .thenReturn(mockResultSet);
+        when(mockResultSet.next())
+            .thenReturn(true);
         when(mockResultSet.getString("account")).thenReturn("vero");
         when(mockResultSet.getString("password")).thenReturn("password");
         when(mockResultSet.getString("email")).thenReturn("email");
