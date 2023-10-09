@@ -1,4 +1,4 @@
-package org.springframework.jdbc.core;
+package org.springframework.transaction;
 
 public interface TransactionalOperationWithReturn<T> {
 

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.DataSourceConfig;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.TransactionExecutor;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

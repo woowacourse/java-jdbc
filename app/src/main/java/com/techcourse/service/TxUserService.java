@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import org.springframework.jdbc.core.TransactionExecutor;
+import org.springframework.transaction.TransactionExecutor;
 
 public class TxUserService implements UserService {
 
