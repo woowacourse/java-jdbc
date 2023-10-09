@@ -29,8 +29,8 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
             TransactionSynchronizationManager.unbindResource(dataSource);
+            connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
