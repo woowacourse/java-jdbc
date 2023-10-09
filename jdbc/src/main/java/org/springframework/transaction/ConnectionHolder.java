@@ -1,8 +1,9 @@
 package org.springframework.transaction;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
-import javax.annotation.Nullable;
+import org.springframework.dao.DataAccessException;
 
 public class ConnectionHolder {
     public static final ThreadLocal<Connection> HOLDER = new ThreadLocal<>();
@@ -10,12 +11,24 @@ public class ConnectionHolder {
     private ConnectionHolder() {
     }
 
-    @Nullable
     public static Connection getConnection() {
-        return HOLDER.get();
+        final Connection connection = HOLDER.get();
+        validateClose(connection);
+        return connection;
+    }
+
+    private static void validateClose(final Connection connection) {
+        try {
+            if (connection.isClosed()) {
+                throw new DataAccessException();
+            }
+        } catch(SQLException exception) {
+            throw new DataAccessException();
+        }
     }
 
     public static void setConnection(final Connection connection) {
+        validateClose(connection);
         HOLDER.set(connection);
     }
 
