@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import org.springframework.transaction.support.Transactional;
+import org.springframework.transaction.support.TransactionManager;
 
 public class TxUserService implements UserService {
 
@@ -13,16 +13,16 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return Transactional.serviceForObject(() -> userService.findById(id));
+        return TransactionManager.serviceForObject(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        Transactional.serviceForUpdate(() -> userService.insert(user));
+        TransactionManager.serviceForUpdate(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        Transactional.serviceForUpdate(() -> userService.changePassword(id, newPassword, createBy));
+        TransactionManager.serviceForUpdate(() -> userService.changePassword(id, newPassword, createBy));
     }
 }

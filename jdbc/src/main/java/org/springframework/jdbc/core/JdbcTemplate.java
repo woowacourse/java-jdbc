@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionManager;
 import org.springframework.transaction.support.Transactional;
 
 public class JdbcTemplate {
@@ -71,7 +72,7 @@ public class JdbcTemplate {
             final CallBack<T> callBack,
             final Object... parameters
     ) {
-        final Transactional transactional = Transactional.getInstance();
+        final Transactional transactional = TransactionManager.getTransactional();
         final Connection connection = transactional.getConnection(dataSource);
 
         try (

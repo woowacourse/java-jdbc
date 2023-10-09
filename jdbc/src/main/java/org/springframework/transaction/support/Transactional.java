@@ -9,18 +9,10 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class Transactional {
 
-    private static Transactional instance;
     private final ThreadLocal<Connection> resource;
     private final ThreadLocal<DataSource> dataSource;
 
-    public static synchronized Transactional getInstance() {
-        if (instance == null) {
-            instance = new Transactional();
-        }
-        return instance;
-    }
-
-    private Transactional() {
+    protected Transactional() {
         this.resource = new ThreadLocal<>();
         this.dataSource = new ThreadLocal<>();
     }
@@ -40,7 +32,7 @@ public class Transactional {
         }
     }
 
-    private void rollback() {
+    protected void rollback() {
         try {
             resource.get().rollback();
         } catch (SQLException e) {
@@ -48,11 +40,11 @@ public class Transactional {
         }
     }
 
-    private void commit() throws SQLException {
+    protected void commit() throws SQLException {
         resource.get().commit();
     }
 
-    private void close() {
+    protected void close() {
         try {
             resource.get().close();
         } catch (SQLException e) {
@@ -61,35 +53,6 @@ public class Transactional {
             DataSourceUtils.releaseConnection(resource.get(), dataSource.get());
             resource.remove();
             dataSource.remove();
-        }
-    }
-
-    public static <T> T serviceForObject(ServiceForObject<T> function) {
-        final Transactional transactional = getInstance();
-        try {
-            final T result = function.service();
-            transactional.commit();
-            return result;
-        } catch (SQLException e) {
-            transactional.rollback();
-            transactional.close();
-            throw new JdbcException(e);
-        } finally {
-            transactional.close();
-        }
-    }
-
-    public static void serviceForUpdate(ServiceForUpdate serviceForUpdate) {
-        final Transactional transactional = getInstance();
-        try {
-            serviceForUpdate.service();
-            transactional.commit();
-        } catch (SQLException e) {
-            transactional.rollback();
-            transactional.close();
-            throw new JdbcException(e);
-        } finally {
-            transactional.close();
         }
     }
 }

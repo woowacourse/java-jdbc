@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.Transactional;
+import org.springframework.transaction.support.TransactionManager;
 
 class UserServiceTest {
 
@@ -26,7 +26,7 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        Transactional.serviceForUpdate(() -> userDao.insert(user));
+        TransactionManager.serviceForUpdate(() -> userDao.insert(user));
     }
 
     @Test
