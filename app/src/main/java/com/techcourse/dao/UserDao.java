@@ -1,11 +1,11 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
+import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.TransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserDao {
 
@@ -17,43 +17,29 @@ public class UserDao {
                     resultSet.getString(4)
             );
 
-    private final TransactionManager transactionManager;
+    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final TransactionManager transactionManager, final JdbcTemplate jdbcTemplate) {
-        this.transactionManager = transactionManager;
+    public UserDao(final DataSource dataSource, final JdbcTemplate jdbcTemplate) {
+        this.dataSource = dataSource;
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        transactionManager.save(
-                (connection, entity) -> jdbcTemplate.executeUpdate(
-                        connection,
-                        sql,
-                        user.getAccount(),
-                        user.getPassword(),
-                        user.getEmail()
-                ), user);
+        jdbcTemplate.executeUpdate(
+                DataSourceUtils.getConnection(dataSource),
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        transactionManager.save(
-                (connection, entity) -> jdbcTemplate.executeUpdate(
-                        connection,
-                        sql,
-                        user.getAccount(),
-                        user.getPassword(),
-                        user.getEmail(),
-                        user.getId()
-                ), user);
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.executeUpdate(
-                connection,
+                DataSourceUtils.getConnection(dataSource),
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -64,20 +50,17 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return transactionManager.find((connection, parameters) ->
-                jdbcTemplate.executeQueryForList(connection, sql, USER_ROW_MAPPER));
+        return jdbcTemplate.executeQueryForList(DataSourceUtils.getConnection(dataSource), sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return transactionManager.find(
-                (connection, parameters) ->
-                        jdbcTemplate.executeQueryForObject(connection, sql, USER_ROW_MAPPER, parameters), id);
+        return jdbcTemplate.executeQueryForObject(DataSourceUtils.getConnection(dataSource), sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return transactionManager.find((connection, parameters) ->
-                jdbcTemplate.executeQueryForObject(connection, sql, USER_ROW_MAPPER, parameters), account);
+        return jdbcTemplate.executeQueryForObject(DataSourceUtils.getConnection(dataSource), sql, USER_ROW_MAPPER,
+                account);
     }
 }
