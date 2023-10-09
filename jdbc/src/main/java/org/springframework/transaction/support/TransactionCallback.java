@@ -1,7 +1,9 @@
 package org.springframework.transaction.support;
 
+import java.sql.SQLException;
+
 @FunctionalInterface
 public interface TransactionCallback<T> {
 
-    T doInTransaction();
+    T doInTransaction() throws SQLException;
 }
