@@ -5,7 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 

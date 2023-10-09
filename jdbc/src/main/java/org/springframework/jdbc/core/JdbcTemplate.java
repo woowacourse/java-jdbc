@@ -3,7 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -25,13 +25,24 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (final Connection connection = particpateOrCreateConnection();
-             final PreparedStatement preparedStatement = getPreparedStatement(sql, connection, parameters)) {
+        Connection connection;
+        PreparedStatement preparedStatement = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            preparedStatement = getPreparedStatement(sql, connection, parameters);
             log.debug("query : {}", sql);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            if (preparedStatement != null) {
+                try {
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    log.error("Error closing PreparedStatement", e);
+                }
+            }
         }
     }
 
@@ -72,21 +83,5 @@ public class JdbcTemplate {
             preparedStatement.setObject(index + 1, parameters[index]);
         }
         return preparedStatement;
-    }
-
-    private Connection particpateOrCreateConnection() {
-        final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection == null) {
-            return generateConnection();
-        }
-        return connection;
-    }
-
-    private Connection generateConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
