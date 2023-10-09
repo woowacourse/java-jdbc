@@ -14,7 +14,7 @@ public class TransactionExecutor {
     private static final Logger log = LoggerFactory.getLogger(TransactionExecutor.class);
 
     private final DataSource dataSource;
-    private final Connection connection;
+    private Connection connection;
 
     public TransactionExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -53,6 +53,7 @@ public class TransactionExecutor {
     }
 
     private void transactionStart() throws SQLException {
+        this.connection = DataSourceUtils.getConnection(dataSource);
         connection.setAutoCommit(false);
         log.info("transaction start");
     }

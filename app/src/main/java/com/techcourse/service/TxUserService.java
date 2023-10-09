@@ -16,12 +16,12 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        return executor.execute(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        executor.execute(() -> userService.insert(user));
     }
 
     @Override
