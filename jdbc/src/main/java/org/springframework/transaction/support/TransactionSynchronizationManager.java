@@ -16,11 +16,11 @@ public abstract class TransactionSynchronizationManager {
         return getThreadLocalResource().get(key);
     }
 
-    public static void bindResource(final DataSource key, final Connection value) {
+    static void bindResource(final DataSource key, final Connection value) {
         getThreadLocalResource().put(key, value);
     }
 
-    public static Connection unbindResource(final DataSource key) {
+    static Connection unbindResource(final DataSource key) {
         return getThreadLocalResource().remove(key);
     }
 

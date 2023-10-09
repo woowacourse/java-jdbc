@@ -15,17 +15,15 @@ public class TransactionManager {
     }
 
     public void doInTransaction(final Runnable runnable) throws DataAccessException {
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        try {
+        try (final var connection = DataSourceUtils.getConnection(dataSource)) {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
         } catch (final SQLException e) {
-            doRollback(e, connection);
+            doRollback(e, TransactionSynchronizationManager.getResource(dataSource));
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
