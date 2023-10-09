@@ -14,7 +14,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private TransactionTemplate transactionTemplate;
@@ -34,7 +34,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
+        var userService = new AppUserService(userDao, userHistoryDao);
 
         var newPassword = "qqqqq";
         var createBy = "gugu";
@@ -49,7 +49,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
+        var appUserService = new AppUserService(userDao, userHistoryDao);
+        var userService = new TxUserService(appUserService, transactionTemplate);
 
         var newPassword = "newPassword";
         var createBy = "gugu";
