@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.sql.Connection;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class UserHistoryDao {
@@ -19,8 +19,9 @@ public class UserHistoryDao {
         String password = rs.getString("password");
         String email = rs.getString("email");
         String createdBy = rs.getString("created_by");
+        LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
 
-        return new UserHistory(id, userId, account, password, email, createdBy);
+        return new UserHistory(id, userId, account, password, email, createdAt, createdBy);
     };
 
     private final JdbcTemplate jdbcTemplate;
@@ -35,6 +36,6 @@ public class UserHistoryDao {
     }
 
     public List<UserHistory> findAll() {
-        return jdbcTemplate.query("select id, user_id, account, password, email, created_by from user_history", rowMapper);
+        return jdbcTemplate.query("select id, user_id, account, password, email, created_at, created_by from user_history", rowMapper);
     }
 }
