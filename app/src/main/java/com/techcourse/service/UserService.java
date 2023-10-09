@@ -6,9 +6,11 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.ConnectionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
@@ -29,9 +31,8 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final ConnectionManager connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
-
-        final Connection connection = connectionManager.getConnection();
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
 
@@ -43,10 +44,18 @@ public class UserService {
 
             connection.commit();
         } catch (final Exception e) {
-            connectionManager.rollback(connection);
+            rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            connectionManager.close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    public void rollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
