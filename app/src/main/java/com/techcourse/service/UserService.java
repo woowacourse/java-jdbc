@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -45,7 +46,8 @@ public class UserService {
     }
 
     public <T> T startTransaction(final TransactionExecutor<T> transactionExecutor) {
-        try (final Connection connection = dataSource.getConnection()) {
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             return commitTransaction(transactionExecutor, connection);
@@ -59,6 +61,7 @@ public class UserService {
             final T result = transactionExecutor.execute(connection);
 
             connection.commit();
+            DataSourceUtils.releaseConnection(connection, dataSource);
 
             return result;
         } catch (Exception ex) {
