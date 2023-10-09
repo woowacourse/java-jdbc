@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.Transaction;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -22,7 +23,7 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -35,10 +36,22 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void insert(final Transaction transaction, final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        jdbcTemplate.update(transaction, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void update(final Transaction transaction, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ?";
+
+        jdbcTemplate.update(transaction, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {

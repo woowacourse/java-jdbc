@@ -1,24 +1,24 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.UserHistory;
+import com.techcourse.dao.UserDao;
+import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.Transaction;
 
-public class MockUserHistoryDao extends UserHistoryDao {
+public class MockUserDao extends UserDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public MockUserDao(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void log(final UserHistory userHistory) {
+    public void update(User user) {
         throw new DataAccessException();
     }
 
     @Override
-    public void log(Transaction transaction, UserHistory userHistory) {
+    public void update(Transaction transaction, User user) {
         throw new DataAccessException();
     }
 }
