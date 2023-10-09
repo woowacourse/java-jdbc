@@ -61,8 +61,6 @@ public class TxUserService implements UserService {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         connection.setAutoCommit(false);
         try {
-            User user = findById(id);
-            user.changePassword(newPassword);
             userService.changePassword(id, newPassword, createBy);
             connection.commit();
         } catch (SQLException e) {
