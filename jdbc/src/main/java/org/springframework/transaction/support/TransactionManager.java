@@ -48,7 +48,7 @@ public class TransactionManager {
         executeTransaction(connection -> DataSourceUtils.releaseConnection(connection, dataSource));
     }
 
-    public void executeTransaction(final TransactionExecutor te) {
+    private void executeTransaction(final TransactionExecutor te) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             te.execute(connection);

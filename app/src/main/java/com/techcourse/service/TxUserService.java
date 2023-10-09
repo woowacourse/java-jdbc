@@ -16,17 +16,20 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        return transactionManager.execute(() -> userService.findById(id));
     }
 
     @Override
     public User findByAccount(String account) {
-        return userService.findByAccount(account);
+        return transactionManager.execute(() -> userService.findByAccount(account));
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        transactionManager.execute(() -> {
+            userService.insert(user);
+            return null;
+        });
     }
 
     @Override
