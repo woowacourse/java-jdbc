@@ -9,6 +9,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.TransactionExecutor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +33,7 @@ class UserServiceTest {
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final TxUserService txUserService = new TxUserService(appUserService);
+        final TxUserService txUserService = new TxUserService(appUserService, new TransactionExecutor(DataSourceConfig.getInstance()));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -50,7 +51,7 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final TxUserService txUserService = new TxUserService(appUserService);
+        final TxUserService txUserService = new TxUserService(appUserService, new TransactionExecutor(DataSourceConfig.getInstance()));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
