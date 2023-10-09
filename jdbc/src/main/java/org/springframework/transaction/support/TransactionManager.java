@@ -14,7 +14,7 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(final TransactionCallback executor) {
+    public void execute(final ServiceCallback executor) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
@@ -29,7 +29,7 @@ public class TransactionManager {
         }
     }
 
-    public <T> T execute(final TransactionExecutor<T> executor) {
+    public <T> T execute(final ServiceExecutor<T> executor) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);

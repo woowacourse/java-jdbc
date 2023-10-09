@@ -1,6 +1,6 @@
 package org.springframework.transaction.support;
 
 @FunctionalInterface
-public interface TransactionCallback {
-    void doGetTransaction();
+public interface ServiceExecutor<T> {
+    T doGetTransaction();
 }
