@@ -15,10 +15,11 @@ public class TransactionTemplate {
     }
 
     private <T> T execute(final Supplier<T> target) {
-        Connection connection = null;
+        if (TransactionSynchronizationManager.transactionEnable(dataSource)) {
+            return target.get();
+        }
+        final Connection connection = beginTransaction(dataSource);
         try {
-            connection = beginTransaction(dataSource);
-
             final T result = target.get();
 
             commit(connection);

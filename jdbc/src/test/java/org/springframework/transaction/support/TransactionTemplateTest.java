@@ -42,7 +42,7 @@ class TransactionTemplateTest {
     @DisplayName("반환값이 없는 메서드를 트랜잭션 단위로 동작시킨다.")
     void execute() throws SQLException {
         //when
-        assertThatThrownBy(() -> transactionTemplate.execute(this::throwExceptionSupplier));
+        assertThatThrownBy(() -> transactionTemplate.execute(this::throwExceptionRunnable));
 
         //then
         verify(connection, times(1)).rollback();
