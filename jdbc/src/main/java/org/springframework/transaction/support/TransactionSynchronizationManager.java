@@ -62,9 +62,11 @@ public abstract class TransactionSynchronizationManager {
 
     private static void commitTransaction(final DataSource dataSource, final Connection connection) {
         try {
-            connection.commit();
+            if (!isActive.get()) {
+                connection.commit();
 
-            clear(connection, dataSource);
+                clear(connection, dataSource);
+            }
         } catch (Exception ex) {
             rollback(dataSource);
 
@@ -74,10 +76,12 @@ public abstract class TransactionSynchronizationManager {
 
     public static void rollback(final DataSource dataSource) {
         try {
-            final Connection connection = resources.get().get(dataSource);
-            connection.rollback();
+            if (!isActive.get()) {
+                final Connection connection = resources.get().get(dataSource);
+                connection.rollback();
 
-            clear(connection, dataSource);
+                clear(connection, dataSource);
+            }
         } catch (SQLException ex) {
             throw new DataAccessException("트랜잭션 롤백 중 예외가 발생했습니다.");
         }
