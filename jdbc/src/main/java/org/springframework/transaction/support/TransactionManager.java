@@ -1,0 +1,49 @@
+package org.springframework.transaction.support;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.function.Supplier;
+import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+
+public class TransactionManager {
+
+    private final DataSource dataSource;
+
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void execute(Runnable runnable) {
+        withTransaction(() -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    private <T> T withTransaction(Supplier<T> supplier) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+            T result = supplier.get();
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            rollback(connection);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(Connection conn) {
+        try {
+            conn.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T executeWithValue(Supplier<T> supplier) {
+        return withTransaction(supplier);
+    }
+}
