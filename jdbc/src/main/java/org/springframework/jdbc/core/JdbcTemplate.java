@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultSetException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.InvalidArgsException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -35,8 +36,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
                 ResultSet.CONCUR_READ_ONLY);
         ) {
             log.debug(QUERY_LOG, sql);
