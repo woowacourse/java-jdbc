@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -65,8 +66,9 @@ public class JdbcTemplate {
             final PreparedStatementExecutor<T> executor,
             final Object... objects
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             setPreparedStatement(preparedStatement, objects);
             return executor.action(preparedStatement);

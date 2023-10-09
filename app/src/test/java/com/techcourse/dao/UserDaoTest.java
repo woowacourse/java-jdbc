@@ -4,25 +4,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import java.util.List;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 class UserDaoTest {
 
-    private UserDao userDao;
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(TestDataSourceConfig.getInstance());
+    private UserDao userDao = new UserDao(TestDataSourceConfig.getInstance());;
+    private JdbcTemplate jdbcTemplate = new JdbcTemplate(TestDataSourceConfig.getInstance());;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(TestDataSourceConfig.getInstance());
-        userDao = new UserDao(TestDataSourceConfig.getInstance());
         jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY;");
         jdbcTemplate.update("TRUNCATE TABLE user_history RESTART IDENTITY;");
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterAll
+    static void releaseConnection() throws SQLException {
+        DataSourceUtils.releaseConnection(TestDataSourceConfig.getInstance());
     }
 
     @Test
