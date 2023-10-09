@@ -7,16 +7,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
  * 트랜잭션의 경계에서 이미 진행 중인 트랜잭션이 있을 때 또는 없을 때 어떻게 동작할 것인가를 결정하는 방식을 말한다.
- *
+ * <p>
  * FirstUserService 클래스의 메서드를 실행할 때 첫 번째 트랜잭션이 생성된다.
  * SecondUserService 클래스의 메서드를 실행할 때 두 번째 트랜잭션이 어떻게 되는지 관찰해보자.
- *
+ * <p>
  * https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#tx-propagation
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -36,31 +38,34 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? 1개
      * 왜 그런 결과가 나왔을까?
+     * : 코드를 보면 Propagation 속성이 REQUIRED로 설정되어 있는 두 트랜잭션이 중첩되어 실행된 것을 확인할 수 있다.
+     * REQUIRED 설정으로 인해 중첩된 내부 트랜잭션은 새 트랜잭션을 생성하지 않고 외부 트랜잭션을 사용하기 때문에, 결과적으로 물리적 트랜잭션의 개수는 1개가 나온 것이다.
      */
     @Test
     void testRequired() {
-        final var actual = firstUserService.saveFirstTransactionWithRequired();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithRequired();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? 2개
      * 왜 그런 결과가 나왔을까?
+     * 내부 트랜잭션의 전파 옵션을 REQUIRES_NEW로 설정할 경우, 외부 트랜잭션이 존재할 때 내부 트랜잭션을 실행하면 새로운 물리적 트랜잭션을 만들기 때문.
      */
     @Test
     void testRequiredNew() {
-        final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithRequiredNew();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,12 +74,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -83,12 +88,12 @@ class Stage2Test {
      */
     @Test
     void testSupports() {
-        final var actual = firstUserService.saveFirstTransactionWithSupports();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -98,29 +103,30 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
-        final var actual = firstUserService.saveFirstTransactionWithMandatory();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 1개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
-     *
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 0개
+     * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
     @Test
     void testNotSupported() {
-        final var actual = firstUserService.saveFirstTransactionWithNotSupported();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
@@ -129,12 +135,12 @@ class Stage2Test {
      */
     @Test
     void testNested() {
-        final var actual = firstUserService.saveFirstTransactionWithNested();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithNested();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -142,11 +148,11 @@ class Stage2Test {
      */
     @Test
     void testNever() {
-        final var actual = firstUserService.saveFirstTransactionWithNever();
+        final Set<String> actual = firstUserService.saveFirstTransactionWithNever();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
