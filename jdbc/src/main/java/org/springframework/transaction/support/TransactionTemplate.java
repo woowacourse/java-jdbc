@@ -12,12 +12,12 @@ public class TransactionTemplate {
 
     public <T> T execute(TransactionCallBack<T> action) {
         try {
-            transactionManager.startTransaction();
+            transactionManager.doGetTransaction();
             T result = action.doInTransaction();
-            transactionManager.commit();
+            transactionManager.doCommit();
             return result;
         } catch (RuntimeException | Error e) {
-            transactionManager.rollback();
+            transactionManager.doRollback();
             throw e;
         }
     }
