@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -25,10 +26,6 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... objects) {
         executePreparedStatement(sql, PreparedStatement::executeUpdate, objects);
-    }
-
-    public void update(final Connection connection, final String sql, final Object... objects) {
-        executeSameConnectionPreparedStatement(connection, sql, PreparedStatement::executeUpdate, objects);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
@@ -54,8 +51,8 @@ public class JdbcTemplate {
 
     private <T> T executePreparedStatement(final String sql, PreparedStatementExecutor<T> preparedStatementExecutor,
                                            final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             for (int i = 0; i < objects.length; i++) {
@@ -69,19 +66,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T executeSameConnectionPreparedStatement(final Connection connection, final String sql,
-                                                         PreparedStatementExecutor<T> preparedStatementExecutor, final Object... objects) {
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-
-            return preparedStatementExecutor.execute(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public DataSource getDataSource() {
+        return this.dataSource;
     }
 }
