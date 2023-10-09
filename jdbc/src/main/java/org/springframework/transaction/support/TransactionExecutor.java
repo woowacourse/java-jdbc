@@ -24,17 +24,11 @@ public class TransactionExecutor {
     public void execute(Runnable action) {
         try {
             try {
-                connection.setAutoCommit(false);
-                log.info("transaction start");
-
+                transactionStart();
                 action.run();
-
-                connection.commit();
-                log.info("transaction commit");
+                transactionCommit();
             } catch (Exception e) {
-                connection.rollback();
-                log.info("transaction rollback");
-
+                transactionRollback();
                 throw e;
             }
         } catch (SQLException e) {
@@ -47,19 +41,12 @@ public class TransactionExecutor {
     public <T> T execute(Supplier<T> action) {
         try {
             try {
-                connection.setAutoCommit(false);
-                log.info("transaction start");
-
+                transactionStart();
                 final T returnValue = action.get();
-
-                connection.commit();
-                log.info("transaction commit");
-
+                transactionCommit();
                 return returnValue;
             } catch (Exception e) {
-                connection.rollback();
-                log.info("transaction rollback");
-
+                transactionRollback();
                 throw e;
             }
         } catch (SQLException e) {
@@ -67,5 +54,20 @@ public class TransactionExecutor {
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    private void transactionStart() throws SQLException {
+        connection.setAutoCommit(false);
+        log.info("transaction start");
+    }
+
+    private void transactionCommit() throws SQLException {
+        connection.commit();
+        log.info("transaction commit");
+    }
+
+    private void transactionRollback() throws SQLException {
+        connection.rollback();
+        log.info("transaction rollback");
     }
 }
