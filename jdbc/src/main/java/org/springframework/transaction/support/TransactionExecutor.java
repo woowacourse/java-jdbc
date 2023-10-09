@@ -7,6 +7,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionExecutor {
 
@@ -30,6 +31,31 @@ public class TransactionExecutor {
 
                 connection.commit();
                 log.info("transaction commit");
+            } catch (Exception e) {
+                connection.rollback();
+                log.info("transaction rollback");
+
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    public <T> T execute(Supplier<T> action) {
+        try {
+            try {
+                connection.setAutoCommit(false);
+                log.info("transaction start");
+
+                final T returnValue = action.get();
+
+                connection.commit();
+                log.info("transaction commit");
+
+                return returnValue;
             } catch (Exception e) {
                 connection.rollback();
                 log.info("transaction rollback");
