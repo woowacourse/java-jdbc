@@ -11,14 +11,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private User user;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+        this.user = userDao.findByAccount("gugu");
     }
 
     @Test
@@ -30,7 +33,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(this.user.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -48,8 +51,9 @@ class UserDaoTest {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
+        User insertedUser = userDao.findByAccount(account);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(insertedUser.getId());
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -57,12 +61,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(this.user.getId());
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
