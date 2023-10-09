@@ -34,7 +34,7 @@ public class TransactionManager {
         try {
             connection.rollback();
         } catch (SQLException ex) {
-            throw new TransactionRollbackException("롤백에 실패했습니다.", ex);
+            throw new TransactionSystemException("롤백에 실패했습니다.", ex);
         }
     }
 
