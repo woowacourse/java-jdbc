@@ -12,9 +12,7 @@ public class ConnectionHolder {
     }
 
     public static Connection getConnection() {
-        final Connection connection = HOLDER.get();
-        validateClose(connection);
-        return connection;
+        return HOLDER.get();
     }
 
     private static void validateClose(final Connection connection) {
