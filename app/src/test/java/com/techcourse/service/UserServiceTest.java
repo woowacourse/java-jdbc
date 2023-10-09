@@ -26,15 +26,14 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = dataSource.getConnection();
-        this.jdbcTemplate = new JdbcTemplate();
+    void setUp() {
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
@@ -64,7 +63,6 @@ class UserServiceTest {
                 () -> userService.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L);
-
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }

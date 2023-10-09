@@ -31,6 +31,6 @@ public class UserHistoryDao {
 
         log.debug("sql={}", sql);
 
-        jdbcTemplate.update(connection, sql, userId, account, password, email, createdAt, createBy);
+        jdbcTemplate.update(sql, userId, account, password, email, createdAt, createBy);
     }
 }

@@ -9,35 +9,35 @@ import org.springframework.transaction.Transaction;
 
 public class UserService {
 
+    private static final Transaction TRANSACTION = new Transaction(DataSourceConfig.getInstance());
+
     private final UserDao userDao;
 
     private final UserHistoryDao userHistoryDao;
-
-    private final Transaction transaction;
 
     public UserService(final UserDao userDao,
                        final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transaction = new Transaction(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
-        return transaction.run(connection -> userDao.findById(connection, id));
+        return TRANSACTION.run(connection -> userDao.findById(id));
     }
 
     public void insert(final User user) {
-        transaction.run(connection -> {
-            userDao.insert(connection, user);
+        TRANSACTION.run(connection -> {
+            userDao.insert(user);
             return null;
         });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transaction.run(connection -> {
-            final User user = findById(id);
+        TRANSACTION.run(connection -> {
+            final User user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
+            userDao.update(user);
+            System.out.println(" = ");
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             return null;
