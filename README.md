@@ -31,3 +31,20 @@ flowchart RL
     UserService --- UserDao
     UserService --- UserHistoryDao
 ```
+
+## 4단계
+
+- [x] UserService를 인터페이스로 만들고 AppUserService와 TxUserSerivce를 구현한다.
+- [x] TxUserService는 AppUserService와 TransactionTemplate을 필드로 갖는다.
+- [x] TransactionManager가 트랜잭션(시작, 커밋, 롤백)을 관리하게 한다.
+
+```mermaid
+flowchart LR
+    AppUserService --> |implements| UserService 
+    
+    TxUserService --> |implements| UserService 
+    TxUserService --- UserService 
+    TxUserService --- TransactionTemplate
+    
+    TransactionTemplate --- TransactionManager --- DataSource
+```
