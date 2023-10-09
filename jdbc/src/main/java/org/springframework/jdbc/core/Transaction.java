@@ -1,5 +1,7 @@
 package org.springframework.jdbc.core;
 
+import org.springframework.dao.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -11,15 +13,27 @@ public class Transaction {
         this.connection = connection;
     }
 
-    public void begin() throws SQLException {
-        connection.setAutoCommit(false);
+    public void begin() {
+        try {
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
-    public void commit() throws SQLException {
-        connection.commit();
+    public void commit() {
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
-    public void rollback() throws SQLException {
-        connection.rollback();
+    public void rollback() {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
