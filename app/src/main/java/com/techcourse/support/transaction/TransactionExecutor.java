@@ -23,7 +23,7 @@ public class TransactionExecutor {
             connection.setAutoCommit(false);
             serviceLogicExecutor.run();
             connection.commit();
-        } catch (SQLException e) {
+        } catch (SQLException | RuntimeException e) {
             rollback(connection);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
@@ -36,7 +36,7 @@ public class TransactionExecutor {
         try {
             connection.setReadOnly(true);
             result = serviceLogicExecutor.get();
-        } catch (SQLException e) {
+        } catch (SQLException | RuntimeException e) {
             rollback(connection);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
