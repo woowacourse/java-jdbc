@@ -75,5 +75,5 @@
       4. ConnectionManager가 Connection 자원 반환
 
 ### 2차
-- [ ] TransactionCallback 대신 Supplier 사용
+- [x] TransactionCallback 대신 Supplier 사용
 - [ ] isTransactional 문제 해결

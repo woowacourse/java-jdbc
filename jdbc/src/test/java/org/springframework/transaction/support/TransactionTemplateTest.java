@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -27,10 +28,10 @@ class TransactionTemplateTest {
     @Test
     void executeWithTransaction() throws SQLException {
         // given
-        TransactionCallback<String> transactionCallback = () -> "성공";
+        Supplier<String> supplier = () -> "성공";
 
         // when
-        transactionTemplate.executeWithTransaction(transactionCallback);
+        transactionTemplate.executeWithTransaction(supplier);
 
         // then
         verify(connection, times(1)).setAutoCommit(false);
@@ -42,12 +43,12 @@ class TransactionTemplateTest {
     void executeWithTransaction_RuntimeExceptionThrown_RollbackAndSameExceptionThrown() throws SQLException {
         // given
         RuntimeException exception = new DataAccessException("실패");
-        TransactionCallback<Object> transactionCallback = () -> {
+        Supplier<Object> supplier = () -> {
             throw exception;
         };
 
         // when, then
-        assertThatThrownBy(() -> transactionTemplate.executeWithTransaction(transactionCallback))
+        assertThatThrownBy(() -> transactionTemplate.executeWithTransaction(supplier))
                 .isInstanceOf(exception.getClass());
         verify(connection, times(1)).setAutoCommit(false);
         verify(connection, times(1)).rollback();

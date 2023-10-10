@@ -8,6 +8,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionTemplate {
 
@@ -20,12 +21,12 @@ public class TransactionTemplate {
     }
 
     @Nullable
-    public <T> T executeWithTransaction(final TransactionCallback<T> transactionCallback) {
+    public <T> T executeWithTransaction(final Supplier<T> supplier) {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            final T result = transactionCallback.execute();
+            final T result = supplier.get();
             connection.commit();
             return result;
         } catch (final RuntimeException e) {
