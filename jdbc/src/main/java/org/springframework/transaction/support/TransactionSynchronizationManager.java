@@ -15,7 +15,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getConnection(DataSource dataSource) {
         Map<DataSource, Connection> dataSourceAndConnection = resources.get();
-        if (dataSourceAndConnection == null) {
+        if (dataSourceAndConnection == null || dataSourceAndConnection.get(dataSource) == null) {
             throw new CannotGetJdbcConnectionException("DataSource에 binding된 Connection이 없습니다.");
         }
 
