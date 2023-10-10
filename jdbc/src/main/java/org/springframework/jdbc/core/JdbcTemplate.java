@@ -1,7 +1,6 @@
 package org.springframework.jdbc.core;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -14,11 +13,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.statementAgent = new StatementAgent(dataSource);
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        StatementCallback<Integer> callback = PreparedStatement::executeUpdate;
-        return statementAgent.service(connection, sql, callback, args);
     }
 
     public int update(final String sql, final Object... args) {
