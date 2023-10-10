@@ -31,7 +31,7 @@ public class TransactionExecutor {
             transactionRollback();
             throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseTransactionConnection(connection, dataSource);
         }
     }
 
@@ -47,7 +47,7 @@ public class TransactionExecutor {
             transactionRollback();
             throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseTransactionConnection(connection, dataSource);
         }
     }
 
