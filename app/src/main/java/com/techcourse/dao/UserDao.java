@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-
-import java.sql.Connection;
-import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+
+import javax.sql.DataSource;
+import java.util.List;
 
 public class UserDao {
 
@@ -32,11 +31,6 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
-    public void update(final Connection conn, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.execute(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
