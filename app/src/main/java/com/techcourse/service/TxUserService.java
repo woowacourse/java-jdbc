@@ -20,21 +20,54 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        TransactionCallback<User> action = () -> userService.findById(id);
+        return doTransactionWithReturn(action);
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        TransactionCallback<Void> action = () -> {
+            userService.insert(user);
+            return null;
+        };
+        doTransactionWithoutReturn(action);
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        TransactionCallback<Void> action = () -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        };
+        doTransactionWithoutReturn(action);
+    }
+
+    private <T> T doTransactionWithReturn(TransactionCallback<T> action) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        T result;
         try {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
             try {
                 conn.setAutoCommit(false);
-                userService.changePassword(id, newPassword, createBy);
+                result = action.doInTransaction();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw SQLExceptionTranslator.translate("", e);
+        } finally {
+            DataSourceUtils.releaseConnection(dataSource);
+        }
+        return result;
+    }
+
+    private <T> void doTransactionWithoutReturn(TransactionCallback<T> action) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            try {
+                conn.setAutoCommit(false);
+                action.doInTransaction();
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
