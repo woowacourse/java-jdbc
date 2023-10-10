@@ -4,7 +4,6 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -34,10 +33,10 @@ public class TxUserService implements UserService {
         execute(() -> appUserService.changePassword(id, newPassword, createBy));
     }
 
-    private void execute(Runnable runnable) {
+    private void execute(ExecutableWithoutReturn executable) {
         try (TransactionExecutor executor = TransactionExecutor.initTransaction(datasource)) {
             try {
-                runnable.run();
+                executable.execute();
                 executor.commit();
             } catch (Exception e) {
                 executor.rollback();
@@ -46,10 +45,10 @@ public class TxUserService implements UserService {
         }
     }
 
-    private <T> T execute(Supplier<T> supplier) {
+    private <T> T execute(ExecutableWithReturn<T> executable) {
         try (TransactionExecutor transactionExecutor = TransactionExecutor.initTransaction(datasource)) {
             try {
-                T result = supplier.get();
+                T result = executable.execute();
                 transactionExecutor.commit();
                 return result;
             } catch (Exception e) {
@@ -57,6 +56,16 @@ public class TxUserService implements UserService {
                 throw new DataAccessException();
             }
         }
+    }
+
+    @FunctionalInterface
+    private interface ExecutableWithoutReturn {
+        void execute();
+    }
+
+    @FunctionalInterface
+    private interface ExecutableWithReturn<T> {
+        T execute();
     }
 
     private static class TransactionExecutor implements AutoCloseable {
