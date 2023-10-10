@@ -10,34 +10,33 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.sql.SQLException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(jdbcTemplate.getDataSource().getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final TxUserService userService = new TxUserService(jdbcTemplate.getDataSource(), appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        appUserService.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L);
 
@@ -45,10 +44,11 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() throws SQLException {
+    void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final TxUserService userService = new TxUserService(jdbcTemplate.getDataSource(), appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -59,7 +59,7 @@ class UserServiceTest {
                 () -> userService.changePassword(1L, newPassword, createBy)
         );
 
-        final var actual = userService.findById(1L);
+        final var actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
