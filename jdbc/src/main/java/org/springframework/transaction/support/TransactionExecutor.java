@@ -20,9 +20,9 @@ public class TransactionExecutor {
             runnable.run();
 
             connection.commit();
-        } catch (SQLException firstException) {
+        } catch (SQLException e) {
             rollback();
-            throw new DataAccessException(firstException);
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(DataSourceConfig.getInstance());
         }
@@ -36,8 +36,8 @@ public class TransactionExecutor {
         try {
             Connection connection = getConnection();
             connection.rollback();
-        } catch (SQLException secondException) {
-            throw new DataAccessException(secondException);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
