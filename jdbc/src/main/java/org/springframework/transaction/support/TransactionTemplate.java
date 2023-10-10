@@ -29,7 +29,6 @@ public class TransactionTemplate {
         }
     }
 
-
     private void begin(Connection connection) {
         try {
             connection.setAutoCommit(false);
