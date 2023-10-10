@@ -1,6 +1,6 @@
 package org.springframework.transaction.support;
 
 @FunctionalInterface
-public interface TransactionExecutor<T> {
+public interface TransactionTemplate<T> {
     T execute();
 }

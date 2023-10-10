@@ -14,7 +14,7 @@ public class ServiceExecutor {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(TransactionExecutor<T> executor) {
+    public <T> T execute(TransactionTemplate<T> executor) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
