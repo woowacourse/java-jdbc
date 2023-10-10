@@ -25,5 +25,5 @@
 ## 코드리뷰 리팩토링
 - [x] 불필요한 분기 지우기
 - [x] runnable 이용하기
-- [ ] read 메소드에도 transaction 적용하기
+- [x] read 메소드에도 transaction 적용하기
 - [ ] runtimeException일 때에도 rollback하도록 수정

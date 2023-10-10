@@ -7,12 +7,13 @@ import org.springframework.jdbc.exception.RollbackFailException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionExecutor {
 
     private final DataSource dataSource;
 
-    public TransactionExecutor(DataSource dataSource) {
+    public TransactionExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -29,7 +30,21 @@ public class TransactionExecutor {
         }
     }
 
-    private static void rollback(Connection connection) {
+    public <T> T readExecute(final Supplier<T> serviceLogicExecutor) {
+        T result = null;
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setReadOnly(true);
+            result = serviceLogicExecutor.get();
+        } catch (SQLException e) {
+            rollback(connection);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+        return result;
+    }
+
+    private static void rollback(final Connection connection) {
         try {
             connection.rollback();
             throw new DataAccessException("데이터에 접근할 수 없습니다.");

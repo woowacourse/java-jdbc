@@ -15,7 +15,7 @@ public class TxUserService {
     }
 
     public User findById(final long id) {
-        return userService.findById(id);
+        return transactionExecutor.readExecute(() -> userService.findById(id));
     }
 
     public void insert(final User user) {
