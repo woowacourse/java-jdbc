@@ -8,46 +8,30 @@ import java.util.Map;
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
-    private static final ThreadLocal<Boolean> transactionEnables = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> transactionEnables =  ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private TransactionSynchronizationManager() {}
 
+    private static Map<DataSource, Connection> resource() {
+        return resources.get();
+    }
+
     public static Connection getResource(final DataSource key) {
-        Map<DataSource, Connection> resource = resources.get();
-        if (resource == null) {
-            resource = new HashMap<>();
-        }
-        return resource.get(key);
+        return resource().get(key);
     }
 
     public static void bindResource(final DataSource key,
                                     final Connection value) {
-        Map<DataSource, Connection> resource = resources.get();
-        if (resource == null) {
-            resource = new HashMap<>();
-            resources.set(resource);
-        }
-        resource.put(key, value);
+        resource().put(key, value);
     }
 
     public static void unbindResource(final DataSource key) {
-        Map<DataSource, Connection> resource = resources.get();
-        if (resource == null) {
-            throw new IllegalStateException("resources is not initialize!");
-        }
         transactionEnables.remove();
-        resource.remove(key);
-        if (resource.isEmpty()) {
-            resources.remove();
-        }
+        resource().remove(key);
     }
 
     public static boolean isTransactionEnable() {
-        Boolean transactionEnable = transactionEnables.get();
-        if (transactionEnable == null) {
-            return false;
-        }
-        return transactionEnable;
+        return transactionEnables.get();
     }
 
     public static void begin() {
