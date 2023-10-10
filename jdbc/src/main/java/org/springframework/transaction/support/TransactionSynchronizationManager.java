@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
     private TransactionSynchronizationManager() {
     }
@@ -33,6 +33,8 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection unbindResource(DataSource key) {
         final Map<DataSource, Connection> dataSourceConnMap = resources.get();
-        return dataSourceConnMap.remove(key);
+        final Connection removedConn = dataSourceConnMap.remove(key);
+        resources.remove();
+        return removedConn;
     }
 }
