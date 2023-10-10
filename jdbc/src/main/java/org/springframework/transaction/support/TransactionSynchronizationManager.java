@@ -20,9 +20,13 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
-        resources.set(new HashMap<>() {{
-            put(key, value);
-        }});
+        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
+        if (dataSourceConnectionMap == null) {
+            dataSourceConnectionMap = new HashMap<>();
+            resources.set(dataSourceConnectionMap);
+        }
+
+        dataSourceConnectionMap.put(key, value);
     }
 
     public static Connection unbindResource(final DataSource key) {
