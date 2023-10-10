@@ -37,7 +37,7 @@ public class TransactionExecutor {
             connection.setReadOnly(true);
             result = serviceLogicExecutor.get();
         } catch (SQLException | RuntimeException e) {
-            rollback(connection);
+            throw new DataAccessException("데이터에 접근할 수 없습니다.");
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
