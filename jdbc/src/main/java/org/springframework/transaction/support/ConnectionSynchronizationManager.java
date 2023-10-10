@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 
-public abstract class TransactionSynchronizationManager {
+public abstract class ConnectionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
-    private TransactionSynchronizationManager() {
+    private ConnectionSynchronizationManager() {
     }
 
     public static Connection getResource(DataSource key) {
