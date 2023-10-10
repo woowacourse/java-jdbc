@@ -27,6 +27,8 @@ public class QueryTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.closeConnectionIfNotInTransaction(dataSource, connection);
         }
     }
 
