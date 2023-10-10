@@ -21,4 +21,5 @@
 
 ## 4단계
 - [x] Transaction synchronization 적용
-- [ ] 트랜잭션 서비스 추상화하기
+- [x] 트랜잭션 서비스 추상화하기
+  - [x] 공통 코드 분리
