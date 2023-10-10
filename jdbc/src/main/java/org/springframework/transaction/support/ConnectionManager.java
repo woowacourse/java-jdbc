@@ -6,6 +6,7 @@ import javax.sql.DataSource;
 import org.springframework.jdbc.core.exception.DataNotFoundException;
 import org.springframework.transaction.exception.ConnectionManagerException;
 
+@Deprecated
 public class ConnectionManager {
 
     private static final ConnectionManager INSTANCE = new ConnectionManager();
