@@ -24,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, boolean closeResources, @Nullable Object... args) {
+    public int update(final String sql, final boolean closeResources, @Nullable Object... args) {
         PreparedStatementCallback<Integer> action = (pstmt) -> {
             ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(pstmt);
@@ -34,7 +34,7 @@ public class JdbcTemplate {
 
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, boolean closeResources, Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final boolean closeResources, Object... args) {
         log.debug("query : {}", sql);
 
         PreparedStatementCallback<T> callback = pstmt -> {
@@ -49,7 +49,7 @@ public class JdbcTemplate {
         return executeQuery(callback, sql, closeResources, args);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, boolean closeResource, @Nullable Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final boolean closeResource, @Nullable Object... args) {
         PreparedStatementCallback<List<T>> callBack = pstmt -> {
             ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(pstmt);
@@ -67,7 +67,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, boolean closeResources, @Nullable Object... args) {
+    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, final boolean closeResources, @Nullable Object... args) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
