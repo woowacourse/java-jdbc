@@ -29,8 +29,8 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public User findById(final long id) throws SQLException {
-        return userDao.findById(dataSource.getConnection(), id)
+    public User findById(final long id) {
+        return userDao.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("해당 아이디의 사용자가 존재하지 않습니다."));
     }
 
@@ -39,7 +39,7 @@ public class AppUserService implements UserService {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         conn.setAutoCommit(false);
         try {
-            userDao.insert(conn, user);
+            userDao.insert(user);
 
             conn.commit();
         } catch (SQLException e) {
@@ -51,22 +51,10 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        conn.setAutoCommit(false);
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        try {
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-            conn.commit();
-        } catch (SQLException | DataAccessException e) {
-            System.out.println("e = " + e);
-            conn.rollback();
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }

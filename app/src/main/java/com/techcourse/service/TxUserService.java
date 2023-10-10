@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,19 +22,28 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public User findById(final long id) throws SQLException {
+    public User findById(final long id) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
-        conn.setAutoCommit(false);
         try {
+            conn.setAutoCommit(false);
             final User user = userService.findById(id);
 
             conn.commit();
             return user;
         } catch (SQLException e) {
-            conn.rollback();
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void rollback(final Connection conn) {
+        try {
+            conn.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
@@ -46,10 +56,11 @@ public class TxUserService implements UserService {
 
             conn.commit();
         } catch (SQLException e) {
-            conn.rollback();
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -62,10 +73,11 @@ public class TxUserService implements UserService {
 
             conn.commit();
         } catch (SQLException e) {
-            conn.rollback();
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

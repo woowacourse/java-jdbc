@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,33 +23,33 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void insert(final Connection conn, final User user) {
+    public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final Connection conn, final User user) {
+    public void update(final User user) {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ?  WHERE id = ?";
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll(final Connection conn) {
+    public List<User> findAll() {
         final var sql = "SELECT * FROM users";
-        return jdbcTemplate.query(conn, sql, User.class);
+        return jdbcTemplate.query(sql, User.class);
     }
 
-    public Optional<User> findById(final Connection conn, final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return Optional.of(jdbcTemplate.queryForObject(conn, sql, User.class, id));
+        return Optional.of(jdbcTemplate.queryForObject(sql, User.class, id));
     }
 
-    public Optional<User> findByAccount(final Connection conn, final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return Optional.of(jdbcTemplate.queryForObject(conn, sql, User.class, account));
+        return Optional.of(jdbcTemplate.queryForObject(sql, User.class, account));
     }
 
-    public void deleteAll(final Connection conn) {
-        jdbcTemplate.update(conn, "TRUNCATE TABLE user_history RESTART IDENTITY;");
-        jdbcTemplate.update(conn, "TRUNCATE TABLE users RESTART IDENTITY");
+    public void deleteAll() {
+        jdbcTemplate.update("TRUNCATE TABLE user_history RESTART IDENTITY;");
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 }
