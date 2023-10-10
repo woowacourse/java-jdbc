@@ -34,8 +34,6 @@ public abstract class TransactionSynchronizationManager {
         if (connectionWithDataSource == null) {
             return null;
         }
-        Connection released = connectionWithDataSource.remove(key);
-        resources.remove();
-        return released;
+        return connectionWithDataSource.remove(key);
     }
 }

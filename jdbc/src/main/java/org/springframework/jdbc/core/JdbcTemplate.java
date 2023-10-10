@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -48,8 +49,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PrepareStatementExecutor<T> executor, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = getPreparedStatement(sql, connection, args)
         ) {
             return executor.execute(preparedStatement);

@@ -2,7 +2,6 @@ package org.springframework.transaction;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -11,7 +10,7 @@ import java.sql.SQLException;
 public class TransactionManager {
 
     private final DataSource dataSource;
-    private final Connection connection;
+    private Connection connection;
 
     public TransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -20,6 +19,9 @@ public class TransactionManager {
 
     public void begin() {
         try {
+            if (connection.isClosed()) {
+                connection = DataSourceUtils.getConnection(dataSource);
+            }
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DataAccessException(e);
