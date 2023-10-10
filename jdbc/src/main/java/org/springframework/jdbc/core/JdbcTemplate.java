@@ -56,6 +56,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            closeConnectionIfAutoCommitted(conn);
         }
     }
 
@@ -92,5 +94,15 @@ public class JdbcTemplate {
             return result;
         }
         throw new IncorrectResultSizeDataAccessException("No result to return");
+    }
+
+    private void closeConnectionIfAutoCommitted(Connection conn) {
+        try {
+            if (conn.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
