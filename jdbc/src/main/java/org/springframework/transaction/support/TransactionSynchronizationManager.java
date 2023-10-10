@@ -1,9 +1,11 @@
 package org.springframework.transaction.support;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.springframework.transaction.exception.TransactionSynchronizationManagerException;
 
 public abstract class TransactionSynchronizationManager {
 
@@ -29,7 +31,11 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static boolean isTransactionActive(final DataSource dataSource) {
-        return resources.get().containsKey(dataSource);
+        try {
+            return resources.get().get(dataSource).getAutoCommit();
+        } catch (final SQLException e) {
+            throw new TransactionSynchronizationManagerException(e);
+        }
     }
 
     public static void clear() {
