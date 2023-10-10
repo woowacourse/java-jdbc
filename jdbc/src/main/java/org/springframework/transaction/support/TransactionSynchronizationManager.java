@@ -31,4 +31,8 @@ public abstract class TransactionSynchronizationManager {
         resources.remove();
         return removeConnection;
     }
+
+    public static boolean isActiveTransaction(DataSource key) {
+        return getResource(key) != null;
+    }
 }
