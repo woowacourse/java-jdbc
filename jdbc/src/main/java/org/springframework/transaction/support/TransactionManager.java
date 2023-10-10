@@ -27,28 +27,28 @@ public class TransactionManager {
         try {
             conn.setAutoCommit(false);
             T result = supplier.get();
-            commit(conn);
+            conn.commit();
             return result;
         } catch (Exception e) {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
-    }
-
-    private void commit(Connection connection){
-        try{
-            connection.commit();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            close(conn);
         }
     }
 
     private void rollback(Connection conn) {
         try {
             conn.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void close(Connection conn) {
+        try {
             conn.setAutoCommit(true);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
