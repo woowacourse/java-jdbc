@@ -1,37 +1,64 @@
 package org.springframework.transaction.support;
 
-import org.springframework.jdbc.datasource.ConnectionManager;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionTemplate {
 
-    private static final ThreadLocal<Boolean> propagations = new ThreadLocal<>();
+    private final DataSource dataSource;
 
-    private TransactionTemplate() {
+    public TransactionTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void execute(Runnable runnable) {
-        if (isPropagation()) {
+    public void execute(Runnable runnable) {
+        if (TransactionSynchronizationManager.isTransactionEnable()) {
             runnable.run();
             return;
         }
-        propagations.set(Boolean.TRUE);
-        TransactionManager.begin();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        begin(conn);
         try {
             runnable.run();
+            commit(conn);
         } catch (Exception e) {
-            TransactionManager.setRollback();
+            rollback(conn);
             throw e;
         } finally {
-            ConnectionManager.releaseConnection();
-            propagations.remove();
+            end(conn);
         }
     }
 
-    private static boolean isPropagation() {
-        Boolean propagation = propagations.get();
-        if (propagation == null) {
-            return false;
+    private void begin(Connection connection) {
+        try {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.doBegin();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
-        return propagation;
+    }
+
+    private void commit(Connection connection) {
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void end(Connection conn) {
+        TransactionSynchronizationManager.doEnd();
+        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }
