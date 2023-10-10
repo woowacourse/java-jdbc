@@ -50,7 +50,7 @@ public class UserDao {
     }
 
     public void deleteAll(final Connection conn) {
-        final String alterAutoIncrementSql = "TRUNCATE TABLE users RESTART IDENTITY";
-        jdbcTemplate.update(conn, alterAutoIncrementSql);
+        jdbcTemplate.update(conn, "TRUNCATE TABLE user_history RESTART IDENTITY;");
+        jdbcTemplate.update(conn, "TRUNCATE TABLE users RESTART IDENTITY");
     }
 }

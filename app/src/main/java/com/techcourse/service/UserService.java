@@ -59,6 +59,7 @@ public class UserService {
 
             conn.commit();
         } catch (SQLException | DataAccessException e) {
+            System.out.println("e = " + e);
             conn.rollback();
             throw new DataAccessException(e);
         } finally {
