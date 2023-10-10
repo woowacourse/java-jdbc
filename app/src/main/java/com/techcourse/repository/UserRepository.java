@@ -3,6 +3,7 @@ package com.techcourse.repository;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository {
 
@@ -12,7 +13,7 @@ public interface UserRepository {
 
     List<User> findAll(final Connection connection);
 
-    User findById(final Connection connection, final Long id);
+    Optional<User> findById(final Connection connection, final Long id);
 
-    User findByAccount(final Connection connection, final String account);
+    Optional<User> findByAccount(final Connection connection, final String account);
 }

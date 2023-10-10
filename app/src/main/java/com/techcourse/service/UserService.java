@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.SQLTransactionRollbackException;
 
@@ -22,7 +23,11 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(connection, id);
+        final Optional<User> user = userDao.findById(connection, id);
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("회원을 찾을 수 없음");
+        }
+        return user.get();
     }
 
     public void insert(final User user) {

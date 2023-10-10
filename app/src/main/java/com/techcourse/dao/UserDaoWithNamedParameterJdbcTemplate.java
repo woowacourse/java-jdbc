@@ -40,26 +40,18 @@ public class UserDaoWithNamedParameterJdbcTemplate {
         return jdbcTemplate.query(sql, getUserRowMapper(), Map.of());
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = :id";
         final HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("id", id);
-        final Optional<User> user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = :account";
         final HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("account", account);
-        final Optional<User> user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), parameters);
     }
 
     private static RowMapper<User> getUserRowMapper() {

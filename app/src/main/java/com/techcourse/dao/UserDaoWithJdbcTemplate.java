@@ -32,22 +32,14 @@ public class UserDaoWithJdbcTemplate implements UserRepository {
         return jdbcTemplate.query(connection, sql, getUserRowMapper());
     }
 
-    public User findById(final Connection connection, final Long id) {
+    public Optional<User> findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), id);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), id);
     }
 
-    public User findByAccount(final Connection connection, final String account) {
+    public Optional<User> findByAccount(final Connection connection, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), account);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), account);
     }
 
     private static RowMapper<User> getUserRowMapper() {

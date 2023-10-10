@@ -40,7 +40,7 @@ class UserDaoWithNamedParameterJdbcTemplateTest {
     @Test
     void findById() {
         final long savedUserId = userDao.findAll().get(0).getId();
-        final var user = userDao.findById(savedUserId);
+        final var user = userDao.findById(savedUserId).get();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -48,7 +48,7 @@ class UserDaoWithNamedParameterJdbcTemplateTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(account).get();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -67,7 +67,7 @@ class UserDaoWithNamedParameterJdbcTemplateTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -76,12 +76,12 @@ class UserDaoWithNamedParameterJdbcTemplateTest {
     void update() {
         final var newPassword = "password99";
         final long savedUserId = userDao.findAll().get(0).getId();
-        final var user = userDao.findById(savedUserId);
+        final var user = userDao.findById(savedUserId).get();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(savedUserId);
+        final var actual = userDao.findById(savedUserId).get();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

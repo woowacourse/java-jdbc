@@ -43,7 +43,7 @@ class UserDaoWithJdbcTemplateTest {
     @Test
     void findById() {
         final long savedUserId = userDao.findAll(connection).get(0).getId();
-        final var user = userDao.findById(connection, savedUserId);
+        final var user = userDao.findById(connection, savedUserId).get();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -52,7 +52,7 @@ class UserDaoWithJdbcTemplateTest {
     void findByAccount() {
         final var account = "gugu";
 
-        final var user = userDao.findByAccount(connection, account);
+        final var user = userDao.findByAccount(connection, account).get();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -71,7 +71,7 @@ class UserDaoWithJdbcTemplateTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(connection, user);
 
-        final var actual = userDao.findById(connection, 2L);
+        final var actual = userDao.findById(connection, 2L).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -81,12 +81,12 @@ class UserDaoWithJdbcTemplateTest {
         final var newPassword = "password99";
         final long savedUserId = userDao.findAll(connection).get(0).getId();
 
-        final var user = userDao.findById(connection, savedUserId);
+        final var user = userDao.findById(connection, savedUserId).get();
         user.changePassword(newPassword);
 
         userDao.update(connection, user);
 
-        final var actual = userDao.findById(connection, savedUserId);
+        final var actual = userDao.findById(connection, savedUserId).get();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
