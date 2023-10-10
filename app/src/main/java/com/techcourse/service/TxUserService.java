@@ -5,10 +5,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class TxUserService implements UserService {
 
-    private final UserService userService;
+    private final AppUserService userService;
     private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(final UserService userService,
+    public TxUserService(final AppUserService userService,
                          final TransactionTemplate transactionTemplate) {
         this.userService = userService;
         this.transactionTemplate = transactionTemplate;
