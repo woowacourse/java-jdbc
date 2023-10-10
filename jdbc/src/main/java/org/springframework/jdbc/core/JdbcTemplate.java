@@ -100,12 +100,4 @@ public class JdbcTemplate {
             }
         });
     }
-
-    public Connection getConnection() throws DataAccessException {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        }
-    }
 }

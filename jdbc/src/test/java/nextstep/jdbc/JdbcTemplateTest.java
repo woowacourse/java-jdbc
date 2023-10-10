@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,7 +23,8 @@ class JdbcTemplateTest {
 
     @BeforeEach
     public void setUp() {
-        try (final Connection connection = jdbcTemplate.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+        try {
             final Statement statement = connection.createStatement();
             statement.execute("drop table if exists users");
             statement.execute("create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))");
