@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.transaction.TransactionExecutor;
 
@@ -9,9 +8,9 @@ public class TxUserService implements UserService {
     private final AppUserService appUserService;
     private final TransactionExecutor transactionExecutor;
 
-    public TxUserService(final AppUserService appUserService) {
+    public TxUserService(final AppUserService appUserService, final TransactionExecutor transactionExecutor) {
         this.appUserService = appUserService;
-        this.transactionExecutor = new TransactionExecutor(DataSourceConfig.getInstance());
+        this.transactionExecutor = transactionExecutor;
     }
 
     @Override

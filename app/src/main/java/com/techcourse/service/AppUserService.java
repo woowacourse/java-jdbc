@@ -10,7 +10,7 @@ public class AppUserService implements UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
