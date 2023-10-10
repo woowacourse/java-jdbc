@@ -10,25 +10,6 @@ import java.sql.SQLException;
 
 public class TxExecutor {
 
-    public static void executeWithoutReturnValue(
-            final DataSource dataSource,
-            final ExecutorWithoutReturnValue executor
-    ) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-            executor.execute();
-
-            commit(conn);
-        } catch (SQLException e) {
-            rollback(conn);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
-    }
-
     public static Object execute(
             final DataSource dataSource,
             final Executor executor
@@ -38,7 +19,7 @@ public class TxExecutor {
             conn.setAutoCommit(false);
             final Object result = executor.execute();
 
-            conn.commit();
+            commit(conn);
             return result;
         } catch (SQLException e) {
             rollback(conn);

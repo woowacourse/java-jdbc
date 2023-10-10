@@ -24,11 +24,17 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        TxExecutor.executeWithoutReturnValue(dataSource, () -> userService.insert(user));
+        TxExecutor.execute(dataSource, () -> {
+            userService.insert(user);
+            return null;
+        });
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TxExecutor.executeWithoutReturnValue(dataSource, () -> userService.changePassword(id, newPassword, createBy));
+        TxExecutor.execute(dataSource, () -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
     }
 }

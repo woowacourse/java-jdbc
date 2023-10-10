@@ -1,7 +1,7 @@
 package org.springframework.jdbc.core.transaction;
 
 @FunctionalInterface
-public interface Executor {
+public interface Executor<T> {
 
-    Object execute();
+    T execute();
 }
