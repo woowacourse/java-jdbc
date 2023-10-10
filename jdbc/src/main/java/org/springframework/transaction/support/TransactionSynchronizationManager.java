@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, ConnectionManager>> resources = withInitial(HashMap::new);
@@ -18,6 +20,9 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(final DataSource key, final ConnectionManager value) {
+        if (resources.get().containsKey(key)) {
+            throw new CannotGetJdbcConnectionException("Connection is already existed with same data source");
+        }
         resources.get().put(key, value);
     }
 
