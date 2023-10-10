@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.DatabaseResourceException;
 
 import javax.sql.DataSource;
@@ -25,23 +26,15 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        update(getConnection(), sql, args);
-    }
-
-    public void update(Connection connection, String sql, Object... args) {
-        template(this::executeUpdate, connection, sql, args);
+        template(this::executeUpdate, sql, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(getConnection(), sql, rowMapper, args);
-    }
-
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
         Function<PreparedStatement, List<T>> query = preparedStatement -> {
             ResultSet resultSet = executeQuery(preparedStatement);
             return getObjects(resultSet, rowMapper);
         };
-        return template(query, connection, sql, args);
+        return template(query, sql, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -86,17 +79,10 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T template(Function<PreparedStatement, T> function, Connection connection, String sql, Object... args) {
+    private <T> T template(Function<PreparedStatement, T> function, String sql, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
         return function.apply(preparedStatement);
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DatabaseResourceException("Connection cannot be acquired.", e);
-        }
     }
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, Object... args) {
