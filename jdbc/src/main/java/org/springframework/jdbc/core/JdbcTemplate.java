@@ -1,8 +1,10 @@
 package org.springframework.jdbc.core;
 
+import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,17 +36,35 @@ public class JdbcTemplate {
         return execute(sql, (pstmt) -> {
             prepareStatement(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
-                int columnCount = rs.getMetaData().getColumnCount();
-                if (rs.first() && rs.isLast()) {
-                    Object[] initArgs = new Object[columnCount];
-                    for (int i = 1; i <= columnCount; i++) {
-                        initArgs[i - 1] = rs.getObject(i);
-                    }
-                    return InstantiateUtil.instantiate(rs, requiredType, initArgs);
-                }
-                throw new IncorrectResultSizeDataAccessException();
+                return instantiate(rs, requiredType);
             }
         });
+    }
+
+    private <T> T instantiate(ResultSet rs, Class<T> requiredType) throws Exception {
+        int columnCount = rs.getMetaData().getColumnCount();
+        if (rs.first() && rs.isLast()) {
+            Object[] initArgs = new Object[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                initArgs[i - 1] = rs.getObject(i);
+            }
+            return instantiate(rs, requiredType, initArgs);
+        }
+        throw new IncorrectResultSizeDataAccessException();
+    }
+
+    private <T> T instantiate(ResultSet rs, Class<T> requiredType, Object[] initArgs)
+            throws Exception {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        Class<?>[] columnTypes = new Class[columnCount];
+        for (int i = 1; i <= columnCount; i++) {
+            int columnType = metaData.getColumnType(i);
+            columnTypes[i - 1] = ColumnTypes.convertToClass(columnType);
+        }
+        Constructor<?> constructor = requiredType.getDeclaredConstructor(columnTypes);
+        return requiredType.cast(constructor.newInstance(initArgs));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
