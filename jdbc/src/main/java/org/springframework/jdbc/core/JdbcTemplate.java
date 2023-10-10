@@ -27,10 +27,6 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public void update(final Connection connection, final String sql, final Object... objects) {
-        execute(connection, sql, PreparedStatement::executeUpdate, objects);
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         final ResultSetExtractor<Optional<T>> rse = resultSet -> {
             if (resultSet.next()) {
@@ -73,20 +69,6 @@ public class JdbcTemplate {
         try (
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setPreparedStatement(preparedStatement, objects);
-            return executor.action(preparedStatement);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementExecutor<T> executor,
-            final Object... objects
-    ) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, objects);
             return executor.action(preparedStatement);
         } catch (final SQLException e) {
