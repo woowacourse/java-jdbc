@@ -12,7 +12,7 @@ public class ConnectionManager {
         this.connection = connection;
     }
 
-    public void activeTransaction() throws SQLException{
+    public void activateTransaction() throws SQLException{
         connection.setAutoCommit(false);
         isTransaction = true;
     }
@@ -21,7 +21,7 @@ public class ConnectionManager {
         return this.connection == other.connection;
     }
 
-    public void inactiveTransaction() {
+    public void inactivateTransaction() {
         isTransaction = false;
     }
 

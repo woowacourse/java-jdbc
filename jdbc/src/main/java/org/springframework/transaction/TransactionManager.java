@@ -30,7 +30,7 @@ public class TransactionManager {
     private <R> R execute(final Supplier<R> transactionSupplier) {
         final ConnectionManager connectionManager = DataSourceUtils.getConnection(dataSource);
         try {
-            connectionManager.activeTransaction();
+            connectionManager.activateTransaction();
             final R result = transactionSupplier.get();
             connectionManager.commit();
             return result;
@@ -38,7 +38,7 @@ public class TransactionManager {
             rollback(connectionManager);
             throw new DataAccessException();
         } finally {
-            connectionManager.inactiveTransaction();
+            connectionManager.inactivateTransaction();
             DataSourceUtils.releaseConnection(connectionManager, dataSource);
         }
     }

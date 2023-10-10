@@ -1,6 +1,7 @@
 package org.springframework.jdbc.datasource;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.ConnectionManager;
@@ -17,7 +18,7 @@ public abstract class DataSourceUtils {
 
     public static ConnectionManager getConnection(final DataSource dataSource) throws CannotGetJdbcConnectionException {
         final ConnectionManager manager = TransactionSynchronizationManager.getResource(dataSource);
-        if (!isNull(manager)) {
+        if (nonNull(manager)) {
             return manager;
         }
 
@@ -41,7 +42,9 @@ public abstract class DataSourceUtils {
             final ConnectionManager releasedManager = TransactionSynchronizationManager.unbindResource(dataSource);
             if (connectionManager.hasSameConnection(releasedManager)) {
                 connectionManager.close();
+                return;
             }
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
