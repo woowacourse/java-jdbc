@@ -38,7 +38,7 @@ public class JdbcTemplate {
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                ResultSet.CONCUR_READ_ONLY);
+            ResultSet.CONCUR_READ_ONLY);
         ) {
             log.debug(QUERY_LOG, sql);
             return preparedStatementExecutor.execute(pstmt);
@@ -53,17 +53,6 @@ public class JdbcTemplate {
     private ResultSet executeWithArgs(PreparedStatement pstmt, String sql, Object[] args) throws SQLException {
         setArgs(pstmt, sql, args);
         return pstmt.executeQuery();
-    }
-
-    private void validOneResult(ResultSet resultSet) throws SQLException {
-        if (!resultSet.next()) {
-            throw new IncorrectResultSizeDataAccessException("No rows selected");
-        }
-        resultSet.last();
-        if (resultSet.getRow() != ONE_RESULT) {
-            throw new IncorrectResultSizeDataAccessException("More than one row selected");
-        }
-        resultSet.beforeFirst();
     }
 
     private void setArgs(PreparedStatement pstmt, String sql, Object[] args) throws SQLException {
@@ -89,6 +78,17 @@ public class JdbcTemplate {
                 sqlArgsCount,
                 providedArgsCount));
         }
+    }
+
+    private void validOneResult(ResultSet resultSet) throws SQLException {
+        if (!resultSet.next()) {
+            throw new IncorrectResultSizeDataAccessException("No rows selected");
+        }
+        resultSet.last();
+        if (resultSet.getRow() != ONE_RESULT) {
+            throw new IncorrectResultSizeDataAccessException("More than one row selected");
+        }
+        resultSet.beforeFirst();
     }
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
