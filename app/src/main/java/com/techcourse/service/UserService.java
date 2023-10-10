@@ -7,7 +7,6 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.SQLTransactionRollbackException;
 
 public class UserService {
@@ -52,7 +51,7 @@ public class UserService {
     private void handleTransactionFailure(final Exception e) {
         try {
             connection.rollback();
-            throw new DataAccessException(e);
+            throw new RuntimeException(e);
         } catch (SQLException ex) {
             throw new SQLTransactionRollbackException(ex);
         }
