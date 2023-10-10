@@ -6,7 +6,7 @@ public class UserHistory {
 
     private Long id;
 
-    private final long userId;
+    private final Long userId;
     private final String account;
     private final String password;
     private final String email;
@@ -19,7 +19,7 @@ public class UserHistory {
         this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createBy);
     }
 
-    public UserHistory(final Long id, final long userId, final String account, final String password,
+    public UserHistory(final Long id, final Long userId, final String account, final String password,
                        final String email, final String createBy) {
         this.id = id;
         this.userId = userId;

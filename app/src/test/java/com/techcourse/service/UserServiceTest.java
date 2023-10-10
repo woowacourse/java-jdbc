@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.support.TransactionTemplate;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -33,7 +33,9 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,7 +50,9 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
