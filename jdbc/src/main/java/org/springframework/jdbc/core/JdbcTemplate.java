@@ -1,6 +1,5 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +21,8 @@ public class JdbcTemplate {
         this.baseJdbcTemplate = new BaseJdbcTemplate(dataSource);
     }
 
-    public void update(final String sql, final Object... args) {
+    public void update(final String sql,
+                       final Object... args) {
         baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
                     setArguments(args, preparedStatement);
@@ -32,18 +32,9 @@ public class JdbcTemplate {
         );
     }
 
-    public void update(final Connection connection, final String sql, final Object... args) {
-        baseJdbcTemplate.execute(connection,
-                sql,
-                preparedStatement -> {
-                    setArguments(args, preparedStatement);
-                    preparedStatement.executeUpdate();
-                    return null;
-                }
-        );
-    }
-
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql,
+                                          final RowMapper<T> rowMapper,
+                                          final Object... args) {
         return baseJdbcTemplate.execute(sql,
                 preparedStatement -> {
                     setArguments(args, preparedStatement);
@@ -52,41 +43,26 @@ public class JdbcTemplate {
                 });
     }
 
-    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                          final Object... args) {
-        return baseJdbcTemplate.execute(connection,
-                sql,
-                preparedStatement -> {
-                    setArguments(args, preparedStatement);
-                    final List<T> results = getResults(rowMapper, preparedStatement.executeQuery());
-                    return Optional.ofNullable(getResult(results));
-                });
-    }
-
-    private <T> T getResult(List<T> results) {
+    private <T> T getResult(final List<T> results) {
         if (results.isEmpty()) {
             return null;
         }
 
         if (results.size() > 1) {
-            throw new DataAccessException("조회된 데이터 수가 1을 초과합니다");
+            throw new DataAccessException("조회된 데이터 수가 1을 초과합니다. count: " + results.size());
         }
 
         return results.get(0);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql,
+                             final RowMapper<T> rowMapper) {
         return baseJdbcTemplate.execute(sql,
                 preparedStatement -> getResults(rowMapper, preparedStatement.executeQuery()));
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
-        return baseJdbcTemplate.execute(connection,
-                sql,
-                preparedStatement -> getResults(rowMapper, preparedStatement.executeQuery()));
-    }
-
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+    private <T> List<T> getResults(final RowMapper<T> rowMapper,
+                                   final ResultSet resultSet) throws SQLException {
         final ArrayList<T> results = new ArrayList<>();
         while (resultSet.next()) {
             final T result = rowMapper.mapRow(resultSet, resultSet.getRow());
@@ -95,7 +71,9 @@ public class JdbcTemplate {
         return results;
     }
 
-    private void setArguments(final Object[] args, final PreparedStatement preparedStatement) throws SQLException {
+    private void setArguments(final Object[] args,
+                              final PreparedStatement preparedStatement
+    ) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             preparedStatement.setObject(i + 1, args[i]);
         }
@@ -103,11 +81,5 @@ public class JdbcTemplate {
 
     public void execute(final String sql) {
         baseJdbcTemplate.execute(sql, PreparedStatement::execute);
-    }
-
-    public void execute(final Connection connection, final String sql) {
-        baseJdbcTemplate.execute(connection,
-                sql,
-                PreparedStatement::execute);
     }
 }

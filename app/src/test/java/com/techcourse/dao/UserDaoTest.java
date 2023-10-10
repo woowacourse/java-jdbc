@@ -6,8 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,32 +28,28 @@ class UserDaoTest {
 
     private final DataSource dataSource = DataSourceConfig.getInstance();
 
-    private Connection connection;
-
     @BeforeEach
-    void setup() throws SQLException {
-        connection = dataSource.getConnection();
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.execute(connection, INIT_USER_TABLE_SQL);
+    void setup() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.execute(INIT_USER_TABLE_SQL);
 
         DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(dataSource);
 
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll(connection);
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(connection, 1L);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -63,7 +57,7 @@ class UserDaoTest {
     @Test
     void findById_fail() {
         assertThatThrownBy(
-                () -> userDao.findById(connection, -1L)
+                () -> userDao.findById(-1L)
         ).isInstanceOf(NoSuchElementException.class)
                 .hasMessage("id에 해당하는 user가 없습니다.");
     }
@@ -71,7 +65,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(connection, account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -79,7 +73,7 @@ class UserDaoTest {
     @Test
     void findByAccount_fail() {
         assertThatThrownBy(
-                () -> userDao.findByAccount(connection, "joy")
+                () -> userDao.findByAccount("joy")
         ).isInstanceOf(NoSuchElementException.class)
                 .hasMessage("account에 해당하는 user가 없습니다.");
     }
@@ -88,9 +82,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(connection, 2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -98,12 +92,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(connection, 1L);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(connection, 1L);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
