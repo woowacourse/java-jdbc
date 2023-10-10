@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,10 +23,6 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... args) {
         executePreparedStatement(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public void update(Connection connection, String sql, Object... args) {
-        executePreparedStatement(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     private void bind(PreparedStatement pstmt, Object... args) throws SQLException {
@@ -66,23 +63,8 @@ public class JdbcTemplate {
             final PreparedStatementCallback<T> preparedStatementCallback,
             final Object... args
     ) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bind(pstmt, args);
-            return preparedStatementCallback.callback(pstmt);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> T executePreparedStatement(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementCallback<T> preparedStatementCallback,
-            final Object... args
-    ) {
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bind(pstmt, args);
             return preparedStatementCallback.callback(pstmt);
