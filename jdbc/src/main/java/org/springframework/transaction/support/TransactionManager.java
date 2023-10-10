@@ -2,6 +2,8 @@ package org.springframework.transaction.support;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -14,20 +16,23 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void doInTransaction(final Runnable runnable) throws DataAccessException {
+    @Nullable
+    public <T> T doInTransaction(final Supplier<T> supplier) throws DataAccessException {
+        T result = null;
         try (final var connection = DataSourceUtils.getConnection(dataSource)) {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
-            runnable.run();
+            result = supplier.get();
             connection.commit();
-        } catch (final SQLException e) {
+        } catch (final Exception e) {
             doRollback(e, TransactionSynchronizationManager.getResource(dataSource));
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
+        return result;
     }
 
-    private void doRollback(final SQLException e, final Connection connection) {
+    private void doRollback(final Exception e, final Connection connection) {
         try {
             connection.rollback();
             throw new DataAccessException(e);
