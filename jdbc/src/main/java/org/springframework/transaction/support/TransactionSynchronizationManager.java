@@ -23,4 +23,9 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(final DataSource key) {
         return resources.get().remove(key);
     }
+
+    public static boolean isTxBegin(final DataSource dataSource) {
+        final Connection connection = resources.get().get(dataSource);
+        return connection != null;
+    }
 }

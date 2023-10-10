@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.transaction.support.TransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public abstract class DataSourceUtils {
@@ -22,12 +21,7 @@ public abstract class DataSourceUtils {
 
     private static Connection createConnection(final DataSource dataSource) {
         try {
-            final Connection connection = dataSource.getConnection();
-            if (TransactionManager.isTxBegin(dataSource)) {
-                connection.setAutoCommit(false);
-                TransactionSynchronizationManager.bindResource(dataSource, connection);
-            }
-            return connection;
+            return dataSource.getConnection();
 
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
@@ -35,7 +29,7 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(final Connection connection, final DataSource dataSource) {
-        if (TransactionManager.isTxBegin(dataSource)) {
+        if (TransactionSynchronizationManager.isTxBegin(dataSource)) {
             return;
         }
         try {

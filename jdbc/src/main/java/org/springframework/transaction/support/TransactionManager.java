@@ -2,14 +2,11 @@ package org.springframework.transaction.support;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
-
-    private static final ThreadLocal<Map<DataSource, Boolean>> isTxBegin = ThreadLocal.withInitial(HashMap::new);
 
     private final DataSource dataSource;
 
@@ -17,16 +14,15 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public static boolean isTxBegin(final DataSource dataSource) {
-        final Boolean flag = isTxBegin.get().get(dataSource);
-        if (flag == null) {
-            return false;
-        }
-        return flag;
-    }
-
     public void begin() {
-        isTxBegin.get().put(dataSource, true);
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     public void commit() {
@@ -53,7 +49,6 @@ public class TransactionManager {
         try {
             final Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
-            isTxBegin.get().remove(dataSource);
 
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
