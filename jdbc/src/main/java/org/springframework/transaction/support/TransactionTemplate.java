@@ -43,6 +43,7 @@ public class TransactionTemplate {
     private void commit(final Connection connection) {
         try {
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -51,6 +52,7 @@ public class TransactionTemplate {
     private void rollback(final Connection connection) {
         try {
             connection.rollback();
+            connection.setAutoCommit(true);
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
