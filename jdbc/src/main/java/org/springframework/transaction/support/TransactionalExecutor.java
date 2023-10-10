@@ -23,7 +23,7 @@ public class TransactionalExecutor {
             connection.commit();
             return result;
         } catch (Exception e) {
-            rollbackAndThrowException(connection, e);
+            rollbackAndThrowException(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
@@ -31,7 +31,7 @@ public class TransactionalExecutor {
         }
     }
 
-    private void rollbackAndThrowException(final Connection connection, final Exception e) {
+    private void rollbackAndThrowException(final Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException ex) {
