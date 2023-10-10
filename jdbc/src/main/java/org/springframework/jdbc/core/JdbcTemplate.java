@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.exception.DataNotFoundException;
 import org.springframework.jdbc.core.exception.JdbcTemplateException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -70,6 +71,11 @@ public class JdbcTemplate {
             return preparedStatementExecutor.execute(pst);
         } catch (final SQLException e) {
             throw new JdbcTemplateException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.isTransactionActive(dataSource)) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 }
