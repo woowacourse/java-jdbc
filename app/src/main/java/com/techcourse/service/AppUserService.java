@@ -29,6 +29,7 @@ public class AppUserService implements UserService {
         userHistoryDao.log(new UserHistory(user, createBy));
     }
 
+    @Override
     public User findById(final long id) {
         return userDao.findById(id);
     }
