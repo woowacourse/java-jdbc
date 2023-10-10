@@ -24,10 +24,18 @@
     - [x] `ResultSet` 생성
     - [x] 예외 처리
     - [x] 트랜잭션 관리
-    - [x] `Connection`, `Statement`, `ResultSet` 객체 close 	
+    - [x] `Connection`, `Statement`, `ResultSet` 객체 close
 
 ## 3단계 요구사항
 
 - [x] User 비밀번호 변경 기능 추가
-  - [x] 변경한 사람, 시간, 바뀐 비밀번호 이력 남기기
-  - [x] 원자성 보장을 위해 트랜잭션 적용
+    - [x] 변경한 사람, 시간, 바뀐 비밀번호 이력 남기기
+    - [x] 원자성 보장을 위해 트랜잭션 적용
+
+## 4단계 요구사항
+
+- [ ] Transaction synchronization 적용하기
+    - [ ] 서비스와 DAO에서 `Connection` 객체를 가져오는 부분은 `DataSourceUtils를` 사용하도록 수정
+    - [ ] `TransactionSynchronizationManager` 클래스가 올바르게 작동하도록 구현
+
+- [ ] 트랜잭션 서비스 추상화하기
