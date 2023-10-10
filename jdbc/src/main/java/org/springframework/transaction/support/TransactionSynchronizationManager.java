@@ -1,9 +1,9 @@
 package org.springframework.transaction.support;
 
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
@@ -21,9 +21,13 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
-        resources.set(new ConcurrentHashMap<>(
-                Map.of(key, value)
-        ));
+        final Map<DataSource, Connection> connectionMap = resources.get();
+        if (Objects.isNull(connectionMap)) {
+            resources.set(new HashMap<>(Map.of(key, value)));
+            return;
+        }
+
+        connectionMap.put(key, value);
     }
 
     public static Connection unbindResource(final DataSource key) {
