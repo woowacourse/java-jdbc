@@ -35,7 +35,7 @@ public class TransactionManager {
                                 final Connection connection) throws SQLException {
         try {
             return commit(action, connection);
-        } catch (SQLException e) {
+        } catch (RuntimeException e) {
             connection.rollback();
             throw new DataAccessException(e);
         }
