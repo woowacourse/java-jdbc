@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, boolean closeResources,  Object... args) {
+    public int update(final String sql, boolean closeResources, @Nullable Object... args) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -56,7 +57,7 @@ public class JdbcTemplate {
         return executeQuery(callback, sql, closeResources, args);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, boolean closeResource, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, boolean closeResource, @Nullable Object... args) {
         PreparedStatementCallback<List<T>> callBack = pstmt -> {
             ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(pstmt);
@@ -74,7 +75,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, boolean closeResources, Object... args) {
+    private <T> T executeQuery(final PreparedStatementCallback<T> action, final String sql, boolean closeResources, @Nullable Object... args) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
