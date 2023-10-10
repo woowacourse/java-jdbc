@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -33,7 +33,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final var userService = new AppUserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,7 +48,7 @@ class UserServiceTest {
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -56,10 +56,10 @@ class UserServiceTest {
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(
                 DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy)
+                () -> appUserService.changePassword(1L, newPassword, createBy)
         );
 
-        final var actual = userService.findById(1L);
+        final var actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
