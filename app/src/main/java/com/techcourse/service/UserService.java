@@ -42,6 +42,13 @@ public class UserService {
         } catch (SQLException e) {
             conn.rollback();
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -59,7 +66,12 @@ public class UserService {
             conn.rollback();
             throw new DataAccessException(e);
         } finally {
-            conn.setAutoCommit(true);
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
