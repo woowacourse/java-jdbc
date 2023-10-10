@@ -50,6 +50,5 @@ public class TransactionManager {
 
     public void close() {
         DataSourceUtils.releaseConnection(connection, dataSource);
-        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 }
