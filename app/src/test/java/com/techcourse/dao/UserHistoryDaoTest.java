@@ -7,6 +7,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class UserHistoryDaoTest {
 
@@ -16,7 +17,7 @@ class UserHistoryDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
+        userHistoryDao = new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance()));
     }
 
     @Test
