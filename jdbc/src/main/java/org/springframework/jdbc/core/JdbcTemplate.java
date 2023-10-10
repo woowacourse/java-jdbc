@@ -25,21 +25,13 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, boolean closeResources, @Nullable Object... args) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
+        PreparedStatementCallback<Integer> action = (pstmt) -> {
             ArgumentPreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(pstmt);
             return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw SQLExceptionTranslator.translate(sql, e);
-        } finally {
-            if (closeResources) {
-                DataSourceUtils.releaseConnection(dataSource);
-            }
-        }
+        };
+        return executeQuery(action, sql, closeResources, args);
+
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, boolean closeResources, Object... args) {
