@@ -8,9 +8,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.transaction.TransactionManager;
 
 import javax.sql.DataSource;
 
