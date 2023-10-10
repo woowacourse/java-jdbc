@@ -18,6 +18,7 @@ public class TrxUserService implements UserService {
         this.dataSource = dataSource;
     }
 
+    @Override
     public User findById(final long id) {
         Connection connection = null;
         try {
@@ -37,6 +38,7 @@ public class TrxUserService implements UserService {
         }
     }
 
+    @Override
     public void insert(final User user) {
         Connection connection = null;
         try {
@@ -55,6 +57,7 @@ public class TrxUserService implements UserService {
         }
     }
 
+    @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
