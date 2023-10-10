@@ -20,27 +20,32 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... objects) {
-        preparedStatementExecutor.execute(PreparedStatement::executeUpdate, sql, objects);
+        preparedStatementExecutor.execute(preparedStatement -> {
+            preparedStatementExecutor.prepareStatementWithBindingQuery(preparedStatement, objects);
+            return preparedStatement.executeUpdate();
+        }, sql);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return preparedStatementExecutor.execute(preparedStatement -> {
+            preparedStatementExecutor.prepareStatementWithBindingQuery(preparedStatement, objects);
             final ResultSet resultSet = preparedStatement.executeQuery();
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapping(resultSet));
             }
             return results;
-        }, sql, objects);
+        }, sql);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         return preparedStatementExecutor.execute(preparedStatement -> {
+            preparedStatementExecutor.prepareStatementWithBindingQuery(preparedStatement, objects);
             final ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapping(resultSet));
             }
             return Optional.empty();
-        }, sql, objects);
+        }, sql);
     }
 }
