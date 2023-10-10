@@ -8,6 +8,7 @@ import com.techcourse.dao.UserDaoWithJdbcTemplate;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.Proxy;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final UserService userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -46,7 +47,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(dataSource);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final UserService userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -57,5 +58,11 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private UserService getTransactionalUserService(final UserHistoryDao userHistoryDao) {
+        return (UserService) Proxy.newProxyInstance(UserService.class.getClassLoader(),
+                new Class[]{UserService.class},
+                new TransactionProxyHandler(new UserServiceImpl(userDao, userHistoryDao), dataSource));
     }
 }
