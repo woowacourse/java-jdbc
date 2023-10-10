@@ -49,7 +49,6 @@ public class UserDao {
     }
 
     public void deleteAll() {
-        jdbcTemplate.update("TRUNCATE TABLE user_history RESTART IDENTITY;");
         jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 }
