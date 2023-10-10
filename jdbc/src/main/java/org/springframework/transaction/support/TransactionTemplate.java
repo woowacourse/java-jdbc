@@ -27,7 +27,7 @@ public class TransactionTemplate {
             commit(conn);
         } catch (Exception e) {
             rollback(conn);
-            throw e;
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
