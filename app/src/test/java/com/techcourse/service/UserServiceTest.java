@@ -5,27 +5,29 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserDaoWithTransaction;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
+import javax.sql.DataSource;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
@@ -70,14 +72,15 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(dataSource);
+        final var userDaoWithTransaction = new UserDaoWithTransaction(dataSource);
+        final var userService = new UserServiceWithTransaction(userDaoWithTransaction, userHistoryDao, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePasswordWithTransaction(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L);
 
