@@ -75,13 +75,8 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (isConnectionManuallyInstantiated(conn)) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
+            if (isConnectionManuallyInstantiated(conn)) {
+                tryCloseConnection(conn);
             }
         }
     }
@@ -95,5 +90,14 @@ public class JdbcTemplate {
 
     private boolean isConnectionManuallyInstantiated(Connection conn) {
         return conn != null && TransactionSynchronizationManager.getResource(dataSource) == null;
+    }
+
+    private void tryCloseConnection(Connection conn) throws DataAccessException {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 }
