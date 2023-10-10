@@ -37,4 +37,8 @@ public abstract class TransactionSynchronizationManager {
     public static void begin() {
         transactionEnables.set(Boolean.TRUE);
     }
+
+    public static void end() {
+        transactionEnables.set(Boolean.FALSE);
+    }
 }

@@ -65,9 +65,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

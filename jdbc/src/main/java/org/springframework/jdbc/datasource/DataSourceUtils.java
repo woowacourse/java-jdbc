@@ -30,6 +30,9 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(final Connection connection,
                                          final DataSource dataSource) {
+        if (TransactionSynchronizationManager.isTransactionEnable()) {
+            return;
+        }
         try {
             connection.close();
         } catch (SQLException ex) {

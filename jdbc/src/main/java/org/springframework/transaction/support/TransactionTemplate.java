@@ -29,6 +29,7 @@ public class TransactionTemplate {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
+            TransactionSynchronizationManager.end();
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
