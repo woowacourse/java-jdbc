@@ -5,17 +5,18 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class TransactionExecutor implements TransactionManager {
 
     @Override
-    public void execute(DataSource dataSource, Consumer<Void> consumer) {
+    public <T> T execute(DataSource dataSource, Supplier<T> method) {
         final var connection = TransactionManager.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            consumer.accept(null);
+            T result = method.get();
             connection.commit();
+            return result;
         } catch (RuntimeException | SQLException e) {
             try {
                 connection.rollback();
