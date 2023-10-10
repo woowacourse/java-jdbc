@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,19 +33,6 @@ public class JdbcTemplate {
         };
 
         return executor.execute(sql, args, fuction);
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        final Function<PreparedStatement, Integer> fuction = pstmt -> {
-            try {
-                return pstmt.executeUpdate();
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
-        };
-
-        return executor.execute(connection, sql, args, fuction);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
