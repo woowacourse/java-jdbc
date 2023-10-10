@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionExecutor {
 
@@ -31,7 +30,6 @@ public class TransactionExecutor {
                 throw new DataAccessException(ex);
             }
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
@@ -54,7 +52,6 @@ public class TransactionExecutor {
                 throw new DataAccessException(ex);
             }
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
         return null;
