@@ -9,10 +9,9 @@ public class SQLExceptionTranslator {
     }
 
     public static DataAccessException translate(String sql,  SQLException e) {
-        Class<? extends DataAccessException> exceptionClazz =
-                H2SQLErrorCodeToDataAccessExceptionMapper.mapSQLErrorCode(e.getErrorCode());
-
         try {
+            Class<? extends DataAccessException> exceptionClazz =
+                    H2SQLErrorCodeToDataAccessExceptionMapper.mapSQLErrorCode(e.getErrorCode());
             return exceptionClazz.getDeclaredConstructor(String.class, SQLException.class)
                     .newInstance(sql, e);
         } catch (ReflectiveOperationException ex) {

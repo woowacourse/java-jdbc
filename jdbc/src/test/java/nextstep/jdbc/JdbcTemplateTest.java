@@ -49,7 +49,7 @@ class JdbcTemplateTest {
         String email = "email";
 
         //when
-        jdbcTemplate.update(sql, account, password, email);
+        jdbcTemplate.update(sql, true, account, password, email);
 
         //then
         then(preparedStatementMock).should(times(3)).setObject(anyInt(), any());
@@ -74,7 +74,7 @@ class JdbcTemplateTest {
                 .willReturn(new TestUser(1L, account, password, email));
 
         //when
-        TestUser testUser = jdbcTemplate.queryForObject(sql, rowMapperMock, 1L);
+        TestUser testUser = jdbcTemplate.queryForObject(sql, rowMapperMock, false, 1L);
 
         //then
         SoftAssertions.assertSoftly(softly -> {
@@ -101,7 +101,7 @@ class JdbcTemplateTest {
 
         //when
         String sql = "select id, account, password, email from user";
-        List<TestUser> results = jdbcTemplate.query(sql, rowMapperMock);
+        List<TestUser> results = jdbcTemplate.query(sql, rowMapperMock, false);
 
         //then
         SoftAssertions.assertSoftly(softly -> {

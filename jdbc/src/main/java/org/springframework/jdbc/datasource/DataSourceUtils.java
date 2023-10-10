@@ -2,6 +2,7 @@ package org.springframework.jdbc.datasource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import javax.sql.DataSource;
 import org.springframework.dao.CannotGetJdbcConnectionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -28,9 +29,12 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(DataSource dataSource) {
         try {
-            connection.close();
+            Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
+            if (Objects.nonNull(connection)) {
+                connection.close();
+            }
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
