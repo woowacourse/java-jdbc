@@ -3,6 +3,7 @@ package org.springframework.transaction.support;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManger {
@@ -20,7 +21,7 @@ public class TransactionManger {
             T result = serviceCallBack.execute();
             connection.commit();
             return result;
-        } catch (SQLException e) {
+        } catch (SQLException | DataAccessException e) {
             try {
                 connection.rollback();
             } catch (SQLException ex) {
