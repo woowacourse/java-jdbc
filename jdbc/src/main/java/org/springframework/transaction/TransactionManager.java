@@ -10,7 +10,7 @@ import java.sql.SQLException;
 public class TransactionManager {
 
     private final DataSource dataSource;
-    private Connection connection;
+    private final Connection connection;
 
     public TransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -19,9 +19,6 @@ public class TransactionManager {
 
     public void begin() {
         try {
-            if (connection.isClosed()) {
-                connection = DataSourceUtils.getConnection(dataSource);
-            }
             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new DataAccessException(e);

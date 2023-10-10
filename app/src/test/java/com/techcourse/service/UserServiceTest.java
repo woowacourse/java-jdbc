@@ -25,7 +25,6 @@ class UserServiceTest {
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
-        this.transactionManager = new TransactionManager(jdbcTemplate.getDataSource());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -50,7 +49,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService, new TransactionExecutor(transactionManager));
+        final var userService = new TxUserService(appUserService, new TransactionExecutor(jdbcTemplate.getDataSource()));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
