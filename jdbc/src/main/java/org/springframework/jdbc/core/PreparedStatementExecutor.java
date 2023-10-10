@@ -24,12 +24,8 @@ public class PreparedStatementExecutor {
             final String sql,
             final Object... args
     ) {
-        try (final Connection connection = DataSourceUtils.getConnection(dataSource)) {
-            return execute(connection, executeStrategy, sql, args);
-        } catch (SQLException e) {
-            log.error("exception : {}", e);
-            throw new RuntimeException(e);
-        }
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        return execute(connection, executeStrategy, sql, args);
     }
 
     public <T> T execute(
@@ -47,6 +43,8 @@ public class PreparedStatementExecutor {
         } catch (SQLException e) {
             log.error("exception : {}", e);
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

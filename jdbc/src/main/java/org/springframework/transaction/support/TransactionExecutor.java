@@ -23,7 +23,7 @@ public class TransactionExecutor {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            connection.setAutoCommit(false);
+            setAutoCommit(connection, false);
 
             final T result = executeStrategy.strategy();
 
@@ -35,6 +35,7 @@ public class TransactionExecutor {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
+            setAutoCommit(connection, true);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
@@ -45,6 +46,14 @@ public class TransactionExecutor {
         } catch (SQLException e) {
             log.error("rollback exception : {}", e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void setAutoCommit(final Connection connection, final boolean status) {
+        try {
+            connection.setAutoCommit(status);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
