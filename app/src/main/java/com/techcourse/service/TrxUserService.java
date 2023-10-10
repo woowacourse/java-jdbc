@@ -7,6 +7,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TrxUserService implements UserService {
 
@@ -20,51 +21,33 @@ public class TrxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        Connection connection = null;
-        try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
-            User user = userService.findById(id);
-            DataSourceUtils.commit(connection);
-            return user;
-        } catch (SQLException e) {
-            DataSourceUtils.rollback(connection);
-            throw new CannotGetJdbcConnectionException("Cannot set autocommit");
-        } catch (Exception e) {
-            DataSourceUtils.rollback(connection);
-            throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+        return executeTransactionTemplate(() -> userService.findById(id));
     }
 
     @Override
     public void insert(final User user) {
-        Connection connection = null;
-        try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
+        executeTransactionTemplate(() -> {
             userService.insert(user);
-            DataSourceUtils.commit(connection);
-        } catch (SQLException e) {
-            DataSourceUtils.rollback(connection);
-            throw new CannotGetJdbcConnectionException("Cannot set autocommit");
-        } catch (Exception e) {
-            DataSourceUtils.rollback(connection);
-            throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+            return null;
+        });
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        executeTransactionTemplate(() -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
+    }
+
+    public <T> T executeTransactionTemplate(Supplier<T> supplier) {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createBy);
+            T result = supplier.get();
             DataSourceUtils.commit(connection);
+            return result;
         } catch (SQLException e) {
             DataSourceUtils.rollback(connection);
             throw new CannotGetJdbcConnectionException("Cannot set autocommit");
