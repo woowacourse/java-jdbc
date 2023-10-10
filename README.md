@@ -73,3 +73,7 @@
       2. ConnectionManager는 Connection 새로 생성해서 반환
       3. JdbcTemplate DB 접근 끝 
       4. ConnectionManager가 Connection 자원 반환
+
+### 2차
+- [ ] TransactionCallback 대신 Supplier 사용
+- [ ] isTransactional 문제 해결
