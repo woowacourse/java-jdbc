@@ -36,17 +36,22 @@ public class TransactionExecutor {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
+            setConnectionTransactionActive(false, connection);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private Connection getTransactionalConnection() {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
-        connectionHolder.setTransactionActive(true);
-        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
+        setConnectionTransactionActive(true, connection);
 
         return connection;
+    }
+
+    private void setConnectionTransactionActive(final boolean isActive, final Connection connection) {
+        final ConnectionHolder connectionHolder = new ConnectionHolder(connection);
+        connectionHolder.setTransactionActive(isActive);
+        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
     }
 
     private void rollback(final Connection connection) {
