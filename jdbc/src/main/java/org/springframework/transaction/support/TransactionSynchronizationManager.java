@@ -16,10 +16,10 @@ public abstract class TransactionSynchronizationManager {
     @Nullable
     public static Connection getResource(DataSource key) {
         final Map<DataSource, Connection> dataSourceConnMap = resources.get();
-        if (dataSourceConnMap != null) {
-            return dataSourceConnMap.get(key);
+        if (dataSourceConnMap == null) {
+            return null;
         }
-        return null;
+        return dataSourceConnMap.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
