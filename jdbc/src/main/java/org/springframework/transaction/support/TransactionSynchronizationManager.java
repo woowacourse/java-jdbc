@@ -1,5 +1,6 @@
 package org.springframework.transaction.support;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ public abstract class TransactionSynchronizationManager {
 
     private TransactionSynchronizationManager() {}
 
+    @Nullable
     public static Connection getResource(DataSource key) {
         final Map<DataSource, Connection> connectionHolder = resources.get();
 
@@ -32,6 +34,7 @@ public abstract class TransactionSynchronizationManager {
         connectionHolder.put(key, value);
     }
 
+    @Nullable
     public static Connection unbindResource(DataSource key) {
         final Map<DataSource, Connection> connectionHolder = resources.get();
 
@@ -39,6 +42,12 @@ public abstract class TransactionSynchronizationManager {
             return null;
         }
 
-        return connectionHolder.remove(key);
+        final Connection removeConnection = connectionHolder.remove(key);
+
+        if (connectionHolder.isEmpty()) {
+            resources.remove();
+        }
+
+        return removeConnection;
     }
 }
