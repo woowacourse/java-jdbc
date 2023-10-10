@@ -9,6 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,15 +22,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return execute(getConnection(), sql, preparedStatement -> mapAllRows(preparedStatement, rowMapper), values);
+        return execute(sql, preparedStatement -> mapAllRows(preparedStatement, rowMapper), values);
     }
 
     private <T> T execute(
-            Connection connection,
             String sql,
             PreparedStatementExecutor<T> preparedStatementExecutor,
             Object... values
     ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement preparedStatement = prepareStatement(connection, sql, values)
         ) {
@@ -63,7 +64,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return execute(getConnection(), sql, preparedStatement -> mapRow(preparedStatement, rowMapper), values);
+        return execute(sql, preparedStatement -> mapRow(preparedStatement, rowMapper), values);
     }
 
     private <T> T mapRow(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
@@ -78,18 +79,6 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... values) {
-        update(getConnection(), sql, values);
-    }
-
-    public void update(Connection connection, String sql, Object... values) {
-        execute(connection, sql, PreparedStatement::executeUpdate, values);
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, values);
     }
 }

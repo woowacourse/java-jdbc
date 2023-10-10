@@ -2,7 +2,9 @@ package org.springframework.transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
@@ -12,39 +14,38 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(TransactionExecutor transactionExecutor) {
-        Connection connection = getConnection();
+    public <T> T execute(Supplier<T> supplier) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            transactionExecutor.execute(connection);
+            T result = supplier.get();
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            rollback(connection);
+            throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    public void execute(Runnable runnable) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+            runnable.run();
             connection.commit();
         } catch (SQLException e) {
             rollback(connection);
             throw new RuntimeException(e);
         } finally {
-            close(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void close(Connection connection) {
-        try {
-            connection.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
