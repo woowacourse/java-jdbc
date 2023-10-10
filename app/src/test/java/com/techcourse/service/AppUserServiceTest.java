@@ -8,34 +8,34 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.techcourse.support.jdbc.init.PooledDataSourceConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.TransactionManager;
+import org.springframework.jdbc.core.TransactionExecutor;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
-    private TransactionManager transactionManager;
+    private TransactionExecutor transactionExecutor;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.transactionManager = new TransactionManager(new PooledDataSourceConnectionManager());
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(transactionManager, jdbcTemplate);
+        final var dataSource = DataSourceConfig.getInstance();
+        this.transactionExecutor = new TransactionExecutor(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(transactionManager, jdbcTemplate);
-        final var userService = new UserService(transactionManager, userDao, userHistoryDao);
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -49,8 +49,9 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(transactionManager, jdbcTemplate);
-        final var userService = new UserService(transactionManager, userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(transactionExecutor, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
