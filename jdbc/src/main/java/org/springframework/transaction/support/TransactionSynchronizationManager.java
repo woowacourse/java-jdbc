@@ -10,7 +10,7 @@ public abstract class TransactionSynchronizationManager {
 
     private TransactionSynchronizationManager() {}
 
-    public static ConnectionHolder getResource(DataSource key) {
+    public static ConnectionHolder getResource(final DataSource key) {
         final Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
         if (connectionHolders == null) {
             return null;
@@ -18,7 +18,7 @@ public abstract class TransactionSynchronizationManager {
         return connectionHolders.get(key);
     }
 
-    public static void bindResource(DataSource key, ConnectionHolder value) {
+    public static void bindResource(final DataSource key, final ConnectionHolder value) {
         Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
         if (connectionHolders == null) {
             connectionHolders = new HashMap<>();
@@ -27,7 +27,7 @@ public abstract class TransactionSynchronizationManager {
         connectionHolders.put(key, value);
     }
 
-    public static ConnectionHolder unbindResource(DataSource key) {
+    public static ConnectionHolder unbindResource(final DataSource key) {
         final Map<DataSource, ConnectionHolder> connectionHolders = resources.get();
         if (connectionHolders == null) {
             return null;
