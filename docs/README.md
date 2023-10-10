@@ -18,3 +18,7 @@
 - [x] User에 비밀번호 변경 기능 구현
   - [x] 변경 이력 저장
   - [x] 트랜잭션 설정
+
+## 4단계
+- [ ] Transaction synchronization 적용
+- [ ] 트랜잭션 서비스 추상화하기
