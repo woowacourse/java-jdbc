@@ -1,11 +1,8 @@
 package org.springframework.transaction.support;
 
-import org.springframework.dao.DataAccessException;
-
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,13 +55,5 @@ public abstract class TransactionSynchronizationManager {
         }
 
         return connection;
-    }
-
-    public static void rollback(final Connection connection) {
-        try {
-            connection.rollback();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 }

@@ -4,10 +4,10 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class TxUserService implements UserService {
 
@@ -34,15 +34,21 @@ public class TxUserService implements UserService {
 
         try {
             connection.setAutoCommit(false);
-
             userService.changePassword(id, newPassword, createBy);
-
             connection.commit();
         } catch (final Exception e) {
-            TransactionSynchronizationManager.rollback(connection);
-            throw new DataAccessException(e);
+            rollbackAndThrow(connection, e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollbackAndThrow(final Connection connection, final Exception businessException) {
+        try {
+            connection.rollback();
+            throw new DataAccessException(businessException);
+        } catch (final SQLException rollbackException) {
+            throw new DataAccessException(rollbackException);
         }
     }
 }
