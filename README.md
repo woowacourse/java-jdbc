@@ -16,3 +16,14 @@
 - [x] UserHistoryDao jdbcTemplate 이용하게 수정
 - [x] 트랜잭션 동기화하기
   - [x] jdbcTemplate에 connection을 받는 update메소드 오버라이드하기
+## 트랜잭션 synchronization 적용하기
+- [x] Transaction synchronization 적용하기
+  - [x] TransactionSynchronizationManager 구현하기
+  - [x] Dao에 connection 인자 제거하기
+- [x] 트랜잭션 서비스 추상화하기
+
+## 코드리뷰 리팩토링
+- [x] 불필요한 분기 지우기
+- [x] runnable 이용하기
+- [x] read 메소드에도 transaction 적용하기
+- [ ] runtimeException일 때에도 rollback하도록 수정
