@@ -23,7 +23,7 @@
 - [x] 트랜잭션 서비스 추상화하기
 
 ## 코드리뷰 리팩토링
-- [ ] 불필요한 분기 지우기
+- [x] 불필요한 분기 지우기
 - [ ] runnable 이용하 
 - [ ] read 메소드에도 transaction 적용하기
 - [ ] runtimeException일 때에도 rollback하도록 수정
