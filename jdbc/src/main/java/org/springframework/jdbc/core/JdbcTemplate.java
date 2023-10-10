@@ -63,7 +63,7 @@ public class JdbcTemplate {
         public <T> T readResult(final String sql,
                                 final SelectQueryExecutor<T> selectQueryExecutor,
                                 final Object... parameters) {
-            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            final Connection connection = DataSourceUtils.getConnectionForTransactionSupports(dataSource);
             try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 setQueryParameter(preparedStatement, parameters);
                 final ResultSet resultSet = preparedStatement.executeQuery();
@@ -73,14 +73,14 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             } finally {
-                DataSourceUtils.releaseConnectionIfNotInTransaction(connection, dataSource);
+                DataSourceUtils.releaseConnectionForTransactionSupports(connection, dataSource);
             }
         }
 
         public void update(final String sql,
                            final UpdateQueryExecutor updateQueryExecutor,
                            final Object... parameters) {
-            final Connection connection = DataSourceUtils.getConnection(dataSource);
+            final Connection connection = DataSourceUtils.getConnectionForTransactionSupports(dataSource);
             try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 setQueryParameter(preparedStatement, parameters);
 
@@ -89,7 +89,7 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             } finally {
-                DataSourceUtils.releaseConnectionIfNotInTransaction(connection, dataSource);
+                DataSourceUtils.releaseConnectionForTransactionSupports(connection, dataSource);
             }
         }
 
