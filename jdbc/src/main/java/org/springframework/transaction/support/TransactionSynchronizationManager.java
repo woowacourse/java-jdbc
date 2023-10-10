@@ -16,11 +16,15 @@ public abstract class TransactionSynchronizationManager {
     public static Connection getResource(DataSource key) {
         final Map<DataSource, Connection> connectionHolder = resources.get();
 
-        if (connectionHolder == null || !connectionHolder.containsKey(key)) {
+        if (isExistKey(key, connectionHolder)) {
             return null;
         }
 
         return connectionHolder.get(key);
+    }
+
+    private static boolean isExistKey(final DataSource key, @Nullable final Map<DataSource, Connection> connectionHolder) {
+        return connectionHolder == null || !connectionHolder.containsKey(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
@@ -38,7 +42,7 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(DataSource key) {
         final Map<DataSource, Connection> connectionHolder = resources.get();
 
-        if (connectionHolder == null) {
+        if (isExistKey(key, connectionHolder)) {
             return null;
         }
 
