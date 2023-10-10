@@ -5,6 +5,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -33,7 +34,7 @@ public class UserService {
     }
 
     public void insert(final User user) throws SQLException {
-        final Connection conn = dataSource.getConnection();
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         conn.setAutoCommit(false);
         try {
             userDao.insert(conn, user);
@@ -43,17 +44,12 @@ public class UserService {
             conn.rollback();
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        Connection conn = dataSource.getConnection();
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         conn.setAutoCommit(false);
         final var user = findById(id);
         user.changePassword(newPassword);
@@ -66,12 +62,7 @@ public class UserService {
             conn.rollback();
             throw new DataAccessException(e);
         } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }
