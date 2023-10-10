@@ -28,10 +28,9 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, Class<T> type, Object... args) {
         return execute(sql, psmt -> {
-            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
-                validOneResult(resultSet);
-                return ObjectConverter.convertForObject(resultSet, type);
-            }
+            ResultSet resultSet = executeWithArgs(psmt, sql, args);
+            validOneResult(resultSet);
+            return ObjectConverter.convertForObject(resultSet, type);
         });
     }
 
@@ -93,9 +92,8 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
         return execute(sql, psmt -> {
-            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
-                return ObjectConverter.convertForList(resultSet, type);
-            }
+            ResultSet resultSet = executeWithArgs(psmt, sql, args);
+            return ObjectConverter.convertForList(resultSet, type);
         });
     }
 
@@ -108,25 +106,23 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, psmt -> {
-            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
-                validOneResult(resultSet);
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                throw new EmptyResultSetException();
+            ResultSet resultSet = executeWithArgs(psmt, sql, args);
+            validOneResult(resultSet);
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
+            throw new EmptyResultSetException();
         });
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, psmt -> {
-            try (ResultSet resultSet = executeWithArgs(psmt, sql, args)) {
-                List<T> result = new ArrayList<>();
-                while (resultSet.next()) {
-                    result.add(rowMapper.mapRow(resultSet));
-                }
-                return result;
+            ResultSet resultSet = executeWithArgs(psmt, sql, args);
+            List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet));
             }
+            return result;
         });
     }
 }
