@@ -32,15 +32,22 @@ public abstract class TransactionSynchronizationManager {
         resources.get().put(dataSource, connection);
     }
 
-    public static Connection unbindConnection(DataSource dataSource) {
+    public static Connection unbindConnection(Connection connection, DataSource dataSource) {
         if (resources.get() == null || !resources.get().containsKey(dataSource)) {
             throw new IllegalArgumentException("등록된 DataSource가 없습니다.");
         }
 
         Map<DataSource, Connection> resource = resources.get();
-        Connection connection = resource.get(dataSource);
+        Connection bindedConnection = resource.get(dataSource);
+        validateConnection(connection, bindedConnection);
         resources.remove();
         return connection;
+    }
+
+    private static void validateConnection(Connection connection, Connection bindedConnection) {
+        if (connection != bindedConnection) {
+            throw new IllegalArgumentException("잘못된 Connection입니다.");
+        }
     }
 
     public static boolean isInTransaction() {

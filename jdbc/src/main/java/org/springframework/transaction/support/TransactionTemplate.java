@@ -57,9 +57,9 @@ public class TransactionTemplate {
 
     private void release(Connection connection) {
         try {
-            connection.close();
             TransactionSynchronizationManager.setInTransaction(false);
-            TransactionSynchronizationManager.unbindConnection(dataSource);
+            Connection unbindedConnection = TransactionSynchronizationManager.unbindConnection(connection, dataSource);
+            unbindedConnection.close();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
