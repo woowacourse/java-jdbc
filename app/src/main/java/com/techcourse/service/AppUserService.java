@@ -4,12 +4,8 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
 public class AppUserService implements UserService {
@@ -35,19 +31,8 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public void insert(final User user) throws SQLException {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        conn.setAutoCommit(false);
-        try {
-            userDao.insert(user);
-
-            conn.commit();
-        } catch (SQLException e) {
-            conn.rollback();
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
+    public void insert(final User user) {
+        userDao.insert(user);
     }
 
     @Override
