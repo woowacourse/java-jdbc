@@ -4,15 +4,15 @@ import java.sql.SQLException;
 
 public class CannotGetJdbcConnectionException extends RuntimeException {
 
-    public CannotGetJdbcConnectionException(String msg) {
+    public CannotGetJdbcConnectionException(final String msg) {
         super(msg);
     }
 
-    public CannotGetJdbcConnectionException(String msg, SQLException ex) {
+    public CannotGetJdbcConnectionException(final String msg, final SQLException ex) {
         super(msg, ex);
     }
 
-    public CannotGetJdbcConnectionException(String msg, IllegalStateException ex) {
+    public CannotGetJdbcConnectionException(final String msg, final IllegalStateException ex) {
         super(msg, ex);
     }
 }
