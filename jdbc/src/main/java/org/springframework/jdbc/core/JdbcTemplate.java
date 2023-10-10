@@ -36,6 +36,9 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapToRow(resultSet));
             }
+            if (resultSet.next()) {
+                throw new SQLException("유일한 결과값이 존재하지 않습니다.");
+            }
             return Optional.empty();
         };
         return query(sql, rse, objects);
