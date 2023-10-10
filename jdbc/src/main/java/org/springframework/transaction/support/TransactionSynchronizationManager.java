@@ -1,5 +1,7 @@
 package org.springframework.transaction.support;
 
+import static java.util.Objects.isNull;
+
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +32,10 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection unbindResource(DataSource key) {
         Connection resource = getResource(key);
+        if (isNull(resource)) {
+            throw new IllegalArgumentException("There is no resource");
+        }
+        
         resources.remove();
         return resource;
     }
