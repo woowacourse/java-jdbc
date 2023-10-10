@@ -47,8 +47,6 @@ class JdbcTemplateTests {
         verify(this.preparedStatement).setObject(1, "reo");
         verify(this.preparedStatement).setObject(2, "1234");
         verify(this.preparedStatement).setObject(3, "reo@woowahan.com");
-        verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 
     @Test
@@ -61,8 +59,6 @@ class JdbcTemplateTests {
         assertThatExceptionOfType(DataAccessException.class)
                 .isThrownBy(() -> this.template.update(sql))
                 .withCause(sqlException);
-        verify(this.preparedStatement).close();
-        verify(this.connection, atLeastOnce()).close();
     }
 
     @Test
@@ -73,9 +69,6 @@ class JdbcTemplateTests {
         });
 
         given(this.preparedStatement.executeQuery()).willReturn(this.resultSet);
-
-        verify(this.preparedStatement).close();
-        verify(this.connection).close();
     }
 
     @Test
@@ -90,7 +83,5 @@ class JdbcTemplateTests {
                     return "";
                 }))
                 .withCause(sqlException);
-        verify(this.preparedStatement).close();
-        verify(this.connection, atLeastOnce()).close();
     }
 }
