@@ -105,7 +105,7 @@ class JdbcTemplateTest {
 
         //when
         String selectSql = "select * from users where account = ?";
-        final Map<String, Object> result = jdbcTemplate.query(selectSql, (resultSet, rowNum) -> Map.of(
+        final Map<String, Object> result = jdbcTemplate.queryForObject(selectSql, (resultSet, rowNum) -> Map.of(
                 "id", resultSet.getLong("id"),
                 "account", resultSet.getString("account"),
                 "password", resultSet.getString("password"),

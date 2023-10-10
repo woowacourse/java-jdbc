@@ -25,9 +25,7 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) throws DataAccessException {
         return update(sql, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setPreparedStatementWithArgs(args, pstmt);
         });
     }
 
@@ -38,33 +36,14 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) throws DataAccessException {
-        return execute(con -> {
-            try (final PreparedStatement pstmt = con.prepareStatement(sql)) {
-                return preparedStatementCallback.doInPreparedStatement(pstmt);
-            }
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
+        return queryForObject(sql, rowMapper, pstmt -> {
+            setPreparedStatementWithArgs(args, pstmt);
         });
     }
 
-    private <T> T execute(final ConnectionCallBack<T> connectionCallBack) throws DataAccessException {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            return connectionCallBack.doInConnection(connection);
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage());
-        }
-    }
-
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
-        return query(sql, rowMapper, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-        });
-    }
-
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        final List<T> result = queryForList(sql, rowMapper, preparedStatementSetter);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        final List<T> result = query(sql, extractList(rowMapper), preparedStatementSetter);
         if (result.isEmpty()) {
             throw new DataAccessException("No results");
         }
@@ -75,22 +54,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        return query(sql, rs -> {
-            final List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rs.getRow()));
-            }
-            return results;
-        }, args);
-    }
-
-    private <T> T query(final String sql, final ResultSetExtractor<T> rse, final Object... args) throws DataAccessException {
-        return query(sql, rse, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return queryForList(sql, rowMapper, pstmt -> {
+            setPreparedStatementWithArgs(args, pstmt);
         });
     }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return query(sql, extractList(rowMapper), preparedStatementSetter);
+    }
+
 
     private <T> T query(final String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws DataAccessException {
         return execute(sql, pstmt -> {
@@ -99,5 +71,32 @@ public class JdbcTemplate {
                 return rse.extractData(rs);
             }
         });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) throws DataAccessException {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void setPreparedStatementWithArgs(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> ResultSetExtractor<List<T>> extractList(final RowMapper<T> rowMapper) {
+        return rs -> {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return results;
+        };
     }
 }

@@ -52,12 +52,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, id);
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, preparedStatementSetter);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatementSetter);
     }
 
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
