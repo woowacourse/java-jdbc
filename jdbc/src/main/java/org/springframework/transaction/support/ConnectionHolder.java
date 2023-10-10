@@ -2,36 +2,34 @@ package org.springframework.transaction.support;
 
 import java.sql.Connection;
 
-class ConnectionHolder {
+public class ConnectionHolder {
 
-    private static final ConnectionHolder INSTANCE = new ConnectionHolder();
+    private final Connection connection;
+    private boolean transactionActive;
 
-    private final ThreadLocal<Connection> connection = new ThreadLocal<>();
-
-    private ConnectionHolder() {
+    public ConnectionHolder(final Connection connection) {
+        this(connection, false);
     }
 
-    static ConnectionHolder getInstance() {
-        return INSTANCE;
+    public ConnectionHolder(final Connection connection, final boolean transactionActive) {
+        this.connection = connection;
+        this.transactionActive = transactionActive;
     }
 
-    public void setConnection(final Connection connection) {
-        this.connection.set(connection);
-    }
-
-    public Connection getConnection() {
-        return connection.get();
-    }
-
-    public void clear() {
-        connection.remove();
-    }
-
-    public boolean isEmpty() {
-        return connection.get() == null;
+    public void setTransactionActive(final boolean transactionActive) {
+        this.transactionActive = transactionActive;
     }
 
     public boolean isSameConnection(final Connection connection) {
-        return this.connection.get() == connection;
+        return this.connection == connection;
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public boolean isTransactionActive() {
+        return transactionActive;
     }
 }
+
