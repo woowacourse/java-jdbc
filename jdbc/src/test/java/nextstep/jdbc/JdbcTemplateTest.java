@@ -42,7 +42,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
         //when
-        jdbcTemplate.update(connection, "Test Sql");
+        jdbcTemplate.update("Test Sql");
 
         //then
         verify(preparedStatement, times(1)).close();

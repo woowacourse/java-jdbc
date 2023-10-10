@@ -1,6 +1,5 @@
 package org.springframework.jdbc.core;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,8 +16,8 @@ public class JdbcTemplate {
         this.queryTemplate = new QueryTemplate(dataSource);
     }
 
-    public void update(Connection connection, String sql, Object... args) {
-        queryTemplate.update(connection, sql, PreparedStatement::executeUpdate, args);
+    public void update(String sql, Object... args) {
+        queryTemplate.update(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
