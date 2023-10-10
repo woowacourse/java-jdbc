@@ -17,18 +17,31 @@ public class QueryExecutorService {
 
     public <T> T execute(final QueryExecutor<T> queryExecutor, final String query,
                          final Object... columns) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
-                final PreparedStatement pstmt = getPreparedstatement(query, columns);
+                final PreparedStatement pstmt = getPreparedstatement(connection, query, columns);
         ) {
             return queryExecutor.execute(pstmt);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        } finally {
+            closeAutoCommitConnection(connection);
+        }
+    }
+
+    private void closeAutoCommitConnection(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement getPreparedstatement(final String query, final Object[] columns)
+    private PreparedStatement getPreparedstatement(final Connection connection, final String query,
+                                                   final Object[] columns)
             throws SQLException {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
         final PreparedStatement preparedStatement = connection.prepareStatement(query);
         setParameters(preparedStatement, columns);
         return preparedStatement;
