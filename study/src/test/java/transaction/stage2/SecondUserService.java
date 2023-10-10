@@ -36,7 +36,8 @@ public class SecondUserService {
     public String saveSecondTransactionWithSupports() {
         userRepository.save(User.createTest());
         logActualTransactionActive();
-        return TransactionSynchronizationManager.getCurrentTransactionName();
+//        return TransactionSynchronizationManager.getCurrentTransactionName();
+        throw new RuntimeException();
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -50,7 +51,8 @@ public class SecondUserService {
     public String saveSecondTransactionWithNotSupported() {
         userRepository.save(User.createTest());
         logActualTransactionActive();
-        return TransactionSynchronizationManager.getCurrentTransactionName();
+        throw new RuntimeException();
+//        return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
     @Transactional(propagation = Propagation.NESTED)
