@@ -1,7 +1,7 @@
 package com.techcourse.support.transaction;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.jdbc.exception.DataAccessException;
 import org.springframework.jdbc.exception.RollbackFailException;
 
 import javax.sql.DataSource;

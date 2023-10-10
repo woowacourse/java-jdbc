@@ -4,7 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.transaction.TransactionExecutor;
 
-public class TxUserService {
+public class TxUserService implements UserService {
 
     private final UserService userService;
     private final TransactionExecutor transactionExecutor;
@@ -14,15 +14,18 @@ public class TxUserService {
         this.transactionExecutor = new TransactionExecutor(DataSourceConfig.getInstance());
     }
 
-    public User findById(final long id) {
+    @Override
+    public User findById(final Long id) {
         return transactionExecutor.readExecute(() -> userService.findById(id));
     }
 
+    @Override
     public void insert(final User user) {
         transactionExecutor.execute(() -> userService.insert(user));
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    @Override
+    public void changePassword(final Long id, final String newPassword, final String createBy) {
         transactionExecutor.execute(() -> userService.changePassword(id, newPassword, createBy));
     }
 }
