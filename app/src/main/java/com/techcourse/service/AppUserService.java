@@ -5,23 +5,19 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-import javax.sql.DataSource;
 import java.util.NoSuchElementException;
 
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
 
     public AppUserService(
             final UserDao userDao,
-            final UserHistoryDao userHistoryDao,
-            final DataSource dataSource
+            final UserHistoryDao userHistoryDao
     ) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
     }
 
     @Override

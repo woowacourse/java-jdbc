@@ -31,7 +31,7 @@ class AppUserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var appUserService = new AppUserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
         final TxUserService userService = new TxUserService(jdbcTemplate.getDataSource(), appUserService);
 
         final var newPassword = "qqqqq";
@@ -47,7 +47,7 @@ class AppUserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao, jdbcTemplate.getDataSource());
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
         final TxUserService userService = new TxUserService(jdbcTemplate.getDataSource(), appUserService);
 
         final var newPassword = "newPassword";
