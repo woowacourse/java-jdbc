@@ -63,4 +63,10 @@ public class UserDao {
         }
         return user.get();
     }
+
+    public void deleteAll() {
+        String sql = "delete from users";
+
+        jdbcTemplate.update(sql);
+    }
 }

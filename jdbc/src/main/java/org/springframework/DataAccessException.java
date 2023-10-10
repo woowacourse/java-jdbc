@@ -1,4 +1,4 @@
-package org.springframework.dao;
+package org.springframework;
 
 public class DataAccessException extends RuntimeException {
 
