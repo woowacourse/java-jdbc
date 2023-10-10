@@ -1,12 +1,11 @@
  package org.springframework.transaction;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-import javax.sql.DataSource;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
+ import java.sql.Connection;
+ import java.sql.SQLException;
+ import java.util.function.Supplier;
+ import javax.sql.DataSource;
+ import org.springframework.dao.DataAccessException;
+ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
@@ -16,14 +15,8 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(Callable<T> callable) {
-        return executeTemplate(() -> {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+    public <T> T execute(TransactionServiceCallback<T> callback) {
+        return executeTemplate(callback::call);
     }
 
 
