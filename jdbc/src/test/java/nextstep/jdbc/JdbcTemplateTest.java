@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessException;
+import org.springframework.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;

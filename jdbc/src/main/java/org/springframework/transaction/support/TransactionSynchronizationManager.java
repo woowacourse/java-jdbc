@@ -1,6 +1,6 @@
 package org.springframework.transaction.support;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,13 +10,14 @@ import java.util.Map;
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> isInTransaction = ThreadLocal.withInitial(() -> false);
 
     private TransactionSynchronizationManager() {}
 
     public static Connection getConnection(DataSource dataSource) {
         Map<DataSource, Connection> dataSourceAndConnection = resources.get();
         if (dataSourceAndConnection == null || dataSourceAndConnection.get(dataSource) == null) {
-            throw new CannotGetJdbcConnectionException("DataSource에 binding된 Connection이 없습니다.");
+            throw new DataAccessException("DataSource에 binding된 Connection이 없습니다.");
         }
 
         return dataSourceAndConnection.get(dataSource);
@@ -40,5 +41,17 @@ public abstract class TransactionSynchronizationManager {
         Connection connection = resource.get(dataSource);
         resources.remove();
         return connection;
+    }
+
+    public static boolean isInTransaction() {
+        return isInTransaction.get();
+    }
+
+    public static void setInTransaction(boolean inTransaction) {
+        if (inTransaction && isInTransaction()) {
+            throw new IllegalStateException("이미 트랜잭션이 진행중입니다.");
+        }
+        isInTransaction.remove();
+        isInTransaction.set(inTransaction);
     }
 }

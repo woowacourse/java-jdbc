@@ -19,7 +19,6 @@ public class DatabasePopulatorUtils {
             URL url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
             File file = new File(url.getFile());
             String sql = Files.readString(file.toPath());
-
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             jdbcTemplate.execute(sql);
         } catch (IOException | NullPointerException e) {

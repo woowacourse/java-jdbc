@@ -6,7 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -25,12 +25,14 @@ class TxUserServiceTest {
     @BeforeEach
     void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
+
+        DatabasePopulatorUtils.execute(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
         this.transactionTemplate = new TransactionTemplate(dataSource);
 
-        DatabasePopulatorUtils.execute(dataSource);
         userDao.deleteAll();
+
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -46,8 +48,8 @@ class TxUserServiceTest {
         final var newPassword = "newPassword";
         final var createBy = "gugu";
 
-        assertThrows(CannotGetJdbcConnectionException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(user.getId(), newPassword, createBy));
 
         final var actual = userService.findById(user.getId());
 

@@ -2,14 +2,11 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
+import org.springframework.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,25 +22,27 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... values) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            log.debug("query : {}", sql);
             setValues(pstmt, values);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql);
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+
             log.debug("query : {}", sql);
 
             setValues(pstmt, values);
@@ -57,6 +56,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection);
         }
     }
 
@@ -74,16 +75,19 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql) {
-        try (
-                Connection connection = dataSource.getConnection();
-                Statement stmt = connection.createStatement();
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
+            Statement stmt = connection.createStatement();
+
             log.debug("query : {}", sql);
 
             stmt.execute(sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection);
         }
     }
 

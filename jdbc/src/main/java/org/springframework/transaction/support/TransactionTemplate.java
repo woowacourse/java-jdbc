@@ -1,7 +1,6 @@
 package org.springframework.transaction.support;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -16,22 +15,23 @@ public class TransactionTemplate {
     }
 
     public void execute(Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        begin(connection);
+        Connection connection = begin();
         try {
             runnable.run();
-
             commit(connection);
         } catch (Exception e) {
             rollback(connection);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            throw new DataAccessException(e);
         }
     }
 
-    private void begin(Connection connection) {
+    private Connection begin() {
         try {
+            TransactionSynchronizationManager.setInTransaction(true);
+            Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindConnection(dataSource, connection);
+            return connection;
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -40,6 +40,7 @@ public class TransactionTemplate {
     private void commit(Connection connection) {
         try {
             connection.commit();
+            release(connection);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -48,6 +49,17 @@ public class TransactionTemplate {
     private void rollback(Connection connection) {
         try {
             connection.rollback();
+            release(connection);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void release(Connection connection) {
+        try {
+            connection.close();
+            TransactionSynchronizationManager.setInTransaction(false);
+            TransactionSynchronizationManager.unbindConnection(dataSource);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
