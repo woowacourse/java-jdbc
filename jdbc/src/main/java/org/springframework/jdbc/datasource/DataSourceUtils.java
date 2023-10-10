@@ -27,11 +27,35 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseJdbcConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
+            if (isTransactionNotStarted(connection)) {
+                releaseConnection(connection, dataSource);
+            }
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    private static boolean isTransactionNotStarted(final Connection connection) throws SQLException {
+        return connection.getAutoCommit() == true;
+    }
+
+    public static void releaseTransactionConnection(Connection connection, DataSource dataSource) {
+        try {
+            connection.setAutoCommit(true);
+            releaseConnection(connection, dataSource);
+        } catch (SQLException ex) {
+            throw new CannotGetJdbcConnectionException("Failed to close Connection");
+        }
+    }
+
+    private static void releaseConnection(Connection connection, DataSource dataSource) {
+        try {
+            connection.close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        } catch (SQLException ex) {
+            throw new CannotGetJdbcConnectionException("Failed to close Connection");
         }
     }
 }

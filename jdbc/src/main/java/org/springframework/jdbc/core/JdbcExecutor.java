@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,8 +25,8 @@ public class JdbcExecutor {
             final Object[] args,
             final Function<PreparedStatement, T> action
     ) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
@@ -35,24 +36,8 @@ public class JdbcExecutor {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    public <T> T execute(
-            final Connection connection,
-            final String sql,
-            final Object[] args,
-            final Function<PreparedStatement, T> action) {
-
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            processPreparedStatementParameter(pstmt, args);
-
-            return action.apply(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseJdbcConnection(conn, dataSource);
         }
     }
 
