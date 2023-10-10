@@ -21,19 +21,11 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(User user) {
-        transactionManger.execute(() -> {
-                    userService.insert(user);
-                    return null;
-                }
-        );
+        transactionManger.execute(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManger.execute(() -> {
-                    userService.changePassword(id, newPassword, createBy);
-                    return null;
-                }
-        );
+        transactionManger.execute(() -> userService.changePassword(id, newPassword, createBy));
     }
 }

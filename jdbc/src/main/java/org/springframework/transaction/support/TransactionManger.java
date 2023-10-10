@@ -33,4 +33,13 @@ public class TransactionManger {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
+
+    public void execute(final Runnable runnable) {
+        execute(() -> {
+            runnable.run();
+            return null;
+        });
+    }
 }
+
+
