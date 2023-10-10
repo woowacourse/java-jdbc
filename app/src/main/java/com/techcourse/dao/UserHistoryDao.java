@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,20 +32,6 @@ public class UserHistoryDao {
     public void log(final UserHistory userHistory) {
         log.debug("User history id : {}", userHistory.getUserId());
         jdbcTemplate.update(
-                INSERT_USER_HISTORY_SQL,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        log.debug("User history id : {}", userHistory.getUserId());
-        jdbcTemplate.update(
-                connection,
                 INSERT_USER_HISTORY_SQL,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
