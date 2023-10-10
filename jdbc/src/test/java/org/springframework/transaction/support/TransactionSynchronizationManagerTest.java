@@ -23,11 +23,13 @@ class TransactionSynchronizationManagerTest {
     @Test
     void 트랜잭션을_시작하면_isTransactionEnable_true() {
         // given
-        TransactionSynchronizationManager.begin();
+        TransactionSynchronizationManager.doBegin();
 
         // when & then
         assertThat(TransactionSynchronizationManager.isTransactionEnable())
             .isTrue();
+
+        TransactionSynchronizationManager.doEnd();
     }
 
     @Test

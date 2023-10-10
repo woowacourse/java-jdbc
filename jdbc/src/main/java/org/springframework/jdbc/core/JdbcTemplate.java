@@ -13,7 +13,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -54,9 +53,7 @@ public class JdbcTemplate {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -90,9 +87,7 @@ public class JdbcTemplate {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -130,9 +125,7 @@ public class JdbcTemplate {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -155,9 +148,7 @@ public class JdbcTemplate {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -172,9 +163,7 @@ public class JdbcTemplate {
             logException(e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            if (!TransactionSynchronizationManager.isTransactionEnable()) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

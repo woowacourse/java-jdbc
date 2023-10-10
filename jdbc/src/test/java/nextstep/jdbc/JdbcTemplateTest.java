@@ -234,12 +234,13 @@ class JdbcTemplateTest {
     @Test
     void 트랜잭션을_시작하면_커넥션을_유지한다() throws Exception {
         // given
-        TransactionSynchronizationManager.begin();
+        TransactionSynchronizationManager.doBegin();
         String sql = "select id, name from member";
         jdbcTemplate.query(sql, MEMBER_MAPPER);
 
         // when & then
         verify(conn, never()).close();
+        TransactionSynchronizationManager.doEnd();
         TransactionSynchronizationManager.unbindResource(dataSource);
     }
 

@@ -28,14 +28,14 @@ public class TransactionTemplate {
             rollback(conn);
             throw e;
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            end(conn);
         }
     }
 
     private void begin(Connection connection) {
         try {
             connection.setAutoCommit(false);
-            TransactionSynchronizationManager.begin();
+            TransactionSynchronizationManager.doBegin();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -55,5 +55,10 @@ public class TransactionTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private void end(Connection conn) {
+        TransactionSynchronizationManager.doEnd();
+        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }

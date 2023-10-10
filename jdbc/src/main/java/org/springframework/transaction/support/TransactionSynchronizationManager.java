@@ -34,7 +34,6 @@ public abstract class TransactionSynchronizationManager {
         if (resource == null) {
             throw new IllegalStateException("resources is not initialize!");
         }
-        transactionEnables.remove();
         resource.remove(key);
         if (resource.isEmpty()) {
             resources.remove();
@@ -49,7 +48,11 @@ public abstract class TransactionSynchronizationManager {
         return transactionEnable;
     }
 
-    public static void begin() {
+    public static void doBegin() {
         transactionEnables.set(Boolean.TRUE);
+    }
+
+    public static void doEnd() {
+        transactionEnables.remove();
     }
 }
