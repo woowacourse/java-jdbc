@@ -1,11 +1,13 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,8 +26,8 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(PreparedStatementCreator statementCreator, StatementCallback<T> action) {
-        try (var connection = dataSource.getConnection();
-             var statement = statementCreator.createPreparedStatement(connection)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (var statement = statementCreator.createPreparedStatement(connection)) {
             return action.doInStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
