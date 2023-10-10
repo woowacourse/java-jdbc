@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.ConnectionSynchronizationManager;
 
 public class TransactionManager {
 
@@ -27,7 +26,6 @@ public class TransactionManager {
             throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            ConnectionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -42,7 +40,6 @@ public class TransactionManager {
             throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            ConnectionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
