@@ -29,9 +29,28 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
-        } catch (SQLException ex) {
+        } catch (SQLException | NullPointerException e) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    public static void commit(Connection connection) {
+        try {
+            connection.commit();
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("Failed to commit JDBC Connection");
+        }
+    }
+
+    public static void rollback(Connection connection) {
+        try {
+            connection.rollback();
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("Failed to rollback JDBC Connection");
         }
     }
 }
