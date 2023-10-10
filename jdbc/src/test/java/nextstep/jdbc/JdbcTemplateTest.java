@@ -188,7 +188,7 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("파라미터 수가 적은 경우 않으면 예외를 발생시킨다")
+        @DisplayName("파라미터 수가 적은 경우 예외를 발생시킨다")
         void throwExceptionIfParameterInputIsLessThenQuestionMark() {
             // given
             final String sql = "select id, content, num from test_data where id = ?";
@@ -201,7 +201,7 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("파라미터 수가 많은 경우 않으면 예외를 발생시킨다")
+        @DisplayName("파라미터 수가 많은 경우 예외를 발생시킨다")
         void throwExceptionIfParameterInputIsLargerThenQuestionMark() {
             // given
             final String sql = "select id, content, num from test_data where id = ?";
