@@ -3,6 +3,8 @@ package com.techcourse.service;
 import com.techcourse.domain.User;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class TxUserService implements UserService {
 
     private final UserService userService;
@@ -15,7 +17,9 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        AtomicReference<User> user = new AtomicReference<>();
+        transactionTemplate.execute(() -> user.set(userService.findById(id)));
+        return user.get();
     }
 
     @Override
