@@ -65,15 +65,24 @@ class TransactionSynchronizationManagerTest {
         @DisplayName("실행한 경우")
         void trueCase() throws SQLException {
             final DataSource datasource = getInstance();
-            TransactionSynchronizationManager.bindResource(datasource, datasource.getConnection());
+            final Connection connection = datasource.getConnection();
+            connection.setAutoCommit(false);
+
+            TransactionSynchronizationManager.bindResource(datasource, connection);
 
             assertTrue(isTransactionActive(getInstance()));
+            connection.close();
         }
 
         @Test
         @DisplayName("실행하지 않은 경우")
         void falseCase() throws SQLException {
+            final DataSource datasource = getInstance();
+            final Connection connection = datasource.getConnection();
+            TransactionSynchronizationManager.bindResource(datasource, connection);
+
             assertFalse(isTransactionActive(getInstance()));
+            connection.close();
         }
     }
 

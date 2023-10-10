@@ -32,7 +32,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static boolean isTransactionActive(final DataSource dataSource) {
         try {
-            return resources.get().get(dataSource).getAutoCommit();
+            return !resources.get().get(dataSource).getAutoCommit();
         } catch (final SQLException e) {
             throw new TransactionSynchronizationManagerException(e);
         }
