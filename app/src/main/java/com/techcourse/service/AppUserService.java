@@ -1,15 +1,10 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.sql.Connection;
 
 public class AppUserService implements UserService {
 
@@ -23,16 +18,7 @@ public class AppUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-        try {
-            userDao.insert(user);
-            userHistoryDao.log(new UserHistory(user, "system"));
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
-            TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
-        }
+        userDao.insert(user);
     }
 
     @Override
