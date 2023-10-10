@@ -18,7 +18,8 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        TransactionTemplate transactionTemplate = new TransactionTemplate();
+        transactionTemplate.execute(()-> userService.insert(user));
     }
 
     @Override
