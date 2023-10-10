@@ -15,11 +15,11 @@ public class UserHistory {
 
     private final String createBy;
 
-    public UserHistory(final User user, final String createBy) {
+    public UserHistory(User user, String createBy) {
         this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createBy);
     }
 
-    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createBy) {
+    public UserHistory(Long id, long userId, String account, String password, String email, String createBy) {
         this.id = id;
         this.userId = userId;
         this.account = account;
