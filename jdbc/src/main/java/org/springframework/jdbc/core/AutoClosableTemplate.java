@@ -32,9 +32,8 @@ abstract class AutoClosableTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
             final ResultSet rs = pstmt.executeQuery();
             return queryAll(rs, rowMapper);
         } catch (SQLException e) {
@@ -44,9 +43,8 @@ abstract class AutoClosableTemplate {
 
     @Nullable
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = preparedStatementAndSetValue(conn, sql, objects)) {
             final ResultSet rs = pstmt.executeQuery();
             return queryForOne(rs, rowMapper);
         } catch (SQLException e) {
