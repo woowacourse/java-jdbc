@@ -1,16 +1,17 @@
 package org.springframework.jdbc.datasource;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
@@ -18,18 +19,25 @@ public abstract class DataSourceUtils {
             return connection;
         }
 
+        connection = newConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        return connection;
+    }
+
+    private static Connection newConnection(DataSource dataSource) {
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
+            if(connection.getAutoCommit()){
+                connection.close();
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }

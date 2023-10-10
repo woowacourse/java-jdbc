@@ -7,6 +7,7 @@ import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,7 +85,8 @@ public class ObjectConverter {
         Object[] args = new Object[length];
         List<String> resultColumnFields = getResultColumnFields(resultSet);
         for (int i = 0; i < length; i++) {
-            args[i] = extractParam(parameters[i], resultSet, resultColumnFields);
+            Object o = extractParam(parameters[i], resultSet, resultColumnFields);
+            args[i] = o;
         }
         return constructor.newInstance(args);
     }
@@ -100,10 +102,31 @@ public class ObjectConverter {
 
     private static Object extractParam(Parameter parameter, ResultSet resultSet, List<String> resultColumnFields)
         throws SQLException {
-        String parameterName = parameter.getName();
+        String parameterName = underScoreName(parameter.getName());
         if (resultColumnFields.contains(parameterName.toUpperCase())) {
-            return resultSet.getObject(parameterName.toUpperCase());
+            Object object = resultSet.getObject(parameterName.toUpperCase());
+            if(object instanceof Timestamp){
+                return ((Timestamp) object).toLocalDateTime();
+            }
+            return object;
         }
         return null;
+    }
+
+    private static String underScoreName(String name) {
+        StringBuilder result = new StringBuilder();
+        result.append(Character.toLowerCase(name.charAt(0))); // 첫 글자는 소문자로 유지
+
+        for (int i = 1; i < name.length(); i++) {
+            char currentChar = name.charAt(i);
+            if (Character.isUpperCase(currentChar)) {
+                result.append('_');
+                result.append(currentChar);
+            } else {
+                result.append(currentChar);
+            }
+        }
+
+        return result.toString();
     }
 }

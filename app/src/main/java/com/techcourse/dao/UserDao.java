@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 public class UserDao {
 
     private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
-        resultSet.getLong("Id"),
+        resultSet.getLong("id"),
         resultSet.getString("account"),
         resultSet.getString("password"),
         resultSet.getString("email")
