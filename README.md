@@ -34,8 +34,8 @@
 
 ## 4단계 요구사항
 
-- [ ] Transaction synchronization 적용하기
-    - [ ] 서비스와 DAO에서 `Connection` 객체를 가져오는 부분은 `DataSourceUtils를` 사용하도록 수정
-    - [ ] `TransactionSynchronizationManager` 클래스가 올바르게 작동하도록 구현
+- [x] Transaction synchronization 적용하기
+    - [x] 서비스와 DAO에서 `Connection` 객체를 가져오는 부분은 `DataSourceUtils를` 사용하도록 수정
+    - [x] `TransactionSynchronizationManager` 클래스가 올바르게 작동하도록 구현
 
-- [ ] 트랜잭션 서비스 추상화하기
+- [x] 트랜잭션 서비스 추상화하기
