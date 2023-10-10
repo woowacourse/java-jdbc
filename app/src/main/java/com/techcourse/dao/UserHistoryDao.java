@@ -3,15 +3,9 @@ package com.techcourse.dao;
 import com.techcourse.domain.UserHistory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-
 public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

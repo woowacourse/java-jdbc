@@ -16,12 +16,12 @@ public class TransactionExecutor {
         this.dataSource = dataSource;
     }
 
-    public void execute(final Runnable runnable) {
+    public void execute(final ServiceExecutor serviceExecutor) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
-            runnable.run();
+            serviceExecutor.execute();
             connection.commit();
         } catch (Exception e) {
             rollback(connection);
