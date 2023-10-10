@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import org.springframework.dao.SQLExceptionTranslator;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,7 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(Connection connection, String sql, Object... parameters) {
+    public int update(String sql, Object... parameters) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
@@ -36,7 +38,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
@@ -68,7 +71,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
