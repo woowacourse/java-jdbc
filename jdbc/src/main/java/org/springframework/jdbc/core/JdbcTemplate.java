@@ -10,7 +10,8 @@ import java.util.NoSuchElementException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.JdbcException;
+import org.springframework.transaction.support.TransactionManager;
+import org.springframework.transaction.support.Transactional;
 
 public class JdbcTemplate {
 
@@ -23,69 +24,66 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = setValues(sql, connection, parameters);
-                final ResultSet resultSet = executeQuery(PreparedStatement::executeQuery, preparedStatement)
-        ) {
-            final List<T> users = new ArrayList<>();
+        return executeQuery(sql,
+                preparedStatement -> {
+                    final ResultSet resultSet = preparedStatement.executeQuery();
+                    final List<T> users = new ArrayList<>();
 
-            while (resultSet.next()) {
-                T result = rowMapper.rowMap(resultSet);
-                users.add(result);
-            }
-            return users;
-        } catch (SQLException e) {
-            throw new JdbcException(e);
-        }
+                    while (resultSet.next()) {
+                        users.add(rowMapper.rowMap(resultSet));
+                    }
+                    return users;
+                },
+                parameters
+        );
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = setValues(sql, connection, parameters);
-                final ResultSet resultSet = executeQuery(PreparedStatement::executeQuery, preparedStatement)
-        ) {
-            if (resultSet.next()) {
-                return rowMapper.rowMap(resultSet);
-            }
-
-            throw new NoSuchElementException();
-        } catch (SQLException e) {
-            throw new JdbcException(e);
-        }
+        return executeQuery(sql,
+                preparedStatement -> {
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    if (resultSet.next()) {
+                        return rowMapper.rowMap(resultSet);
+                    }
+                    throw new NoSuchElementException();
+                },
+                parameters
+        );
     }
 
     public int update(final String sql, final Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = setValues(sql, connection, parameters)
-        ) {
-            return executeQuery(PreparedStatement::executeUpdate, preparedStatement);
-        } catch (SQLException e) {
-            throw new JdbcException(e);
-        }
+        return executeQuery(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    private PreparedStatement setValues(
+    private void setValues(
             final String sql,
-            final Connection connection,
+            final PreparedStatement preparedStatement,
             final Object... parameters
     ) throws SQLException {
         log.debug("query : {}", sql);
 
-        final PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < parameters.length; i++) {
             preparedStatement.setObject(i + 1, parameters[i]);
         }
-        return preparedStatement;
     }
 
     private <T> T executeQuery(
+            final String sql,
             final CallBack<T> callBack,
-            final PreparedStatement preparedStatement
-    ) throws SQLException {
-        return callBack.call(preparedStatement);
+            final Object... parameters
+    ) {
+        final Transactional transactional = TransactionManager.getTransactional();
+        final Connection connection = transactional.getConnection(dataSource);
+
+        try (
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            setValues(sql, preparedStatement, parameters);
+            return callBack.call(preparedStatement);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public DataSource getDataSource() {
