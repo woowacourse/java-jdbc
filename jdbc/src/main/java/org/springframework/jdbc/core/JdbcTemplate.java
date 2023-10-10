@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -19,9 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection connection, String sql, Object... parameters) {
+    public void update(String sql, Object... parameters) {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
@@ -33,13 +35,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(
-            Connection connection,
             String sql,
             RowMapper<T> rowMapper,
             Object... parameters
     ) {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
@@ -61,13 +63,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(
-            Connection connection,
             String sql,
             RowMapper<T> rowMapper,
             Object... parameters
     ) {
         PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(sql);
         PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter(parameters);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (PreparedStatement preparedStatement = preparedStatementCreator.createPreparedStatement(connection)) {
             log.debug("query : {}", sql);
