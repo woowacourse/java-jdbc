@@ -8,10 +8,6 @@ public class TransactionTemplate {
 
     private final TransactionManager transactionManager;
 
-    public TransactionTemplate(final TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
     public TransactionTemplate(final DataSource dataSource) {
         this.transactionManager = new TransactionManager(dataSource);
     }
