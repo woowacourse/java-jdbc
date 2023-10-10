@@ -9,3 +9,8 @@
  - try-with-resources 활용하기
  - 예외 처리 더 신경쓰기
  - 람다 활용해서 코드량 줄이기
+
+## 4단계
+ - Dao의 메서드에서 connection 객체를 파라미터로 전달받지 않기
+ - Connection을 관리하는 기능을 가지는 객체 구현
+ - `UserService`에서 비즈니스 로직과 데이터 액세스 로직 분리하기 
