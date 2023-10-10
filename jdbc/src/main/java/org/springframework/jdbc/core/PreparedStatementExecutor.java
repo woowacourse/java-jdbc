@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -16,8 +17,8 @@ public class PreparedStatementExecutor {
     }
 
     public <T> T execute(final PreparedStatementGenerator psmtGenerator, final PreparedStatementCaller<T> psmtCaller) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement psmt = psmtGenerator.generate(conn)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement psmt = psmtGenerator.generate(conn)) {
             return psmtCaller.call(psmt);
         } catch (final SQLException e) {
             throw new DataAccessException(e.getMessage());
