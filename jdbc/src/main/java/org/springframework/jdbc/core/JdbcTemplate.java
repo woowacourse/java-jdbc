@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.UniqueResultException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,8 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final Connection conn, final String sql, final Object... params) {
-        returnResult(conn, sql, this::executeQuery, params);
+    public void execute(final String sql, final Object... params) {
+        returnResult(sql, this::executeQuery, params);
     }
 
     private int executeQuery(final PreparedStatement pstmt) {
@@ -37,8 +38,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> mapper, Object... params) {
-        final List<T> results = returnResult(conn, sql, pstmt -> queryForSelect(pstmt, mapper), params);
+    public <T> T queryForObject(final String sql, final RowMapper<T> mapper, Object... params) {
+        final List<T> results = returnResult(sql, pstmt -> queryForSelect(pstmt, mapper), params);
 
         if (results.isEmpty()) {
             throw new NoSuchElementException("데이터가 없습니다");
@@ -51,8 +52,8 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public <T> List<T> queryForObjects(final Connection conn, final String sql, final RowMapper<T> mapper, Object... params) {
-        return returnResult(conn, sql, pstmt -> queryForSelect(pstmt, mapper), params);
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> mapper, Object... params) {
+        return returnResult(sql, pstmt -> queryForSelect(pstmt, mapper), params);
     }
 
     private <T> List<T> queryForSelect(final PreparedStatement pstmt, final RowMapper<T> mapper) {
@@ -70,10 +71,12 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T returnResult(final Connection conn, final String sql, final QueryLauncher<T> launcher, final Object... params) {
-        try (PreparedStatement pstmt = makePreparedWhenHasParams(conn, sql, params)) {
+    private <T> T returnResult(final String sql, final QueryLauncher<T> launcher, final Object... params) {
+        try {
+            Connection connection = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement pstmt = makePreparedWhenHasParams(connection, sql, params);
 
-            log.debug("query : {}", sql);
+            log.info("query : {}", sql);
 
             return launcher.execute(pstmt);
         } catch (SQLException e) {
@@ -81,9 +84,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement makePreparedWhenHasParams(final Connection conn, final String sql, final Object... params)
-            throws SQLException {
-        final PreparedStatement pstmt = conn.prepareStatement(sql);
+    private PreparedStatement makePreparedWhenHasParams(final Connection connection, final String sql,
+                                                        final Object... params) throws SQLException {
+        final PreparedStatement pstmt = connection.prepareStatement(sql);
 
         if (params.length < 1) {
             return pstmt;
