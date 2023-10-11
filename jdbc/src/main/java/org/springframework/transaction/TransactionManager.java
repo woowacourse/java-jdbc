@@ -32,7 +32,7 @@ public class TransactionManager {
         }
     }
 
-    private static void rollBackConnection(final Connection connection) {
+    private void rollBackConnection(final Connection connection) {
         try {
             connection.rollback();
         } catch (final SQLException e) {
