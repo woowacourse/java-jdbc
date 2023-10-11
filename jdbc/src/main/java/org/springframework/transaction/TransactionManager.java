@@ -15,18 +15,14 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void doInTransaction(final Runnable runnable) {
+    public void begin() {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         try {
             connection.setAutoCommit(false);
-            runnable.run();
-            connection.commit();
         } catch (SQLException e) {
             tryRollback(connection);
-        } finally {
-            tryCloseConnection();
         }
     }
 
@@ -34,7 +30,18 @@ public class TransactionManager {
         try {
             connection.rollback();
         } catch (SQLException ex) {
-            throw new TransactionRollbackException("롤백에 실패했습니다.", ex);
+            throw new TransactionSystemException("롤백에 실패했습니다.", ex);
+        }
+    }
+
+    public void commit() {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            tryRollback(connection);
+        } finally {
+            tryCloseConnection();
         }
     }
 
@@ -44,6 +51,17 @@ public class TransactionManager {
             connection.close();
         } catch (SQLException e) {
             throw new CannotCloseJdbcConnectionException("JDBC Connection 을 닫는데 실패했습니다.", e);
+        }
+    }
+
+    public void rollback() {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new TransactionSystemException("롤백에 실패했습니다.", e);
+        } finally {
+            tryCloseConnection();
         }
     }
 }

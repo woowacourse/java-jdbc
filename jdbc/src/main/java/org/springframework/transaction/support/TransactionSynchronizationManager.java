@@ -18,11 +18,11 @@ public abstract class TransactionSynchronizationManager {
     }
 
     private static Map<DataSource, Connection> getResources() {
-        if (TransactionSynchronizationManager.resources.get() == null) {
-            TransactionSynchronizationManager.resources.set(new HashMap<>());
+        if (resources.get() == null) {
+            resources.set(new HashMap<>());
         }
 
-        return TransactionSynchronizationManager.resources.get();
+        return resources.get();
     }
 
     public static void bindResource(DataSource key, Connection value) {

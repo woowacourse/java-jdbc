@@ -26,14 +26,18 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if(TransactionSynchronizationManager.getResource(dataSource) == connection) {
+        if(isInTransaction(connection, dataSource)) {
             return;
         }
+
         try {
-            System.out.println("release connection: " + connection);
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    private static boolean isInTransaction(final Connection connection, final DataSource dataSource) {
+        return TransactionSynchronizationManager.getResource(dataSource) == connection;
     }
 }
