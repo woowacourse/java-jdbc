@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,14 +27,13 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, objects);
     }
 
-    public void update(final Connection connection, final String sql, final Object... objects) {
-        execute(connection, sql, PreparedStatement::executeUpdate, objects);
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... objects) {
         final ResultSetExtractor<Optional<T>> rse = resultSet -> {
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapToRow(resultSet));
+            }
+            if (resultSet.next()) {
+                throw new SQLException("유일한 결과값이 존재하지 않습니다.");
             }
             return Optional.empty();
         };
@@ -65,23 +65,10 @@ public class JdbcTemplate {
             final PreparedStatementExecutor<T> executor,
             final Object... objects
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setPreparedStatement(preparedStatement, objects);
-            return executor.action(preparedStatement);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementExecutor<T> executor,
-            final Object... objects
-    ) {
-        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setPreparedStatement(preparedStatement, objects);
             return executor.action(preparedStatement);
         } catch (final SQLException e) {
