@@ -42,12 +42,4 @@ public abstract class DataSourceUtils {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
-
-    public static void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (final SQLException e) {
-            log.error("Exception Thrown During Connection Rollback", e);
-        }
-    }
 }
