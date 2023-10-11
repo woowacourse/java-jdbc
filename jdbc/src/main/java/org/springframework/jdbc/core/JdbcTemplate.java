@@ -6,6 +6,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -28,23 +30,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
+    public int update(final String sql, final Object... args) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
             return ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new DataAccessException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
     public <T> List<T> query(final String sql, final ResultSetMapper<T> resultSetMapper) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement ps = connection.prepareStatement(sql);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement ps = connection.prepareStatement(sql);
              final ResultSet resultSet = ps.executeQuery()
         ) {
             log.debug("query: {}", sql);
             final List<T> results = new ArrayList<>();
-            while(resultSet.next()) {
+            while (resultSet.next()) {
                 results.add(resultSetMapper.apply(resultSet));
             }
             return results;
