@@ -53,7 +53,7 @@ class TransactionTemplateTest {
         when(dataSource.getConnection()).thenReturn(mockConnection);
 
         TransactionCallback throwExceptionLogic = () -> {
-            throw new SQLException();
+            throw new IllegalArgumentException();
         };
 
         // when & then

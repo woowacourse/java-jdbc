@@ -24,7 +24,7 @@ public class TransactionTemplate {
             connection.setAutoCommit(false);
             result = action.doInTransaction();
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollback(connection);
             throw new DataAccessException("Failed to change password.", e);
         } finally {
