@@ -3,10 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.sql.SQLException;
 
 public class UserHistoryDao {
 
@@ -20,17 +17,13 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        try {
-            jdbcTemplate.update(sql,
-                    userHistory.getUserId(),
-                    userHistory.getAccount(),
-                    userHistory.getPassword(),
-                    userHistory.getEmail(),
-                    userHistory.getCreatedAt(),
-                    userHistory.getCreateBy()
-            );
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        jdbcTemplate.update(sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
+        );
     }
 }

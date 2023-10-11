@@ -25,16 +25,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... arguments) throws SQLException {
+    public void update(String sql, Object... arguments) {
         Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setArguments(pstmt, arguments);
             pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) throws SQLException {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
         Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
@@ -50,10 +52,12 @@ public class JdbcTemplate {
                 }
                 throw new NoSuchElementException();
             }, pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) throws SQLException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
@@ -66,6 +70,8 @@ public class JdbcTemplate {
                 }
                 return results;
             }, pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
