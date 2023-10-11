@@ -1,9 +1,7 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserHistoryDao {
 
@@ -17,6 +15,6 @@ public class UserHistoryDao {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         final Object[] parameters = {userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy()};
 
-        jdbcTemplate.update(DataSourceUtils.getConnection(DataSourceConfig.getInstance()), sql, parameters);
+        jdbcTemplate.update(sql, parameters);
     }
 }

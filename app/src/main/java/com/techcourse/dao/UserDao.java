@@ -1,10 +1,8 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import java.util.List;
 
@@ -35,7 +33,7 @@ public class UserDao {
         final var sql = "update users set account = ? , password = ? , email = ? where id = ?";
         final Object[] parameters = {user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
 
-        jdbcTemplate.update(DataSourceUtils.getConnection(DataSourceConfig.getInstance()), sql, parameters);
+        jdbcTemplate.update(sql, parameters);
     }
 
     public List<User> findAll() {
