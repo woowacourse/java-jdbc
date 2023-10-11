@@ -30,19 +30,23 @@ public class TransactionManager {
     private <T> T execute(final TransactionExecutor<T> transactionExecutor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
-
-            final T action = transactionExecutor.action();
-
-            connection.commit();
-
-            return action;
+            return runInConnection(transactionExecutor, connection);
         } catch (final SQLException e) {
             rollBackConnection(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    private <T> T runInConnection(
+            final TransactionExecutor<T> transactionExecutor,
+            final Connection connection
+    ) throws SQLException {
+        connection.setAutoCommit(false);
+        final T action = transactionExecutor.action();
+        connection.commit();
+        return action;
     }
 
     private void rollBackConnection(final Connection connection) {
