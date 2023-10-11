@@ -25,7 +25,7 @@ public class TransactionManager {
 
     public <T> T executeWithResult(final Supplier<T> logicExecutor) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
-        setTransactionActive(conn);
+        setTransactionActiveStatus(conn, true);
         try {
             conn.setAutoCommit(false);
             T result = logicExecutor.get();
@@ -35,20 +35,14 @@ public class TransactionManager {
             rollback(conn);
             throw new TransactionException(e);
         } finally {
-            setTransactionInactive(conn);
+            setTransactionActiveStatus(conn, false);
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    private void setTransactionActive(final Connection conn) {
+    private void setTransactionActiveStatus(final Connection conn, final boolean isTransactionActive) {
         ConnectionHolder connectionHolder = new ConnectionHolder(conn);
-        connectionHolder.setConnectionTransactionActive(true);
-        TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
-    }
-
-    private void setTransactionInactive(final Connection conn) {
-        ConnectionHolder connectionHolder = new ConnectionHolder(conn);
-        connectionHolder.setConnectionTransactionActive(false);
+        connectionHolder.setConnectionTransactionActive(isTransactionActive);
         TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
     }
 
