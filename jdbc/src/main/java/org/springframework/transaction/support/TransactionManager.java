@@ -16,15 +16,22 @@ public class TransactionManager {
     }
 
     public void execute(final Runnable runnable) {
-        executeWithResult(() -> {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
             runnable.run();
-            return null;
-        });
+            connection.commit();
+        } catch (SQLException e) {
+            rollback(connection);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     public <T> T executeWithResult(final Supplier<T> supplier) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        try{
+        try {
             connection.setAutoCommit(false);
             final T result = supplier.get();
             connection.commit();
