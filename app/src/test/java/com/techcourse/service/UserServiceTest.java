@@ -6,25 +6,24 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.io.Closeable;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
-
     private JdbcTemplate jdbcTemplate;
+    private TransactionTemplate transactionTemplate;
     private UserDao userDao;
     private UserHistoryDao userHistoryDao;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
 
@@ -35,7 +34,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -50,7 +49,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -61,31 +61,5 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-    }
-
-    @Test
-    @DisplayName("try-with-resource 테스트")
-    void tryWithResourcesTest() {
-        foo();
-    }
-
-    public void foo() {
-        try (final MyResource myResource = new MyResource()) {
-            try {
-                throw new RuntimeException();
-            } catch (RuntimeException e) {
-                System.out.println("error!");
-            } finally {
-                System.out.println("finally..");
-            }
-
-        }
-    }
-
-    private static class MyResource implements Closeable {
-        @Override
-        public void close() {
-            System.out.println("closed!!");
-        }
     }
 }

@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,7 +25,6 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
         return execute(
-                null,
                 conn -> conn.prepareStatement(sql),
                 pstmt -> {
                     setValues(pstmt, args);
@@ -59,7 +59,6 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         execute(
-                null,
                 conn -> conn.prepareStatement(sql),
                 pstmt -> {
                     setValues(pstmt, args);
@@ -68,29 +67,8 @@ public class JdbcTemplate {
         );
     }
 
-    public void update(final Connection connection, final String sql, final Object... args) {
-        execute(
-                connection,
-                conn -> conn.prepareStatement(sql),
-                pstmt -> {
-                    setValues(pstmt, args);
-                    return pstmt.executeUpdate();
-                }
-        );
-    }
-
-    private <T> T execute(final Connection connection, final PreparedStatementCreator psc, final PreparedStatementCallBack<T> action) {
-        if (connection != null) {
-            return doExecute(connection, psc, action);
-        }
-        try {
-            return doExecute(dataSource.getConnection(), psc, action);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T doExecute(final Connection connection, final PreparedStatementCreator psc, final PreparedStatementCallBack<T> action) {
+    private <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallBack<T> action) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = psc.createPreparedStatement(connection)) {
             return action.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
