@@ -1,7 +1,6 @@
 package org.springframework.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -17,9 +16,9 @@ import javax.sql.DataSource;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.TestDataSourceConfig;
-import org.springframework.jdbc.core.JdbcTemplateException.DatabaseAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 class JdbcTemplateTest {
 
@@ -98,7 +97,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void connection을_전달하지_않는_경우_내부에서_트랜잭션이_설정된다() throws SQLException {
+    void JdbcTemplate에서_트랜잭션을_관리하지_않는다() throws SQLException {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
@@ -115,53 +114,55 @@ class JdbcTemplateTest {
                 ));
 
         assertAll(
-                () -> verify(mockConnection, times(1)).setAutoCommit(false),
-                () -> verify(mockConnection, times(1)).setAutoCommit(true),
+                () -> verify(mockConnection, never()).setAutoCommit(false),
+                () -> verify(mockConnection, never()).setAutoCommit(true),
                 () -> verify(mockConnection, never()).rollback()
         );
     }
 
     @Test
-    void connection을_전달하지_않는_경우_예외가_발생하면_롤백이_호출된다() throws SQLException {
-        DataSource mockDataSource = mock(DataSource.class);
-        Connection mockConnection = mock(Connection.class);
-        JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
-
-        String sql = "insert into member (name) values ('kong');";
-        when(mockDataSource.getConnection()).thenReturn(mockConnection);
-        when(mockConnection.prepareStatement(sql)).thenThrow(new DatabaseAccessException("공습 경보! 공습 경보!"));
-
-        assertThatThrownBy(() -> mockJdbcTemplate.execute(sql))
-                .isInstanceOf(JdbcTemplateException.class);
-
-        assertAll(
-                () -> verify(mockConnection, times(1)).setAutoCommit(false),
-                () -> verify(mockConnection, times(1)).setAutoCommit(true),
-                () -> verify(mockConnection, times(1)).rollback()
-        );
-    }
-
-    @Test
-    void connection을_전달하는_경우_트랜잭션이_걸리지_않고_autocommit이_유지된다() throws SQLException {
+    void 외부에서_connection을_얻지_않으면_JdbcTemplate에서_connection을_close한다() throws SQLException {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
 
         String sql = "select id, name from member where name = '콩하나';";
+        when(mockDataSource.getConnection()).thenReturn(mockConnection);
         when(mockConnection.prepareStatement(sql))
                 .thenReturn(TestDataSourceConfig.getInstance().getConnection().prepareStatement(sql));
 
-        mockJdbcTemplate.find(mockConnection,
-                sql,
+        mockJdbcTemplate.find(sql,
                 (rs) -> new TestMember(
                         rs.getLong("id"),
                         rs.getString("name")
                 ));
 
         assertAll(
-                () -> verify(mockConnection, never()).setAutoCommit(false),
-                () -> verify(mockConnection, never()).setAutoCommit(true),
-                () -> verify(mockConnection, never()).rollback()
+                () -> verify(mockDataSource, times(1)).getConnection(),
+                () -> verify(mockConnection, times(1)).close()
+        );
+    }
+
+    @Test
+    void 외부에서_connection을_얻으면_JdbcTemplate에서_connection을_close하지_않는다() throws SQLException {
+        DataSource mockDataSource = mock(DataSource.class);
+        Connection mockConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(mockDataSource, mockConnection);
+        JdbcTemplate mockJdbcTemplate = new JdbcTemplate(mockDataSource);
+
+        String sql = "select id, name from member where name = '콩하나';";
+        when(mockConnection.prepareStatement(sql))
+                .thenReturn(TestDataSourceConfig.getInstance().getConnection().prepareStatement(sql));
+
+        mockJdbcTemplate.find(sql,
+                (rs) -> new TestMember(
+                        rs.getLong("id"),
+                        rs.getString("name")
+                ));
+        
+        assertAll(
+                () -> verify(mockDataSource, never()).getConnection(),
+                () -> verify(mockConnection, never()).close()
         );
     }
 }
