@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -16,8 +17,8 @@ public class QueryExecutorService {
     }
 
     public <T> T execute(QueryExecutor<T> queryExecutor, String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = makePreparedStatement(connection, sql, args)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = makePreparedStatement(connection, sql, args)) {
 
             return queryExecutor.execute(preparedStatement);
         } catch (SQLException e) {
