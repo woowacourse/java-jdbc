@@ -16,14 +16,27 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void run(final TransactionExecutor transactionExecutor) {
+    public <T> T runForObject(final TransactionExecutor<T> transactionExecutor) {
+        return execute(transactionExecutor);
+    }
+
+    public void run(final Runnable runnable) {
+        execute(() -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    private <T> T execute(final TransactionExecutor<T> transactionExecutor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
 
-            transactionExecutor.action();
+            final T action = transactionExecutor.action();
 
             connection.commit();
+
+            return action;
         } catch (final SQLException e) {
             rollBackConnection(connection);
             throw new DataAccessException(e);
