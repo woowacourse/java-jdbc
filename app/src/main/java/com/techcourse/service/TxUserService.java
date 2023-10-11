@@ -20,16 +20,10 @@ public class TxUserService implements UserService {
     }
 
     public void insert(final User user) {
-        transactionTemplate.transaction(() -> {
-            appUserService.insert(user);
-            return null;
-        });
+        transactionTemplate.transaction(() -> appUserService.insert(user));
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.transaction(() -> {
-            appUserService.changePassword(id, newPassword, createBy);
-            return null;
-        });
+        transactionTemplate.transaction(() -> appUserService.changePassword(id, newPassword, createBy));
     }
 }

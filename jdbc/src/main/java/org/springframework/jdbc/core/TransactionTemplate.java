@@ -32,6 +32,22 @@ public class TransactionTemplate {
         }
     }
 
+    public void transaction(Runnable runnable) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            conn.setAutoCommit(false);
+            runnable.run();
+            conn.commit();
+            conn.setAutoCommit(true);
+        } catch (SQLException | DataAccessException e) {
+            e.printStackTrace();
+            rollback(conn);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
     private void rollback(Connection conn) {
         try {
             conn.rollback();
