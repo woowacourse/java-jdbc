@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -23,8 +23,8 @@ class JdbcTemplateTest {
 
     @BeforeEach
     public void setUp() {
-        final DataSource instance = DataSourceConfig.getInstance();
-        try (final Connection connection = instance.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
+        try {
             final Statement statement = connection.createStatement();
             statement.execute("drop table if exists users");
             statement.execute("create table if not exists users (id bigint auto_increment, account varchar(255), password varchar(255), email varchar(255), primary key (id))");
@@ -53,7 +53,7 @@ class JdbcTemplateTest {
                 "email", resultSet.getString("email")
         );
         String selectSql = "select * from users";
-        final List<Map<String, Object>> result = jdbcTemplate.query(selectSql, rowMapper);
+        final List<Map<String, Object>> result = jdbcTemplate.queryForList(selectSql, rowMapper);
         assertSoftly(softly -> {
             softly.assertThat(result).hasSize(1);
             softly.assertThat(result.get(0).get("account")).isEqualTo("account");
@@ -79,7 +79,7 @@ class JdbcTemplateTest {
 
         //when
         String selectSql = "select * from users";
-        final List<Map<String, Object>> result = jdbcTemplate.query(selectSql, (resultSet, rowNum) -> Map.of(
+        final List<Map<String, Object>> result = jdbcTemplate.queryForList(selectSql, (resultSet, rowNum) -> Map.of(
                 "id", resultSet.getLong("id"),
                 "account", resultSet.getString("account"),
                 "password", resultSet.getString("password"),
@@ -105,7 +105,7 @@ class JdbcTemplateTest {
 
         //when
         String selectSql = "select * from users where account = ?";
-        final Map<String, Object> result = jdbcTemplate.query(selectSql, (resultSet, rowNum) -> Map.of(
+        final Map<String, Object> result = jdbcTemplate.queryForObject(selectSql, (resultSet, rowNum) -> Map.of(
                 "id", resultSet.getLong("id"),
                 "account", resultSet.getString("account"),
                 "password", resultSet.getString("password"),

@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -22,70 +23,80 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection()) {
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                preparedStatementSetter.setValues(pstmt);
-                pstmt.executeUpdate();
+    public int update(final String sql, final Object... args) throws DataAccessException {
+        return update(sql, pstmt -> {
+            setPreparedStatementWithArgs(args, pstmt);
+        });
+    }
+
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return execute(sql, pstmt -> {
+            preparedStatementSetter.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws DataAccessException {
+        return queryForObject(sql, rowMapper, pstmt -> {
+            setPreparedStatementWithArgs(args, pstmt);
+        });
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        final List<T> result = query(sql, extractList(rowMapper), preparedStatementSetter);
+        if (result.isEmpty()) {
+            throw new DataAccessException("No results");
+        }
+        if (result.size() > 1) {
+            throw new DataAccessException("Too many results");
+        }
+        return result.get(0);
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+        return queryForList(sql, rowMapper, pstmt -> {
+            setPreparedStatementWithArgs(args, pstmt);
+        });
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return query(sql, extractList(rowMapper), preparedStatementSetter);
+    }
+
+
+    private <T> T query(final String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) throws DataAccessException {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rse.extractData(rs);
             }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) throws DataAccessException {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (final ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
-                log.debug("query : {}", sql);
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
-                }
-                throw new DataAccessException("Empty Result");
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private ResultSet executeQuery(final PreparedStatementSetter preparedStatementSetter, final PreparedStatement preparedStatement) throws SQLException {
-        preparedStatementSetter.setValues(preparedStatement);
-        return preparedStatement.executeQuery();
-    }
-
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (final ResultSet rs = executeQuery(args, pstmt)) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
-                }
-                throw new DataAccessException("Empty Result");
-            }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private ResultSet executeQuery(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+    private void setPreparedStatementWithArgs(final Object[] args, final PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
-        return pstmt.executeQuery();
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs, rs.getRow()));
-                }
-                return result;
+    private <T> ResultSetExtractor<List<T>> extractList(final RowMapper<T> rowMapper) {
+        return rs -> {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rs.getRow()));
             }
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
+            return results;
+        };
     }
 }

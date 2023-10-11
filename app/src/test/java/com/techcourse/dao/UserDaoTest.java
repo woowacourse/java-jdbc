@@ -11,13 +11,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
