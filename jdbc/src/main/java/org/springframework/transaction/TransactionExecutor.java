@@ -2,24 +2,38 @@ package org.springframework.transaction;
 
 import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
+import javax.sql.DataSource;
+import java.util.function.Supplier;
 
 public class TransactionExecutor {
 
-    private TransactionExecutor() {
+    private final DataSource dataSource;
+
+    public TransactionExecutor(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void execute(final TransactionManager transactionManager, final Runnable runnable) {
+    public void execute(final Runnable runnable) {
+        TransactionManager transactionManager = new TransactionManager(dataSource);
         try {
             transactionManager.begin();
             runnable.run();
             transactionManager.commit();
         } catch (Exception e) {
-            try {
-                transactionManager.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+            transactionManager.rollback();
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <R> R executeWithResult(final Supplier<R> supplier) {
+        TransactionManager transactionManager = new TransactionManager(dataSource);
+        try {
+            transactionManager.begin();
+            R result = supplier.get();
+            transactionManager.commit();
+            return result;
+        } catch (Exception e) {
+            transactionManager.rollback();
             throw new DataAccessException(e);
         }
     }
