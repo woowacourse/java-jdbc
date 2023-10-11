@@ -3,6 +3,7 @@ package org.springframework.transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -19,29 +20,26 @@ public class Transaction {
     }
 
     public <T> T run(final TransactionTemplate<T> transactionTemplate) {
-        final Connection connection = initializeConnection();
+        final Connection connection = DataSourceUtils.getConnectionForTransactionRequired(dataSource);
+        start(connection);
         try {
             final T result = transactionTemplate.execute(connection);
 
             commit(connection);
-
             return result;
         } catch (Exception exception) {
             rollback(connection);
             throw new DataAccessException(exception);
         } finally {
-            close(connection);
+            DataSourceUtils.releaseConnectionForTransactionRequired(connection, dataSource);
         }
     }
 
-    private Connection initializeConnection() {
+    private void start(final Connection connection) {
         try {
-            final Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            return connection;
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
@@ -54,14 +52,6 @@ public class Transaction {
             connection.rollback();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-        }
-    }
-
-    private void close(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException exception) {
-            throw new DataAccessException(exception);
         }
     }
 }

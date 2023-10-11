@@ -3,7 +3,9 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,15 +18,14 @@ public class JdbcTemplate {
 
     private final ConnectionTemplate connectionTemplate;
 
-    public JdbcTemplate() {
-        this.connectionTemplate = new ConnectionTemplate();
+    public JdbcTemplate(final DataSource dataSource) {
+        this.connectionTemplate = new ConnectionTemplate(dataSource);
     }
 
-    public <T> List<T> query(final Connection connection,
-                             final String sql,
+    public <T> List<T> query(final String sql,
                              final RowMapper<T> rowMapper,
                              final Object... arguments) {
-        return connectionTemplate.readResult(connection, sql, resultSet -> {
+        return connectionTemplate.readResult(sql, resultSet -> {
             final List<T> list = new ArrayList<>();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
@@ -33,11 +34,10 @@ public class JdbcTemplate {
         }, arguments);
     }
 
-    public <T> Optional<T> querySingleRow(final Connection connection,
-                                          final String sql,
+    public <T> Optional<T> querySingleRow(final String sql,
                                           final RowMapper<T> rowMapper,
                                           final Object... arguments) {
-        return connectionTemplate.readResult(connection, sql, resultSet -> {
+        return connectionTemplate.readResult(sql, resultSet -> {
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
@@ -45,20 +45,25 @@ public class JdbcTemplate {
         }, arguments);
     }
 
-    public void update(final Connection connection,
-                       final String sql,
+    public void update(final String sql,
                        final Object... arguments) {
-        connectionTemplate.update(connection, sql, PreparedStatement::executeUpdate, arguments);
+        connectionTemplate.update(sql, PreparedStatement::executeUpdate, arguments);
     }
 
     private static class ConnectionTemplate {
 
         private final Logger log = LoggerFactory.getLogger(ConnectionTemplate.class);
 
-        public <T> T readResult(final Connection connection,
-                                final String sql,
+        private final DataSource dataSource;
+
+        public ConnectionTemplate(final DataSource dataSource) {
+            this.dataSource = dataSource;
+        }
+
+        public <T> T readResult(final String sql,
                                 final SelectQueryExecutor<T> selectQueryExecutor,
                                 final Object... parameters) {
+            final Connection connection = DataSourceUtils.getConnectionForTransactionSupports(dataSource);
             try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 setQueryParameter(preparedStatement, parameters);
                 final ResultSet resultSet = preparedStatement.executeQuery();
@@ -67,13 +72,15 @@ public class JdbcTemplate {
             } catch (final SQLException e) {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
+            } finally {
+                DataSourceUtils.releaseConnectionForTransactionSupports(connection, dataSource);
             }
         }
 
-        public void update(final Connection connection,
-                           final String sql,
+        public void update(final String sql,
                            final UpdateQueryExecutor updateQueryExecutor,
                            final Object... parameters) {
+            final Connection connection = DataSourceUtils.getConnectionForTransactionSupports(dataSource);
             try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 setQueryParameter(preparedStatement, parameters);
 
@@ -81,6 +88,8 @@ public class JdbcTemplate {
             } catch (final SQLException e) {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
+            } finally {
+                DataSourceUtils.releaseConnectionForTransactionSupports(connection, dataSource);
             }
         }
 

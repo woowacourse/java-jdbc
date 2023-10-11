@@ -18,8 +18,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection,
-                    final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         final long userId = userHistory.getUserId();
@@ -31,6 +30,6 @@ public class UserHistoryDao {
 
         log.debug("sql={}", sql);
 
-        jdbcTemplate.update(connection, sql, userId, account, password, email, createdAt, createBy);
+        jdbcTemplate.update(sql, userId, account, password, email, createdAt, createBy);
     }
 }
