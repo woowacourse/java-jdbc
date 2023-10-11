@@ -2,12 +2,7 @@ package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionExecutor;
 
 public class TxUserService implements UserService {
 
@@ -29,37 +24,12 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-
-        try {
-            conn.setAutoCommit(false);
-            appUserService.changePassword(id, newPassword, createBy);
-            conn.commit();
-        } catch (RuntimeException | SQLException e) {
-            rollback(conn, e);
-            throw new DataAccessException(e);
-        } finally {
-            close(dataSource);
-        }
-    }
-
-
-    private void rollback(Connection conn, Exception e) {
-        if (conn == null) {
-            return;
-        }
-        try {
-            conn.rollback();
-        } catch (SQLException ignored) {
-            throw new DataAccessException("롤백 실패", e);
-        }
-    }
-
-    private void close(DataSource dataSource) {
-        try {
-            DataSourceUtils.releaseConnection(dataSource);
-        } catch (CannotGetJdbcConnectionException e) {
-        }
+        TransactionExecutor.execute(
+            DataSourceConfig.getInstance(),
+            () -> {
+                appUserService.changePassword(id, newPassword, createBy);
+                return null;
+            }
+        );
     }
 }
