@@ -26,10 +26,11 @@ public abstract class TransactionSynchronizationManager {
             resources.set(connectionMap);
         }
 
-        Connection mappedConnection = connectionMap.put(key, value);
-        if (mappedConnection != null) {
+        if (connectionMap.containsKey(key)) {
             throw new IllegalStateException("fail to bind resource because of already exist bound thread");
         }
+
+        connectionMap.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
