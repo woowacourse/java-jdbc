@@ -34,6 +34,7 @@ public class TransactionManager {
             conn.setAutoCommit(false);
             result = transactionExecutor.get();
             conn.commit();
+            conn.setAutoCommit(true);
         } catch (final SQLException e) {
             rollBack(e, TransactionSynchronizationManager.getResource(dataSource));
         } finally {
@@ -42,9 +43,10 @@ public class TransactionManager {
         return result;
     }
 
-    private void rollBack(final SQLException e, final Connection connection) {
+    private void rollBack(final SQLException e, final Connection conn) {
         try {
-            connection.rollback();
+            conn.rollback();
+            conn.setAutoCommit(true);
             throw new DataAccessException(e);
         } catch (final SQLException exception) {
             throw new DataAccessException(exception);
