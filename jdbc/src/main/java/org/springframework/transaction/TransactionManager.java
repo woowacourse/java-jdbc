@@ -2,6 +2,7 @@ package org.springframework.transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -14,15 +15,17 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(TransactionExecuter executer) {
+    @Nullable
+    public <T> T execute(TransactionExecuter<T> executer) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
 
         try {
             conn.setAutoCommit(false);
 
-            executer.execute(conn);
+            T execute = executer.execute(conn);
 
             conn.commit();
+            return execute;
         } catch (Exception e) {
             rollback(conn);
             throw new DataAccessException(e);

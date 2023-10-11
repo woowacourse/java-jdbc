@@ -15,16 +15,22 @@ public class TransactionUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return userService.findById(id);
+        return transactionManager.execute(conn -> userService.findById(id));
     }
 
     @Override
     public void insert(User user) {
-        userService.insert(user);
+        transactionManager.execute(conn -> {
+            userService.insert(user);
+            return null;
+        });
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        transactionManager.execute(conn -> userService.changePassword(id, newPassword, createBy));
+        transactionManager.execute(conn -> {
+            userService.changePassword(id, newPassword, createBy);
+            return null;
+        });
     }
 }

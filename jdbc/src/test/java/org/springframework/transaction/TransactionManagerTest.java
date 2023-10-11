@@ -1,5 +1,6 @@
 package org.springframework.transaction;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -46,13 +47,13 @@ class TransactionManagerTest {
     void 예외가_발생하지_않으면_커밋된다() throws SQLException {
         // given
         TransactionManager transactionManager = new TransactionManager(dataSource);
-        TransactionExecuter transactionExecuter = conn -> {
-        };
+        TransactionExecuter<String> transactionExecuter = conn -> "test";
 
         // when
-        transactionManager.execute(transactionExecuter);
+        String result = transactionManager.execute(transactionExecuter);
 
         // then
+        assertThat(result).isEqualTo("test");
         then(connection)
                 .should(times(1))
                 .commit();
@@ -65,7 +66,7 @@ class TransactionManagerTest {
     void 예외가_발생하면_롤백된다() throws SQLException {
         // given
         TransactionManager transactionManager = new TransactionManager(dataSource);
-        TransactionExecuter transactionExecuter = conn -> {
+        TransactionExecuter<String> transactionExecuter = conn -> {
             throw new SQLException();
         };
 
