@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplateException.DatabaseAccessExcepti
 import org.springframework.jdbc.core.JdbcTemplateException.MoreDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplateException.NoDataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -33,8 +34,9 @@ public class JdbcTemplate {
     private <T> T execute(final String sql,
                           final PreparedStatementExecutor<T> executor,
                           final Object... fields) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (ConnectionManager connectionManager = ConnectionManager.from(dataSource);
+             PreparedStatement ps = connectionManager.getPreparedStatement(sql)) {
+
             setPreparedStatement(ps, fields);
 
             return executor.execute(ps);
@@ -89,5 +91,43 @@ public class JdbcTemplate {
             objects.add(rowMapper.mapRow(rs));
         }
         return objects;
+    }
+
+    private static class ConnectionManager implements AutoCloseable {
+
+        private final DataSource dataSource;
+        private final Connection connection;
+
+        private ConnectionManager(final DataSource dataSource, final Connection connection) {
+            this.dataSource = dataSource;
+            this.connection = connection;
+        }
+
+        public static ConnectionManager from(final DataSource dataSource) throws SQLException {
+            return new ConnectionManager(dataSource, initConnection(dataSource));
+        }
+
+        private static Connection initConnection(final DataSource dataSource) throws SQLException {
+            Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+            if (connection != null) {
+                return connection;
+            }
+            return dataSource.getConnection();
+        }
+
+        public Connection getConnection() {
+            return connection;
+        }
+
+        public PreparedStatement getPreparedStatement(final String sql) throws SQLException {
+            return connection.prepareStatement(sql);
+        }
+
+        @Override
+        public void close() throws SQLException {
+            if (TransactionSynchronizationManager.getResource(dataSource) == null) {
+                connection.close();
+            }
+        }
     }
 }
