@@ -1,20 +1,16 @@
 package org.springframework.transaction.support;
 
-import java.util.HashMap;
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources;
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
-    static {
-        resources = new ThreadLocal<>();
-        resources.set(new HashMap<>());
+    private TransactionSynchronizationManager() {
     }
-
-    private TransactionSynchronizationManager() {}
 
     public static Connection getResource(final DataSource key) {
         return resources.get().get(key);
