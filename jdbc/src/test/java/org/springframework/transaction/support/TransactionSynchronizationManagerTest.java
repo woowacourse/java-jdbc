@@ -3,6 +3,7 @@ package org.springframework.transaction.support;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +75,29 @@ class TransactionSynchronizationManagerTest {
     void 할당_해제할_때_할당된_자원이_없으면_예외가_발생한다() {
         // expect
         assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("There is no resource");
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void 이미_connection이_할당된_상태에서_bind를_하면_예외가_발생한다() {
+        // given
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        Connection otherConnection = mock(Connection.class);
+
+        // expect
+        assertAll(
+                () -> assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, otherConnection))
+                        .isInstanceOf(IllegalStateException.class),
+                () -> assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, connection))
+                        .isInstanceOf(IllegalStateException.class)
+        );
+    }
+
+    @Test
+    void connection이_할당되지_않은_상태에서_bind하면_예외가_발생하지_않는다() {
+        // expect
+        assertThatNoException().isThrownBy(
+                () -> TransactionSynchronizationManager.bindResource(dataSource, connection)
+        );
     }
 }

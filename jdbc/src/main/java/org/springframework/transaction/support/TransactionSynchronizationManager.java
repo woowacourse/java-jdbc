@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
@@ -25,9 +26,15 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> resource = new HashMap<>();
-        resource.put(key, value);
-        resources.set(resource);
+        Connection connection = getResource(key);
+        if (Objects.isNull(connection)) {
+            Map<DataSource, Connection> resource = new HashMap<>();
+            resource.put(key, value);
+            resources.set(resource);
+            return;
+        }
+
+        throw new IllegalStateException("Already Connection Exist");
     }
 
     public static Connection unbindResource(DataSource key) {
@@ -35,7 +42,7 @@ public abstract class TransactionSynchronizationManager {
         if (isNull(resource)) {
             throw new IllegalArgumentException("There is no resource");
         }
-        
+
         resources.remove();
         return resource;
     }
