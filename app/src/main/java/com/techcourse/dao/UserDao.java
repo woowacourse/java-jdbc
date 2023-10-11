@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,17 +28,6 @@ public class UserDao {
             ps.setString(1, user.getAccount());
             ps.setString(2, user.getPassword());
             ps.setString(3, user.getEmail());
-        });
-    }
-
-    public void update(final User user, Connection conn) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.execute(conn, sql, ps -> {
-            ps.setString(1, user.getAccount());
-            ps.setString(2, user.getPassword());
-            ps.setString(3, user.getEmail());
-            ps.setLong(4, user.getId());
         });
     }
 

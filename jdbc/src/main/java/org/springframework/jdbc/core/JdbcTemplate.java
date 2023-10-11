@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -22,22 +23,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(Connection conn, String sql, MyPreparedStatementCallback myPreparedStatementCallback) {
-        try (
-            PreparedStatement pstmt = prepareStatement(conn, sql, new Object[0])
-        ) {
-            myPreparedStatementCallback.execute(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     public void execute(String sql, MyPreparedStatementCallback myPreparedStatementCallback) {
-        try (
-            Connection conn = getConnection();
-            PreparedStatement pstmt = prepareStatement(conn, sql, new Object[0])
-        ) {
+        Connection conn = getConnection();
+        try (PreparedStatement pstmt = prepareStatement(conn, sql, new Object[0])) {
             myPreparedStatementCallback.execute(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -46,10 +34,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryAll(String sql, MyRowMapper<T> rowMapper, Object... params) {
+        Connection conn = getConnection();
         try (
-            Connection conn = getConnection();
             PreparedStatement pstmt = prepareStatement(conn, sql, params);
-            ResultSet rs = pstmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery()
         ) {
             List<T> list = new ArrayList<>();
             while (rs.next()) {
@@ -62,8 +50,8 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, MyRowMapper<T> rowMapper, Object... params) {
+        Connection conn = getConnection();
         try (
-            Connection conn = getConnection();
             PreparedStatement pstmt = prepareStatement(conn, sql, params);
             ResultSet rs = pstmt.executeQuery();
         ) {
@@ -76,8 +64,8 @@ public class JdbcTemplate {
         }
     }
 
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    public Connection getConnection() {
+        return DataSourceUtils.getConnection(dataSource);
     }
 
     private PreparedStatement prepareStatement(Connection conn, String sql, Object[] params)

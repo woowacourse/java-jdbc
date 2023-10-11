@@ -7,7 +7,9 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserService {
@@ -29,23 +31,23 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        User user = findById(id);
-        user.changePassword(newPassword);
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
 
-        Connection conn = null;
         try {
-            conn = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
             conn.setAutoCommit(false);
+            User user = findById(id);
+            user.changePassword(newPassword);
 
-            userDao.update(user, conn);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             conn.commit();
         } catch (RuntimeException | SQLException e) {
             rollback(conn, e);
             throw new DataAccessException(e);
         } finally {
-            close(conn);
+            close(dataSource);
         }
     }
 
@@ -60,12 +62,10 @@ public class UserService {
         }
     }
 
-    private void close(Connection conn) {
+    private void close(DataSource dataSource) {
         try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException ignored) {
+            DataSourceUtils.releaseConnection(dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
         }
     }
 }
