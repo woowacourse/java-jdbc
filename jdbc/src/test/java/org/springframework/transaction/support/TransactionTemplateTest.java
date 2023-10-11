@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -28,6 +29,17 @@ class TransactionTemplateTest {
         // when & then
         String result = transactionTemplate.execute(() -> "Transaction Successful");
         assertEquals("Transaction Successful", result);
+    }
+
+    @DisplayName("Runnable을 실행하고 결과를 반환하지 않는다.")
+    @Test
+    void executeWithoutResult_Success() {
+        // given
+        dataSource = TestDataSourceConfig.createJdbcDataSource();
+        transactionTemplate = new TransactionTemplate(dataSource);
+
+        // when & then
+        assertDoesNotThrow(() -> transactionTemplate.executeWithoutResult(() -> {}));
     }
 
     @DisplayName("TransactionCallback 실행 중 SQLException이 발생하면 DataAccessException을 던지고 트랜잭션을 롤백한다.")

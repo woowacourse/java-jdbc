@@ -33,6 +33,13 @@ public class TransactionTemplate {
         return result;
     }
 
+    public void executeWithoutResult(final Runnable action) {
+        execute(() -> {
+            action.run();
+            return null;
+        });
+    }
+
     private void rollback(final Connection connection) {
         try {
             connection.rollback();

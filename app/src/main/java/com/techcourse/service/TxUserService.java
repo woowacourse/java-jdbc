@@ -25,9 +25,8 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(() -> {
-            userService.changePassword(id, newPassword, createBy);
-            return null;
-        });
+        transactionTemplate.executeWithoutResult(() ->
+                userService.changePassword(id, newPassword, createBy)
+        );
     }
 }
