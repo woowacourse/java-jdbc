@@ -4,6 +4,7 @@ import com.techcourse.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -49,5 +50,12 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, rowMapper, account);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ? , password = ? , email = ? where id = ?";
+        final Object[] parameters = {user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
+
+        jdbcTemplate.update(connection, sql, parameters);
     }
 }

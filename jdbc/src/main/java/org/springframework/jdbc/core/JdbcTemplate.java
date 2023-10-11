@@ -34,6 +34,15 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(final Connection conn, final String sql, final Object[] parameters) {
+        try (PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters)){
+            log.debug("Execute Update - query : {}", sql);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = PreparedStateUtil.makeStatement(conn, sql, parameters);
