@@ -11,7 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.sql.SQLException;
+import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,8 +36,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService,dataSource);
+        final var userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -52,8 +51,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService,dataSource);
+        final var userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -64,5 +62,11 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private UserService getTransactionalUserService(final UserHistoryDao userHistoryDao) {
+        return (UserService) Proxy.newProxyInstance(UserService.class.getClassLoader(),
+                new Class[]{UserService.class},
+                new TransactionHandler(new AppUserService(userDao, userHistoryDao), dataSource));
     }
 }
