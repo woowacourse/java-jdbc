@@ -6,7 +6,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -16,7 +15,6 @@ import javax.sql.DataSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
@@ -24,7 +22,7 @@ class TxUserServiceTest {
 
     private DataSource dataSource;
     private UserDao userDao;
-    private UserService userService;
+    private AppUserService appUserService;
     private TransactionTemplate transactionTemplate;
 
     @BeforeEach
@@ -32,7 +30,7 @@ class TxUserServiceTest {
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
         UserHistoryDao userHistoryDao = new UserHistoryDao(dataSource);
-        this.userService = new AppUserService(userDao, userHistoryDao);
+        this.appUserService = new AppUserService(userDao, userHistoryDao);
         this.transactionTemplate = new TransactionTemplate(dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
@@ -42,11 +40,11 @@ class TxUserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var txUserService = new TxUserService(userService, transactionTemplate);
+        final var txUserService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        appUserService.changePassword(1L, newPassword, createBy);
 
         final var actual = txUserService.findById(1L);
 
