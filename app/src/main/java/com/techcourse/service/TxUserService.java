@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class TxUserService implements UserService {
 
@@ -46,13 +45,13 @@ public class TxUserService implements UserService {
     }
 
     private <T> T execute(ExecutableWithReturn<T> executable) {
-        try (TransactionExecutor transactionExecutor = TransactionExecutor.initTransaction(datasource)) {
+        try (TransactionExecutor executor = TransactionExecutor.initTransaction(datasource)) {
             try {
                 T result = executable.execute();
-                transactionExecutor.commit();
+                executor.commit();
                 return result;
             } catch (Exception e) {
-                transactionExecutor.rollback();
+                executor.rollback();
                 throw new DataAccessException();
             }
         }
@@ -80,8 +79,6 @@ public class TxUserService implements UserService {
 
         public static TransactionExecutor initTransaction(DataSource dataSource) {
             try {
-                Connection conn = dataSource.getConnection();
-                TransactionSynchronizationManager.bindResource(dataSource, conn);
                 Connection connection = DataSourceUtils.getConnection(dataSource);
                 connection.setAutoCommit(false);
                 return new TransactionExecutor(dataSource, connection);
@@ -108,8 +105,7 @@ public class TxUserService implements UserService {
 
         @Override
         public void close() {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 }

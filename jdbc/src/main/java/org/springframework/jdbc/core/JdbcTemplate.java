@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.IncorrectResultSizeDataAccessException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -86,36 +86,12 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementExecution<PreparedStatement, T> function) {
-        Connection conn = null;
+        Connection conn;
         try {
-            conn = getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             PreparedStatement pstmt = conn.prepareStatement(sql);
             return function.apply(pstmt);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        } finally {
-            if (isConnectionManuallyInstantiated(conn)) {
-                tryCloseConnection(conn);
-            }
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
-            return TransactionSynchronizationManager.getResource(dataSource);
-        }
-        return dataSource.getConnection();
-    }
-
-    private boolean isConnectionManuallyInstantiated(Connection conn) {
-        return conn != null && TransactionSynchronizationManager.getResource(dataSource) == null;
-    }
-
-    private void tryCloseConnection(Connection conn) throws DataAccessException {
-        try {
-            conn.close();
-        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
