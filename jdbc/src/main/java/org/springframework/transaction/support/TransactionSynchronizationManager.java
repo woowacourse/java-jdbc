@@ -1,8 +1,9 @@
 package org.springframework.transaction.support;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
@@ -11,13 +12,39 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        return null;
+        Map<DataSource, Connection> connectionMap = resources.get();
+        if (connectionMap == null) {
+            return null;
+        }
+        return connectionMap.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        Map<DataSource, Connection> connectionMap = resources.get();
+        if (connectionMap == null) {
+            connectionMap = new HashMap<>();
+            resources.set(connectionMap);
+        }
+
+        if (connectionMap.containsKey(key)) {
+            throw new IllegalStateException("fail to bind resource because of already exist bound thread");
+        }
+
+        connectionMap.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        return null;
+        Map<DataSource, Connection> connectionMap = resources.get();
+        if (connectionMap == null) {
+            return null;
+        }
+        Connection connectionToRemove = connectionMap.remove(key);
+        if (connectionToRemove == null) {
+            throw new IllegalStateException("fail to unbind resource because of not found value");
+        }
+        if (connectionMap.isEmpty()) {
+            resources.remove();
+        }
+        return connectionToRemove;
     }
 }
