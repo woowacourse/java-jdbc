@@ -1,7 +1,7 @@
 package org.springframework.transaction.support;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.exception.TransactionException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -33,7 +33,7 @@ public class TransactionManager {
             return result;
         } catch (Exception e) {
             rollback(conn);
-            throw new DataAccessException(e);
+            throw new TransactionException(e);
         } finally {
             setTransactionInactive(conn);
             DataSourceUtils.releaseConnection(conn, dataSource);
@@ -56,7 +56,7 @@ public class TransactionManager {
         try {
             conn.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new TransactionException(e);
         }
     }
 }
