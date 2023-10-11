@@ -7,7 +7,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -18,15 +18,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class UserDaoTest {
 
-    private JdbcTemplate jdbcTemplate;
     private User user;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
+
+        final String deleteSql = "DELETE FROM users";
+        jdbcTemplate.update(deleteSql);
 
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         user = userDao.findByAccount("gugu");
@@ -103,11 +106,5 @@ class UserDaoTest {
         // then
         final User changedUser = userDao.findByAccount(user.getAccount());
         assertThat(changedUser.getPassword()).isEqualTo("newPassword");
-    }
-
-    @AfterEach
-    void tearDown() {
-        final String deleteSql = "DELETE FROM users";
-        jdbcTemplate.update(deleteSql);
     }
 }
