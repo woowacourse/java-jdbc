@@ -31,6 +31,8 @@ public class JdbcTemplate {
             return action.doInStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

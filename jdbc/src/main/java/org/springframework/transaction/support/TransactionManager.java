@@ -16,7 +16,7 @@ public class TransactionManager {
     }
 
     public void execute(final Runnable runnable) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
             runnable.run();
@@ -25,12 +25,23 @@ public class TransactionManager {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            releaseConnection(connection);
         }
     }
 
-    public <T> T executeWithResult(final Supplier<T> supplier) {
+    private Connection getConnection() {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.setActiveTransaction(connection, true);
+        return connection;
+    }
+
+    private void releaseConnection(final Connection connection) {
+        TransactionSynchronizationManager.setActiveTransaction(connection, false);
+        DataSourceUtils.releaseConnection(connection, dataSource);
+    }
+
+    public <T> T executeWithResult(final Supplier<T> supplier) {
+        final Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
             final T result = supplier.get();
@@ -40,7 +51,7 @@ public class TransactionManager {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            releaseConnection(connection);
         }
     }
 

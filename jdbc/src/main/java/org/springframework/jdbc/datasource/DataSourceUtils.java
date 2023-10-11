@@ -27,6 +27,10 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        final boolean isActiveTransaction = TransactionSynchronizationManager.isActiveTransaction(connection);
+        if (isActiveTransaction) {
+            return;
+        }
         try {
             TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
