@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -29,28 +30,13 @@ public class JdbcTemplate {
             PreparedStatementMaker pstmtMaker,
             PreparedStatementExecuter<T> pstmtExecuter
     ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = pstmtMaker.makePreparedStatement(conn)
         ) {
             return pstmtExecuter.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        }
-    }
-
-    public int update(Connection conn, String sql, Object... args) throws SQLException {
-        log.debug("query : {}", sql);
-        return execute(conn, new SetPreparedStatementMaker(sql, args), new PreparedStatementUpdateExecuter());
-    }
-
-    private <T> T execute(
-            Connection conn,
-            PreparedStatementMaker pstmtMaker,
-            PreparedStatementExecuter<T> pstmtExecuter
-    ) throws SQLException {
-        try (PreparedStatement pstmt = pstmtMaker.makePreparedStatement(conn)) {
-            return pstmtExecuter.execute(pstmt);
         }
     }
 

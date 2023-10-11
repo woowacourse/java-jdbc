@@ -6,10 +6,8 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -20,17 +18,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class UserDaoTest {
 
-    private JdbcTemplate jdbcTemplate;
     private User user;
     private UserDao userDao;
-    private Connection connection;
 
     @BeforeEach
-    void setup() throws SQLException {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    void setup() {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
-        connection = DataSourceConfig.getInstance().getConnection();
+
+        final String deleteSql = "DELETE FROM users";
+        jdbcTemplate.update(deleteSql);
 
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
         user = userDao.findByAccount("gugu");
@@ -107,24 +106,5 @@ class UserDaoTest {
         // then
         final User changedUser = userDao.findByAccount(user.getAccount());
         assertThat(changedUser.getPassword()).isEqualTo("newPassword");
-    }
-
-    @Test
-    void Connection을_이용해_회원_정보를_수정한다() throws SQLException {
-        // given
-        user.changePassword("newPassword");
-
-        // when
-        userDao.update(connection, user);
-
-        // then
-        final User changedUser = userDao.findByAccount(user.getAccount());
-        assertThat(changedUser.getPassword()).isEqualTo("newPassword");
-    }
-
-    @AfterEach
-    void tearDown() {
-        final String deleteSql = "DELETE FROM users";
-        jdbcTemplate.update(deleteSql);
     }
 }
