@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Connection;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {

@@ -2,7 +2,9 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.exception.DataAccessException;
+import org.springframework.jdbc.exception.IncorrectResultSizeDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,10 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
     public void execute(String sql, Object... args) {
         context(sql, args);
     }
@@ -33,7 +31,7 @@ public class JdbcTemplate {
         return context(sql, new RowByResultSet<>(rm));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) throws DataAccessException {
+    public <T> T queryForObject(String sql, RowMapper<T> rm, Object... args) {
         List<T> list = context(sql, new RowByResultSet<>(rm), args);
 
         if (list.isEmpty()) {
@@ -41,15 +39,15 @@ public class JdbcTemplate {
         }
 
         if (list.size() > 1) {
-            throw new DataAccessException("조건에 해당하는 값이 " + list.size() + "개입니다.");
+            throw new IncorrectResultSizeDataAccessException("조건에 해당하는 값이 " + list.size() + "개입니다.");
         }
 
         return list.get(0);
     }
 
-    private void context(String sql, Object... args) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private void context(String sql, Object... args) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
@@ -62,9 +60,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> context(String sql, ResultSetStrategy<List<T>> rss, Object... args) throws DataAccessException {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> List<T> context(String sql, ResultSetStrategy<List<T>> rss, Object... args) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
