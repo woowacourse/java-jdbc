@@ -1,6 +1,7 @@
 package org.springframework.jdbc.core;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,19 +15,45 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void transaction(TransactionExecutor transactionExecutor) throws SQLException {
-        Connection conn = dataSource.getConnection();
-        conn.setAutoCommit(false);
+    public <T> T transaction(TransactionExecutor<T> transactionExecutor) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            transactionExecutor.execute(conn);
+            conn.setAutoCommit(false);
+            T result = transactionExecutor.execute();
+            conn.commit();
+            conn.setAutoCommit(true);
+            return result;
+        } catch (SQLException | DataAccessException e) {
+            e.printStackTrace();
+            rollback(conn);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    public void transaction(Runnable runnable) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            conn.setAutoCommit(false);
+            runnable.run();
             conn.commit();
             conn.setAutoCommit(true);
         } catch (SQLException | DataAccessException e) {
-            conn.rollback();
-            conn.setAutoCommit(true);
+            e.printStackTrace();
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            conn.close();
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private void rollback(Connection conn) {
+        try {
+            conn.rollback();
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }

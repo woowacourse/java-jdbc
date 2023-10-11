@@ -2,6 +2,7 @@ package org.springframework.jdbc.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -18,24 +19,14 @@ public class QueryTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(Connection conn, String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
+    public <T> T query(String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             settingParameters(pstmt, parameters);
             return queryExecutor.execute(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public <T> T query(String sql, QueryExecutor<T> queryExecutor, Object... parameters) {
-        try (
-                Connection conn = dataSource.getConnection();
-        ) {
-            return query(conn, sql, queryExecutor, parameters);
-        } catch (RuntimeException | SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }

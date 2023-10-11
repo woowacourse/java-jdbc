@@ -16,27 +16,28 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private DataSource dataSource;
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
         this.dataSource = DataSourceConfig.getInstance();
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,10 +49,11 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
+    void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
