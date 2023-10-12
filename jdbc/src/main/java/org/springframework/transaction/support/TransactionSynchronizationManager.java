@@ -38,8 +38,11 @@ public abstract class TransactionSynchronizationManager {
         try {
             Map<DataSource, Connection> resource = resources.get();
             Connection connection = resource.get(key);
-            resources.remove();
-            return connection;
+            if (connection.isClosed()) {
+                resources.remove();
+                return connection;
+            }
+            throw new DataAccessException("connection not closed. failed to unbind resource");
         } catch (Exception e) {
             throw new DataAccessException("resource unbind failed", e);
         }
