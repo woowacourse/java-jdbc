@@ -76,4 +76,4 @@
 
 ### 2차
 - [x] TransactionCallback 대신 Supplier 사용
-- [ ] isTransactional 문제 해결
+- [x] isTransactional 문제 해결

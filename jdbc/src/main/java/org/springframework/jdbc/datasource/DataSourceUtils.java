@@ -35,17 +35,14 @@ public abstract class DataSourceUtils {
     }
 
     public static void closeNotTransactional(final DataSource dataSource, final Connection connection) {
-        if (isTransactional(dataSource, connection)) {
-            return;
+        try {
+            if (connection.getAutoCommit()) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                releaseConnection(connection);
+            }
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
-        TransactionSynchronizationManager.unbindResource(dataSource);
-        releaseConnection(connection);
     }
 
-    private static boolean isTransactional(final DataSource dataSource, final Connection connection) {
-        if (TransactionSynchronizationManager.hasResource(dataSource)) {
-            return TransactionSynchronizationManager.getResource(dataSource) == connection;
-        }
-        return false;
-    }
 }
