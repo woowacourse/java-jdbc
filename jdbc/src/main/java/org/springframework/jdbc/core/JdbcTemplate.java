@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import org.springframework.dao.SQLExceptionTranslator;
+import org.springframework.dao.SQLNonTransientConnectionException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -35,6 +36,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
+        } finally {
+            releaseIfNotTransacting(connection);
         }
     }
 
@@ -58,16 +61,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
-        }
-    }
-
-    private static void verifyResultRowSize(final ResultSet rs, final int rowSize) throws SQLException {
-        rs.last();
-        if (rowSize < rs.getRow()) {
-            throw new SQLException(String.format("결과가 1개인 줄 알았는데, %d개 나왔서!", rs.getRow()));
-            /**
-             * 예외 원문 : Incorrect result size: expected 1, actual n
-             */
+        } finally {
+            releaseIfNotTransacting(connection);
         }
     }
 
@@ -89,6 +84,18 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw SQLExceptionTranslator.translate(e);
+        } finally {
+            releaseIfNotTransacting(connection);
+        }
+    }
+
+    private static void verifyResultRowSize(final ResultSet rs, final int rowSize) throws SQLException {
+        rs.last();
+        if (rowSize < rs.getRow()) {
+            throw new SQLException(String.format("결과가 1개인 줄 알았는데, %d개 나왔서!", rs.getRow()));
+            /**
+             * 예외 원문 : Incorrect result size: expected 1, actual n
+             */
         }
     }
 
@@ -96,6 +103,16 @@ public class JdbcTemplate {
             throws SQLException {
         for (int i = 1; i < parameters.length + 1; i++) {
             pstmt.setObject(i, parameters[i - 1]);
+        }
+    }
+
+    private void releaseIfNotTransacting(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+        } catch (SQLException e) {
+            throw new SQLNonTransientConnectionException(e);
         }
     }
 }
