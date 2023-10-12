@@ -3,10 +3,12 @@ package org.springframework.transaction.support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.exception.UndeclaredThrowableException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 
 public class TransactionTemplate {
 
@@ -18,14 +20,15 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeWithTransaction(final TransactionCallback transactionCallback) {
+    @Nullable
+    public <T> T executeWithTransaction(final Supplier<T> supplier) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            TransactionContext.set(connection);
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            transactionCallback.execute();
+            final T result = supplier.get();
             connection.commit();
+            return result;
         } catch (final RuntimeException e) {
             if (connection != null) {
                 rollback(connection);
@@ -37,13 +40,8 @@ public class TransactionTemplate {
             }
             throw new UndeclaredThrowableException(e);
         } finally {
-            TransactionContext.remove();
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (final SQLException e) {
-                throw new RuntimeException(e);
+            if (connection != null) {
+                closeTransactional(connection);
             }
         }
     }
@@ -55,5 +53,17 @@ public class TransactionTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void closeTransactional(final Connection connection) {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection);
+    }
+
+    public void executeWithoutResult(final Runnable action) {
+        executeWithTransaction(() -> {
+            action.run();
+            return null;
+        });
     }
 }

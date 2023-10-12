@@ -70,7 +70,10 @@ public class SecondUserService {
     private void logActualTransactionActive() {
         final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        final var synchronizationActive = TransactionSynchronizationManager.isSynchronizationActive();
         final var emoji = actualTransactionActive ? "✅" : "❌";
+        final var emoji2 = synchronizationActive ? "✅" : "❌";
         log.info("\n{} is Actual Transaction Active : {} {}", currentTransactionName, emoji, actualTransactionActive);
+        log.info("\n{} is Synchronization Transaction Active : {} {}", currentTransactionName, emoji2, synchronizationActive);
     }
 }

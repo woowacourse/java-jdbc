@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -17,6 +19,8 @@ public class UserDao {
         final String email = rs.getString("email");
         return new User(id, account, password, email);
     };
+
+    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
