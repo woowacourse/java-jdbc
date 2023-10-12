@@ -6,21 +6,20 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
     private UserDao userDao;
+    private long userId;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userId = userDao.insert(user);
     }
 
     @Test
@@ -32,7 +31,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L).get();
+        final var user = userDao.findById(userId).get();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -40,18 +39,18 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        List<User> users = userDao.findByAccount(account);
+        User user = userDao.findByAccount(account).get();
 
-        assertThat(users).extracting("account").containsOnly("gugu");
+        assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        long insertedId = userDao.insert(user);
 
-        final var actual = userDao.findById(2L).get();
+        final var actual = userDao.findById(insertedId).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
         assertThat(actual.getEmail()).isEqualTo("hkkang@woowahan.com");
@@ -60,12 +59,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L).get();
+        final var user = userDao.findById(userId).get();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L).get();
+        final var actual = userDao.findById(userId).get();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
