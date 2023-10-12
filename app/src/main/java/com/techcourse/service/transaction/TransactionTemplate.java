@@ -1,6 +1,5 @@
 package com.techcourse.service.transaction;
 
-import com.techcourse.config.DataSourceConfig;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.TransactionException;
@@ -12,9 +11,15 @@ import java.sql.SQLException;
 
 public class TransactionTemplate {
 
+    private final DataSource dataSource;
+
+    public TransactionTemplate(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public void executeWithTransaction(final TransactionLogicExecutor transactionLogicExecutor) {
-        final DataSource dataSource = DataSourceConfig.getInstance();
         final Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try {
             connection.setAutoCommit(false);
 
