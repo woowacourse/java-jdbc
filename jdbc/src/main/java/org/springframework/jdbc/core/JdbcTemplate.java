@@ -1,7 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.springframework.jdbc.transaction.TransactionManager;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,13 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.singletonList;
+import static org.springframework.jdbc.datasource.DataSourceUtils.getConnection;
 
 public class JdbcTemplate {
 
-    private final TransactionManager transactionManager;
+    private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.transactionManager = new TransactionManager(dataSource);
+        this.dataSource = dataSource;
     }
 
     public int update(final String sql, final Object... conditions) {
@@ -43,7 +42,7 @@ public class JdbcTemplate {
     }
 
     private <T> T getResult(final PreparedStatementExecutor<T> executor, final String sql, final Object... conditions) {
-        Connection connection = transactionManager.getConnection();
+        Connection connection = getConnection(dataSource);
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
