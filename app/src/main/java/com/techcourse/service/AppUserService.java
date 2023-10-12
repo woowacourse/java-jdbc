@@ -5,8 +5,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-import java.util.NoSuchElementException;
-
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
@@ -20,7 +18,7 @@ public class AppUserService implements UserService {
     @Override
     public User findById(final long id) {
         return userDao.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("id 값으로 해당하는 User 를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("id 값으로 해당하는 User 를 찾을 수 없습니다. 입력값 : %s", id)));
     }
 
     @Override
