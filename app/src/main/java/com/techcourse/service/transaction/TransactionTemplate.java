@@ -35,12 +35,14 @@ public class TransactionTemplate {
     }
 
     private void rollback(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (final SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+        if (connection == null) {
+            return;
+        }
+
+        try {
+            connection.rollback();
+        } catch (final SQLException ex) {
+            throw new DataAccessException(ex);
         }
     }
 
