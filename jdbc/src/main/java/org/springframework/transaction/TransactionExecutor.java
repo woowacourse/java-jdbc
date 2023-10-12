@@ -18,11 +18,11 @@ public class TransactionExecutor {
     public <T> T execute(final Supplier<T> supplier) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            DataSourceUtils.startTransaction(connection, dataSource);
             final T t = supplier.get();
-            connection.commit();
+            DataSourceUtils.finishTransaction(connection, dataSource);
             return t;
-        } catch (SQLException | DataAccessException e) {
+        } catch (DataAccessException e) {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
@@ -33,10 +33,10 @@ public class TransactionExecutor {
     public void execute(final Runnable runnable) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            DataSourceUtils.startTransaction(connection, dataSource);
             runnable.run();
-            connection.commit();
-        } catch (SQLException | DataAccessException e) {
+            DataSourceUtils.finishTransaction(connection, dataSource);
+        } catch (DataAccessException e) {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {

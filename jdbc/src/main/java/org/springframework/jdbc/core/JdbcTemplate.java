@@ -29,6 +29,8 @@ public class JdbcTemplate {
             return executionCallback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
