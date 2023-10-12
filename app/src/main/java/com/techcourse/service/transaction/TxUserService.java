@@ -15,7 +15,7 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        return transactionTemplate.queryWithTransaction(() -> userService.findById(id));
     }
 
     @Override

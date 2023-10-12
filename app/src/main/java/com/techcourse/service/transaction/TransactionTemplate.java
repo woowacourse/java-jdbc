@@ -17,13 +17,13 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeWithTransaction(final TransactionLogicExecutor transactionLogicExecutor) {
+    public void executeWithTransaction(final TransactionCommandExecutor transactionCommandExecutor) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
 
-            transactionLogicExecutor.run();
+            transactionCommandExecutor.run();
 
             connection.commit();
         } catch (final SQLException | DataAccessException e) {
@@ -53,6 +53,25 @@ public class TransactionTemplate {
             DataSourceUtils.releaseConnection(connection, dataSource);
         } catch (final SQLException e) {
             throw new TransactionException("Failed to change auto commit to true");
+        }
+    }
+
+    public <T> T queryWithTransaction(final TransactionQueryExecutor<T> transactionQueryExecutor) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
+            connection.setAutoCommit(false);
+            connection.setReadOnly(true);
+
+            final T result = transactionQueryExecutor.get();
+
+            connection.commit();
+            return result;
+        } catch (final SQLException | DataAccessException e) {
+            rollback(connection);
+            throw new DataAccessException(e);
+        } finally {
+            release(dataSource, connection);
         }
     }
 }

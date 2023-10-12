@@ -1,7 +1,7 @@
 package com.techcourse.service.transaction;
 
 @FunctionalInterface
-public interface TransactionLogicExecutor {
+public interface TransactionQueryExecutor<T> {
 
-    void run();
+    T get();
 }
