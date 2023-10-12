@@ -34,10 +34,10 @@ public class TransactionProxyHandler implements InvocationHandler {
         }
     }
 
-    private RuntimeException handleTransactionFailure(final Connection connection, final Exception e) {
+    private Exception handleTransactionFailure(final Connection connection, final Exception e) {
         try {
             connection.rollback();
-            return new RuntimeException(e);
+            return e;
         } catch (SQLException ex) {
             return new SQLTransactionRollbackException(ex);
         }
