@@ -1,17 +1,15 @@
 package org.springframework.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -20,19 +18,21 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        execute(new PreparedStatementCreator(sql), ps -> {
-            final var pss = newArgumentPreparedStatementSetter(parameters);
-            pss.setValues(ps);
-            return ps.executeUpdate();
+        execute(new PreparedStatementCreator(sql), statement -> {
+            final var statementSetter = newArgumentPreparedStatementSetter(parameters);
+            statementSetter.setValues(statement);
+            return statement.executeUpdate();
         });
     }
 
-    public <T> T execute(PreparedStatementCreator psc, StatementCallback<T> action) {
-        try (var conn = dataSource.getConnection();
-             var stmt = psc.createPreparedStatement(conn)) {
-            return action.doInStatement(stmt);
+    public <T> T execute(PreparedStatementCreator statementCreator, StatementCallback<T> action) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (var statement = statementCreator.createPreparedStatement(connection)) {
+            return action.doInStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -49,18 +49,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(new PreparedStatementCreator(sql), ps -> {
-            final var pss = new ArgumentPreparedStatementSetter(parameters);
-            pss.setValues(ps);
-            final var rs = ps.executeQuery();
-            return result(rowMapper, rs);
+        return execute(new PreparedStatementCreator(sql), statement -> {
+            final var statementSetter = new ArgumentPreparedStatementSetter(parameters);
+            statementSetter.setValues(statement);
+            final var resultSet = statement.executeQuery();
+            return result(rowMapper, resultSet);
         });
     }
 
-    private <T> List<T> result(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
+    private <T> List<T> result(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
         List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(rowMapper.mapRow(rs));
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
         }
         return result;
     }
