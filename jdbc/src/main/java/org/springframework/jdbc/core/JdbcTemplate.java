@@ -1,8 +1,10 @@
 package org.springframework.jdbc.core;
 
+import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.IncorrectResultSizeDataAccessException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,32 +25,49 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) throws DataAccessException {
+    public int update(String sql, Object... args) {
         return execute(sql, (pstmt) -> {
             prepareStatement(pstmt, args);
             return pstmt.executeUpdate();
         });
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... args)
-            throws DataAccessException {
+    public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
         return execute(sql, (pstmt) -> {
             prepareStatement(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
-                int columnCount = rs.getMetaData().getColumnCount();
-                if (rs.first() && rs.isLast()) {
-                    Object[] initArgs = new Object[columnCount];
-                    for (int i = 1; i <= columnCount; i++) {
-                        initArgs[i - 1] = rs.getObject(i);
-                    }
-                    return InstantiateUtil.instantiate(rs, requiredType, initArgs);
-                }
-                throw new IncorrectResultSizeDataAccessException();
+                return instantiate(rs, requiredType);
             }
         });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+    private <T> T instantiate(ResultSet rs, Class<T> requiredType) throws Exception {
+        int columnCount = rs.getMetaData().getColumnCount();
+        if (rs.first() && rs.isLast()) {
+            Object[] initArgs = new Object[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                initArgs[i - 1] = rs.getObject(i);
+            }
+            return instantiate(rs, requiredType, initArgs);
+        }
+        throw new IncorrectResultSizeDataAccessException();
+    }
+
+    private <T> T instantiate(ResultSet rs, Class<T> requiredType, Object[] initArgs)
+            throws Exception {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        Class<?>[] columnTypes = new Class[columnCount];
+        for (int i = 1; i <= columnCount; i++) {
+            int columnType = metaData.getColumnType(i);
+            columnTypes[i - 1] = ColumnTypes.convertToClass(columnType);
+        }
+        Constructor<?> constructor = requiredType.getDeclaredConstructor(columnTypes);
+        return requiredType.cast(constructor.newInstance(initArgs));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return execute(sql, (pstmt) -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -67,34 +86,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementExecution<PreparedStatement, T> function) {
-        Connection conn = null;
+        Connection conn;
         try {
-            conn = getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             PreparedStatement pstmt = conn.prepareStatement(sql);
             return function.apply(pstmt);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            try {
-                if (isConnectionManuallyInstantiated(conn)) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
         }
-    }
-
-    private Connection getConnection() throws SQLException {
-        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
-            return TransactionSynchronizationManager.getResource(dataSource);
-        }
-        return dataSource.getConnection();
-    }
-
-    private boolean isConnectionManuallyInstantiated(Connection conn) {
-        return conn != null && TransactionSynchronizationManager.getResource(dataSource) == null;
     }
 }
