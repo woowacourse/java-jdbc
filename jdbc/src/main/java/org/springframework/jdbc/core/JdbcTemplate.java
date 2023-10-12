@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,24 +24,13 @@ public class JdbcTemplate {
 
     private <T> T execute(final PreparedStatementCallback preparedStatementCallback,
                           final ExecutionCallback<T> executionCallback) {
-        try (final Connection connection = dataSource.getConnection()) {
-            return executeWithConnection(connection, preparedStatementCallback, executionCallback);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return executeWithConnection(connection, conn -> prepareStatement(sql, conn, args), PreparedStatement::executeUpdate);
-    }
-
-    private <T> T executeWithConnection(final Connection connection,
-                                        final PreparedStatementCallback preparedStatementCallback,
-                                        final ExecutionCallback<T> executionCallback) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = preparedStatementCallback.prepareStatement(connection)) {
             return executionCallback.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
