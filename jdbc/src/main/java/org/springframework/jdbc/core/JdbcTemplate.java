@@ -3,8 +3,9 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataUpdateException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,18 +19,25 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update(Connection con, String sql, Object... arguments) {
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void update(String sql, Object... arguments) {
+        Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setArguments(pstmt, arguments);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataUpdateException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(Connection con,String sql, RowMapper<T> rowMapper, Object... arguments) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
@@ -45,12 +53,12 @@ public class JdbcTemplate {
                 throw new NoSuchElementException();
             }, pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(Connection con,String sql, RowMapper<T> rowMapper, Object... arguments) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        Connection con = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             setArguments(pstmt, arguments);
             log.debug("query : {}", sql);
@@ -63,12 +71,11 @@ public class JdbcTemplate {
                 return results;
             }, pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
-    private void setArguments(PreparedStatement pstmt, Object[] arguments) throws SQLException {
+    private void setArguments(PreparedStatement pstmt, Object[] arguments) {
         PreparedStatementSetter psSetter = getPreparedStatementSetter(arguments);
         psSetter.setValues(pstmt);
     }

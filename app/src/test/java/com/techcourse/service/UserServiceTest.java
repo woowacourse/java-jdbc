@@ -11,8 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,23 +22,21 @@ class UserServiceTest {
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
     private DataSource dataSource;
-    private Connection con;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(jdbcTemplate);
+    void setUp() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         dataSource = DataSourceConfig.getInstance();
-        con = dataSource.getConnection();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(con, user);
+        userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +51,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var userService = getTransactionalUserService(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -65,5 +62,11 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private UserService getTransactionalUserService(final UserHistoryDao userHistoryDao) {
+        return (UserService) Proxy.newProxyInstance(UserService.class.getClassLoader(),
+                new Class[]{UserService.class},
+                new TransactionHandler(new AppUserService(userDao, userHistoryDao), dataSource));
     }
 }
