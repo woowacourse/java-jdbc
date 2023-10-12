@@ -31,7 +31,9 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(DataSource key) {
         Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
         Connection remove = dataSourceConnectionMap.remove(key);
-        resources.remove();
+        if (dataSourceConnectionMap.isEmpty()) {
+            resources.remove();
+        }
         return remove;
     }
 }
