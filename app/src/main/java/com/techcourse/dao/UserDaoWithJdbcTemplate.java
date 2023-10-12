@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.techcourse.repository.UserRepository;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -17,37 +16,34 @@ public class UserDaoWithJdbcTemplate implements UserRepository {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void insert(final Connection connection, final User user) {
+    @Override
+    public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final Connection connection, final User user) {
+    @Override
+    public void update(final User user) {
         final String sql = "update users set (account, password, email) = (?, ?, ?) where id = ?";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll(final Connection connection) {
+    @Override
+    public List<User> findAll() {
         final String sql = "select * from users";
-        return jdbcTemplate.query(connection, sql, getUserRowMapper());
+        return jdbcTemplate.query(sql, getUserRowMapper());
     }
 
-    public User findById(final Connection connection, final Long id) {
+    @Override
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), id);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
     }
 
-    public User findByAccount(final Connection connection, final String account) {
+    @Override
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final Optional<User> user = jdbcTemplate.queryForObject(connection, sql, getUserRowMapper(), account);
-        if (user.isEmpty()) {
-            throw new RuntimeException("유저 없음!");
-        }
-        return user.get();
+        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
     }
 
     private static RowMapper<User> getUserRowMapper() {

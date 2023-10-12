@@ -1,18 +1,18 @@
 package com.techcourse.repository;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository {
 
-    void insert(final Connection connection, final User user);
+    void insert(final User user);
 
-    void update(final Connection connection, final User user);
+    void update(final User user);
 
-    List<User> findAll(final Connection connection);
+    List<User> findAll();
 
-    User findById(final Connection connection, final Long id);
+    Optional<User> findById(final Long id);
 
-    User findByAccount(final Connection connection, final String account);
+    Optional<User> findByAccount(final String account);
 }
