@@ -27,7 +27,8 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        return execute(connection, sql, pstmt -> {
             ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -37,7 +38,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        return execute(connection, sql, pstmt -> {
             ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
