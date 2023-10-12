@@ -18,7 +18,7 @@ public abstract class TransactionSynchronizationManager {
         if (resources.get() == null) {
             return null;
         }
-        return resources.get().get(key);
+        return resources.get().getOrDefault(key, null);
     }
 
     public static void bindResource(DataSource key, Connection value) {
