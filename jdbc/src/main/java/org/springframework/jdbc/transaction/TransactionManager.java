@@ -1,15 +1,11 @@
 package org.springframework.jdbc.transaction;
 
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.springframework.jdbc.datasource.DataSourceUtils.*;
+import static org.springframework.jdbc.datasource.DataSourceUtils.getConnection;
 import static org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection;
-import static org.springframework.transaction.support.TransactionSynchronizationManager.*;
 
 public class TransactionManager {
 

@@ -1,9 +1,5 @@
 package org.springframework.jdbc.core;
 
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.jdbc.transaction.TransactionManager;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,8 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.singletonList;
-import static org.springframework.jdbc.datasource.DataSourceUtils.*;
-import static org.springframework.transaction.support.TransactionSynchronizationManager.*;
+import static org.springframework.jdbc.datasource.DataSourceUtils.getConnection;
 
 public class JdbcTemplate {
 
