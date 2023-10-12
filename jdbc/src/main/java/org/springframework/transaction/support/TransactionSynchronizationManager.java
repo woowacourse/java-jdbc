@@ -14,14 +14,18 @@ public abstract class TransactionSynchronizationManager {
 
     @Nullable
     public static Connection getResource(final DataSource key) {
-        return resources.get().getOrDefault(key, null);
+        return getResources().getOrDefault(key, null);
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
-        resources.get().put(key, value);
+        getResources().put(key, value);
     }
 
     public static Connection unbindResource(final DataSource key) {
-        return resources.get().remove(key);
+        return getResources().remove(key);
+    }
+
+    private static Map<DataSource, Connection> getResources() {
+        return resources.get();
     }
 }
