@@ -1,7 +1,7 @@
-package com.techcourse.service.transaction;
+package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import com.techcourse.service.UserService;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class TxUserService implements UserService {
 

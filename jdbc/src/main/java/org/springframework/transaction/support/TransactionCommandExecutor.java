@@ -1,4 +1,4 @@
-package com.techcourse.service.transaction;
+package org.springframework.transaction.support;
 
 @FunctionalInterface
 public interface TransactionCommandExecutor {
