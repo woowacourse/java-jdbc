@@ -18,6 +18,14 @@ public class UserHistoryDao {
     public void log(UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         log.info("[LOG] insert user into user_history");
-        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+        Object[] params = {
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
+        };
+        jdbcTemplate.update(sql, params);
     }
 }

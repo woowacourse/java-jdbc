@@ -22,16 +22,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, rowMapper, createPreparedStatementSetter(args));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return query(sql, rowMapper, createPreparedStatementSetter(params));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryForObject(sql, rowMapper, createPreparedStatementSetter(args));
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return queryForObject(sql, rowMapper, createPreparedStatementSetter(params));
     }
 
-    public int update(String sql, Object... args) {
-        return update(sql, createPreparedStatementSetter(args));
+    public int update(String sql, Object... params) {
+        return update(sql, createPreparedStatementSetter(params));
     }
 
     private <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
@@ -62,10 +62,10 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatementSetter createPreparedStatementSetter(Object... args) {
+    private PreparedStatementSetter createPreparedStatementSetter(Object... params) {
         return psmt -> {
-            for (int i = 0; i < args.length; i++) {
-                psmt.setObject(i + 1, args[i]);
+            for (int i = 0; i < params.length; i++) {
+                psmt.setObject(i + 1, params[i]);
             }
         };
     }
