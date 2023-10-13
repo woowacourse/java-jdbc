@@ -3,6 +3,7 @@ package org.springframework.jdbc.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,23 +22,20 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(connection, sql, rowMapper, createPreparedStatementSetter(args));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, createPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryForObject(connection, sql, rowMapper, createPreparedStatementSetter(args));
-    }
-
-    public int update(Connection connection, String sql, Object... args) {
-        return update(connection, sql, createPreparedStatementSetter(args));
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, createPreparedStatementSetter(args));
     }
 
     public int update(String sql, Object... args) {
         return update(sql, createPreparedStatementSetter(args));
     }
 
-    private <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+    private <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             pss.setParameters(preparedStatement);
             return mapResultSetToObject(rowMapper, preparedStatement);
@@ -47,19 +45,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        List<T> result = query(connection, sql, rowMapper, pss);
+    private <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> result = query(sql, rowMapper, pss);
         validateResultSize(result);
         return result.get(0);
-    }
-
-    private int update(Connection connection, String sql, PreparedStatementSetter pss) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            pss.setParameters(preparedStatement);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 
     private int update(String sql, PreparedStatementSetter pss) {

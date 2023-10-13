@@ -9,22 +9,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 class UserDaoTest {
 
     private UserDao userDao;
-    private Connection connection;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        connection = dataSource.getConnection();
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao = new UserDao(new JdbcTemplate(dataSource));
@@ -33,7 +28,7 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll(connection);
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
@@ -48,7 +43,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(connection, account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -56,7 +51,7 @@ class UserDaoTest {
     @Test
     void findByWrongAccount() {
         final var account = "gaga";
-        assertThatThrownBy(() -> userDao.findByAccount(connection, account))
+        assertThatThrownBy(() -> userDao.findByAccount(account))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -77,7 +72,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
