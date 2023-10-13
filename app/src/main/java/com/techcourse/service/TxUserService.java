@@ -16,7 +16,27 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        User user;
+
+        final var dataSource = DataSourceConfig.getInstance();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+            user = userService.findById(id);
+
+            connection.commit();
+        } catch (final Exception e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new DataAccessException(ex);
+            }
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+
+        return user;
     }
 
     @Override
