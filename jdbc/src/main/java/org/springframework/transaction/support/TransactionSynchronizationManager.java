@@ -10,15 +10,16 @@ import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
-    private TransactionSynchronizationManager() {}
+    private TransactionSynchronizationManager() {
+    }
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> map = getMap();
         Connection connection = map.get(key);
         try {
-            if(connection == null || connection.isClosed()){
+            if (connection == null || connection.isClosed()) {
                 connection = key.getConnection();
                 map.put(key, connection);
             }
@@ -29,17 +30,12 @@ public abstract class TransactionSynchronizationManager {
     }
 
     private static Map<DataSource, Connection> getMap() {
-        Map<DataSource, Connection> map = resources.get();
-        if(map == null){
-            map = new HashMap<>();
-            resources.set(map);
-        }
-        return map;
+        return resources.get();
     }
 
     public static boolean hasConnection(DataSource key) {
         Map<DataSource, Connection> map = resources.get();
-        return map != null && map.containsKey(key);
+        return map.containsKey(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
