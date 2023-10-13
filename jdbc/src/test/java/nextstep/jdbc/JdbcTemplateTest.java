@@ -49,7 +49,7 @@ class JdbcTemplateTest {
             //expect
             assertThatThrownBy(
                     () -> jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Integer(1), params))
-                    .isInstanceOf(SizeException.class);
+                    .isInstanceOf(DataAccessException.class);
         }
 
         @Test
