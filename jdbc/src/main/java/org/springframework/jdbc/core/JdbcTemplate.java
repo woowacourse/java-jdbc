@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.SizeException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
@@ -26,7 +27,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         List<T> results = query(sql, rowMapper, params);
         if (results.size() > 1) {
-            throw new DataAccessException("too many result. expected 1 but was " + results.size());
+            throw new SizeException("too many result. expected 1 but was " + results.size());
         }
         if (results.isEmpty()) {
             throw new DataAccessException("no result");
@@ -37,7 +38,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... params) {
         List<T> results = query(connection, sql, rowMapper, params);
         if (results.size() > 1) {
-            throw new DataAccessException("too many result. expected 1 but was " + results.size());
+            throw new SizeException("too many result. expected 1 but was " + results.size());
         }
         if (results.isEmpty()) {
             throw new DataAccessException("no result");
