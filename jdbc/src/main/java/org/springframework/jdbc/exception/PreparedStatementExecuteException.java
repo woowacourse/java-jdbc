@@ -1,5 +1,5 @@
 package org.springframework.jdbc.exception;
 
-public class PreparedStatementExecuteException extends RuntimeException {
+public class PreparedStatementExecuteException extends TransactionException {
 
 }

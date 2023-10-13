@@ -1,5 +1,7 @@
 package org.springframework.transaction.support;
 
+import org.springframework.jdbc.exception.TransactionException;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 
@@ -19,7 +21,7 @@ public class TransactionManager {
             connectionHolder.setIsTransactionActive(true);
             TransactionSynchronizationManager.bindResource(dataSource, connectionHolder);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TransactionException(e.getMessage(), e);
         }
     }
 

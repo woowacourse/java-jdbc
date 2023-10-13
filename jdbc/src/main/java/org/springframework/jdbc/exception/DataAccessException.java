@@ -1,4 +1,4 @@
 package org.springframework.jdbc.exception;
 
-public class DataAccessException extends RuntimeException {
+public class DataAccessException extends TransactionException {
 }

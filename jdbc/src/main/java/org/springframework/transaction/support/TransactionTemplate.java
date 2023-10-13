@@ -1,5 +1,7 @@
 package org.springframework.transaction.support;
 
+import org.springframework.jdbc.exception.TransactionException;
+
 import java.util.function.Supplier;
 
 public class TransactionTemplate {
@@ -16,7 +18,7 @@ public class TransactionTemplate {
             T result = supplier.get();
             transactionManager.commit();
             return result;
-        } catch (RuntimeException ex) {
+        } catch (TransactionException ex) {
             transactionManager.rollback();
             throw ex;
         } finally {

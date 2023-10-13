@@ -1,5 +1,7 @@
 package org.springframework.transaction.support;
 
+import org.springframework.jdbc.exception.TransactionException;
+
 import java.sql.Connection;
 
 public class ConnectionHolder {
@@ -15,7 +17,7 @@ public class ConnectionHolder {
         try {
             connection.commit();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TransactionException(e.getMessage(), e);
         }
     }
 
@@ -23,7 +25,7 @@ public class ConnectionHolder {
         try {
             connection.rollback();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TransactionException(e.getMessage(), e);
         }
     }
 
@@ -31,7 +33,7 @@ public class ConnectionHolder {
         try {
             connection.close();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new TransactionException(e.getMessage(), e);
         }
     }
 
