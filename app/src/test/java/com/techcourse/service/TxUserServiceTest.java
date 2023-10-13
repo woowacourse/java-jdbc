@@ -15,7 +15,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.TransactionTemplate;
 
-
 class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
