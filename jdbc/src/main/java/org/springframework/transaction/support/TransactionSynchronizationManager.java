@@ -16,9 +16,10 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getResource(final DataSource dataSource) throws SQLException {
-        if (!isActive.get() || !resources.get().containsKey(dataSource)) {
-            throw new RuntimeException("시작한 트랜잭션이 없습니다.");
+    public static Connection getResource(final DataSource dataSource) {
+        if (!resources.get().containsKey(dataSource)) {
+            final Connection connection = startNewTransaction(dataSource);
+            resources.get().put(dataSource, connection);
         }
         return resources.get().get(dataSource);
     }

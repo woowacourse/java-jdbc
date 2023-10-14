@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
+import java.sql.SQLException;
+
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
@@ -16,17 +18,17 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public User findById(final long id) {
+    public User findById(final long id) throws SQLException {
         return userDao.findById(id);
     }
 
     @Override
-    public void insert(final User user) {
+    public void insert(final User user) throws SQLException {
         userDao.insert(user);
     }
 
     @Override
-    public void changePassword(long id, final String newPassword, final String createBy) {
+    public void changePassword(long id, final String newPassword, final String createBy) throws SQLException {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);

@@ -17,14 +17,18 @@ public class TransactionManager {
     }
 
     public <T> T execute(final TransactionCallback<T> callback) {
-        final Connection connection = TransactionSynchronizationManager.startNewTransaction(dataSource);
+        try {
+            final Connection connection = TransactionSynchronizationManager.startNewTransaction(dataSource);
 
-        final T result = callback.execute();
+            final T result = callback.execute();
 
-        commitTransaction(connection);
-        TransactionSynchronizationManager.finishTransaction(dataSource);
+            commitTransaction(connection);
+            TransactionSynchronizationManager.finishTransaction(dataSource);
 
-        return result;
+            return result;
+        } catch (final SQLException ex) {
+            throw new RuntimeException("실행 중 예외가 발생했습니다.");
+        }
     }
 
     public static void commitTransaction(final Connection connection) {

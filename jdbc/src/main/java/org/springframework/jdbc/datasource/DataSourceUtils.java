@@ -1,7 +1,6 @@
 package org.springframework.jdbc.datasource;
 
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,7 +13,7 @@ public abstract class DataSourceUtils {
 
     public static Connection getConnection(final DataSource dataSource) throws CannotGetJdbcConnectionException, SQLException {
         try {
-            return TransactionSynchronizationManager.getResource(dataSource);
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
