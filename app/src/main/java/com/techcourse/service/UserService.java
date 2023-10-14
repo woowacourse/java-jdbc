@@ -2,13 +2,11 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 
-import java.sql.SQLException;
-
 public interface UserService {
 
-    User findById(long id) throws SQLException;
+    User findById(long id);
 
-    void insert(User user) throws SQLException;
+    void insert(User user);
 
-    void changePassword(long id, String newPassword, String createBy) throws SQLException;
+    void changePassword(long id, String newPassword, String createBy);
 }
