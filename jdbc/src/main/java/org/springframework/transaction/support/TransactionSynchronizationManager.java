@@ -1,10 +1,7 @@
 package org.springframework.transaction.support;
 
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,25 +14,11 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> map = getMap();
-        Connection connection = map.get(key);
-        try {
-            if (connection == null || connection.isClosed()) {
-                connection = key.getConnection();
-                map.put(key, connection);
-            }
-            return connection;
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection");
-        }
+        return map.get(key);
     }
 
     private static Map<DataSource, Connection> getMap() {
         return resources.get();
-    }
-
-    public static boolean hasConnection(DataSource key) {
-        Map<DataSource, Connection> map = resources.get();
-        return map.containsKey(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
