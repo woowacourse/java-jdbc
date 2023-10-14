@@ -56,12 +56,22 @@ public class JdbcTemplate {
 
     public <T> T execute(final String sql, final ExecuteQueryCallback<T> callBack, final Object... objects) {
         try {
-            final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
+            final PreparedStatement preparedStatement = createPreparedStatement(sql);
             setPreparedStatement(preparedStatement, objects);
 
-            return TransactionSynchronizationManager.commit(callBack, preparedStatement, dataSource);
+            final T result = callBack.execute(preparedStatement);
+            TransactionSynchronizationManager.commitTransaction(dataSource);
+
+            return result;
+        } catch (final SQLException ex) {
+            throw new RuntimeException("실행 중 예외가 발생했습니다.");
+        }
+    }
+
+    private PreparedStatement createPreparedStatement(final String sql) {
+        try {
+            final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+            return connection.prepareStatement(sql);
         } catch (SQLException ex) {
             TransactionSynchronizationManager.rollback(dataSource);
 

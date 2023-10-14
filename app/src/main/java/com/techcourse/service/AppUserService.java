@@ -29,7 +29,7 @@ public class AppUserService implements UserService {
     public void changePassword(long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userHistoryDao.log(new UserHistory(user, createBy));
         userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }

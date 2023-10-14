@@ -1,13 +1,10 @@
 package org.springframework.transaction.support;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.ExecuteQueryCallback;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,54 +17,35 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getResource(DataSource dataSource) throws SQLException {
-        if (resources.get().containsKey(dataSource)) {
-            return resources.get().get(dataSource);
+    public static Connection getResource(final DataSource dataSource) throws SQLException {
+        if (!isActive.get() || !resources.get().containsKey(dataSource)) {
+            throw new RuntimeException("시작한 트랜잭션이 없습니다.");
         }
-        final Connection connection = dataSource.getConnection();
-        bindResource(dataSource, connection);
-        return connection;
+        return resources.get().get(dataSource);
     }
 
-    public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
-    }
-
-    public static Connection unbindResource(DataSource key) {
-        return resources.get().remove(key);
-    }
-
-    public static void startTransaction() {
-        isActive.set(true);
-    }
-
-    public static void finishTransaction() {
-        isActive.set(false);
-    }
-
-    public static <T> T commit(final ExecuteQueryCallback<T> callBack, final PreparedStatement preparedStatement, final DataSource dataSource) {
+    private static Connection bindResource(final DataSource dataSource) {
         try {
             final Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-
-            final T result = callBack.execute(preparedStatement);
-
-            commitTransaction(dataSource, connection);
-
-            return result;
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("jdbc 연결에 실패했습니다.");
+            resources.get().put(dataSource, connection);
+            return connection;
+        } catch (final SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private static void commitTransaction(final DataSource dataSource, final Connection connection) {
-        try {
-            if (!isActive.get()) {
-                connection.commit();
+    public static void startNewTransaction(final DataSource dataSource) {
+        // TODO: 2023/10/14 transaction이 active인 경우 기존 트랜잭션 참여 여부에 따라 새로 생성하거나 기존 트랜잭션에 참여하도록 하는 것도 필요할까?
+        isActive.set(true);
+        bindResource(dataSource);
+    }
 
-                clear(connection, dataSource);
-            }
-        } catch (Exception ex) {
+    public static void commitTransaction(final DataSource dataSource) {
+        try {
+            final Connection connection = resources.get().get(dataSource);
+            connection.commit();
+        } catch (final SQLException ex) {
             rollback(dataSource);
 
             throw new DataAccessException("실행 중 예외가 발생했습니다.");
@@ -80,19 +58,31 @@ public abstract class TransactionSynchronizationManager {
                 final Connection connection = resources.get().get(dataSource);
                 connection.rollback();
 
-                clear(connection, dataSource);
+                clear(dataSource);
             }
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             throw new DataAccessException("트랜잭션 롤백 중 예외가 발생했습니다.");
         }
     }
 
-    private static void clear(final Connection connection, final DataSource dataSource) {
+    private static void clear(final DataSource dataSource) {
         try {
+            final Connection connection = resources.get().get(dataSource);
+            connection.setAutoCommit(true);
             connection.close();
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        } catch (SQLException e) {
+            DataSourceUtils.releaseConnection(connection);
+        } catch (final SQLException ex) {
             throw new DataAccessException("실행 중 예외가 발생했습니다.");
         }
+    }
+
+    public static void finishTransaction(final DataSource dataSource) {
+        isActive.set(false);
+        unbindResource(dataSource);
+        clear(dataSource);
+    }
+
+    public static Connection unbindResource(final DataSource dataSource) {
+        return resources.get().remove(dataSource);
     }
 }
