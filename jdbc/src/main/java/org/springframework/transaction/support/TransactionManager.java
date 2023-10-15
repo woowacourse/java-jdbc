@@ -4,11 +4,15 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.transaction.TransactionException;
 
 public class TransactionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
     private final DataSource dataSource;
 
@@ -75,7 +79,7 @@ public class TransactionManager {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
         } catch (Exception e) {
-            throw new TransactionException(e);
+            log.warn(String.valueOf(e));
         }
     }
 
