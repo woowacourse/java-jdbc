@@ -32,12 +32,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * + : 발생
  * - : 발생하지 않음
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
- * Isolation level  |             |                      |
- * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Isolation level  |              |                       |
+ * -----------------|--------------|-----------------------|--------------
+ * Read Uncommitted |      🅾️       |           🅾️           |      🅾️
+ * Read Committed   |      ❎       |           🅾️           |      🅾️
+ * Repeatable Read  |      ❎       |           ❎           |      🅾️
+ * Serializable     |      ❎       |           ❎           |      ❎
  */
 class Stage1Test {
 
@@ -56,12 +56,12 @@ class Stage1Test {
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Dirty reads
-     * Isolation level  |
+     * Isolation level  |  커밋되지 않은 데이터를 조회할 수 있음
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      🅾️️
+     * Read Committed   |      ❎
+     * Repeatable Read  |      ❎
+     * Serializable     |      ❎
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +81,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -109,12 +109,12 @@ class Stage1Test {
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Non-repeatable reads
-     * Isolation level  |
+     * Isolation level  | 한 트랜잭션 내에서 같은 데이터를 조회했을 때 다른 결과가 나올 수 있음
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      🅾️
+     * Read Committed   |      🅾️
+     * Repeatable Read  |      ❎
+     * Serializable     |      ❎
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +130,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -151,7 +151,7 @@ class Stage1Test {
             userDao.update(subConnection, anotherUser);
         })).start();
 
-        sleep(0.5);
+        sleep(0.5); //쓰레드 기다리기 위함
 
         // 사용자A가 다시 gugu 객체를 조회했다.
         // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다.
@@ -171,12 +171,12 @@ class Stage1Test {
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Phantom reads
-     * Isolation level  |
+     * Isolation level  | 데이터의 추가 및 삭제가 일어나면 조회 결과가 달라질 수 있음
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      🅾️
+     * Read Committed   |      🅾️
+     * Repeatable Read  |      🅾️
+     * Serializable     |      ❎
      */
     @Test
     void phantomReading() throws SQLException {
@@ -184,6 +184,7 @@ class Stage1Test {
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
                 .withLogConsumer(new Slf4jLogConsumer(log));
+        mysql.withUrlParam("allowMultiQueries", "true");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
@@ -197,7 +198,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);

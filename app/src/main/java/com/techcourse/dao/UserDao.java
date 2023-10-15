@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
-import java.util.Optional;
 
 public class UserDao {
 
@@ -20,7 +19,7 @@ public class UserDao {
                     rs.getString("email")
             );
 
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -32,10 +31,10 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
-        String sql = "update users set account = ?, password = ? where email = ?";
+    public int update(User user) {
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         log.info("[LOG] update user");
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -44,13 +43,13 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public Optional<User> findById(Long id) {
+    public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         log.info("[LOG] select user by id");
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public Optional<User> findByAccount(String account) {
+    public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.info("[LOG] select user by account");
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);

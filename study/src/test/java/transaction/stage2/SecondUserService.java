@@ -26,9 +26,10 @@ public class SecondUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public String saveSecondTransactionWithRequiresNew() {
+    public String saveSecondTransactionWithRequiresNew(boolean throwException) {
         userRepository.save(User.createTest());
         logActualTransactionActive();
+        if(!throwException) throw new RuntimeException();
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
