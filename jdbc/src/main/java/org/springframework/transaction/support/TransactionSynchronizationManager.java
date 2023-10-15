@@ -1,23 +1,34 @@
 package org.springframework.transaction.support;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(ConcurrentHashMap::new);
 
-    private TransactionSynchronizationManager() {}
+    private TransactionSynchronizationManager() {
+    }
 
     public static Connection getResource(DataSource key) {
-        return null;
+        Map<DataSource, Connection> connectionsByDataSource = resources.get();
+        return connectionsByDataSource.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        Map<DataSource, Connection> connectionsByDataSource = resources.get();
+        connectionsByDataSource.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        return null;
+        Map<DataSource, Connection> connectionsByDataSource = resources.get();
+        Connection connection = connectionsByDataSource.get(key);
+        if (connection == null) {
+            throw new IllegalArgumentException();
+        }
+        connectionsByDataSource.remove(key);
+        return connection;
     }
 }
