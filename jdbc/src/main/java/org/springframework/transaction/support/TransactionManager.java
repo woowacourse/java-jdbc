@@ -4,7 +4,6 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.util.function.Supplier;
 
 public interface TransactionManager {
 
@@ -12,5 +11,7 @@ public interface TransactionManager {
         return DataSourceUtils.getConnection(dataSource);
     }
 
-    <T> T execute(DataSource dataSource, Supplier<T> method);
+    void execute(DataSource dataSource, TransactionExecutor method);
+
+    <T> T executeAndReturn(DataSource dataSource, TransactionSupplier<T> method);
 }
