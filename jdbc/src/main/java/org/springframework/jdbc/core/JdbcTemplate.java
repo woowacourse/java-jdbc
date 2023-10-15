@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,8 +25,9 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug(QUERY_FORMAT, sql);
@@ -37,20 +39,11 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(Connection connection, String sql, Object... args) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug(QUERY_FORMAT, sql);
-
-            bindStatementWithArgs(args, preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = getPreparedStatement(connection, sql, args);
                 ResultSet resultSet = preparedStatement.executeQuery()
         ) {
@@ -63,6 +56,28 @@ public class JdbcTemplate {
             }
 
             return Optional.empty();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                ResultSet resultSet = preparedStatement.executeQuery()
+        ) {
+            log.debug(QUERY_FORMAT, sql);
+
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(
+                        rowMapper.mapRow(resultSet, resultSet.getRow())
+                );
+            }
+
+            return results;
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -82,27 +97,6 @@ public class JdbcTemplate {
     private void bindStatementWithArgs(Object[] args, PreparedStatement preparedStatement) throws SQLException {
         for (int i = 1; i <= args.length; i++) {
             preparedStatement.setObject(i, args[i - 1]);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql);
-                ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            log.debug(QUERY_FORMAT, sql);
-
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(
-                        rowMapper.mapRow(resultSet, resultSet.getRow())
-                );
-            }
-
-            return results;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
     }
 

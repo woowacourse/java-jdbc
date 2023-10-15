@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class UserService {
 
@@ -29,25 +31,24 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-
         DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
+            final var user = findById(id);
+            user.changePassword(newPassword);
 
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (RuntimeException | SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -55,19 +56,9 @@ public class UserService {
         if (connection == null) {
             return;
         }
+
         try {
             connection.rollback();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void close(final Connection connection) {
-        if (connection == null) {
-            return;
-        }
-        try {
-            connection.close();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
