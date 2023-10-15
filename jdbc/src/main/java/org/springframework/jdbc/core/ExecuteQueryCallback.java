@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface executeQueryCallback<T> {
+public interface ExecuteQueryCallback<T> {
 
     T execute(final PreparedStatement preparedStatement) throws SQLException;
 }
