@@ -1,37 +1,22 @@
 package org.springframework.jdbc.datasource;
 
+import java.sql.Connection;
+import javax.sql.DataSource;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.support.ConnectionHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
-
-    public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection != null) {
-            return connection;
-        }
-
-        try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
-        }
+    private DataSourceUtils() {
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
-        try {
-            connection.close();
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+    public static ConnectionHolder getConnectionHolder(DataSource dataSource) throws CannotGetJdbcConnectionException {
+        final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        if (TransactionSynchronizationManager.isTransactionBegan()) {
+            return ConnectionHolder.activeTransaction(connection);
         }
+
+        return ConnectionHolder.disableTransaction(connection);
     }
 }

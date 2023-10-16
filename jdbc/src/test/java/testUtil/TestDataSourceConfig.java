@@ -1,4 +1,4 @@
-package nextstep.testUtil;
+package testUtil;
 
 import java.util.Objects;
 import javax.sql.DataSource;

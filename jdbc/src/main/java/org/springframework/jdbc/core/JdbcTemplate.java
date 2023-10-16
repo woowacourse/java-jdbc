@@ -11,8 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.exception.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.ConnectionHolder;
-import org.springframework.jdbc.support.TransactionManager;
 
 public class JdbcTemplate {
 
@@ -51,7 +51,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
-        try (final ConnectionHolder connectionHolder = TransactionManager.getConnectionHolder(dataSource);
+        try (final ConnectionHolder connectionHolder = DataSourceUtils.getConnectionHolder(dataSource);
              final PreparedStatement preparedStatement = createPrepareStatement(connectionHolder, sql, parameters);
         ) {
             return callback.callback(preparedStatement);

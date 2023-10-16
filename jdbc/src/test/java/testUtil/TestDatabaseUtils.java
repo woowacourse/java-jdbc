@@ -1,4 +1,4 @@
-package nextstep.testUtil;
+package testUtil;
 
 import java.io.File;
 import java.io.IOException;
