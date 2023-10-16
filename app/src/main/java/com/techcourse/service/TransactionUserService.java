@@ -5,9 +5,8 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import java.sql.Connection;
-import java.sql.SQLException;
-import org.springframework.jdbc.core.error.SqlExceptionConverter;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class TransactionUserService extends TransactionService<UserService> implements UserService {
 
@@ -23,36 +22,12 @@ public class TransactionUserService extends TransactionService<UserService> impl
     }
 
     public void insert(final User user) {
-        final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-        try {
-            connection.setAutoCommit(false);
-            appService.insert(user);
-            connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
-            throw SqlExceptionConverter.convert(e);
-        } catch (Exception e) {
-            rollback(connection);
-            throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
-        }
+        TransactionTemplate.executeWithoutReturn(() -> appService.insert(user), DataSourceConfig.getInstance());
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-        try {
-            connection.setAutoCommit(false);
-            appService.changePassword(id, newPassword, createBy);
-            connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
-            throw SqlExceptionConverter.convert(e);
-        } catch (Exception e) {
-            rollback(connection);
-            throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
-        }
+        TransactionTemplate.executeWithoutReturn(
+                () -> appService.changePassword(id, newPassword, createBy), DataSourceConfig.getInstance()
+        );
     }
 }
