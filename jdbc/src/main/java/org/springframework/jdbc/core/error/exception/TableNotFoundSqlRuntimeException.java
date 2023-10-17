@@ -1,7 +1,6 @@
-package org.springframework.jdbc.core.error;
+package org.springframework.jdbc.core.error.exception;
 
 import java.sql.SQLException;
-import org.springframework.jdbc.core.error.exception.SqlRuntimeException;
 
 public class TableNotFoundSqlRuntimeException extends SqlRuntimeException {
 
