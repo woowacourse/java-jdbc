@@ -32,13 +32,17 @@ public class DatabasePopulatorUtils {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException e) {
+                log.warn(String.valueOf(e));
+            }
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException e) {
+                log.warn(String.valueOf(e));
+            }
         }
     }
 
