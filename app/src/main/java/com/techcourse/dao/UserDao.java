@@ -1,7 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

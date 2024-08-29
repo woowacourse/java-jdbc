@@ -2,9 +2,9 @@ package com.techcourse;
 
 import com.techcourse.controller.*;
 import jakarta.servlet.http.HttpServletRequest;
-import webmvc.org.springframework.web.servlet.mvc.HandlerMapping;
-import webmvc.org.springframework.web.servlet.mvc.asis.Controller;
-import webmvc.org.springframework.web.servlet.mvc.asis.ForwardController;
+import com.interface21.webmvc.servlet.mvc.HandlerMapping;
+import com.interface21.webmvc.servlet.mvc.asis.Controller;
+import com.interface21.webmvc.servlet.mvc.asis.ForwardController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
