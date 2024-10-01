@@ -40,4 +40,44 @@ public class JdbcTemplate {
             pstmt.setString(i + 1, String.valueOf(parameters[i]));
         }
     }
+
+    public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object ... parameters) {
+        ResultSet resultSet = query(sql, parameters);
+        try {
+            return parseResults(resultSetParser, resultSet);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ResultSet query(String sql, Object ... parameters) {
+        try{
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            log.debug("query : {}", sql);
+            setParameters(parameters, pstmt);
+            return pstmt.executeQuery();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> List<T> parseResults(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(resultSetParser.parse(resultSet));
+        }
+        return results;
+    }
+
+    public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object ... parameters) {
+        ResultSet resultSet = query(sql, parameters);
+        try {
+            return parseResults(resultSetParser, resultSet).getFirst();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }
