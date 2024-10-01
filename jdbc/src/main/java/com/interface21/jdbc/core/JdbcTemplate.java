@@ -30,13 +30,11 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             validateParameterCount(objects, pstmt);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
+            setParameter(objects, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
@@ -51,22 +49,16 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            validateParameterCount(objects, pstmt);
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
-            rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
-            List<T> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(rowMapper.mapRow(rs));
-            }
-            return list;
+            validateParameterCount(objects, pstmt);
+            setParameter(objects, pstmt);
+            rs = pstmt.executeQuery();
+
+            return getQueryResult(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e.getMessage(), e);
         } finally {
             try {
                 if (rs != null) {
@@ -76,10 +68,24 @@ public class JdbcTemplate {
         }
     }
 
+    private static <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> re = new ArrayList<>();
+        while (rs.next()) {
+            re.add(rowMapper.mapRow(rs));
+        }
+        return re;
+    }
+
     private static void validateParameterCount(Object[] objects, PreparedStatement pstmt) throws SQLException {
         ParameterMetaData parameterMetaData = pstmt.getParameterMetaData();
         if (objects.length != parameterMetaData.getParameterCount()) {
             throw new IllegalArgumentException("파라미터 값의 개수가 올바르지 않습니다");
+        }
+    }
+
+    private void setParameter(Object[] objects, PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < objects.length; i++) {
+            pstmt.setObject(i + 1, objects[i]);
         }
     }
 }
