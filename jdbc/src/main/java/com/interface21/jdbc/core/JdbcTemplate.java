@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +67,13 @@ public class JdbcTemplate {
     }
 
     private void setParameters(PreparedStatement ps, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            ps.setObject(i + 1, args[i]);
-        }
+        IntStream.range(0, args.length).forEach(i -> {
+            try {
+                ps.setObject(i + 1, args[i]);
+            } catch (SQLException e) {
+                log.error("Parameter 설정에 실패했습니다.", e);
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
