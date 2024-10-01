@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
@@ -17,25 +16,33 @@ public class UserDao {
                 resultSet.getString(4)
     );
 
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public UserDao(DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+    public UserDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, preparedStatement -> {
+                    preparedStatement.setString(1, user.getAccount());
+                    preparedStatement.setString(2, user.getPassword());
+                    preparedStatement.setString(3, user.getEmail());
+                });
     }
 
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email =? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, preparedStatement -> {
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
@@ -45,11 +52,13 @@ public class UserDao {
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatement ->
+                preparedStatement.setLong(1, id));
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatement ->
+                preparedStatement.setString(1, account));
     }
 }
