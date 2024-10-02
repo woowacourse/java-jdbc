@@ -50,6 +50,8 @@ public class JdbcTemplate {
             assignSqlValues(values, pstmt);
             rs = pstmt.executeQuery();
 
+            log.debug("query : {}", sql);
+
             List<T> result = new ArrayList<>();
 
             while (rs.next()) {
