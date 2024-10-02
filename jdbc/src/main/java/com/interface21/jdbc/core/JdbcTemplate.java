@@ -23,13 +23,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, @Nullable Object... args) {
-        sql = sql.replace("?", "'%s'");
-        sql = sql.formatted(args);
-        log.info("query = {}", sql);
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            setPreparedStatementParameter(args, pstmt);
+            log.info("query = {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
@@ -37,14 +35,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        sql = sql.replace("?", "'%s'");
-        sql = sql.formatted(args);
-        log.info("query = {}", sql);
 
         List<T> result = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            setPreparedStatementParameter(args, pstmt);
+            log.info("query = {}", sql);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 T object = rowMapper.mapRow(rs, rs.getRow());
@@ -58,13 +55,10 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        sql = sql.replace("?", "'%s'");
-        sql = sql.formatted(args);
-        log.info("query = {}", sql);
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            setPreparedStatementParameter(args, pstmt);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs, rs.getRow());
@@ -72,6 +66,12 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+        }
+    }
+
+    private void setPreparedStatementParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
+        for (int idx = 1; idx <= args.length; idx++) {
+            pstmt.setObject(idx, args[idx - 1]);
         }
     }
 }
