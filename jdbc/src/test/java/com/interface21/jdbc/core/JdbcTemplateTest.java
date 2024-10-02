@@ -35,7 +35,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("여러건 조회 쿼리 수행한다.")
+    @DisplayName("여러건 조회 쿼리를 실행한다.")
     void query() throws SQLException {
         String sql = "select * from test where arg1 = ? and arg2 = ?";
         when(dataSource.getConnection()).thenReturn(connection);
@@ -98,7 +98,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("업데이트 쿼리를 실행한다..")
+    @DisplayName("업데이트 쿼리를 실행한다.")
     void update() throws SQLException {
         final String sql = "update test set arg1 = ?, arg2 = ?";
         when(dataSource.getConnection()).thenReturn(connection);
