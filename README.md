@@ -24,7 +24,7 @@
 
 - 사용자 데이터를 메모리가 아닌 DB에 저장할 수 있도록 개선
   - [ ] JDBC API 적용
-  - [ ]  UserDao 테스트 성공
+  - [x] UserDao 테스트 성공
 
 - 반복적인 DB 관련 작업 코드 개선 
     - [ ] JdbcTemplate 클래스에 구현
