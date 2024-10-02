@@ -49,6 +49,18 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataSizeMismatchException(1, results.size());
+        }
+        return results.getFirst();
+    }
+
+
     private void setSQLParameters(PreparedStatement ps, Object... args) throws SQLException {
         // SQL parameter index is 1-based
         for (int i = 0; i < args.length; i++) {
