@@ -23,7 +23,6 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... params) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             setParams(ps, params);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -41,7 +40,6 @@ public class JdbcTemplate {
     public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             setParams(ps, params);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -57,7 +55,6 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             setParams(ps, params);
             ResultSet rs = ps.executeQuery();
             List<T> list = new ArrayList<>();
