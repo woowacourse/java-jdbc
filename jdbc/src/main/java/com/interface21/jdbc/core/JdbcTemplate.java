@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import java.lang.invoke.MethodHandles.Lookup.ClassOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,6 +51,17 @@ public class JdbcTemplate {
         }
     }
 
+    private void setPreparedStatementParameter(Object[] args, PreparedStatement preparedStatement) {
+        try {
+            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
+                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
+            }
+        } catch (SQLException e) {
+            log.info("SET_PREPARED_STATEMENT_PARAMETER_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException("PreparedStatement에 파라미터를 설정하던 중 오류가 발생했습니다.");
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
@@ -77,9 +87,7 @@ public class JdbcTemplate {
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
         try {
-            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
-                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
-            }
+            setPreparedStatementParameter(args, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
@@ -99,9 +107,7 @@ public class JdbcTemplate {
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
         try {
-            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
-                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
-            }
+            setPreparedStatementParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
@@ -109,9 +115,5 @@ public class JdbcTemplate {
         } finally {
             close(connection, preparedStatement);
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }
