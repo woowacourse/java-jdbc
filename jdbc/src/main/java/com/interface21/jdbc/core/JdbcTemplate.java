@@ -14,6 +14,9 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    
+    private static final int PREPARED_STATEMENT_INDEX_OFFSET = 1;
+    private static final int SINGLE_OBJECT_COUNT = 1;
 
     private final DataSource dataSource;
 
@@ -43,7 +46,7 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new DataAccessException("찾으려는 값이 존재하지 않습니다.");
         }
-        if (results.size() > 1) {
+        if (results.size() > SINGLE_OBJECT_COUNT) {
             throw new DataAccessException("조회 결과 개수가 2 이상입니다. actual " + results.size());
         }
         return results.getFirst();
@@ -69,7 +72,7 @@ public class JdbcTemplate {
 
     private void setArguments(PreparedStatement pstmt, Object[] args) throws SQLException {
         for (int paramIndex = 0; paramIndex < args.length; paramIndex++) {
-            pstmt.setObject(paramIndex + 1, args[paramIndex]);
+            pstmt.setObject(paramIndex + PREPARED_STATEMENT_INDEX_OFFSET, args[paramIndex]);
         }
     }
 
