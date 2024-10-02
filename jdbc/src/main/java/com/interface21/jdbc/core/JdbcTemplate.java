@@ -21,13 +21,10 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        try {
-            conn = getConnection();
-            pstmt = getPreparedStatement(sql, conn);
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = getPreparedStatement(sql, conn)) {
             assignSqlValues(values, pstmt);
             rs = pstmt.executeQuery();
 
@@ -42,19 +39,14 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             closeResultSet(rs);
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        try {
-            conn = getConnection();
-            pstmt = getPreparedStatement(sql, conn);
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = getPreparedStatement(sql, conn)) {
             assignSqlValues(values, pstmt);
             rs = pstmt.executeQuery();
 
@@ -69,18 +61,12 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             closeResultSet(rs);
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
     public void update(String sql, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = getConnection();
-            pstmt = getPreparedStatement(sql, conn);
-
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = getPreparedStatement(sql, conn)) {
             log.debug("query : {}", sql);
 
             assignSqlValues(values, pstmt);
@@ -89,9 +75,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
@@ -113,23 +96,6 @@ public class JdbcTemplate {
         try {
             if (rs != null) {
                 rs.close();
-            }
-        } catch (SQLException ignored) {}
-    }
-
-    private void closePreparedStatement(PreparedStatement pstmt) {
-        try {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private void closeConnection(Connection conn) {
-        try {
-            if (conn != null) {
-                conn.close();
             }
         } catch (SQLException ignored) {
         }
