@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,6 +27,16 @@ public class JdbcTemplate {
             return dataSource.getConnection();
         } catch (SQLException e) {
             log.error("GET_CONNECTION_EXCEPTION :: {}", e.getMessage(), e);
+            throw new DataAccessException("Connection을 생성하던 중 오류가 발생했습니다.");
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql) {
+        try {
+            return connection.prepareStatement(sql);
+        } catch (SQLException e) {
+            log.error("GET_PREPARED_STATEMENT_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException("PreparedStatement를 생성하던 중 오류가 발생했습니다.");
         }
     }
 
@@ -35,14 +46,7 @@ public class JdbcTemplate {
             preparedStatement.close();
         } catch (SQLException e) {
             log.info("CLOSE_JDBC_RESOURCE_ERROR :: {}", e.getMessage(), e);
-        }
-    }
-
-    private PreparedStatement getPreparedStatement(Connection connection, String sql) {
-        try {
-            return connection.prepareStatement(sql);
-        } catch (SQLException e) {
-            log.error("GET_PREPARED_STATEMENT_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException("JDBC의 자원을 종료하던 중 오류가 발생했습니다.");
         }
     }
 
@@ -61,6 +65,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
         }
     }
 
