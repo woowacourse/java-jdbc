@@ -26,22 +26,29 @@ public class JdbcTemplate {
             return dataSource.getConnection();
         } catch (SQLException e) {
             log.error("GET_CONNECTION_EXCEPTION :: {}", e.getMessage(), e);
-            throw new IllegalStateException(e);
         }
     }
 
-    private PreparedStatement getPreparedStatement(String sql) {
+    private void close(Connection connection, PreparedStatement preparedStatement) {
         try {
-            Connection connection = getConnection();
+            connection.close();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            log.info("CLOSE_JDBC_RESOURCE_ERROR :: {}", e.getMessage(), e);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql) {
+        try {
             return connection.prepareStatement(sql);
         } catch (SQLException e) {
             log.error("GET_PREPARED_STATEMENT_ERROR :: {}", e.getMessage(), e);
-            throw new IllegalStateException(e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        PreparedStatement preparedStatement = getPreparedStatement(sql);
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
         try {
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -49,10 +56,11 @@ public class JdbcTemplate {
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
             }
+
+            close(connection, preparedStatement);
             return results;
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
-            throw new IllegalArgumentException(e);
         }
     }
 
