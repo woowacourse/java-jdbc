@@ -6,7 +6,7 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.HandlesTypes;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -16,7 +16,7 @@ public class SpringServletContainerInitializer implements ServletContainerInitia
     @Override
     public void onStartup(Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
             throws ServletException {
-        final List<WebApplicationInitializer> initializers = new LinkedList<>();
+        final List<WebApplicationInitializer> initializers = new ArrayList<>();
 
         if (webAppInitializerClasses != null) {
             for (Class<?> waiClass : webAppInitializerClasses) {
