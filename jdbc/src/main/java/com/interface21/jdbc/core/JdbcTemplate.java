@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class JdbcTemplate {
@@ -15,6 +16,33 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            pstmt = getPreparedStatement(sql, conn);
+            assignSqlValues(values, pstmt);
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            closeResultSet(rs);
+            closePreparedStatement(pstmt);
+            closeConnection(conn);
+        }
     }
 
     public void update(String sql, Object... values) {
@@ -50,6 +78,14 @@ public class JdbcTemplate {
         for (int i = 1; i <= values.length; i++) {
             pstmt.setObject(i, values[i - 1]);
         }
+    }
+
+    private void closeResultSet(ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (SQLException ignored) {}
     }
 
     private void closePreparedStatement(PreparedStatement pstmt) {
