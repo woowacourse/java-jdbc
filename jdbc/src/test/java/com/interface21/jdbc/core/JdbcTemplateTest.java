@@ -64,7 +64,6 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class);
     }
 
-
     static class User {
         private Long id;
         private String account;
