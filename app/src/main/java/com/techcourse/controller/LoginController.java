@@ -1,20 +1,24 @@
 package com.techcourse.controller;
 
-import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.interface21.webmvc.servlet.view.JspView;
-import com.interface21.webmvc.servlet.ModelAndView;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.interface21.context.stereotype.Controller;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.interface21.webmvc.servlet.ModelAndView;
+import com.interface21.webmvc.servlet.view.JspView;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.domain.User;
 
 @Controller
 public class LoginController {
 
+    private static final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
@@ -33,7 +37,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
+        return userDao.findByAccount(request.getParameter("account"))
                 .map(user -> {
                     log.info("User : {}", user);
                     return login(request, user);

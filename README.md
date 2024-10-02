@@ -23,7 +23,7 @@
 ### 1단계
 
 - 사용자 데이터를 메모리가 아닌 DB에 저장할 수 있도록 개선
-  - [ ] JDBC API 적용
+  - [x] InMemoryUserRepository 사용 로직 UserDao 사용으로 전환
   - [x] UserDao 테스트 성공
 
 - 반복적인 DB 관련 작업 코드 개선 
