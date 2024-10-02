@@ -17,3 +17,9 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+### 1단계 기능 요구사항
+- [ ] 개발자는 SQL 쿼리 작성, 쿼리에 전달할 인자, SELECT 구문일 경우 조회 결과를 추출하는 것만 집중할 수 있도록 라이브러리를 만들자.
+ - [ ] 리팩터링은 UserDaoTest를 활용해 진행
+ - [ ] 중복을 제거하기 위한 라이브러리는 JdbcTemplate 클래스에 구현
+ - [ ] DataSource는 DataSourceConfig 클래스의 getInstance() 메서드를 호출
