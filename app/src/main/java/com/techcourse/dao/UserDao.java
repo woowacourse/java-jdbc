@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -59,13 +60,15 @@ public class UserDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -128,7 +131,8 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        String sql = "SELECT * FROM users WHERE account = ?";
+        return jdbcTemplate.queryForObject(sql, new String[]{account}, USER_ROW_MAPPER)
+                .orElseThrow(() -> new DataAccessException("존재하지 않는 계정입니다."));
     }
 }

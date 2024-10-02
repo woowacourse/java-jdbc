@@ -1,12 +1,13 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.exception.DataAccessException;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,26 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        }
+    }
+
+    public <T> Optional<T> queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+
+        try {
+            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
+                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
+            }
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                return Optional.of(rowMapper.mapRow(resultSet, resultSet.getRow()));
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            log.info("EXECUTE_QUERY_FOR_OBJECT :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
         }
     }
