@@ -56,4 +56,22 @@ public class JdbcTemplate {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
     }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
+        sql = sql.replace("?", "'%s'");
+        sql = sql.formatted(args);
+        log.info("query = {}", sql);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs, rs.getRow());
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+        }
+    }
 }
