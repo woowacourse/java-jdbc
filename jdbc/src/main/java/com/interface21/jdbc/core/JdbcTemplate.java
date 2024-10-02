@@ -67,9 +67,9 @@ public class JdbcTemplate {
     }
 
     private void setParameters(PreparedStatement ps, Object... args) throws SQLException {
-        IntStream.range(0, args.length).forEach(i -> {
+        IntStream.range(0, args.length).forEach(parameterIndex -> {
             try {
-                ps.setObject(i + 1, args[i]);
+                ps.setObject(parameterIndex + 1, args[parameterIndex]);
             } catch (SQLException e) {
                 log.error("Parameter 설정에 실패했습니다.", e);
                 throw new RuntimeException(e);
