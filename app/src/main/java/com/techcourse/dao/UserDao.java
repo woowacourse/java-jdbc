@@ -41,7 +41,11 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, new CastingResultSetParser<>(User.class) {
+        return jdbcTemplate.query(sql, UserResultSetParser());
+    }
+
+    private CastingResultSetParser<User> UserResultSetParser() {
+        return new CastingResultSetParser<>(User.class) {
             @Override
             protected Object parseInternal(ResultSet resultSet) throws SQLException {
                 return new User(
@@ -50,34 +54,16 @@ public class UserDao {
                         resultSet.getString(3),
                         resultSet.getString(4));
             }
-        });
+        };
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryOne(sql, new CastingResultSetParser<>(User.class) {
-            @Override
-            protected Object parseInternal(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-        }, id);
+        return jdbcTemplate.queryOne(sql, UserResultSetParser(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryOne(sql, new CastingResultSetParser<>(User.class) {
-            @Override
-            protected Object parseInternal(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-        }, account);
+        return jdbcTemplate.queryOne(sql, UserResultSetParser(), account);
     }
 }
