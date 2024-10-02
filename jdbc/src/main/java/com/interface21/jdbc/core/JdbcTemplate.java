@@ -17,6 +17,7 @@ public class JdbcTemplate {
     
     private static final int PREPARED_STATEMENT_INDEX_OFFSET = 1;
     private static final int SINGLE_OBJECT_COUNT = 1;
+    private static final int EMPTY_SIZE = 0;
 
     private final DataSource dataSource;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql) {
-        return update(sql, new Object[0]);
+        return update(sql, new Object[EMPTY_SIZE]);
     }
 
     public int update(String sql, Object... args) {
