@@ -44,6 +44,30 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new DataAccessException("queryForObject error", e);
+        } finally {
+            close(con, pstmt, rs);
+        }
+    }
+
     public void close(Connection con, Statement stmt, ResultSet rs) {
         if (rs != null) {
             try {
