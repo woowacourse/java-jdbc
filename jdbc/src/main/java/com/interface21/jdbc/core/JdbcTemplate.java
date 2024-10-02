@@ -41,20 +41,10 @@ public class JdbcTemplate {
         }
     }
 
-    private void close(Connection connection, PreparedStatement preparedStatement) {
-        try {
-            connection.close();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            log.info("CLOSE_JDBC_RESOURCE_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException("JDBC의 자원을 종료하던 중 오류가 발생했습니다.");
-        }
-    }
-
     private void setPreparedStatementParameter(Object[] args, PreparedStatement preparedStatement) {
         try {
             for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
-                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
+                preparedStatement.setObject(paramterIndex, args[paramterIndex - 1]);
             }
         } catch (SQLException e) {
             log.info("SET_PREPARED_STATEMENT_PARAMETER_ERROR :: {}", e.getMessage(), e);
@@ -63,9 +53,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        Connection connection = getConnection();
-        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-        try {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
+        ) {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             List<T> results = new ArrayList<>();
@@ -77,16 +67,13 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
-        } finally {
-            close(connection, preparedStatement);
         }
     }
 
     public <T> Optional<T> queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
-        Connection connection = getConnection();
-        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-
-        try {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
+        ) {
             setPreparedStatementParameter(args, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -97,23 +84,17 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.info("EXECUTE_QUERY_FOR_OBJECT_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
-        } finally {
-            close(connection, preparedStatement);
         }
     }
 
     public int update(String sql, Object[] args) {
-        Connection connection = getConnection();
-        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-
-        try {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)){
             setPreparedStatementParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
-        } finally {
-            close(connection, preparedStatement);
         }
     }
 }
