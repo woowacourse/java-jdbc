@@ -24,36 +24,36 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+    public void insert(User user) {
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+    public void update(User user) {
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
+        String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
-        final var sql = "select * from users where id = ?";
+    public User findById(Long id) {
+        String sql = "select * from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
-        final var sql = "select * from users where account = ?";
+    public User findByAccount(String account) {
+        String sql = "select * from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
