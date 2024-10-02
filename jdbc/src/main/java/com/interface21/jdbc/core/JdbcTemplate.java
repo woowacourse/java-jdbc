@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.lang.invoke.MethodHandles.Lookup.ClassOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -62,11 +63,12 @@ public class JdbcTemplate {
                 results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
             }
 
-            close(connection, preparedStatement);
             return results;
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        } finally {
+            close(connection, preparedStatement);
         }
     }
 
@@ -85,8 +87,27 @@ public class JdbcTemplate {
             }
             return Optional.empty();
         } catch (SQLException e) {
-            log.info("EXECUTE_QUERY_FOR_OBJECT :: {}", e.getMessage(), e);
+            log.info("EXECUTE_QUERY_FOR_OBJECT_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        } finally {
+            close(connection, preparedStatement);
+        }
+    }
+
+    public int update(String sql, Object[] args) {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+
+        try {
+            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
+                preparedStatement.setObject(paramterIndex, args[paramterIndex-1]);
+            }
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        } finally {
+            close(connection, preparedStatement);
         }
     }
 

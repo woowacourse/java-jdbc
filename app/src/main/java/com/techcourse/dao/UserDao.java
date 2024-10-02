@@ -73,7 +73,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        String sql = "update users set account = ?, email = ?, password = ?";
+        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getEmail(), user.getPassword()});
     }
 
     public List<User> findAll() {
