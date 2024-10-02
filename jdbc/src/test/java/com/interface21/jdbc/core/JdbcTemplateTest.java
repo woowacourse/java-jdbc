@@ -96,4 +96,16 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("Query returned more than one result.");
     }
+
+    @Test
+    @DisplayName("업데이트 쿼리를 실행한다..")
+    void update() throws SQLException {
+        final String sql = "update test set arg1 = ?, arg2 = ?";
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(any(String.class))).thenReturn(preparedStatement);
+
+        jdbcTemplate.update(sql, "arg1", "arg2");
+
+        verify(preparedStatement, times(2)).setObject(anyInt(), any(String.class));
+    }
 }

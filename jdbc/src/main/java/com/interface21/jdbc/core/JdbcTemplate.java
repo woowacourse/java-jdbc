@@ -89,4 +89,15 @@ public class JdbcTemplate {
             throw new NonUniqueResultException("Query returned more than one result.");
         }
     }
+
+    public int update(String sql, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            setArguments(ps, args);
+            return ps.executeUpdate();
+        } catch (final Exception e) {
+            log.error("update error", e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
 }
