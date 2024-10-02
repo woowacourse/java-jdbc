@@ -59,6 +59,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             setPreparedStatementParameter(args, pstmt);
+            log.info("query = {}", sql);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 return rowMapper.mapRow(rs, rs.getRow());
