@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.NonUniqueResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,5 +56,37 @@ public class JdbcTemplate {
             results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
         }
         return results;
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> RowMapper, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            setArguments(ps, args);
+            return excuteQueryForObject(RowMapper, ps);
+        } catch (final Exception e) {
+            log.error("queryForObject error", e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T excuteQueryForObject(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
+        try (ResultSet resultSet = ps.executeQuery()) {
+            return getSingleResult(resultSet, rowMapper);
+        }
+    }
+
+    private <T> T getSingleResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        if (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet, resultSet.getRow());
+            checkForMultipleResults(resultSet);
+            return result;
+        }
+        throw new EmptyResultDataAccessException("No result");
+    }
+
+    private void checkForMultipleResults(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            throw new NonUniqueResultException("Query returned more than one result.");
+        }
     }
 }
