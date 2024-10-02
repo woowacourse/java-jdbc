@@ -68,7 +68,26 @@ public class JdbcTemplate {
         }
     }
 
-    public void close(Connection con, Statement stmt, ResultSet rs) {
+    public int update(String sql, Object... args) {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("update error", e);
+        } finally {
+            close(con, pstmt, null);
+        }
+    }
+
+    private void close(Connection con, Statement stmt, ResultSet rs) {
         if (rs != null) {
             try {
                 rs.close();
@@ -86,10 +105,6 @@ public class JdbcTemplate {
         }
 
         DataSourceUtils.releaseConnection(con, dataSource);
-    }
-
-    private DataSource getDataSource() {
-        return dataSource;
     }
 
     private Connection getConnection() {
