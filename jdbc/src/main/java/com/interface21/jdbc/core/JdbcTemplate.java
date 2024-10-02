@@ -27,7 +27,7 @@ public class JdbcTemplate {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            log.error("GET_CONNECTION_EXCEPTION :: {}", e.getMessage(), e);
+            log.error("GET_CONNECTION_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException("Connection을 생성하던 중 오류가 발생했습니다.");
         }
     }
