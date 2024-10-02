@@ -2,6 +2,7 @@ package connectionpool.stage1;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage1Test {
 
+    /**
+     * DB_CLOSE_DELAY=-1은 H2 데이터베이스가 마지막 연결이 종료된 후에도 데이터베이스를 유지하도록 설정한다.
+     * 기본적으로 H2는 모든 연결이 종료되면 데이터베이스 파일이 닫히지만,
+     * 이 설정을 통해 데이터베이스를 계속 사용할 수 있다.
+     */
     private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
