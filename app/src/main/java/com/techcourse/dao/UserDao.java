@@ -41,7 +41,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        String sql = "select id, account, password, email from users";
+        String sql = "select * from users";
 
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
