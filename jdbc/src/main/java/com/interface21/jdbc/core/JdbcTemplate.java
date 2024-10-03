@@ -26,8 +26,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            for (int i = 1; i < args.length + 1; i++) {
-                pstmt.setObject(i, args[i - 1]);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
             }
 
             ResultSet rs = pstmt.executeQuery();
@@ -38,8 +38,7 @@ public class JdbcTemplate {
             }
             return queryResult;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -51,6 +50,6 @@ public class JdbcTemplate {
         if (queryResult.isEmpty()) {
             return null;
         }
-        return queryResult.get(0);
+        return queryResult.getFirst();
     }
 }
