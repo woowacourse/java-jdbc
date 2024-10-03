@@ -42,20 +42,26 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.info("query : {}", sql);
 
-            return extractMultiRows(rowMapper, rs);
+            setArguments(args, pstmt);
+            return extractMultiRows(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> extractMultiRows(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> extractMultiRows(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return getRows(rowMapper, rs);
+        }
+    }
+
+    private <T> List<T> getRows(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         List<T> list = new ArrayList<>();
 
         while (rs.next()) {
