@@ -1,7 +1,10 @@
 package com.interface21.jdbc.core;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +27,7 @@ public class JdbcTemplate {
                 PreparedStatement statement = connection.prepareStatement(sql)) {
 
             for (int i = 1; i <= parameters.length; i++) {
-                statement.setObject(i, parameters[i]);
+                statement.setObject(i, parameters[i - 1]);
             }
 
             return statement.executeUpdate();
@@ -34,11 +37,40 @@ public class JdbcTemplate {
         }
     }
 
-    public Optional<Object> findOne(String query) {
-        return Optional.empty();
+    public <T> Optional<T> findOne(String sql, Class<T> clazz, Object... parameters) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            for (int i = 1; i <= parameters.length; i++) {
+                statement.setObject(i, parameters[i - 1]);
+            }
+
+            ResultSet resultSet = statement.executeQuery();
+
+            Constructor<T> constructor = clazz.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            T instance = constructor.newInstance();
+            Field[] fields = clazz.getDeclaredFields();
+
+            if (resultSet.next()) {
+                for (int i = 0; i < fields.length; i++) {
+                    Field field = fields[i];
+                    Object object = resultSet.getObject(i + 1, PrimitiveTypeConverter.convert(field.getType()));
+                    field.setAccessible(true);
+                    field.set(instance, object);
+                }
+
+                return Optional.of(instance);
+            }
+
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public List<Object> findAll(String query) {
+    public List<Object> findAll(String sql) {
         return null;
     }
 }
