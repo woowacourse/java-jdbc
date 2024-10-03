@@ -13,8 +13,7 @@ public class DataAccessUtils {
         if (results == null || results.isEmpty()) {
             throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다.");
         } else if (results.size() > 1) {
-            String message = String.format("%d개의 결과를 예상했지만 %d개의 결과가 조회되었습니다.", 1, results.size());
-            throw new IncorrectResultSizeDataAccessException(message);
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         } else {
             return results.iterator().next();
         }
