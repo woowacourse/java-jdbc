@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private JdbcTemplate jdbcTemplate;
-    private DataBaseCleaner databaseInitializer;
+    private DataBaseCleaner dataBaseCleaner;
     private UserDao userDao;
 
     @BeforeEach
@@ -24,8 +24,8 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(dataSource);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
-        databaseInitializer = new DataBaseCleaner(jdbcTemplate);
-        databaseInitializer.resetTable("users");
+        dataBaseCleaner = new DataBaseCleaner(jdbcTemplate);
+        dataBaseCleaner.cleanUp("users");
         userDao = new UserDao(jdbcTemplate);
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");

@@ -10,7 +10,7 @@ public class DataBaseCleaner {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void resetTable(String tableName) {
+    public void cleanUp(String tableName) {
         String truncateSql = String.format("TRUNCATE TABLE %s;", tableName);
         jdbcTemplate.update(truncateSql);
 
