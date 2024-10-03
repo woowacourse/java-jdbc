@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -8,6 +9,10 @@ import javax.sql.DataSource;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserDao() {
+        this(new JdbcTemplate(DataSourceConfig.getInstance()));
+    }
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));

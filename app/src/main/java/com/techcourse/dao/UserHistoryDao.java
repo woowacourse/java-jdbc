@@ -1,11 +1,16 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserHistoryDao() {
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
