@@ -29,7 +29,6 @@ public class JdbcTemplate {
             setParameterValue(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -43,7 +42,7 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
-        return results.iterator().next();
+        return results.getFirst();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -60,7 +59,6 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
