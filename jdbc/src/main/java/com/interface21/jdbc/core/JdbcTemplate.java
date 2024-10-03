@@ -34,7 +34,7 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(preparedStatement);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet, 1);
+                    return rowMapper.mapRow(resultSet);
                 }
                 return null;
             }
@@ -50,9 +50,8 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(preparedStatement);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> results = new ArrayList<>();
-                int rowNum = 0;
                 while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rowNum++));
+                    results.add(rowMapper.mapRow(resultSet));
                 }
                 return results;
             }
