@@ -37,6 +37,15 @@ public class JdbcTemplate<T> {
         }
     }
 
+    public T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = executeQuery(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
+            log.info("{} : 조회 결과가 없습니다.", sql);
+            return null;
+        }
+        return results.getFirst();
+    }
+
     private void mapResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
         while (resultSet.next()) {
             T row = rowMapper.map(resultSet);

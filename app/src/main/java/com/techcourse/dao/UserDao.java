@@ -50,14 +50,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        List<User> users = jdbcTemplate.executeQuery(sql, mapper, id);
-        return users.getFirst();
+        return jdbcTemplate.executeQueryForObject(sql, mapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        List<User> users = jdbcTemplate.executeQuery(sql, mapper, account);
-        return users.getFirst();
+        return jdbcTemplate.executeQueryForObject(sql, mapper, account);
     }
 }
