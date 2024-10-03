@@ -70,7 +70,8 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(3)).next(),
                 () -> verify(rowMapper, times(2)).mapRow(resultSet),
                 () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close()
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(resultSet, times(1)).close()
         );
     }
 
@@ -92,7 +93,8 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(2)).next(),
                 () -> verify(rowMapper, times(1)).mapRow(resultSet),
                 () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close()
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(resultSet, times(1)).close()
         );
     }
 
@@ -136,7 +138,8 @@ class JdbcTemplateTest {
                 () -> verify(pstmt).setObject(2, 1),
                 () -> verify(pstmt).executeUpdate(),
                 () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close()
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(resultSet, times(1)).close()
         );
     }
 }
