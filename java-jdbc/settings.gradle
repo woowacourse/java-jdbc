@@ -1,4 +1,0 @@
-rootProject.name = 'java-mvc'
-include 'mvc'
-include 'app'
-include 'study'
