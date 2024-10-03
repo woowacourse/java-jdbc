@@ -59,7 +59,7 @@ public class UserDaoJdbcImpl implements UserDao {
             );
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException("user 데이터 추출 실패");
+            throw new DataAccessException("user 데이터 추출 실패", exception);
         }
     }
 }
