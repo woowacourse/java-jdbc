@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,13 +41,31 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void executeUpdate() {
+    void 데이터_생성_성공() {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account) values (?, ?)";
 
         jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword());
 
         assertAll(
+                () -> verify(pstmt).setObject(1, user.getAccount()),
+                () -> verify(pstmt).setObject(2, user.getPassword()),
+                () -> verify(pstmt, times(1)).executeUpdate(),
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close()
+        );
+    }
+
+    @Test
+    void 데이터_생성_예외_발생() throws SQLException {
+        TestUser user = new TestUser("jojo", "1234");
+        String sql = "insert into test-user (account) values (?, ?, ?)";
+
+        when(pstmt.executeUpdate()).thenThrow(SQLException.class);
+
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword()))
+                        .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt).setObject(2, user.getPassword()),
                 () -> verify(pstmt, times(1)).executeUpdate(),
@@ -71,6 +91,27 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(actual).isPresent(),
                 () -> assertThat(actual.get().getAccount()).isEqualTo(user.getAccount()),
+                () -> verify(pstmt).setObject(1, user.getAccount()),
+                () -> verify(pstmt, times(1)).executeQuery(),
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
+        );
+    }
+
+    @Test
+    void 단일_데이터_조회_에러_발생() throws SQLException {
+        TestUser user = new TestUser("jojo", "1234");
+        String sql = "select id, account, password from users where account = ?";
+
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getLong("id")).thenThrow(SQLException.class);
+
+        assertAll(
+                () -> assertThatThrownBy(
+                        () -> jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, user.getAccount()))
+                        .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -124,6 +165,23 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void 복수_데이터_조회_에러_발생() throws SQLException {
+        String sql = "select id, account, password from users";
+
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenThrow(SQLException.class);
+
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser))
+                        .isInstanceOf(DataAccessException.class),
+                () -> verify(pstmt, times(1)).executeQuery(),
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
+        );
+    }
+
+    @Test
     void 복수_데이터_조회_실패() throws SQLException {
         String sql = "select id, account, password from users";
 
@@ -149,7 +207,7 @@ class JdbcTemplateTest {
                     rs.getString("password")
             );
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
