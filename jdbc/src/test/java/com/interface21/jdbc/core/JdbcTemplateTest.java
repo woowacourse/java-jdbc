@@ -119,7 +119,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class)
-                .hasMessage("조회 결과가 없습니다.");
+                .hasMessage("1개의 결과를 예상했지만 0개의 결과가 조회되었습니다.");
     }
 
 
