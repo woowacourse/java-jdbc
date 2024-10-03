@@ -22,7 +22,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDao();
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -31,7 +31,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao();
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";

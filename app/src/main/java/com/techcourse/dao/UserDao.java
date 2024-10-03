@@ -5,22 +5,13 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao() {
-        this(new JdbcTemplate(DataSourceConfig.getInstance()));
-    }
-
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     }
 
     public void insert(final User user) {
