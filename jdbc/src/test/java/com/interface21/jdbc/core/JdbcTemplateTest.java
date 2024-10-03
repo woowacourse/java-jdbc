@@ -68,7 +68,9 @@ class JdbcTemplateTest {
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(3)).next(),
-                () -> verify(rowMapper, times(2)).mapRow(resultSet)
+                () -> verify(rowMapper, times(2)).mapRow(resultSet),
+                () -> verify(connection, times(1)).close(),
+                () -> verify(pstmt, times(1)).close()
         );
     }
 
@@ -88,7 +90,9 @@ class JdbcTemplateTest {
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(2)).next(),
-                () -> verify(rowMapper, times(1)).mapRow(resultSet)
+                () -> verify(rowMapper, times(1)).mapRow(resultSet),
+                () -> verify(connection, times(1)).close(),
+                () -> verify(pstmt, times(1)).close()
         );
     }
 
@@ -116,7 +120,9 @@ class JdbcTemplateTest {
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).setObject(1, "aru"),
                 () -> verify(pstmt).setObject(2, 1),
-                () -> verify(pstmt).executeUpdate()
+                () -> verify(pstmt).executeUpdate(),
+                () -> verify(connection, times(1)).close(),
+                () -> verify(pstmt, times(1)).close()
         );
     }
 }
