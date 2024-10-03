@@ -22,12 +22,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, String... parameters){
+    public void executeUpdate(String sql, Object... parameters){
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
-                pstmt.setString(i + 1, parameters[i]);
+                pstmt.setObject(i + 1, parameters[i]);
             }
 
             pstmt.executeUpdate();
