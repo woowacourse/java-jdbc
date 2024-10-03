@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.EmptyResultDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +86,6 @@ public class JdbcTemplate {
         if (rs.next()) {
             return rowMapper.mapRow(rs, rs.getRow());
         }
-        return null;
+        throw new EmptyResultDataAccessException("반환할 수 있는 결과가 존재하지 않습니다.");
     }
 }

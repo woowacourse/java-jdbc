@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.EmptyResultDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -47,11 +49,14 @@ class JdbcTemplateTest {
         assertThat(user).isEqualTo(new User("hello", "1234", "my@email.com"));
     }
 
-    private RowMapper<User> getUserRowMapper() {
-        return (rs, rowNum) -> new User(
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
+    @Test
+    @DisplayName("값 하나를 조회할 수 없다면 예외가 발생한다.")
+    void invalidQueryForObject() throws SQLException {
+        when(rs.next()).thenReturn(false);
+        String sql = "select * from users where account = ?";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello"))
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
@@ -78,6 +83,13 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "account", "password", "email", 1L);
 
         verify(pstmt).executeUpdate();
+    }
+
+    private RowMapper<User> getUserRowMapper() {
+        return (rs, rowNum) -> new User(
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 
     private static class User {
