@@ -1,22 +1,32 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.support.DataBaseCleaner;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 class UserDaoTest {
 
+    private JdbcTemplate jdbcTemplate;
+    private DataBaseCleaner databaseInitializer;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        databaseInitializer = new DataBaseCleaner(jdbcTemplate);
+        databaseInitializer.resetTable("users");
+        userDao = new UserDao(jdbcTemplate);
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -24,6 +34,9 @@ class UserDaoTest {
     @Test
     void findAll() {
         final var users = userDao.findAll();
+
+        System.out.println(users.size());
+        System.out.println(users.getFirst().getId());
 
         assertThat(users).isNotEmpty();
     }
