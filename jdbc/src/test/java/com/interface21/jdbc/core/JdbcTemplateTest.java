@@ -58,9 +58,9 @@ class JdbcTemplateTest {
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true);
-        when(rs.getLong(1)).thenReturn(1L);
-        when(rs.getString(2)).thenReturn("jojo");
-        when(rs.getString(3)).thenReturn("1234");
+        when(rs.getLong("id")).thenReturn(1L);
+        when(rs.getString("account")).thenReturn("jojo");
+        when(rs.getString("password")).thenReturn("1234");
 
         Optional<TestUser> actual = jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser,
                 user.getAccount());
@@ -97,9 +97,9 @@ class JdbcTemplateTest {
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true, true, false);
-        when(rs.getLong(1)).thenReturn(1L, 2L);
-        when(rs.getString(2)).thenReturn("jojo", "cutehuman");
-        when(rs.getString(3)).thenReturn("jojo1234", "cutehuman1234");
+        when(rs.getLong("id")).thenReturn(1L, 2L);
+        when(rs.getString("account")).thenReturn("jojo", "cutehuman");
+        when(rs.getString("password")).thenReturn("jojo1234", "cutehuman1234");
 
         List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
@@ -131,9 +131,9 @@ class JdbcTemplateTest {
     private TestUser generateUser(ResultSet rs) {
         try {
             return new TestUser(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3)
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password")
             );
         } catch (SQLException e) {
             throw new RuntimeException(e);

@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
@@ -52,10 +53,10 @@ public class UserDaoJdbcImpl implements UserDao {
     private User generateUser(ResultSet rs) {
         try {
             return new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
             );
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
