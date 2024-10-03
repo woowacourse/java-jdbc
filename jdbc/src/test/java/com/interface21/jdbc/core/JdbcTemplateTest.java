@@ -130,16 +130,16 @@ class JdbcTemplateTest {
         String sql = "UPDATE test_user SET name = ? WHERE id = ?";
         when(pstmt.executeUpdate()).thenReturn(1);
 
-        jdbcTemplate.update(sql, "aru", 1);
+        int updatedRows = jdbcTemplate.update(sql, "aru", 1);
 
         assertAll(
+                () -> assertThat(updatedRows).isEqualTo(1),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).setObject(1, "aru"),
                 () -> verify(pstmt).setObject(2, 1),
                 () -> verify(pstmt).executeUpdate(),
                 () -> verify(connection).close(),
-                () -> verify(pstmt).close(),
-                () -> verify(resultSet).close()
+                () -> verify(pstmt).close()
         );
     }
 }
