@@ -42,11 +42,10 @@ class JdbcTemplateTest {
     @DisplayName("업데이트성 쿼리를 올바르게 수행한다.")
     void validUpdate() throws SQLException {
         when(connection.prepareStatement("update test set name = ? where id = ?")).thenReturn(preparedStatement);
-        when(preparedStatement.executeUpdate()).thenReturn(5);
+        when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        int rowsAffected = jdbcTemplate.update("update test set name = ? where id = ?", "test", 1);
+        jdbcTemplate.update("update test set name = ? where id = ?", "test", 1);
 
-        assertThat(rowsAffected).isEqualTo(5);
         verify(preparedStatement).setObject(1, "test");
         verify(preparedStatement).setObject(2, 1);
         verify(preparedStatement).close();
