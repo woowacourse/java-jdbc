@@ -35,7 +35,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
         ) {
@@ -47,18 +47,23 @@ public class JdbcTemplate {
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
-                if (results.isEmpty()) {
-                    return null;
-                }
-                if (results.size() > 1) {
-                    throw new IllegalStateException("Incorrect result size: expected " + 1 + ", actual " + results.size());
-                }
-                return results.getFirst();
+                return results;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new IllegalStateException("Incorrect result size: expected " + 1 + ", actual " + results.size());
+        }
+        return results.getFirst();
     }
 
     private void setParameters(PreparedStatement pstmt, Object... args) {
