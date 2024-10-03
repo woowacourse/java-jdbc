@@ -70,4 +70,11 @@ class UserDaoTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
+
+    @Test
+    void deleteAll() {
+        userDao.deleteAll();
+
+        assertThat(userDao.findAll()).isEmpty();
+    }
 }
