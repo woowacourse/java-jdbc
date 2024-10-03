@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.GeneratedKeyHolder;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -33,9 +34,13 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public User insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(sql, keyHolder, user.getAccount(), user.getPassword(), user.getEmail());
+
+        long id = (long) keyHolder.getKey();
+        return new User(id, user);
     }
 
     public void update(final User user) {
@@ -56,5 +61,10 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+    }
+
+    public void deleteAll() {
+        final String sql = "delete from users";
+        int update = jdbcTemplate.update(sql);
     }
 }

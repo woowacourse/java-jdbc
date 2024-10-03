@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -69,6 +70,30 @@ public class JdbcTemplate {
             }
             log.debug("query : {}", sql);
             return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public int update(final String sql, GeneratedKeyHolder keyHolder, Object... args) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        ) {
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            log.debug("query : {}", sql);
+            int affectedRows = pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    keyHolder.setKey(rs.getObject(1));
+                }
+            }
+            return affectedRows;
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
