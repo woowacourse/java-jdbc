@@ -69,9 +69,9 @@ class JdbcTemplateTest {
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(3)).next(),
                 () -> verify(rowMapper, times(2)).mapRow(resultSet),
-                () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close(),
-                () -> verify(resultSet, times(1)).close()
+                () -> verify(connection).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(resultSet).close()
         );
     }
 
@@ -91,10 +91,10 @@ class JdbcTemplateTest {
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(2)).next(),
-                () -> verify(rowMapper, times(1)).mapRow(resultSet),
-                () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close(),
-                () -> verify(resultSet, times(1)).close()
+                () -> verify(rowMapper).mapRow(resultSet),
+                () -> verify(connection).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(resultSet).close()
         );
     }
 
@@ -124,9 +124,9 @@ class JdbcTemplateTest {
                 .hasMessage("1개의 결과를 예상했지만 0개의 결과가 조회되었습니다.");
     }
 
-
+    @DisplayName("update() : 저장된 User의 값을 변경한다.")
     @Test
-    void update_ShouldExecuteUpdateStatement() throws SQLException {
+    void update() throws SQLException {
         String sql = "UPDATE test_user SET name = ? WHERE id = ?";
         when(pstmt.executeUpdate()).thenReturn(1);
 
@@ -137,9 +137,9 @@ class JdbcTemplateTest {
                 () -> verify(pstmt).setObject(1, "aru"),
                 () -> verify(pstmt).setObject(2, 1),
                 () -> verify(pstmt).executeUpdate(),
-                () -> verify(connection, times(1)).close(),
-                () -> verify(pstmt, times(1)).close(),
-                () -> verify(resultSet, times(1)).close()
+                () -> verify(connection).close(),
+                () -> verify(pstmt).close(),
+                () -> verify(resultSet).close()
         );
     }
 }
