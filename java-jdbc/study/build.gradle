@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group 'com.techcourse'
+version '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.reflections:reflections:0.10.2'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.25'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.25'
+    implementation 'ch.qos.logback:logback-classic:1.5.7'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+
+    implementation 'org.springframework:spring-context:6.1.10'
+
+    testImplementation 'org.assertj:assertj-core:3.26.0'
+    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testImplementation 'com.h2database:h2:2.2.224'
+}
+
+test {
+    maxParallelForks 3
+    useJUnitPlatform()
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir file('src/main/webapp/WEB-INF/classes')
+    }
+}
+
+sourceSets {
+    main {
+        java.destinationDirectory.set(file('src/main/webapp/WEB-INF/classes'))
+    }
+}
