@@ -35,21 +35,15 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameterValue(pstmt, args);
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
+        final var results = query(sql, rowMapper, args);
 
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
         }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.iterator().next();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
