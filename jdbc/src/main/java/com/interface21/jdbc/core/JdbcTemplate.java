@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,7 +25,6 @@ public class JdbcTemplate<T> {
     public T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> results = query(sql, rowMapper, parameters);
         if (results.isEmpty()) {
-            log.info("{} : 조회 결과가 없습니다.", sql);
             return null;
         }
         return results.getFirst();
@@ -42,15 +42,20 @@ public class JdbcTemplate<T> {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("올바르지 않은 쿼리입니다.", e);
         }
     }
 
-    private void mapResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        while (resultSet.next()) {
-            T row = rowMapper.map(resultSet);
-            results.add(row);
+    private void mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
+        try {
+            while (resultSet.next()) {
+                T row = rowMapper.map(resultSet);
+                results.add(row);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("쿼리 값과 mapper가 맞지 않습니다.", e);
         }
+
     }
 
     public int update(String sql, Object... parameters) {
@@ -63,13 +68,17 @@ public class JdbcTemplate<T> {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("올바르지 않은 업데이트 쿼리입니다.", e);
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
+    private void setParameters(PreparedStatement pstmt, Object... parameters) {
+        try {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("쿼리의 파라미터가 올바르지 않습니다.", e);
         }
     }
 }
