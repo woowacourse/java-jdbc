@@ -17,13 +17,16 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = null;
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -57,6 +60,11 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    public void insert2(final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getEmail(), user.getPassword());
     }
 
     public void update(final User user) {
@@ -112,6 +120,12 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    public User findById2(final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        User user = (User) jdbcTemplate.execute(sql, User.class, id);
+        return user;
     }
 
     public User findByAccount(final String account) {
