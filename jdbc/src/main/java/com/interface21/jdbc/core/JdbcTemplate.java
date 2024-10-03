@@ -61,7 +61,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new IllegalStateException("Incorrect result size: expected " + 1 + ", actual " + results.size());
+            throw new IllegalStateException("Incorrect result size: expected 1, actual " + results.size());
         }
         return results.getFirst();
     }
