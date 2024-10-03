@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int PREPARED_STATEMENT_INDEX_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
+                statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
             }
             statement.executeUpdate();
             log.info("query : {}", sql);
