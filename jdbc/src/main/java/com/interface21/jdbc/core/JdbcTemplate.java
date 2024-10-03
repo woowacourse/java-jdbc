@@ -58,4 +58,19 @@ public class JdbcTemplate {
         }
         return queryResult.getFirst();
     }
+
+    public int update(final String sql, Object... args) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            log.debug("query : {}", sql);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
 }
