@@ -23,7 +23,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -43,10 +44,11 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public void update(String sql, Object... args) {
+    public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, args);
-            pstmt.executeUpdate();
+            int updatedRows = pstmt.executeUpdate();
+            return updatedRows;
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
