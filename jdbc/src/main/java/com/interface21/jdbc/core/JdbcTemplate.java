@@ -21,6 +21,15 @@ public class JdbcTemplate<T> {
         this.dataSource = dataSource;
     }
 
+    public T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = executeQuery(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
+            log.info("{} : 조회 결과가 없습니다.", sql);
+            return null;
+        }
+        return results.getFirst();
+    }
+
     public List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -35,15 +44,6 @@ public class JdbcTemplate<T> {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    public T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = executeQuery(sql, rowMapper, parameters);
-        if (results.isEmpty()) {
-            log.info("{} : 조회 결과가 없습니다.", sql);
-            return null;
-        }
-        return results.getFirst();
     }
 
     private void mapResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
