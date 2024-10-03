@@ -17,3 +17,6 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+### 기능 요구 사항
+- [ ] 개발자 편의를 위해 JDBC 라이브러리 구현
