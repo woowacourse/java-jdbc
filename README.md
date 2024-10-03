@@ -18,5 +18,14 @@
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
 
-### 기능 요구 사항
+### STEP1 - 기능 요구 사항
 - [ ] 개발자 편의를 위해 JDBC 라이브러리 구현
+
+**Feat**
+
+- [x]  UserDao - findAll 구현
+- [x]  UserDao - update 구현
+- [x]  UserDao - findByAccount 구현
+
+**Refactor**
+- [ ]  InMemoryDB → DAO로 교체
