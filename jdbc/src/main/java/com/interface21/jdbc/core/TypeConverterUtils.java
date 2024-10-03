@@ -19,10 +19,6 @@ public class TypeConverterUtils {
     }
 
     public static Class<?> convertToWrapperIfPrimitive(Class<?> primitiveType) {
-        if (!wrapperTypes.containsKey(primitiveType)) {
-            return primitiveType;
-        }
-
-        return wrapperTypes.get(primitiveType);
+        return wrapperTypes.getOrDefault(primitiveType, primitiveType);
     }
 }
