@@ -27,22 +27,17 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setQueryParameter(pstmt, args);
+            setParameter(pstmt, args);
             log.debug("query : {}", sql);
-            return executeQuery(pstmt, rowMapper);
-
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> queryResult = new ArrayList<>();
+                while (rs.next()) {
+                    queryResult.add(rowMapper.mapRow(rs));
+                }
+                return queryResult;
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            List<T> queryResult = new ArrayList<>();
-            while (rs.next()) {
-                queryResult.add(rowMapper.mapRow(rs));
-            }
-            return queryResult;
         }
     }
 
@@ -62,7 +57,7 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setQueryParameter(pstmt, args);
+            setParameter(pstmt, args);
             log.debug("query : {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -75,12 +70,10 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         ) {
-
-            setQueryParameter(pstmt, args);
+            setParameter(pstmt, args);
 
             log.debug("query : {}", sql);
             int affectedRows = pstmt.executeUpdate();
-
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     keyHolder.setKey(rs.getObject(1));
@@ -92,7 +85,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setQueryParameter(PreparedStatement pstmt, Object[] args) throws SQLException {
+    private void setParameter(PreparedStatement pstmt, Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
