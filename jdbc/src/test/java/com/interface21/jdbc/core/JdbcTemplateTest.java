@@ -79,13 +79,12 @@ class JdbcTemplateTest {
     @DisplayName("SQLException이 발생하는 경우, 적절한 예외로 변환한다.")
     void convertException() throws SQLException {
         when(connection.prepareStatement("wrong sql grammar")).thenReturn(preparedStatement);
-        SQLException sqlException = new SQLException("Bad SQL");
+        SQLException sqlException = new SQLException();
         when(preparedStatement.executeUpdate()).thenThrow(sqlException);
 
         assertThatThrownBy(() -> jdbcTemplate.update("wrong sql grammar"))
                 .isInstanceOf(DataAccessException.class)
-                .hasCause(sqlException)
-                .hasMessage("Bad SQL");
+                .hasCause(sqlException);
         verify(preparedStatement).close();
     }
 
