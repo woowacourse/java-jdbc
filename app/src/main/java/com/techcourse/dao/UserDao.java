@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 public class UserDao {
@@ -37,25 +38,25 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, User.class);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ? limit 1";
         List<User> users = jdbcTemplate.queryForObject(sql, User.class, id);
 
         if (users.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
-        return users.get(0);
+        return Optional.of(users.getFirst());
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         List<User> users = jdbcTemplate.queryForObject(sql, User.class, account);
 
         if (users.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
-        return users.get(0);
+        return Optional.of(users.getFirst());
     }
 }

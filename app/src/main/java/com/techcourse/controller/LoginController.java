@@ -41,13 +41,9 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        User user = userService.findByAccount(request.getParameter("account"));
-
-        if (user == null) {
-            return redirect("/401.jsp");
-        }
-
-        return login(request, user);
+        return userService.findByAccount(request.getParameter("account"))
+                .map(user -> login(request, user))
+                .orElse(redirect("/401.jsp"));
     }
 
     private ModelAndView login(final HttpServletRequest request, final User user) {
