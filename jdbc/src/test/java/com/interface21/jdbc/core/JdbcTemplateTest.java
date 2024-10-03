@@ -62,9 +62,9 @@ class JdbcTemplateTest {
         record Fruit(int id, String name) {
         }
         ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-        when(resultSet.getInt("id")).thenReturn(1).thenReturn(2);
-        when(resultSet.getString("name")).thenReturn("apple").thenReturn("banana");
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getInt("id")).thenReturn(1, 2);
+        when(resultSet.getString("name")).thenReturn("apple", "banana");
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         RowMapper<Fruit> rowMapper = rs -> new Fruit(rs.getInt("id"), rs.getString("name"));
@@ -119,9 +119,9 @@ class JdbcTemplateTest {
         }
         ResultSet resultSet = mock(ResultSet.class);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-        when(resultSet.getInt("id")).thenReturn(1);
-        when(resultSet.getString("name")).thenReturn("apple");
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getInt("id")).thenReturn(1, 2);
+        when(resultSet.getString("name")).thenReturn("apple", "banana");
         RowMapper<Fruit> rowMapper = rs -> new Fruit(rs.getInt("id"), rs.getString("name"));
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from fruit where id = ?", rowMapper, 1))
