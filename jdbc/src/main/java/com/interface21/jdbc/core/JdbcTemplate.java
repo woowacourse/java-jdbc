@@ -50,8 +50,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql))
         {
             setParameters(pstmt, args);
-            int updatedRows = pstmt.executeUpdate();
-            return updatedRows;
+            return pstmt.executeUpdate();
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
