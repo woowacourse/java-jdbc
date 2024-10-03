@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
+    private static final int SINGLE_RESULT = 1;
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -37,10 +38,10 @@ public class JdbcTemplate {
         final var results = query(sql, rowMapper, args);
 
         if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
+            throw new EmptyResultDataAccessException(SINGLE_RESULT);
         }
         if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+            throw new IncorrectResultSizeDataAccessException(SINGLE_RESULT, results.size());
         }
         return results.getFirst();
     }
