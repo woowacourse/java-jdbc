@@ -42,15 +42,15 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> strategy, Object... params) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
-            return getResults(strategy, preparedStatement);
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getResults(strategy, resultSet);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> getResults(RowMapper<T> strategy, PreparedStatement pstmt) throws SQLException {
-        ResultSet resultSet = pstmt.executeQuery();
+    private <T> List<T> getResults(RowMapper<T> strategy, ResultSet resultSet) throws SQLException {
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(strategy.map(resultSet));
@@ -60,15 +60,15 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> strategy, Object... params) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
-            return getResult(strategy, preparedStatement);
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getResult(strategy, resultSet);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> Optional<T> getResult(RowMapper<T> strategy, PreparedStatement pstmt) throws SQLException {
-        ResultSet resultSet = pstmt.executeQuery();
+    private <T> Optional<T> getResult(RowMapper<T> strategy, ResultSet resultSet) throws SQLException {
         if (resultSet.next()) {
             return Optional.ofNullable(strategy.map(resultSet));
         }
