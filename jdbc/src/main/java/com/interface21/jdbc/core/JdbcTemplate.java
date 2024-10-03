@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +31,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error("쿼리 실행에 실패했습니다: {}", sql, e);
-            throw new RuntimeException("쿼리 실행에 실패했습니다.", e);
+            throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
         }
     }
 
@@ -43,7 +44,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error("쿼리 실행에 실패했습니다: {}", sql, e);
-            throw new RuntimeException("쿼리 실행에 실패했습니다.", e);
+            throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
         }
     }
 
