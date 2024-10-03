@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
+//@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -45,6 +45,7 @@ class UserServiceTest {
     }
 
     @Test
+    @Disabled
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
