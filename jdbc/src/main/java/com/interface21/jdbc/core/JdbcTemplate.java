@@ -23,21 +23,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql))
-        {
-            setParameters(pstmt, args);
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
+                return extractResults(rs, rowMapper);
             }
-        } catch (SQLException exception) {
-            log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
-            throw new DataAccessException("쿼리 실행 에러 발생", exception);
-        }
+        }, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -46,15 +36,27 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, StatementCallback<T> action, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql))
-        {
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             setParameters(pstmt, args);
-            return pstmt.executeUpdate();
+            return action.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
         }
+    }
+
+    private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
     }
 
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
