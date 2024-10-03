@@ -1,5 +1,7 @@
 package com.techcourse.dao.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -26,10 +28,12 @@ class UserRowMapperTest {
 
         User user = userRowMapper.mapRow(resultSet);
 
-        assertNotNull(user);
-        assertEquals(user.getId(), 1L);
-        assertEquals(user.getAccount(), "kaki");
-        assertEquals(user.getPassword(), "1234");
-        assertEquals(user.getEmail(), "test@example.com");
+        assertAll(
+                () -> assertThat(user).isNotNull(),
+                () -> assertThat(user.getId()).isEqualTo(1L),
+                () -> assertThat(user.getAccount()).isEqualTo("kaki"),
+                () -> assertThat(user.getPassword()).isEqualTo("1234"),
+                () -> assertThat(user.getEmail()).isEqualTo("test@example.com")
+        );
     }
 }
