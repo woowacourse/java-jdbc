@@ -23,20 +23,27 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql),
-                     params)) {
-            pstmt.executeUpdate();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object[] params)
+            throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int index = 0; index < params.length; index++) {
+            preparedStatement.setObject(index + 1, params[index]);
+        }
+        return preparedStatement;
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> strategy, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql),
-                     params)) {
-            return getResults(strategy, pstmt);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
+            return getResults(strategy, preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -52,9 +59,9 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> strategy, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql), params)) {
-            return getResult(strategy, pstmt);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
+            return getResult(strategy, preparedStatement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
