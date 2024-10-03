@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -25,9 +26,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
-            }
+            setStatement(args, statement);
             statement.executeUpdate();
             log.info("query : {}", sql);
         } catch (Exception e) {
@@ -40,9 +39,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
+            setStatement(args, statement);
             ResultSet resultSet = statement.executeQuery();
             log.info("query : {}", sql);
 
@@ -54,6 +51,12 @@ public class JdbcTemplate {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL execution failed. : " + sql);
+        }
+    }
+
+    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
         }
     }
 
