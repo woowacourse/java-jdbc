@@ -1,16 +1,16 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -49,23 +49,70 @@ public class UserDao {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
     public void update(final User user) {
-        // todo
+        // todo: 쿼리 최적화 가능한지, return값으로 뭘 할 수 있을 지
+        var sql = """
+        update 
+            users 
+        set
+            account = ?,
+            password = ?, 
+            email = ?
+        where 
+            id = ?
+        """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+            pstmt.executeUpdate();
+            log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        var sql = "select id, account, password, email from users";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug("query : {}", sql);
+            List<User> users = new ArrayList<>();
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                users.add(
+                        new User(
+                                rs.getLong(1),
+                                rs.getString(2),
+                                rs.getString(3),
+                                rs.getString(4)
+                        )
+                );
+            }
+            return users;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public User findById(final Long id) {
@@ -98,24 +145,46 @@ public class UserDao {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
     public User findByAccount(final String account) {
-        // todo
+        var sql = "select id, account, password, email from users where account = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            pstmt.setString(1, account);
+            ResultSet rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
+            if (rs.next()) {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)
+                );
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
         return null;
     }
 }
