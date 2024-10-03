@@ -25,25 +25,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, connection -> {
-            var pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            return pstmt;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, connection -> {
-            var pstmt = connection.prepareStatement(sql);
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            return pstmt;
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

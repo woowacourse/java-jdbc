@@ -22,27 +22,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, PreparedStatementCreator strategy) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = strategy.create(connection)
-        ) {
-            preparedStatement.executeUpdate();
+    public void update(String sql, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql),
+                     params)) {
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> strategy, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = PreparedStatementSetter.setArguments(connection.prepareStatement(sql), args)) {
-            ResultSet resultSet = pstmt.executeQuery();
-            return getResults(strategy, resultSet);
+    public <T> List<T> query(String sql, RowMapper<T> strategy, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql),
+                     params)) {
+            return getResults(strategy, pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> getResults(RowMapper<T> strategy, ResultSet resultSet) throws SQLException {
+    private <T> List<T> getResults(RowMapper<T> strategy, PreparedStatement pstmt) throws SQLException {
+        ResultSet resultSet = pstmt.executeQuery();
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(strategy.map(resultSet));
@@ -50,17 +51,17 @@ public class JdbcTemplate {
         return Collections.unmodifiableList(results);
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> strategy, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = PreparedStatementSetter.setArguments(connection.prepareStatement(sql), args)) {
-            ResultSet resultSet = pstmt.executeQuery();
-            return getResult(strategy, resultSet);
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> strategy, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = PreparedStatementSetter.setParameters(conn.prepareStatement(sql), params)) {
+            return getResult(strategy, pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> Optional<T> getResult(RowMapper<T> strategy, ResultSet resultSet) throws SQLException {
+    private <T> Optional<T> getResult(RowMapper<T> strategy, PreparedStatement pstmt) throws SQLException {
+        ResultSet resultSet = pstmt.executeQuery();
         if (resultSet.next()) {
             return Optional.ofNullable(strategy.map(resultSet));
         }
