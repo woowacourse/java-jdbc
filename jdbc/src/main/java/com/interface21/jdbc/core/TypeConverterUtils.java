@@ -3,7 +3,7 @@ package com.interface21.jdbc.core;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PrimitiveTypeConverter {
+public class TypeConverterUtils {
 
     private static final Map<Class<?>, Class<?>> wrapperTypes = new HashMap<>();
 
@@ -18,7 +18,7 @@ public class PrimitiveTypeConverter {
         wrapperTypes.put(short.class, Short.class);
     }
 
-    public static Class<?> convert(Class<?> primitiveType) {
+    public static Class<?> convertToWrapperIfPrimitive(Class<?> primitiveType) {
         if (!wrapperTypes.containsKey(primitiveType)) {
             return primitiveType;
         }

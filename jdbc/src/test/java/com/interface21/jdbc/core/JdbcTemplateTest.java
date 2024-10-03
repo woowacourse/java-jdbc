@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 import org.h2.jdbc.JdbcSQLSyntaxErrorException;
 import org.junit.jupiter.api.AfterEach;
@@ -87,50 +86,21 @@ class JdbcTemplateTest {
                 .hasCauseInstanceOf(JdbcSQLSyntaxErrorException.class);
     }
 
-    @DisplayName("단건 조회 정상 실행: 결과값 present")
-    @Test
-    void findOne_Present() {
-        // given
-        jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
-
-        // when
-        Optional<TestUser> user = jdbcTemplate.findOne(
-                "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class,
-                "John");
-
-        // then
-        assertThat(user).hasValue(new TestUser(1L, "John", 20));
-    }
-
-    @DisplayName("단건 조회 정상 실행: 결과값 empty")
-    @Test
-    void findOne_Empty() {
-        // given
-        jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
-
-        // when
-        Optional<TestUser> user = jdbcTemplate.findOne(
-                "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class, "Joe");
-
-        // then
-        assertThat(user).isEmpty();
-    }
-
-    @DisplayName("다중 조회 정상 실행: 결과값 0개")
+    @DisplayName("조회 정상 실행: 결과값 0개")
     @Test
     void findAll_NoResults() {
         // given
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
         // when
-        List<TestUser> users = jdbcTemplate.findAll(
+        List<TestUser> users = jdbcTemplate.queryForObject(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
 
         // then
         assertThat(users).isEmpty();
     }
 
-    @DisplayName("다중 조회 정상 실행: 결과값 2개")
+    @DisplayName("조회 정상 실행: 결과값 2개")
     @Test
     void findAll_TwoResults() {
         // given
@@ -138,7 +108,7 @@ class JdbcTemplateTest {
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('Jake', 20)");
 
         // when
-        List<TestUser> users = jdbcTemplate.findAll(
+        List<TestUser> users = jdbcTemplate.queryForObject(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
 
         // then
