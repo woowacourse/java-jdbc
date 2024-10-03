@@ -103,8 +103,6 @@ class JdbcTemplateTest {
 
         List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
-        System.out.println(actual);
-
         assertAll(
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> assertThat(actual).hasSize(2),
