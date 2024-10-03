@@ -106,8 +106,22 @@ class JdbcTemplateTest {
         when(rowMapper.mapRow(resultSet)).thenReturn(kaki, aru);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper))
-                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessage("1개의 결과를 예상했지만 2개의 결과가 조회되었습니다.");
     }
+
+    @DisplayName("queryForObject() : 조회된 결과가 없으면 예외가 발생한다.")
+    @Test
+    void failByQueryForObjectNull() throws SQLException {
+        String sql = "SELECT * FROM test_user";
+        when(resultSet.next()).thenReturn(false);
+        when(rowMapper.mapRow(resultSet)).thenReturn(null);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessage("조회 결과가 없습니다.");
+    }
+
 
     @Test
     void update_ShouldExecuteUpdateStatement() throws SQLException {
