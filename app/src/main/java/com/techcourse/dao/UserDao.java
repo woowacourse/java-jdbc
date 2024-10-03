@@ -12,6 +12,13 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
+    private static final RowMapper<User> mapper = resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+    );
+
     private final JdbcTemplate<User> jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
@@ -36,22 +43,12 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        RowMapper<User> mapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4));
+
         return jdbcTemplate.executeQuery(sql, mapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        RowMapper<User> mapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4));
 
         List<User> users = jdbcTemplate.executeQuery(sql, mapper, id);
         return users.getFirst();
@@ -59,12 +56,6 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
-        RowMapper<User> mapper = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4));
 
         List<User> users = jdbcTemplate.executeQuery(sql, mapper, account);
         return users.getFirst();
