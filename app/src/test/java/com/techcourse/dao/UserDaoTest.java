@@ -19,7 +19,7 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert2(user);
+        userDao.insert(user);
     }
 
     @Test
@@ -48,9 +48,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert2(user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById2(2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
