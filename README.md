@@ -24,7 +24,7 @@
 
 ### STEP1 - 기능 요구 사항
 
-- [ ] 개발자 편의를 위해 JDBC 라이브러리 구현
+- [x] 개발자 편의를 위해 JDBC 라이브러리 구현
 
 **Feat**
 
@@ -35,5 +35,5 @@
 **Refactor**
 
 - [ ]  InMemoryDB → DAO로 교체
-- [ ]  클라이언트 중복 코드 JdbcTemplate 프레임 워크로 추상화
-- [ ]  JdbcTemplate이용하도록 개선
+- [x]  클라이언트 중복 코드 JdbcTemplate 프레임 워크로 추상화
+- [x]  JdbcTemplate 이용하도록 개선
