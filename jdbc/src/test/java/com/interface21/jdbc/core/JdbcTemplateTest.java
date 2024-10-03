@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 import org.h2.jdbc.JdbcSQLSyntaxErrorException;
@@ -107,6 +108,29 @@ class JdbcTemplateTest {
                 "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class, "Joe");
 
         assertThat(user).isEmpty();
+    }
+
+    @DisplayName("다중 조회 정상 실행: 결과값 0개")
+    @Test
+    void findAll_NoResults() {
+        jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
+
+        List<TestUser> users = jdbcTemplate.findAll(
+                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
+
+        assertThat(users).isEmpty();
+    }
+
+    @DisplayName("다중 조회 정상 실행: 결과값 2개")
+    @Test
+    void findAll_TwoResults() {
+        jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
+        jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('Jake', 20)");
+
+        List<TestUser> users = jdbcTemplate.findAll(
+                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
+
+        assertThat(users).hasSize(2);
     }
 
     private void createTable() {
