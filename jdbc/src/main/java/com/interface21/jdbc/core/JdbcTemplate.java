@@ -21,28 +21,25 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        ResultSet rs = null;
-
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = getPreparedStatement(sql, conn)) {
-            assignSqlValues(values, pstmt);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
+        return executeQuery(sql, rs -> {
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResultSet(rs);
-        }
+        }, values);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
+        return executeQuery(sql, rs -> {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        }, values);
+    }
+
+    private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
         ResultSet rs = null;
 
         try (Connection conn = getConnection();
@@ -51,13 +48,7 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
+            return resultSetExtractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
