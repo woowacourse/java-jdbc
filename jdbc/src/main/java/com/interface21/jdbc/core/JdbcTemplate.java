@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.exception.EmptyResultDataAccessException;
+import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +92,16 @@ public class JdbcTemplate {
 
     private <T> T getRow(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         if (rs.next()) {
-            return rowMapper.mapRow(rs, rs.getRow());
+            T row = rowMapper.mapRow(rs, rs.getRow());
+            validateIncorrectResultSize(rs);
+            return row;
         }
         throw new EmptyResultDataAccessException("반환할 수 있는 결과가 존재하지 않습니다.");
+    }
+
+    private void validateIncorrectResultSize(ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            throw new IncorrectResultSizeDataAccessException("하나의 결과를 반환할 것을 기대했지만, 반환할 수 있는 결과가 많습니다.");
+        }
     }
 }

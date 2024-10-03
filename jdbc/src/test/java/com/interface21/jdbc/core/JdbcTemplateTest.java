@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.exception.EmptyResultDataAccessException;
+import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,16 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello"))
                 .isInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    @DisplayName("값 하나를 조회할 때, 조회 가능한 값이 여러개라면 예외가 발생한다.")
+    void incorrectResultSize() throws SQLException {
+        when(rs.next()).thenReturn(true, true);
+        String sql = "select * from users where account = ?";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello"))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
