@@ -40,11 +40,10 @@ public class JdbcTemplate {
 
             setParameters(statement, parameters);
             ResultSet resultSet = statement.executeQuery();
-
             List<T> result = new ArrayList<>();
 
             while (resultSet.next()) {
-                T instance = getInstance(clazz);
+                T instance = createNewInstance(clazz);
                 setFields(instance, resultSet);
                 result.add(instance);
             }
@@ -62,7 +61,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getInstance(Class<T> clazz) throws Exception {
+    private <T> T createNewInstance(Class<T> clazz) throws Exception {
         Constructor<T> constructor = clazz.getDeclaredConstructor();
         constructor.setAccessible(true);
         return constructor.newInstance();
