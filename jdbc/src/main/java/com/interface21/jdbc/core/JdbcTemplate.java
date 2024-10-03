@@ -24,7 +24,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql))
+        {
             setParameters(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -45,7 +46,9 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql))
+        {
             setParameters(pstmt, args);
             int updatedRows = pstmt.executeUpdate();
             return updatedRows;
