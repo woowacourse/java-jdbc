@@ -30,15 +30,21 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
 
-            ResultSet rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
+            return executeQuery(pstmt, rowMapper);
+
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
             List<T> queryResult = new ArrayList<>();
             while (rs.next()) {
                 queryResult.add(rowMapper.mapRow(rs));
             }
             return queryResult;
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
