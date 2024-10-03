@@ -29,7 +29,12 @@ public class UserDao {
 
     public List<User> findAll() {
         // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        List<Object> objects = jdbcTemplate.executeList(sql, User.class);
+
+        return objects.stream()
+                .map(o -> (User) o)
+                .toList();
     }
 
     public User findById(final Long id) {
