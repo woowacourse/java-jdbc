@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,26 +13,29 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate<T> {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final List<T> results = new ArrayList<>();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> results = query(sql, rowMapper, parameters);
         if (results.isEmpty()) {
-            return null;
+            throw new EmptyResultDataAccessException();
+        }
+        if (results.size() == 1) {
+            throw new IncorrectResultSizeDataAccessException(results.size());
         }
         return results.getFirst();
     }
 
-    public List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -46,7 +51,8 @@ public class JdbcTemplate<T> {
         }
     }
 
-    private void mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
+        List<T> results = new ArrayList<>();
         try {
             while (resultSet.next()) {
                 T row = rowMapper.map(resultSet);
@@ -55,7 +61,7 @@ public class JdbcTemplate<T> {
         } catch (SQLException e) {
             throw new DataAccessException("쿼리 값과 mapper가 맞지 않습니다.", e);
         }
-
+        return results;
     }
 
     public int update(String sql, Object... parameters) {

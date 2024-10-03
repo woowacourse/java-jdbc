@@ -19,13 +19,13 @@ public class UserDao {
             resultSet.getString(4)
     );
 
-    private final JdbcTemplate<User> jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate<>(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public UserDao(final JdbcTemplate<User> jdbcTemplate) {
+    public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
