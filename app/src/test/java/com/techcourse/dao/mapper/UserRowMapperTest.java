@@ -8,12 +8,14 @@ import static org.mockito.Mockito.when;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class UserRowMapperTest {
 
     private static final UserRowMapper userRowMapper = new UserRowMapper();
 
+    @DisplayName("ResultSet을 받아 User 객체를 매핑한다.")
     @Test
     void mapRow() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
