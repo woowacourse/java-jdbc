@@ -20,14 +20,15 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private JdbcTemplate jdbcTemplate;
+    private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet rs;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
         DataSource dataSource = mock(DataSource.class);
-        Connection conn = mock(Connection.class);
+        conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
 
@@ -47,7 +48,9 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt).setObject(2, user.getPassword()),
-                () -> verify(pstmt, times(1)).executeUpdate()
+                () -> verify(pstmt, times(1)).executeUpdate(),
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close()
         );
     }
 
@@ -66,10 +69,13 @@ class JdbcTemplateTest {
                 user.getAccount());
 
         assertAll(
+                () -> assertThat(actual).isPresent(),
+                () -> assertThat(actual.get().getAccount()).isEqualTo(user.getAccount()),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
-                () -> assertThat(actual).isPresent(),
-                () -> assertThat(actual.get().getAccount()).isEqualTo(user.getAccount())
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
         );
     }
 
@@ -85,9 +91,12 @@ class JdbcTemplateTest {
                 user.getAccount());
 
         assertAll(
+                () -> assertThat(actual).isEmpty(),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
-                () -> assertThat(actual).isEmpty()
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
         );
     }
 
@@ -104,10 +113,13 @@ class JdbcTemplateTest {
         List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
         assertAll(
-                () -> verify(pstmt, times(1)).executeQuery(),
                 () -> assertThat(actual).hasSize(2),
                 () -> assertThat(actual.get(0).getAccount()).isEqualTo("jojo"),
-                () -> assertThat(actual.get(1).getAccount()).isEqualTo("cutehuman")
+                () -> assertThat(actual.get(1).getAccount()).isEqualTo("cutehuman"),
+                () -> verify(pstmt, times(1)).executeQuery(),
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
         );
     }
 
@@ -121,8 +133,11 @@ class JdbcTemplateTest {
         List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
         assertAll(
+                () -> assertThat(actual).isEmpty(),
                 () -> verify(pstmt, times(1)).executeQuery(),
-                () -> assertThat(actual).isEmpty()
+                () -> verify(pstmt, times(1)).close(),
+                () -> verify(conn, times(1)).close(),
+                () -> verify(rs, times(1)).close()
         );
     }
 

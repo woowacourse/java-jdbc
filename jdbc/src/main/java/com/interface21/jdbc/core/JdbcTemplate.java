@@ -48,8 +48,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
-            return extractSingle(rs, extractData);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractSingle(rs, extractData);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -67,8 +68,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
-            return extractMultitude(rs, extractData);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractMultitude(rs, extractData);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);

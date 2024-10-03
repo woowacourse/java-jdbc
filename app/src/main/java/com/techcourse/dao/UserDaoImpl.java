@@ -83,13 +83,14 @@ public class UserDaoImpl implements UserDao {
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, id);
-            ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
+            pstmt.setLong(1, id);
 
-            if (rs.next()) {
-                return Optional.of(generateUser(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(generateUser(rs));
+                }
             }
             return Optional.empty();
         } catch (SQLException e) {
@@ -104,13 +105,14 @@ public class UserDaoImpl implements UserDao {
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, account);
-            ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
+            pstmt.setString(1, account);
 
-            if (rs.next()) {
-                return Optional.of(generateUser(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(generateUser(rs));
+                }
             }
             return Optional.empty();
         } catch (SQLException e) {
