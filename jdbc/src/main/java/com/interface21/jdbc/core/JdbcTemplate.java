@@ -22,55 +22,55 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(Class<T> clazz, String sql, Object... params) {
-        List<T> result = queryForAll(clazz, sql, params);
+    public <T> T query(Class<T> clazz, String sqlStatement, Object... params) {
+        List<T> result = queryForAll(clazz, sqlStatement, params);
 
         if (result.isEmpty()) {
             return null;
         }
-        if (result.size() != 1) {
-            throw new DataAccessException("다수의 데이터가 조회되었습니다.");
+        if (result.size() > 1) {
+            throw new DataAccessException("한 건 이상의 데이터가 조회되었습니다.");
         }
 
         return result.getFirst();
     }
 
-    public <T> List<T> queryForAll(Class<T> clazz, String sql, Object... params) {
+    public <T> List<T> queryForAll(Class<T> clazz, String sqlStatement, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getStatement(conn, sql, params);
-                ResultSet rs = pstmt.executeQuery();
+                PreparedStatement preparedStatement = getStatement(conn, sqlStatement, params);
+                ResultSet resultSet = preparedStatement.executeQuery();
         ) {
-            log.debug("query : {}", sql);
-            return Mapper.queryResolver(clazz, sql, rs);
+            log.debug("query : {}", sqlStatement);
+            return Mapper.doQueryMapping(clazz, sqlStatement, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public void update(String sql, Object... params) {
+    public void update(String sqlStatement, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = getStatement(conn, sql, params);
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = getStatement(connection, sqlStatement, params);
         ) {
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-
+            log.debug("query : {}", sqlStatement);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement getStatement(Connection conn, String sql, Object[] params) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
+    private PreparedStatement getStatement(Connection connection, String sqlStatement, Object[] params)
+            throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sqlStatement);
 
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+        for (int index = 0; index < params.length; index++) {
+            final int databaseIndex = index + 1;
+            preparedStatement.setObject(databaseIndex, params[index]);
         }
 
-        return pstmt;
+        return preparedStatement;
     }
 }

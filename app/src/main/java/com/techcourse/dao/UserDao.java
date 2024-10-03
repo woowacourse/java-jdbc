@@ -24,21 +24,12 @@ public class UserDao {
 
     public void insert(User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        String account = user.getAccount();
-        String password = user.getPassword();
-        String email = user.getEmail();
-
-        jdbcTemplate.update(sql, account, password, email);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(User user) {
         final var sql = "update users set account=?, password=?, email=? where id=?";
-        String account = user.getAccount();
-        String password = user.getPassword();
-        String email = user.getEmail();
-        long id = user.getId();
-
-        jdbcTemplate.update(sql, account, password, email, id);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

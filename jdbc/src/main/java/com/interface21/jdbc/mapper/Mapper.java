@@ -8,49 +8,60 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Mapper {
+
+    private static final Logger log = LoggerFactory.getLogger(Mapper.class);
 
     private Mapper() {
     }
 
-    public static <T> List<T> queryResolver(Class<T> clazz, String sqlStatement, ResultSet resultSet)
+    public static <T> List<T> doQueryMapping(Class<T> clazz, String sqlStatement, ResultSet resultSet)
             throws SQLException {
         if (resultSet.isAfterLast()) {
             return null;
         }
 
-        try {
-            List<String> fieldNames = getFieldNameFrom(sqlStatement);
-            final List<T> queryResult = new ArrayList<>();
+        List<String> fieldNames = getFieldNameFrom(sqlStatement);
+        final List<T> queryResult = new ArrayList<>();
 
-            while (resultSet.next()) {
-                T newInstance = createInstanceFromResultSet(clazz, resultSet, fieldNames);
-                queryResult.add(newInstance);
-            }
-
-            return queryResult;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 NoSuchFieldException e) {
-            throw new RuntimeException(e);
+        while (resultSet.next()) {
+            T newInstance = createInstanceFromResultSet(clazz, resultSet, fieldNames);
+            queryResult.add(newInstance);
         }
+
+        log.info("queryResult = {}", queryResult);
+
+        return queryResult;
     }
 
     private static <T> T createInstanceFromResultSet(Class<T> clazz, ResultSet resultSet, List<String> fieldNames)
-            throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException,
-            NoSuchFieldException, SQLException {
-        final T instance = clazz.getConstructor().newInstance();
+            throws SQLException {
+        try {
+            final T newInstance = instantiate(clazz);
 
-        for (String fieldName : fieldNames) {
-            Field field = clazz.getDeclaredField(fieldName);
+            for (String fieldName : fieldNames) {
+                Field field = clazz.getDeclaredField(fieldName);
 
-            String columnName = toColumnName(fieldName);
-            Object columnValue = resultSet.getObject(columnName);
+                String columnName = toColumnName(fieldName);
+                Object columnValue = resultSet.getObject(columnName);
 
-            setFieldValueToInstance(instance, field, columnValue);
+                setFieldValueToInstance(newInstance, field, columnValue);
+            }
+            return newInstance;
+        } catch (IllegalAccessException | NoSuchFieldException | InstantiationException e) {
+            throw new SQLException(e);
         }
+    }
 
-        return instance;
+    private static <T> T instantiate(Class<T> clazz) throws InstantiationException {
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new InstantiationException();
+        }
     }
 
     private static <T> void setFieldValueToInstance(T instance, Field field, Object columnValue)
@@ -60,14 +71,18 @@ public class Mapper {
         field.setAccessible(false);
     }
 
-    private static List<String> getFieldNameFrom(String sqlStatement) {
-        int selectIndex = sqlStatement.indexOf("select") + "select".length();
-        int fromIndex = sqlStatement.indexOf("from");
-        String arguments = sqlStatement.substring(selectIndex, fromIndex).trim();
+    private static List<String> getFieldNameFrom(String sqlStatement) throws SQLException {
+        try {
+            int selectIndex = sqlStatement.indexOf("select") + "select".length();
+            int fromIndex = sqlStatement.indexOf("from");
+            String arguments = sqlStatement.substring(selectIndex, fromIndex).trim();
 
-        return Arrays.stream(arguments.split(","))
-                .map(String::trim)
-                .toList();
+            return Arrays.stream(arguments.split(","))
+                    .map(String::trim)
+                    .toList();
+        } catch (IndexOutOfBoundsException e) {
+            throw new SQLException(e);
+        }
     }
 
     private static String toColumnName(String fieldName) {
