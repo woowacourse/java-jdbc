@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.dao.mapper.UserRowMapper;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,12 +18,12 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public UserDao(final DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
     }
 
     public void insert(final User user) {
@@ -48,17 +49,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
-    }
-
-    private static class UserRowMapper implements RowMapper<User> {
-        @Override
-        public User mapRow(ResultSet rs) throws SQLException {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email")
-            );
-        }
     }
 }
