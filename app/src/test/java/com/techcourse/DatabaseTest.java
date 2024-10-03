@@ -10,10 +10,11 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class DatabaseTest {
 
     @BeforeEach
-    void deleteData() throws SQLException {
+    void setData() throws SQLException {
         DataSource dataSourceInstance = DataSourceConfig.getInstance();
         Connection connection = dataSourceInstance.getConnection();
         connection.createStatement().execute("DROP TABLE IF EXISTS users");
+
         DatabasePopulatorUtils.execute(dataSourceInstance);
     }
 }

@@ -1,21 +1,19 @@
 package com.techcourse.dao;
 
+import com.techcourse.DatabaseTest;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserDaoTest {
+class UserDaoTest extends DatabaseTest {
 
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
