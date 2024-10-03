@@ -11,7 +11,7 @@ public class DataAccessUtils {
 
     public static <T> T nullableSingleResult(@Nullable Collection<T> results) throws IncorrectResultSizeDataAccessException {
         if (results == null || results.isEmpty()) {
-            throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다.");
+            throw new IncorrectResultSizeDataAccessException();
         }
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
