@@ -12,7 +12,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +41,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("hello");
         when(rs.getString("password")).thenReturn("1234");
         when(rs.getString("email")).thenReturn("my@email.com");
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
         String sql = "select * from users where account = ?";
 
         User user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello");
@@ -73,12 +72,7 @@ class JdbcTemplateTest {
     @Test
     @DisplayName("값 여러개를 조회할 수 있다.")
     void query() throws SQLException {
-        when(rs.getString("account")).thenReturn("hello");
-        when(rs.getString("password")).thenReturn("1234");
-        when(rs.getString("email")).thenReturn("my@email.com");
-        when(rs.next()).thenReturn(true)
-                .thenReturn(true)
-                .thenReturn(false);
+        when(rs.next()).thenReturn(true, true, false);
         String sql = "select * from users";
 
         List<User> users = jdbcTemplate.query(sql, getUserRowMapper());
@@ -103,38 +97,6 @@ class JdbcTemplateTest {
                 rs.getString("email"));
     }
 
-    private static class User {
-
-        private final String account;
-        private final String password;
-        private final String email;
-
-        public User(String account, String password, String email) {
-            this.account = account;
-            this.password = password;
-            this.email = email;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            User user = (User) o;
-            return Objects.equals(account, user.account) && Objects.equals(password, user.password) && Objects.equals(email, user.email);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(account, password, email);
-        }
-
-        @Override
-        public String toString() {
-            return "User{" +
-                    "account='" + account + '\'' +
-                    ", password='" + password + '\'' +
-                    ", email='" + email + '\'' +
-                    '}';
-        }
+    private record User(String account, String password, String email) {
     }
 }
