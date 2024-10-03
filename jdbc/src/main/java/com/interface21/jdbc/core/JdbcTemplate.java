@@ -27,10 +27,7 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
+            setQueryParameter(pstmt, args);
             log.debug("query : {}", sql);
             return executeQuery(pstmt, rowMapper);
 
@@ -65,9 +62,7 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setQueryParameter(pstmt, args);
             log.debug("query : {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -81,9 +76,7 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         ) {
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            setQueryParameter(pstmt, args);
 
             log.debug("query : {}", sql);
             int affectedRows = pstmt.executeUpdate();
@@ -96,6 +89,12 @@ public class JdbcTemplate {
             return affectedRows;
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void setQueryParameter(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
