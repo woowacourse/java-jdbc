@@ -57,7 +57,7 @@ DataSourceConfig는 이미 만들어져있어서 신경쓰지 않아도 될 것 
 
 #### 해결 과정
 
-- [ ] UserDaoTest를 전부 통과 시킨다
+- [x] UserDaoTest를 전부 통과 시킨다
 - [ ] UesrDao에 있는 중복 메서드를 JdbcTemplate에 옮기고 테스트를 전부 통과 시킨다.
   - [ ] insert, findAll, update, findById, findByAccount를 실행할 때 사용하는 JdbcTemplate메서드가 무엇인지 조사한다.
   - [ ] 레벨 2 미션 살펴본다.
