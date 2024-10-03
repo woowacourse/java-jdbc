@@ -62,9 +62,9 @@ class UserDaoTest {
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(preSavedUser.getId());
-        user.changePassword(newPassword);
+        User passwordChangedUser = user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(passwordChangedUser);
 
         final var actual = userDao.findById(preSavedUser.getId());
 
