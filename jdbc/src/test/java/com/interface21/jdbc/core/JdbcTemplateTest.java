@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.Optional;
 import javax.sql.DataSource;
 import org.h2.jdbc.JdbcSQLSyntaxErrorException;
@@ -105,8 +104,7 @@ class JdbcTemplateTest {
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
         Optional<TestUser> user = jdbcTemplate.findOne(
-                "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class,
-                "Joe");
+                "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class, "Joe");
 
         assertThat(user).isEmpty();
     }
