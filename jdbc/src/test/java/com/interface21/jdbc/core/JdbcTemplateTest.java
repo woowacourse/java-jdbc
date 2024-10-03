@@ -90,47 +90,62 @@ class JdbcTemplateTest {
     @DisplayName("단건 조회 정상 실행: 결과값 present")
     @Test
     void findOne_Present() {
+        // given
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
+        // when
         Optional<TestUser> user = jdbcTemplate.findOne(
                 "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class,
                 "John");
 
+        // then
         assertThat(user).hasValue(new TestUser(1L, "John", 20));
     }
 
     @DisplayName("단건 조회 정상 실행: 결과값 empty")
     @Test
     void findOne_Empty() {
+        // given
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
+        // when
         Optional<TestUser> user = jdbcTemplate.findOne(
                 "SELECT id, name, age FROM test_user WHERE name=?", TestUser.class, "Joe");
 
+        // then
         assertThat(user).isEmpty();
     }
 
     @DisplayName("다중 조회 정상 실행: 결과값 0개")
     @Test
     void findAll_NoResults() {
+        // given
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
+        // when
         List<TestUser> users = jdbcTemplate.findAll(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
 
+        // then
         assertThat(users).isEmpty();
     }
 
     @DisplayName("다중 조회 정상 실행: 결과값 2개")
     @Test
     void findAll_TwoResults() {
+        // given
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('Jake', 20)");
 
+        // when
         List<TestUser> users = jdbcTemplate.findAll(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
 
-        assertThat(users).hasSize(2);
+        // then
+        assertThat(users).containsExactly(
+                new TestUser(1L, "John", 20),
+                new TestUser(2L, "Jake", 20)
+        );
     }
 
     private void createTable() {
