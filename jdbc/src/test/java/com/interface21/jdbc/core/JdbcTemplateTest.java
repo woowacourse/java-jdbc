@@ -69,6 +69,19 @@ class JdbcTemplateTest {
                 .containsExactly("Potato1", "Potato2");
     }
 
+    @DisplayName("파라미터를 설정하지 않는 조회 쿼리에 대한 목록을 반환한다.")
+    @Test
+    void queryFroListWithoutParameterSetter() throws SQLException {
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, true, false);
+        when(resultSet.getLong("id")).thenReturn(1L, 2L, 3L);
+
+        List<Long> result = jdbcTemplate.queryForList("SELECT id FROM users",
+                rs -> rs.getLong("id"));
+
+        assertThat(result).containsExactly(1L, 2L, 3L);
+    }
+
     @DisplayName("조회 쿼리에 대한 객체를 반환한다.")
     @Test
     void queryForObject() throws SQLException {
@@ -82,6 +95,19 @@ class JdbcTemplateTest {
         );
 
         assertThat(result).isEqualTo("takoyakimchi");
+    }
+
+    @DisplayName("파라미터를 설정하지 않는 조회 쿼리에 대한 객체를 반환한다.")
+    @Test
+    void queryFroObjectWithoutParameterSetter() throws SQLException {
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, true);
+        when(resultSet.getInt("count")).thenReturn(1);
+
+        int result = jdbcTemplate.queryForObject("SELECT COUNT(id) AS count FROM users",
+                rs -> rs.getInt("count"));
+
+        assertThat(result).isEqualTo(1);
     }
 
     @DisplayName("쿼리를 실행한다.")
