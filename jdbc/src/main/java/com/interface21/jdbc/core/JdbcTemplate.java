@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final int START_ARGUMENT_COUNT = 1;
 
     private final DataSource dataSource;
 
@@ -23,7 +24,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... arguments) {
-        log.debug("query : {}", sql);
+        log.debug("update query : {}", sql);
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -42,19 +43,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            closeResources(pstmt, conn);
         }
     }
 
@@ -68,7 +57,7 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            int count = 1;
+            int count = START_ARGUMENT_COUNT;
             for (Object argument : arguments) {
                 pstmt.setObject(count, argument);
                 count++;
@@ -84,30 +73,12 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            closeResources(rs, pstmt, conn);
         }
     }
 
     public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        log.debug("query : {}", sql);
+        log.debug("queryObject query : {}", sql);
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -131,24 +102,18 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            closeResources(rs, pstmt, conn);
+        }
+    }
 
+    private void closeResources(AutoCloseable... closeables) {
+        for (AutoCloseable closeable : closeables) {
             try {
-                if (conn != null) {
-                    conn.close();
+                if (closeable != null) {
+                    closeable.close();
                 }
-            } catch (SQLException ignored) {
+            } catch (Exception e) {
+                log.error("There was a problem while closing. ", e);
             }
         }
     }
