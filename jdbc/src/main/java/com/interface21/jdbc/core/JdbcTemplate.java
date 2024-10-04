@@ -28,11 +28,8 @@ public class JdbcTemplate {
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int count = 1;
-            for (Object argument : arguments) {
-                pstmt.setObject(count, argument);
-                count++;
-            }
+            setArguments(arguments, pstmt);
+
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -45,11 +42,8 @@ public class JdbcTemplate {
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int count = START_ARGUMENT_COUNT;
-            for (Object argument : arguments) {
-                pstmt.setObject(count, argument);
-                count++;
-            }
+            setArguments(arguments, pstmt);
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> objects = new ArrayList<>();
                 while (rs.next()) {
@@ -68,11 +62,7 @@ public class JdbcTemplate {
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int count = 1;
-            for (Object argument : arguments) {
-                pstmt.setObject(count, argument);
-                count++;
-            }
+            setArguments(arguments, pstmt);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -83,6 +73,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setArguments(Object[] arguments, PreparedStatement pstmt) throws SQLException {
+        int count = START_ARGUMENT_COUNT;
+        for (Object argument : arguments) {
+            pstmt.setObject(count, argument);
+            count++;
         }
     }
 }
