@@ -16,7 +16,7 @@ public class UserHistoryDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(
                 sql,
