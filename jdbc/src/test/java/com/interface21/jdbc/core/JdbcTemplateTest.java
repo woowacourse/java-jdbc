@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +92,19 @@ class JdbcTemplateTest {
         assertThat(password).isEqualTo(testObject.password());
     }
 
-    private record TestObject(Long id, String password) {
+    @DisplayName("SQLException 발생 시 Unchecked Exception으로 래핑한다.")
+    @Test
+    void testQueryFail() throws SQLException {
+        // given
+        when(connection.prepareStatement(any())).thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate()).thenThrow(new SQLException());
 
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.update("BAD SQL"))
+                .isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(SQLException.class);
+    }
+
+    private record TestObject(Long id, String password) {
     }
 }
