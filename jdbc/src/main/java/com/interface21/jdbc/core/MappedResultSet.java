@@ -22,15 +22,23 @@ public class MappedResultSet<T> {
 
     public static <T> MappedResultSet<T> create(RowMapper<T> rowMapper, PreparedStatement preparedStatement, int limitCount)
             throws SQLException {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            List<T> results = mapResults(resultSet, rowMapper, limitCount);
+
+            return new MappedResultSet<>(results);
+        }
+    }
+
+    private static <T> List<T> mapResults(ResultSet resultSet, RowMapper<T> rowMapper, int limitCount)
+            throws SQLException {
         List<T> results = new ArrayList<>();
         AtomicInteger remainingCount = new AtomicInteger(limitCount);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            while (next(resultSet, remainingCount)) {
-                results.add(rowMapper.map(resultSet));
-            }
+
+        while (next(resultSet, remainingCount)) {
+            results.add(rowMapper.map(resultSet));
         }
 
-        return new MappedResultSet<>(results);
+        return results;
     }
 
     private static boolean next(ResultSet resultSet, AtomicInteger remainingCount) throws SQLException {
