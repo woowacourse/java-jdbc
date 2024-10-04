@@ -28,8 +28,8 @@ public class Sql {
         final List<String> bindingParameterNames = parseBindingParameterNames();
         String result = this.value;
         for (String bindingParameterName : bindingParameterNames) {
-            final String parameterValue = parameterSource.getParameterValue(bindingParameterName);
-            result = replaceBindingParameterNameToValue(result, bindingParameterName, parameterValue);
+            final Object parameterValue = parameterSource.getParameter(bindingParameterName);
+            result = bindingParameterValue(result, bindingParameterName, parameterValue);
         }
 
         return new Sql(result);
@@ -47,15 +47,20 @@ public class Sql {
         return bindingParameterNames;
     }
 
-    private String replaceBindingParameterNameToValue(
+    private String bindingParameterValue(
             final String sql,
-            final String bindingParameterName,
-            final String bindingParameterValue
+            final String parameterName,
+            final Object parameterValue
     ) {
-        return sql.replace(":" + bindingParameterName, "'" + bindingParameterValue + "'");
+        final String value = String.valueOf(parameterValue);
+        if (parameterValue instanceof String) {
+            return sql.replace(":" + parameterName, "'" + value + "'");
+        }
+
+        return sql.replace(":" + parameterName, value);
     }
 
     public String getValue() {
-        return this.value;
+        return value;
     }
 }

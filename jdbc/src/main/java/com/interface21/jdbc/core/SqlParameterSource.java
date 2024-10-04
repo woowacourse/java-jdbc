@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +24,18 @@ public class SqlParameterSource {
         }
     }
 
-    public String getParameterValue(final String parameterName) {
+    public Object getParameter(final String parameterName) {
         validateParameterName(parameterName);
         final Field parameter = parseFields().stream()
                 .filter(field -> field.getName().equals(parameterName))
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("일치하는 파라미터가 없습니다."));
-        return convertStringValue(parameter);
+
+        if (parameter.getType() != String.class) {
+            throw new NoSuchElementException("해당 키 값을 가진 문자열 타입의 값이 존재하지 않습니다.");
+        }
+
+        return parseParameterValue(parameter);
     }
 
     private void validateParameterName(final String parameterName) {
@@ -43,10 +49,10 @@ public class SqlParameterSource {
         return List.of(clazz.getDeclaredFields());
     }
 
-    private String convertStringValue(final Field field) {
+    private Object parseParameterValue(final Field field) {
         try {
             field.setAccessible(true);
-            return String.valueOf(field.get(source));
+            return field.get(source);
         } catch (final Exception e) {
             log.error(e.getMessage(), e);
         }
