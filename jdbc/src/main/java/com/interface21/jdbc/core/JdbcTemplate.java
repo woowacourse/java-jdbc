@@ -62,7 +62,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         List<T> re = new ArrayList<>();
         while (rs.next()) {
             re.add(rowMapper.mapRow(rs));
@@ -70,7 +70,7 @@ public class JdbcTemplate {
         return re;
     }
 
-    private static void validateParameterCount(Object[] objects, PreparedStatement pstmt) throws SQLException {
+    private void validateParameterCount(Object[] objects, PreparedStatement pstmt) throws SQLException {
         ParameterMetaData parameterMetaData = pstmt.getParameterMetaData();
         if (objects.length != parameterMetaData.getParameterCount()) {
             throw new IllegalArgumentException("파라미터 값의 개수가 올바르지 않습니다");
