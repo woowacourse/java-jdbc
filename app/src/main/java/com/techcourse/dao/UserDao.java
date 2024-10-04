@@ -49,7 +49,7 @@ public class UserDao {
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
             List<User> users = new ArrayList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 var user = new User(
                         rs.getLong(1),
                         rs.getString(2),
