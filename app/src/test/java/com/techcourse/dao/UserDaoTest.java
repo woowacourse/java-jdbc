@@ -17,7 +17,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final var user = new User("ever", "password", "ever@woowahan.com");
         userDao.insert(user);
     }
 
@@ -32,12 +32,12 @@ class UserDaoTest {
     void findById() {
         final var user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.getAccount()).isEqualTo("ever");
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
+        final var account = "ever";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -45,8 +45,8 @@ class UserDaoTest {
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        final var account = "insert-ever";
+        final var user = new User(account, "password", "ever@woowahan.com");
         userDao.insert(user);
 
         final var actual = userDao.findById(2L);
