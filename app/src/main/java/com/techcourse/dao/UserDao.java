@@ -23,15 +23,25 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         String sql = "SELECT * FROM users";
-        return null;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new User(
+                rs.getInt("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        ));
     }
 
     public User findById(final Long id) {
