@@ -5,5 +5,5 @@ import java.sql.SQLException;
 @FunctionalInterface
 public interface SqlFunction<T, R> {
 
-    R apply(T pstmt) throws SQLException;
+    R apply(T sqlObject) throws SQLException;
 }

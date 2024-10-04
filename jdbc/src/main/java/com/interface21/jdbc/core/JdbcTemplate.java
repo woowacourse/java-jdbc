@@ -15,7 +15,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -51,8 +51,8 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(String sql, SqlFunction<PreparedStatement, T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("Executing query: {}", sql);
 
             return action.apply(preparedStatement);
