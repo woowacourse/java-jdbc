@@ -16,7 +16,13 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow();
+    }
+
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 
     public void insert(final User user) {
