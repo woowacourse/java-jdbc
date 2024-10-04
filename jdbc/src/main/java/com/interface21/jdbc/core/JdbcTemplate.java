@@ -78,13 +78,13 @@ public class JdbcTemplate {
     private <T> T getSingleResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         if (resultSet.next()) {
             T result = rowMapper.mapRow(resultSet, resultSet.getRow());
-            checkForMultipleResults(resultSet);
+            checkForRemainingResult(resultSet);
             return result;
         }
         throw new EmptyResultDataAccessException("No result");
     }
 
-    private void checkForMultipleResults(ResultSet resultSet) throws SQLException {
+    private void checkForRemainingResult(ResultSet resultSet) throws SQLException {
         if (resultSet.next()) {
             throw new NonUniqueResultException("Query returned more than one result.");
         }
