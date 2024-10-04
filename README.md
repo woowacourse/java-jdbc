@@ -27,4 +27,4 @@
   - [x] UserDao 테스트 성공
 
 - 반복적인 DB 관련 작업 코드 개선 
-    - [ ] JdbcTemplate 클래스에 구현
+    - [x] JdbcTemplate 클래스에 구현
