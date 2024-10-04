@@ -8,7 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Consumer<PreparedStatement> beforeExecution) {
+    public void executeUpdate(String sql, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -32,7 +31,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            beforeExecution.accept(pstmt);
+            setParameter(pstmt, parameters);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -55,7 +54,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(String sql, Consumer<PreparedStatement> beforeExecution, Class<T> dataType) {
+    public <T> T executeQuery(String sql, Class<T> dataType, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -65,7 +64,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            beforeExecution.accept(pstmt);
+            setParameter(pstmt, parameters);
             rs = pstmt.executeQuery();
 
             if (!rs.next()) {
@@ -100,8 +99,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQueryReturnList(String sql, Consumer<PreparedStatement> beforeExecution,
-                                              Class<T> dataType) {
+    public <T> List<T> executeQueryReturnList(String sql, Class<T> dataType, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -111,7 +109,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            beforeExecution.accept(pstmt);
+            setParameter(pstmt, parameters);
             rs = pstmt.executeQuery();
 
             if (!rs.next()) {
@@ -143,6 +141,12 @@ public class JdbcTemplate {
                 }
             } catch (SQLException ignored) {
             }
+        }
+    }
+
+    private void setParameter(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
         }
     }
 
