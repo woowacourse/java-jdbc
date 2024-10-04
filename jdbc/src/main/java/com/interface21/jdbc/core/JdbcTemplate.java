@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,7 +25,7 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException sqlException) {
-            throw new RuntimeException(sqlException);
+            throw new DataAccessException("update 메서드를 실행하는 과정에서 예상치 못한 예외가 발생했습니다.", sqlException);
         }
     }
 
@@ -49,7 +50,7 @@ public class JdbcTemplate {
             }
             return results;
         } catch (SQLException sqlException) {
-            throw new RuntimeException(sqlException);
+            throw new DataAccessException("query 메서드를 실행하는 과정에서 예상치 못한 예외가 발생했습니다.", sqlException);
         }
     }
 }
