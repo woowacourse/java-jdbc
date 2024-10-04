@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,11 @@ class JdbcTemplateTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        verify(connection).close();
     }
 
     @DisplayName("쿼리에 파라미터 정보를 올바르게 바인딩한다.")

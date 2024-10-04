@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +23,8 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (PreparedStatement ps = dataSource.getConnection().prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
             setParameters(ps, args);
             return ps.executeUpdate();
         } catch (SQLException e) {
@@ -37,7 +39,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... args) {
         List<T> results = new ArrayList<>();
-        try (PreparedStatement ps = dataSource.getConnection().prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
             setParameters(ps, args);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
