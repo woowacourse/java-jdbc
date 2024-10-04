@@ -82,6 +82,19 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class);
     }
 
+    @DisplayName("SQLException을 DataAccessException으로 변경한다")
+    @Test
+    void sqlExceptionChangeDataAccessException() throws SQLException {
+        String sql = "sql";
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        SQLException sqlException = new SQLException();
+        when(preparedStatement.executeUpdate()).thenThrow(sqlException);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlException);
+    }
+
     record Sample(long id, String name) {
     }
 }
