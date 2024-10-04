@@ -35,7 +35,7 @@ public class UserDao {
 
     public void update(final User user) {
         String sql = "update users set account = ?, email = ?, password = ?";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getEmail(), user.getPassword()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getEmail(), user.getPassword());
     }
 
     public List<User> findAll() {
@@ -45,13 +45,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{id}, USER_ROW_MAPPER)
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT * FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, new String[]{account}, USER_ROW_MAPPER)
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 }

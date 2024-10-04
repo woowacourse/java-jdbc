@@ -70,7 +70,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object ...args) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
         ) {
@@ -87,7 +87,7 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(String sql, Object[] args) {
+    public int update(String sql, Object ...args) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(connection, sql)){
             setPreparedStatementParameter(args, preparedStatement);
