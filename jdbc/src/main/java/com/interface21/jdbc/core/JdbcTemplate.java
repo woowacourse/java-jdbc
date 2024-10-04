@@ -30,13 +30,18 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(ps);
+            setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getResults(resultSet, rowMapper);
         } catch (final Exception e) {
             log.error("query error", e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void setArguments(PreparedStatement ps, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            ps.setObject(i + 1, args[i]);
         }
     }
 
@@ -51,8 +56,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> RowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(ps);
+            setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getSingleResult(resultSet, RowMapper);
         } catch (final Exception e) {
@@ -79,8 +83,7 @@ public class JdbcTemplate {
     public int update(String sql, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
-            pss.setValues(ps);
+            setArguments(ps, args);
             return ps.executeUpdate();
         } catch (final Exception e) {
             log.error("update error", e);
