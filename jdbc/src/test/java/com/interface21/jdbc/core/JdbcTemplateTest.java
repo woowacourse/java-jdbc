@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.DataAccessException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
@@ -9,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,6 +75,20 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObjectFail() throws SQLException {
+        // given
+        String sql = "SELECT * FROM users WHERE id = ?";
+
+        // when
+        doThrow(new SQLException()).when(preparedStatement).executeQuery();
+
+        // then
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+
+    @Test
     void queryForList() throws SQLException {
         // given
         String sql = "SELECT * FROM users WHERE id = ?";
@@ -87,5 +104,18 @@ class JdbcTemplateTest {
         verify(rowMapper).mapRow(resultSet);
         verify(connection).close();
         verify(preparedStatement).close();
+    }
+
+    @Test
+    void queryForListFail() throws SQLException {
+        // given
+        String sql = "SELECT * FROM users WHERE id = ?";
+
+        // when
+        doThrow(new SQLException()).when(preparedStatement).executeQuery();
+
+        // then
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper))
+                .isInstanceOf(DataAccessException.class);
     }
 }
