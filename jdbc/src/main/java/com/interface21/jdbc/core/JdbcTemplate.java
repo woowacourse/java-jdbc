@@ -42,15 +42,20 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             setParameters(ps, args);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.apply(rs));
-                }
-            }
+            retrieveRow(rowMapper, ps, results);
         } catch (SQLException e) {
             throw new RuntimeException("Query 실패", e);
         }
         return results;
+    }
+
+    private <T> void retrieveRow(
+            Function<ResultSet, T> rowMapper, PreparedStatement ps, List<T> results) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(rowMapper.apply(rs));
+            }
+        }
     }
 
     private void setParameters(PreparedStatement ps, Object... args) {
@@ -59,8 +64,8 @@ public class JdbcTemplate {
 
     private void setParameterOfIdx(PreparedStatement ps, Object[] args, int parameterIdx) {
         try {
-            ps.setObject(parameterIdx+1, args[parameterIdx]);
-            log.info("Parameter-{} : {}", parameterIdx+1, args[parameterIdx]);
+            ps.setObject(parameterIdx + 1, args[parameterIdx]);
+            log.info("Parameter-{} : {}", parameterIdx + 1, args[parameterIdx]);
         } catch (SQLException e) {
             throw new RuntimeException("파라미터 설정 실패", e);
         }
