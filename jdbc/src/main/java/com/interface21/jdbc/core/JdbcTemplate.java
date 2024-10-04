@@ -36,13 +36,17 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             setObject(pstmt, parameters);
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-                return result;
+                return mapResults(rs, rowMapper);
             }
         });
+    }
+
+    private <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.mapRow(rs));
+        }
+        return result;
     }
 
     public void update(String sql, Object... parameters) {
