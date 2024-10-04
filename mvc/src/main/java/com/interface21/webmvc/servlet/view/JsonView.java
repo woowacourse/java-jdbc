@@ -1,41 +1,34 @@
 package com.interface21.webmvc.servlet.view;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.web.http.MediaType;
 import com.interface21.webmvc.servlet.View;
-
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class JsonView implements View {
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        if (model == null || model.isEmpty()) {
-            return;
-        }
-
+    public void render(Map<String, ?> model,
+                       HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        final Object renderObject = toJsonObject(model);
-        render(renderObject, response.getOutputStream());
-    }
-
-    private void render(final Object renderObject, final ServletOutputStream outputStream) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(outputStream, renderObject);
-    }
-
-    private Object toJsonObject(final Map<String, ?> model) {
         if (model.size() == 1) {
-            return model.values()
+            Object value = model.values()
                     .stream()
                     .findFirst()
-                    .orElseThrow(IllegalArgumentException::new);
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Has model size of 1, but there was an error getting the value."
+                    ));
+            objectMapper.writeValue(response.getWriter(), value);
+            return;
         }
-        return model;
+        objectMapper.writeValue(response.getWriter(), model);
     }
 }

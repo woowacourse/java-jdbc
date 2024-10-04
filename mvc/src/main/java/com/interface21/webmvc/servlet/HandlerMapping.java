@@ -1,4 +1,4 @@
-package com.interface21.webmvc.servlet.mvc;
+package com.interface21.webmvc.servlet;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -6,5 +6,5 @@ public interface HandlerMapping {
 
     void initialize();
 
-    Object getHandler(final HttpServletRequest request);
+    Object getHandler(HttpServletRequest request);
 }

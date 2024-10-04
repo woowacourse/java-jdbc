@@ -1,5 +1,6 @@
 package com.techcourse;
 
+import com.interface21.core.BeanRegistrar;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ public class Application {
     private static final int DEFAULT_PORT = 8080;
 
     public static void main(String[] args) throws Exception {
+        BeanRegistrar.registerBeans(Application.class);
         final int port = defaultPortIfNull(args);
 
         final var tomcat = new Tomcat();

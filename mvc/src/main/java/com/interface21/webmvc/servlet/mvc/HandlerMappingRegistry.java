@@ -1,5 +1,6 @@
 package com.interface21.webmvc.servlet.mvc;
 
+import com.interface21.webmvc.servlet.HandlerMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,15 +11,15 @@ public class HandlerMappingRegistry {
 
     private final List<HandlerMapping> handlerMappings = new ArrayList<>();
 
-    public void addHandlerMapping(final HandlerMapping handlerMapping) {
+    public void addHandlerMapping(HandlerMapping handlerMapping) {
         handlerMapping.initialize();
         handlerMappings.add(handlerMapping);
     }
 
-    public Optional<Object> getHandler(final HttpServletRequest request) {
+    public Optional<Object> getHandler(HttpServletRequest request) {
         return handlerMappings.stream()
-                .map(hm -> hm.getHandler(request))
+                .map(handlerMapping -> handlerMapping.getHandler(request))
                 .filter(Objects::nonNull)
-                .findFirst();
+                .findAny();
     }
 }
