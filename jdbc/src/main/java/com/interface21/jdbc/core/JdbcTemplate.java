@@ -24,25 +24,29 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params)) {
+             PreparedStatement preparedStatement = buildPreparedStatement(connection, sql, params)) {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object[] params)
+    private PreparedStatement buildPreparedStatement(Connection connection, String sql, Object[] params)
             throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        setParams(params, preparedStatement);
+        return preparedStatement;
+    }
+
+    private void setParams(Object[] params, PreparedStatement preparedStatement) throws SQLException {
         for (int index = 0; index < params.length; index++) {
             preparedStatement.setObject(index + 1, params[index]);
         }
-        return preparedStatement;
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params);
+             PreparedStatement preparedStatement = buildPreparedStatement(connection, sql, params);
              ResultSet resultSet = preparedStatement.executeQuery()) {
             return getResults(rowMapper, resultSet);
         } catch (SQLException e) {
@@ -60,7 +64,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, params);
+             PreparedStatement preparedStatement = buildPreparedStatement(connection, sql, params);
              ResultSet resultSet = preparedStatement.executeQuery()) {
             return getSingleObject(getResults(rowMapper, resultSet));
         } catch (SQLException e) {
