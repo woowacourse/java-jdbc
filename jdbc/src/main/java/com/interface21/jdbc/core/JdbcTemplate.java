@@ -49,6 +49,7 @@ public class JdbcTemplate {
 
             preparedStatementSetter.setValues(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
+
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));

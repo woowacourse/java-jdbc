@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
@@ -7,6 +8,7 @@ import java.util.List;
 
 public class UserDao {
 
+    private static final RowMapper<User> USER_ROW_MAPPER = new UserRowMapper();
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -36,7 +38,7 @@ public class UserDao {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.queryForList(sql,
                 preparedStatement -> {},
-                new UserRowMapper());
+                USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -44,7 +46,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(
                 sql,
                 preparedStatement -> preparedStatement.setLong(1, id),
-                new UserRowMapper());
+                USER_ROW_MAPPER);
     }
 
     public User findByAccount(final String account) {
@@ -52,6 +54,6 @@ public class UserDao {
         return jdbcTemplate.queryForObject(
                 sql,
                 preparedStatement -> preparedStatement.setString(1, account),
-                new UserRowMapper());
+                USER_ROW_MAPPER);
     }
 }
