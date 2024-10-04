@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,18 +17,19 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+    public void update(String sql, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParams(ps, params);
             ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -37,8 +39,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParams(ps, params);
             ResultSet rs = ps.executeQuery();
@@ -48,11 +51,11 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParams(ps, params);
@@ -64,7 +67,7 @@ public class JdbcTemplate {
             return list;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
