@@ -36,7 +36,7 @@ class MappedResultSetTest {
     @Test
     void createWithoutLimit() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
-        when(rowMapper.map(resultSet)).thenReturn("first", "second");
+        when(rowMapper.mapRows(resultSet)).thenReturn("first", "second");
 
         List<String> results = MappedResultSet.create(rowMapper, preparedStatement)
                 .getResults();
@@ -49,7 +49,7 @@ class MappedResultSetTest {
     @Test
     void createWithLimit() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, true, false);
-        when(rowMapper.map(resultSet)).thenReturn("first", "second", "third");
+        when(rowMapper.mapRows(resultSet)).thenReturn("first", "second", "third");
 
         List<String> results = MappedResultSet.create(rowMapper, preparedStatement, 2)
                 .getResults();
