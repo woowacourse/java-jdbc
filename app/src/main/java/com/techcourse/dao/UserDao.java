@@ -10,10 +10,10 @@ import java.util.List;
 public class UserDao {
 
     private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
-                resultSet.getLong(1),
-                resultSet.getString(2),
-                resultSet.getString(3),
-                resultSet.getString(4)
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -29,10 +29,10 @@ public class UserDao {
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, preparedStatement -> {
-                    preparedStatement.setString(1, user.getAccount());
-                    preparedStatement.setString(2, user.getPassword());
-                    preparedStatement.setString(3, user.getEmail());
-                });
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+        });
     }
 
     public void update(User user) {

@@ -30,7 +30,7 @@ public class JdbcTemplate {
         return queryForList(sql, rowMapper, preparedStatement -> {});
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper,  ParameterSetter parameterSetter) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
         return execute(sql, (preparedStatement) -> {
             parameterSetter.setParameters(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement)
