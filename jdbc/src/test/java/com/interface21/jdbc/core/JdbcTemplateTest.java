@@ -13,7 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -96,14 +95,14 @@ class JdbcTemplateTest {
         User rush = new User(3L, "rush", "password", "emil");
 
         when(resultSet.next()).thenReturn(true, true, true, true, false);
-        when(resultSet.getInt("id")).thenReturn(1, 2, 3);
+        when(resultSet.getLong("id")).thenReturn(1L, 2L, 3L);
         when(resultSet.getString("account")).thenReturn(gugu.account, kyum.account, rush.account);
         when(resultSet.getString("password")).thenReturn(gugu.password, kyum.password, rush.password);
         when(resultSet.getString("email")).thenReturn(gugu.email, kyum.email, rush.email);
 
         // when
         List<User> users = jdbcTemplate.query(sql, rs -> new User(
-                rs.getInt("id"),
+                rs.getLong("id"),
                 rs.getString("account"),
                 rs.getString("password"),
                 rs.getString("email")
@@ -125,19 +124,20 @@ class JdbcTemplateTest {
         User gugu = new User(1L, "gugu", "password", "email");
 
         when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getInt("id")).thenReturn(1);
+        when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("account")).thenReturn(gugu.account);
         when(resultSet.getString("password")).thenReturn(gugu.password);
         when(resultSet.getString("email")).thenReturn(gugu.email);
 
         // when
         User findUser = jdbcTemplate.queryForObject(sql, rs -> new User(
-                rs.getInt("id"),
+                rs.getLong("id"),
                 rs.getString("account"),
                 rs.getString("password"),
                 rs.getString("email")
         ), 1L);
 
+        // then
         assertAll(
                 () -> assertThat(findUser).isEqualTo(gugu),
                 () -> verify(prepareStatement, times(1)).executeQuery(),
@@ -145,36 +145,8 @@ class JdbcTemplateTest {
         );
     }
 
-    static class User {
+    record User(Long id, String account, String password, String email) {
 
-        private Long id;
-        private final String account;
-        private String password;
-        private final String email;
-
-        public User(long id, String account, String password, String email) {
-            this.id = id;
-            this.account = account;
-            this.password = password;
-            this.email = email;
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (this == object) {
-                return true;
-            }
-            if (object == null || getClass() != object.getClass()) {
-                return false;
-            }
-            User user = (User) object;
-            return Objects.equals(id, user.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(id);
-        }
     }
 }
 
