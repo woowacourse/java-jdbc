@@ -18,70 +18,56 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public int update(String sql, Object... args) {
-        logDebug(sql);
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; args != null && i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
-
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            return 0;
-        }
+        Integer result = execute(sql, PreparedStatement::executeUpdate, args);
+        return Optional.ofNullable(result).orElse(0);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        ArrayList<T> results = new ArrayList<>();
-        logDebug(sql);
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; args != null && i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
-
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, statement -> {
+            ArrayList<T> results = new ArrayList<>();
             ResultSet resultSet = statement.executeQuery();
 
             for (int rowNum = 0; resultSet.next(); rowNum++) {
                 results.add(rowMapper.mapRow(resultSet, rowNum));
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
 
-        return Collections.unmodifiableList(results);
+            return Collections.unmodifiableList(results);
+        }, args);
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        logDebug(sql);
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            for (int i = 0; args != null && i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
-
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, statement -> {
             ResultSet resultSet = statement.executeQuery();
             if (!resultSet.next()) {
                 return Optional.empty();
             }
 
             return Optional.of(rowMapper.mapRow(resultSet, 0));
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            return Optional.empty();
-        }
+        }, args);
     }
 
-    private void logDebug(String sql) {
+    private <T> T execute(String sql, SqlExecutor<T> executor, Object... args) {
         log.debug("query : {}", sql);
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            if (args == null) {
+                return executor.execute(statement);
+            }
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+            return executor.execute(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        return null;
     }
 }
