@@ -32,12 +32,12 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(preparedStatement);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
+            return null;
         } catch (SQLException sqlException) {
             throw new RuntimeException(sqlException);
         }
@@ -48,13 +48,12 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(preparedStatement);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
+            return results;
         } catch (SQLException sqlException) {
             throw new RuntimeException(sqlException);
         }
