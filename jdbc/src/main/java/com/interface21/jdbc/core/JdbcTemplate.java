@@ -24,11 +24,8 @@ public class JdbcTemplate {
     }
 
     public void execute(String query, Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
@@ -37,30 +34,13 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> T getResult(String query, ObjectMapper<T> objectMapper, Object... parameters) {
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.info("query : {}", query);
@@ -73,29 +53,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public <T> List<T> getResults(String query, ObjectMapper<T> objectMapper, Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.info("query : {}", query);
@@ -109,28 +72,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for (int i = 1; i <= parameters.length; i++) {
-            setParameter(pstmt, parameters[i-1], i);
+            setParameter(pstmt, parameters[i - 1], i);
         }
     }
+
     private void setParameter(PreparedStatement pstmt, Object parameter, int index) throws SQLException {
         Class<?> parameterClass = parameter.getClass();
         if (parameterClass.equals(String.class)) {
