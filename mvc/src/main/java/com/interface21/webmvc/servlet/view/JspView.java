@@ -1,13 +1,13 @@
 package com.interface21.webmvc.servlet.view;
 
+import com.interface21.webmvc.servlet.View;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.interface21.webmvc.servlet.View;
 
 import java.util.Map;
-import java.util.Objects;
 
 public class JspView implements View {
 
@@ -18,14 +18,17 @@ public class JspView implements View {
     private final String viewName;
 
     public JspView(final String viewName) {
-        this.viewName = Objects.requireNonNull(viewName, "viewName is null. 이동할 URL을 입력하세요.");
+        this.viewName = viewName;
     }
 
     @Override
-    public void render(final Map<String, ?> model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
-        log.debug("ViewName : {}", viewName);
-        if (viewName.startsWith(REDIRECT_PREFIX)) {
-            response.sendRedirect(viewName.substring(REDIRECT_PREFIX.length()));
+    public void render(
+            final Map<String, ?> model,
+            final HttpServletRequest request,
+            final HttpServletResponse response
+    ) throws Exception {
+        if (viewName.startsWith(JspView.REDIRECT_PREFIX)) {
+            response.sendRedirect(viewName.substring(JspView.REDIRECT_PREFIX.length()));
             return;
         }
 
@@ -34,7 +37,7 @@ public class JspView implements View {
             request.setAttribute(key, model.get(key));
         });
 
-        final var requestDispatcher = request.getRequestDispatcher(viewName);
+        RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewName);
         requestDispatcher.forward(request, response);
     }
 }
