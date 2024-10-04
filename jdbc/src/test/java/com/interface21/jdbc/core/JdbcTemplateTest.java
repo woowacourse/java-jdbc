@@ -92,7 +92,7 @@ class JdbcTemplateTest {
         String result = jdbcTemplate.queryForObject("SELECT name FROM users WHERE id = ?",
                 rs -> rs.getString("name"),
                 parameterStatement -> parameterStatement.setLong(1, 1L)
-        );
+        ).orElseThrow();
 
         assertThat(result).isEqualTo("takoyakimchi");
     }
@@ -105,7 +105,8 @@ class JdbcTemplateTest {
         when(resultSet.getInt("count")).thenReturn(1);
 
         int result = jdbcTemplate.queryForObject("SELECT COUNT(id) AS count FROM users",
-                rs -> rs.getInt("count"));
+                rs -> rs.getInt("count"))
+                .orElseThrow();
 
         assertThat(result).isEqualTo(1);
     }

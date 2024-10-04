@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +39,11 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
         return queryForObject(sql, rowMapper, preparedStatement -> {});
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
         return execute(sql, (preparedStatement) -> {
             parameterSetter.setParameters(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement, 1)

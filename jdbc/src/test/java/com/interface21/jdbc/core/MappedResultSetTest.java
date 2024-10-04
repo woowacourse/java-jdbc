@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,20 +58,20 @@ class MappedResultSetTest {
                 .containsExactly("first", "second");
     }
 
-    @DisplayName("첫 번째 요소가 존재하지 않는 경우 getFirst에서 null을 반환한다.")
+    @DisplayName("첫 번째 요소가 존재하지 않는 경우 getFirst에서 Optional.empty를 반환한다.")
     @Test
     void getFirstWhenResultsAreEmpty() {
         MappedResultSet<String> mappedResultSet = new MappedResultSet<>(List.of());
-        String firstResult = mappedResultSet.getFirst();
+        Optional<String> firstResult = mappedResultSet.getFirst();
 
-        assertThat(firstResult).isNull();
+        assertThat(firstResult).isEmpty();
     }
 
     @DisplayName("첫 번째 요소가 존재하는 경우 getFirst에서 해당 요소를 반환한다.")
     @Test
     void getFirstWhenResultsAreNotEmpty() {
         MappedResultSet<String> mappedResultSet = new MappedResultSet<>(List.of("first", "second"));
-        String firstResult = mappedResultSet.getFirst();
+        String firstResult = mappedResultSet.getFirst().orElseThrow();
 
         assertThat(firstResult).isEqualTo("first");
     }

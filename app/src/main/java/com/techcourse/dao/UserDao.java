@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
+import java.util.Optional;
 import javax.sql.DataSource;
 import java.util.List;
 
@@ -50,13 +51,13 @@ public class UserDao {
         return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatement ->
                 preparedStatement.setLong(1, id));
     }
 
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatement ->
                 preparedStatement.setString(1, account));

@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MappedResultSet<T> {
@@ -50,10 +51,10 @@ public class MappedResultSet<T> {
         return Collections.unmodifiableList(results);
     }
 
-    public T getFirst() {
+    public Optional<T> getFirst() {
         if (results.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
-        return results.getFirst();
+        return Optional.of(results.getFirst());
     }
 }
