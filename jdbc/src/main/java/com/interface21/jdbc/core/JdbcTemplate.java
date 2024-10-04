@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class JdbcTemplate {
@@ -28,6 +29,17 @@ public class JdbcTemplate {
             connection.setAutoCommit(false);
             preparedStatement.executeUpdate();
             connection.commit();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(PreparedStatementCreator creator, RowMapper<T> rowMapper) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
