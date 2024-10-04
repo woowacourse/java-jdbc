@@ -40,7 +40,7 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException(SINGLE_RESULT);
         }
-        if (results.size() > 1) {
+        if (results.size() > SINGLE_RESULT) {
             throw new IncorrectResultSizeDataAccessException(SINGLE_RESULT, results.size());
         }
         return results.getFirst();
