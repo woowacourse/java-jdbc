@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int UNIQUE_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -39,20 +42,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParams(ps, params);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = queryForList(sql, rowMapper, params);
+        validateResultUniqueness(results);
+        return results.getFirst();
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -60,14 +53,23 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             setParams(ps, params);
             ResultSet rs = ps.executeQuery();
-            List<T> list = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             while (rs.next()) {
-                list.add(rowMapper.mapRow(rs));
+                results.add(rowMapper.mapRow(rs));
             }
-            return list;
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> void validateResultUniqueness(List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(UNIQUE_SIZE);
+        }
+        if (results.size() > UNIQUE_SIZE) {
+            throw new IncorrectResultSizeDataAccessException(UNIQUE_SIZE, results.size());
         }
     }
 }

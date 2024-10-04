@@ -57,12 +57,12 @@ class JdbcTemplateTest {
 
     @DisplayName("입력된 RowMapper에 따라 값을 가져온다.")
     @Test
-    void query() throws SQLException {
+    void queryForObject() throws SQLException {
         // given
         String sql = "select id, name, age from people where id = ?";
 
         // when
-        jdbcTemplate.query(sql, ROW_MAPPER);
+        jdbcTemplate.queryForObject(sql, ROW_MAPPER);
 
         // then
         Mockito.verify(dataSource).getConnection();
