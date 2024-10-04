@@ -41,8 +41,7 @@ class MappedResultSetTest {
         List<String> results = MappedResultSet.create(rowMapper, preparedStatement)
                 .getResults();
 
-        assertThat(results).hasSize(2)
-                .containsExactly("first", "second");
+        assertThat(results).containsExactly("first", "second");
     }
 
     @DisplayName("limitCount 내에 포함되는 요소만 반환한다.")
@@ -54,8 +53,7 @@ class MappedResultSetTest {
         List<String> results = MappedResultSet.create(rowMapper, preparedStatement, 2)
                 .getResults();
 
-        assertThat(results).hasSize(2)
-                .containsExactly("first", "second");
+        assertThat(results).containsExactly("first", "second");
     }
 
     @DisplayName("첫 번째 요소가 존재하지 않는 경우 getFirst에서 Optional.empty를 반환한다.")

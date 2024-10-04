@@ -65,8 +65,7 @@ class JdbcTemplateTest {
 
         List<String> results = jdbcTemplate.queryForList("SELECT name FROM users", rs -> rs.getString("name"));
 
-        assertThat(results).hasSize(2)
-                .containsExactly("Potato1", "Potato2");
+        assertThat(results).containsExactly("Potato1", "Potato2");
     }
 
     @DisplayName("파라미터를 설정하지 않는 조회 쿼리에 대한 목록을 반환한다.")
