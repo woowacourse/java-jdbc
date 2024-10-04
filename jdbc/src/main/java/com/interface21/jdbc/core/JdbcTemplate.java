@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -23,66 +24,59 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object ... objects) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            validateParameterCount(objects, pstmt);
-            setParameter(objects, pstmt);
-            pstmt.executeUpdate();
+            validateParameterCount(objects, preparedStatement);
+            setParameter(objects, preparedStatement);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
         List<T> query = query(sql, rowMapper, objects);
-        for (var u : query) {
-            System.out.println(u);
-        }
         if (query.size() > 1) {
-            throw new IllegalArgumentException("2개 이상의 결과가 조회되었습니다");
+            throw new DataAccessException("2개 이상의 결과가 조회되었습니다");
         }
         return query.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ...objects) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            validateParameterCount(objects, pstmt);
-            setParameter(objects, pstmt);
-            rs = pstmt.executeQuery();
-            return getQueryResult(rowMapper, rs);
+            validateParameterCount(objects, preparedStatement);
+            setParameter(objects, preparedStatement);
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                return getQueryResult(rowMapper, rs);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e.getMessage(), e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        List<T> re = new ArrayList<>();
-        while (rs.next()) {
-            re.add(rowMapper.mapRow(rs));
+    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
         }
-        return re;
+        return result;
     }
 
-    private void validateParameterCount(Object[] objects, PreparedStatement pstmt) throws SQLException {
-        ParameterMetaData parameterMetaData = pstmt.getParameterMetaData();
+    private void validateParameterCount(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
+        ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
         if (objects.length != parameterMetaData.getParameterCount()) {
-            throw new IllegalArgumentException("파라미터 값의 개수가 올바르지 않습니다");
+            throw new DataAccessException("파라미터 값의 개수가 올바르지 않습니다");
         }
     }
 
-    private void setParameter(Object[] objects, PreparedStatement pstmt) throws SQLException {
+    private void setParameter(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < objects.length; i++) {
-            pstmt.setObject(i + 1, objects[i]);
+            preparedStatement.setObject(i + 1, objects[i]);
         }
     }
 }
