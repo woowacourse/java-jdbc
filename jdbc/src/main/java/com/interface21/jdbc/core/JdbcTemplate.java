@@ -48,18 +48,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, @Nullable PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        return execute(sql, pstmt -> {
-            if (pss != null) {
-                pss.setValues(pstmt);
-            }
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            }
-        });
+        List<T> results = query(sql, pss, rowMapper);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Empty Result");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("Incorrect Result Size");
+        }
+        return results.getFirst();
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {

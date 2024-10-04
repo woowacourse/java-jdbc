@@ -54,4 +54,10 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
+
+    public void deleteAll() {
+        String sql = "delete from users";
+
+        jdbcTemplate.update(sql);
+    }
 }
