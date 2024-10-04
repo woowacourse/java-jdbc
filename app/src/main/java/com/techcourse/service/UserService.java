@@ -29,4 +29,8 @@ public class UserService {
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
     }
+
+    public User findByAccount(String account) {
+        return userDao.findByAccount(account);
+    }
 }
