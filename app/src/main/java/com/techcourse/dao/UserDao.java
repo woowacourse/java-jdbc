@@ -28,7 +28,7 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        String sql = "insert int users (account, password, email) values (?, ?, ?)";
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, preparedStatement -> {
             preparedStatement.setString(1, user.getAccount());
             preparedStatement.setString(2, user.getPassword());
