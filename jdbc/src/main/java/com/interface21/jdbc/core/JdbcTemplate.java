@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,15 +22,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return execute(sql, pstmt -> {
-            setObject(pstmt, parameters);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-            }
-            return null;
-        });
+        List<T> result = query(sql, rowMapper, parameters);
+        if (result.isEmpty()) {
+            throw new DataAccessException("조회된 데이터가 없습니다.");
+        }
+        if (result.size() > 1) {
+            throw new DataAccessException("조회된 데이터가 두 건 이상입니다.");
+        }
+        return result.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
