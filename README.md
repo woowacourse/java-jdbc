@@ -17,3 +17,13 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+---
+
+## 1단계 - JDBC 라이브러리 구현하기
+
+- [x] JDBC 라이브러리 구현
+  - 개발자는 SQL 쿼리 작성, 쿼리에 전달할 인자, SELECT 구문일 경우 조회 결과를 추출하는 것만 집중
+
+
+
