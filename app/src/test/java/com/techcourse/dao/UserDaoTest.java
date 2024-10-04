@@ -14,7 +14,6 @@ class UserDaoTest {
 
     private UserDao userDao;
 
-
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
