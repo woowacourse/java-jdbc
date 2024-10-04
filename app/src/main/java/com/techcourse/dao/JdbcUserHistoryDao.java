@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.dao.mapper.UserHistoryMapper;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcUserHistoryDao implements UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcUserHistoryDao.class);
+    private static final RowMapper<UserHistory> ROW_MAPPER = new UserHistoryMapper();
 
     private final DataSource dataSource;
 
