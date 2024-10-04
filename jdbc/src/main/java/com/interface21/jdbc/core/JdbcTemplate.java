@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class JdbcTemplate {
 
@@ -13,5 +16,21 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void update(PreparedStatementCreator creator) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
+            connection.setAutoCommit(false);
+            preparedStatement.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }
