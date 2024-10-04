@@ -54,17 +54,17 @@ public class JdbcTemplate {
         }
     }
 
-    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
-        }
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(sql, rowMapper, args);
         if (result.isEmpty()) {
             return null;
         }
         return result.getFirst();
+    }
+
+    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
+        }
     }
 }
