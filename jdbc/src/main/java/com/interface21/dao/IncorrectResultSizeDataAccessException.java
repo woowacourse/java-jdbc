@@ -7,7 +7,7 @@ public class IncorrectResultSizeDataAccessException extends DataAccessException 
     private final int actualSize;
 
     public IncorrectResultSizeDataAccessException(int expectedSize, int actualSize) {
-        super("올바르지 않은 결과입니다. expected size: %d, actual size: %d".formatted(expectedSize, actualSize));
+        super("Incorrect result size. expected size: %d, actual size: %d".formatted(expectedSize, actualSize));
         this.expectedSize = expectedSize;
         this.actualSize = actualSize;
     }
