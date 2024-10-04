@@ -36,6 +36,9 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
         List<T> query = query(sql, rowMapper, objects);
+        if (query.size() > 1) {
+            throw new IllegalArgumentException("2개 이상의 결과가 조회되었습니다");
+        }
         return query.getFirst();
     }
 
