@@ -16,6 +16,7 @@ import javax.sql.DataSource;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int PARAMETER_START_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -43,8 +44,8 @@ public class JdbcTemplate {
 
     private void setPreparedStatementParameter(Object[] args, PreparedStatement preparedStatement) {
         try {
-            for (int paramterIndex = 1; paramterIndex <= args.length; paramterIndex++) {
-                preparedStatement.setObject(paramterIndex, args[paramterIndex - 1]);
+            for (int parameterIndex = PARAMETER_START_INDEX; parameterIndex <= args.length; parameterIndex++) {
+                preparedStatement.setObject(parameterIndex, args[parameterIndex - PARAMETER_START_INDEX]);
             }
         } catch (SQLException e) {
             log.info("SET_PREPARED_STATEMENT_PARAMETER_ERROR :: {}", e.getMessage(), e);
