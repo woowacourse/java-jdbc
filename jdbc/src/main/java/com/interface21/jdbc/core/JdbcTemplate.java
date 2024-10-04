@@ -31,7 +31,8 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             setArguments(ps, args);
-            return executeQuery(ps, rowMapper);
+            ResultSet resultSet = ps.executeQuery();
+            return getResults(resultSet, rowMapper);
         } catch (final Exception e) {
             log.error("query error", e);
             throw new DataAccessException(e.getMessage(), e);
@@ -41,12 +42,6 @@ public class JdbcTemplate {
     private void setArguments(PreparedStatement ps, Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             ps.setObject(i + 1, args[i]);
-        }
-    }
-
-    private <T> List<T> executeQuery(PreparedStatement ps, RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet resultSet = ps.executeQuery()) {
-            return getResults(resultSet, rowMapper);
         }
     }
 
@@ -62,16 +57,11 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             setArguments(ps, args);
-            return excuteQueryForObject(RowMapper, ps);
+            ResultSet resultSet = ps.executeQuery();
+            return getSingleResult(resultSet, RowMapper);
         } catch (final Exception e) {
             log.error("queryForObject error", e);
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> T excuteQueryForObject(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
-        try (ResultSet resultSet = ps.executeQuery()) {
-            return getSingleResult(resultSet, rowMapper);
         }
     }
 
