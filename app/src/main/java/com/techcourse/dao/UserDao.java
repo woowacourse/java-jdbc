@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
-import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,14 +39,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id)
-                .orElseThrow(() -> new NoSuchElementException("해당 id에 대한 유저가 존재하지 않습니다. id = [%d]".formatted(id)));
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "해당 account 에 대한 유저가 존재하지 않습니다. account = [%s]".formatted(account)));
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
