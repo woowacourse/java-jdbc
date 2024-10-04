@@ -7,10 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -57,7 +56,7 @@ public class JdbcTemplate {
 
             List<T> results = new ArrayList<>();
 
-            if (rs.next()) {
+            while (rs.next()) {
                 results.add(rowMapper.mapRow(rs, rs.getRow()));
             }
             return results;
@@ -105,7 +104,8 @@ public class JdbcTemplate {
             if (rs != null) {
                 rs.close();
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException ignored) {
+        }
     }
 
     private void closeStatement(PreparedStatement pstmt) {
@@ -113,7 +113,8 @@ public class JdbcTemplate {
             if (pstmt != null) {
                 pstmt.close();
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException ignored) {
+        }
     }
 
     private void releaseConnection(Connection conn) {
@@ -121,6 +122,7 @@ public class JdbcTemplate {
             if (conn != null) {
                 conn.close();
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException ignored) {
+        }
     }
 }
