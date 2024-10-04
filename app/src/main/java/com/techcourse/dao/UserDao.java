@@ -12,7 +12,7 @@ import java.util.List;
 
 public class UserDao {
 
-    public static final RowMapper<User> USER_ROW_MAPPER = resultSet -> {
+    public static final RowMapper<User> USER_ROW_MAPPER = (resultSet, rowNum) -> {
         if (resultSet.next()) {
             return new User(
                     resultSet.getLong(1),
@@ -52,8 +52,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
