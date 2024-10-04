@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
     }
 
-    @DisplayName("업데이트 쿼리를 실행한다.")
+    @DisplayName("UPDATE 쿼리를 실행한다.")
     @Test
     void update() throws SQLException {
         when(preparedStatement.executeUpdate()).thenReturn(1);
@@ -53,6 +54,22 @@ class JdbcTemplateTest {
         assertThat(result).isEqualTo(1);
         verify(preparedStatement).setString(1, "TRE");
         verify(preparedStatement).setLong(2, 1);
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @DisplayName("INSERT 쿼리를 실행한다.")
+    @Test
+    void insert() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        int result = jdbcTemplate.update("INSERT INTO users (name, email) VALUE (?, ?)", preparedStatement -> {
+            preparedStatement.setString(1, "TRE");
+            preparedStatement.setString(2, "TRE@gmail.com");
+        });
+
+        assertThat(result).isEqualTo(1);
+        verify(preparedStatement).setString(1, "TRE");
+        verify(preparedStatement).setString(2, "TRE@gmail.com");
         verify(preparedStatement).executeUpdate();
     }
 
@@ -120,5 +137,17 @@ class JdbcTemplateTest {
 
         assertThat(result).isEqualTo(1);
         verify(preparedStatement).executeUpdate();
+    }
+
+    @DisplayName("SQLException이 발생하는 경우 RuntimeException으로 변환해 준다.")
+    @Test
+    void convertSQLException() {
+        SqlFunction<PreparedStatement, Integer> action = (preparedStatement) -> {
+            throw new SQLException("잘못된 요청입니다.");
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.execute("INSERT into", action))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("잘못된 요청입니다.");
     }
 }

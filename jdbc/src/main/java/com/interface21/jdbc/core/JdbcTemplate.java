@@ -59,7 +59,7 @@ public class JdbcTemplate {
             return action.apply(preparedStatement);
         } catch (SQLException e) {
             log.error("Error executing query: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 }
