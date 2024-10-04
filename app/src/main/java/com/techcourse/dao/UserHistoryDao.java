@@ -11,12 +11,12 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+    public void log(UserHistory userHistory) {
+        String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
                 sql,

@@ -18,7 +18,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -36,6 +36,9 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
         List<T> query = query(sql, rowMapper, objects);
+        for (var u : query) {
+            System.out.println(u);
+        }
         if (query.size() > 1) {
             throw new IllegalArgumentException("2개 이상의 결과가 조회되었습니다");
         }
