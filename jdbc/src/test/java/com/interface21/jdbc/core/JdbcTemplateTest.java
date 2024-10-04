@@ -8,7 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,7 +33,7 @@ class JdbcTemplateTest {
         resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(any(String.class))).thenReturn(preparedStatement);
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
