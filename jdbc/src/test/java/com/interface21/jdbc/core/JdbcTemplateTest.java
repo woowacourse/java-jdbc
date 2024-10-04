@@ -1,11 +1,9 @@
 package com.interface21.jdbc.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,15 +28,15 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void set() {
+    void setup() throws SQLException {
         jdbcTemplate = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
     }
 
     @Test
     @DisplayName("여러건 조회 쿼리를 실행한다.")
     void query() throws SQLException {
         String sql = "select * from test where arg1 = ? and arg2 = ?";
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
@@ -46,8 +44,8 @@ class JdbcTemplateTest {
         jdbcTemplate.query(sql, TEST_ROW_MAPPER, "arg1", "arg2");
 
         assertAll(
-                () -> verify(preparedStatement, times(2)).setObject(anyInt(), any()),
-                () -> verify(resultSet, times(3)).next()
+                () -> verify(preparedStatement).setObject(1, "arg1"),
+                () -> verify(preparedStatement).setObject(2, "arg2")
         );
     }
 
@@ -55,25 +53,22 @@ class JdbcTemplateTest {
     @DisplayName("단일건 조회 쿼리를 실행한다.")
     void queryForObject() throws SQLException {
         String sql = "select * from test where arg1 = ? and arg2 = ?";
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.getRow()).thenReturn(1);
         when(resultSet.next()).thenReturn(true).thenReturn(false);
 
         jdbcTemplate.queryForObject(sql, TEST_ROW_MAPPER, "arg1", "arg2");
 
         assertAll(
-                () -> verify(preparedStatement, times(2)).setObject(anyInt(), any()),
-                () -> verify(resultSet, times(2)).next()
+                () -> verify(preparedStatement).setObject(1, "arg1"),
+                () -> verify(preparedStatement).setObject(2, "arg2")
         );
     }
 
     @Test
     @DisplayName("단일건 조회 쿼리문 실행 중 조회 결과가 없으면 예외가 발생한다.")
-    void queryForObject_noResult() throws SQLException {
+    void queryForObjectWhenNoResult() throws SQLException {
         String sql = "select * from test where arg1 = ? and arg2 = ?";
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
@@ -85,9 +80,8 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("단일건 조회 쿼리문 수행 중 조획 결과가 2개 이상일 경우 예외가 발생한다.")
-    void queryForObject_moreThanOne() throws SQLException {
+    void queryForObjectWhenMoreThanOne() throws SQLException {
         final String sql = "select * from test where arg1 = ? and arg2 = ?";
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
@@ -101,11 +95,56 @@ class JdbcTemplateTest {
     @DisplayName("업데이트 쿼리를 실행한다.")
     void update() throws SQLException {
         final String sql = "update test set arg1 = ?, arg2 = ?";
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(any(String.class))).thenReturn(preparedStatement);
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
 
         jdbcTemplate.update(sql, "arg1", "arg2");
 
-        verify(preparedStatement, times(2)).setObject(anyInt(), any(String.class));
+        assertAll(
+                () -> verify(preparedStatement).setObject(1, "arg1"),
+                () -> verify(preparedStatement).setObject(2, "arg2")
+        );
+    }
+
+    @Test
+    @DisplayName("결과 객체 변환이 올바르게 수행되는지 테스트한다.")
+    void queryForObjectGetObject() throws SQLException {
+
+        String sql = "SELECT arg1, arg2 FROM test WHERE id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
+        when(resultSet.getInt("arg1")).thenReturn(1);
+        when(resultSet.getString("arg2")).thenReturn("arg2");
+
+        TestObject result = jdbcTemplate.queryForObject(sql,
+                (rs, rowNum) -> new TestObject(
+                        rs.getInt("arg1"),
+                        rs.getString("arg2")
+                ),
+                1, "arg2"
+        );
+
+        assertAll(
+                () -> assertThat(result.getArg1()).isEqualTo(1),
+                () -> assertThat(result.getArg2()).isEqualTo("arg2")
+        );
+    }
+
+    private static class TestObject {
+        private final int arg1;
+        private final String arg2;
+
+        public TestObject(int arg1, String arg2) {
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+        }
+
+        public int getArg1() {
+            return arg1;
+        }
+
+        public String getArg2() {
+            return arg2;
+        }
     }
 }
