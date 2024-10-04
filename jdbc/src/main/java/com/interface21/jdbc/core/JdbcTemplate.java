@@ -10,6 +10,7 @@ import java.util.List;
 
 public class JdbcTemplate {
 
+    private static final int OBJECT_INDEX = 0;
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -28,22 +29,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            return null;
-        } catch (SQLException sqlException) {
-            throw new RuntimeException(sqlException);
-        }
+        return query(sql, preparedStatementSetter, rowMapper).get(OBJECT_INDEX);
     }
 
     public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        return query(sql, preparedStatementSetter, rowMapper);
+    }
+
+    private <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
