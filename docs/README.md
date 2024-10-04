@@ -11,4 +11,4 @@
 - [x] DAO를 추상화한다.
 - [x] ResultSet을 객체로 변환하는 인터페이스 RowMapper를 구현한다.
     - [x] Domain들의 RowMapper 구현
-- [ ] 반복적인 DB 관련 작업을 대신 수행할 JdbcTemplate 구현하기
+- [x] 반복적인 DB 관련 작업을 대신 수행할 JdbcTemplate 구현하기

@@ -6,9 +6,10 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class UserDaoTest {
+class JdbcUserDaoTest {
 
     private UserDao userDao;
 
@@ -21,6 +22,7 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
+    @DisplayName("모든 유저 정보를 조회한다.")
     @Test
     void findAll() {
         final var users = userDao.findAll();
@@ -28,6 +30,7 @@ class UserDaoTest {
         assertThat(users).isNotEmpty();
     }
 
+    @DisplayName("아이디로 유저 정보를 조회한다.")
     @Test
     void findById() {
         final var user = userDao.findById(1L)
@@ -36,6 +39,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
+    @DisplayName("계정으로 유저 정보를 조회한다.")
     @Test
     void findByAccount() {
         final var account = "gugu";
@@ -45,6 +49,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
+    @DisplayName("유저를 추가한다.")
     @Test
     void insert() {
         final var account = "insert-gugu";
@@ -57,6 +62,7 @@ class UserDaoTest {
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
+    @DisplayName("유저 정보를 업데이트 한다.")
     @Test
     void update() {
         final var newPassword = "password99";

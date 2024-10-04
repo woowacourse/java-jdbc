@@ -37,7 +37,7 @@ public class JdbcUserDao implements UserDao {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -48,15 +48,15 @@ public class JdbcUserDao implements UserDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
+
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
-
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -67,6 +67,7 @@ public class JdbcUserDao implements UserDao {
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet resultSet = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
+
             List<User> users = new ArrayList<>();
             while (resultSet.next()) {
                 long id = resultSet.getLong("id");
@@ -85,7 +86,7 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public Optional<User> findById(final Long id) {
-        final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
+        String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
