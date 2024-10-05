@@ -55,28 +55,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParam(PreparedStatement pstmt, int index, Object param) throws SQLException {
-        if (param.getClass() == Long.class) {
-            pstmt.setLong(index, (Long) param);
-            return;
-        }
-        if (param.getClass() == String.class) {
-            pstmt.setString(index, (String) param);
-            return;
-        }
-        if (param.getClass() == Date.class) {
-            pstmt.setDate(index, (Date) param);
-            return;
-        }
-        if (param.getClass() == Time.class) {
-            pstmt.setTime(index, (Time) param);
-            return;
-        }
-        if (param.getClass() == Integer.class) {
-            pstmt.setInt(index, (Integer) param);
-        }
-    }
-
     public Object executeQueryForObject(String sql, List<Object> paramList, Maker maker) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -167,6 +145,28 @@ public class JdbcTemplate {
                     conn.close();
                 }
             } catch (SQLException ignored) {}
+        }
+    }
+
+    private void setParam(PreparedStatement pstmt, int index, Object param) throws SQLException {
+        if (param.getClass() == Long.class) {
+            pstmt.setLong(index, (Long) param);
+            return;
+        }
+        if (param.getClass() == String.class) {
+            pstmt.setString(index, (String) param);
+            return;
+        }
+        if (param.getClass() == Date.class) {
+            pstmt.setDate(index, (Date) param);
+            return;
+        }
+        if (param.getClass() == Time.class) {
+            pstmt.setTime(index, (Time) param);
+            return;
+        }
+        if (param.getClass() == Integer.class) {
+            pstmt.setInt(index, (Integer) param);
         }
     }
 }
