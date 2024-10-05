@@ -1,6 +1,4 @@
-package com.interface21.jdbc.core;
-
-import com.interface21.dao.DataAccessException;
+package com.interface21.dao;
 
 public class IncorrectResultSizeDataAccessException extends DataAccessException {
 
