@@ -20,7 +20,7 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        userDao.save(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
