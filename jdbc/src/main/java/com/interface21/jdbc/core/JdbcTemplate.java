@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import javax.sql.DataSource;
@@ -66,6 +67,7 @@ public class JdbcTemplate {
             throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         log.debug("실행 쿼리: {}", sql);
+        log.debug("파라미터: {}", Arrays.toString(parameters));
         setParameters(preparedStatement, parameters);
         return preparedStatement;
     }
