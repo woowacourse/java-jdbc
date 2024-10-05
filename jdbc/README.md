@@ -18,7 +18,7 @@
     - update 메서드와 관련된 코드를 UpdateJdbcTemplate 클래스를 만들어 이동시킨다.
     - insert도 마찬가지로 InsertJdbcTemplate 클래스를 만들어 이동한다.
     - UserDao에서 update, insert 각 메서드는 코드를 이동한 클래스를 사용하도록 수정한다.
-- [ ] [3] 템플릿 메서드 패턴 적용
+- [x] [3] 템플릿 메서드 패턴 적용
     - UpdateJdbcTemplate, InsertJdbcTemplate를 하나의 클래스로 합친다.
     - 사용자가 구현해야되는 부분은 추상 메서드로 만든다.
     - 클래스명, 메서드명을 범용적으로 쓸 수 있게 수정한다.

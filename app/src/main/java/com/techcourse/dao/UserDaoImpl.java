@@ -17,18 +17,50 @@ public class UserDaoImpl implements UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDaoImpl.class);
 
     private final DataSource dataSource;
-    private final InsertJdbcTemplate insertJdbcTemplate;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
+    private final JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
+
+        @Override
+        protected String createQuery() {
+            return "insert into users (account, password, email) values (?, ?, ?)";
+        }
+
+        @Override
+        protected DataSource getDataSource() {
+            return UserDaoImpl.this.getDataSource();
+        }
+
+        @Override
+        protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            pstmt.setObject(1, user.getAccount());
+            pstmt.setObject(2, user.getPassword());
+            pstmt.setObject(3, user.getEmail());
+        }
+    };
+    private final JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
+        @Override
+        protected String createQuery() {
+            return "update users set password = ? where id = ?";
+        }
+
+        @Override
+        protected DataSource getDataSource() {
+            return UserDaoImpl.this.getDataSource();
+        }
+
+        @Override
+        protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+            pstmt.setObject(1, user.getPassword());
+            pstmt.setObject(2, user.getId());
+        }
+    };
 
     public UserDaoImpl(final DataSource dataSource) {
         this.dataSource = dataSource;
-        insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
-        updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
     }
 
     @Override
     public void insert(User user) {
-        insertJdbcTemplate.insert(user);
+        insertJdbcTemplate.update(user);
     }
 
     @Override
@@ -108,5 +140,9 @@ public class UserDaoImpl implements UserDao {
                 rs.getString(3),
                 rs.getString(4)
         );
+    }
+
+    private DataSource getDataSource() {
+        return dataSource;
     }
 }
