@@ -1,6 +1,10 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.querybuilder.ConditionExpression;
+import com.interface21.jdbc.querybuilder.QueryBuilder;
+import com.interface21.jdbc.querybuilder.query.Query;
 import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -10,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> rowMapper = new UserRowMapper();
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -18,30 +23,53 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        Query query = new QueryBuilder()
+                .insert(List.of("account", "password", "email"))
+                .from("users")
+                .build();
+        jdbcTemplate.queryForUpdate(query.getSql(), user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        Query query = new QueryBuilder()
+                .update(List.of("account", "password", "email"))
+                .from("users")
+                .where(ConditionExpression.eq("id"))
+                .build();
+
+        jdbcTemplate.queryForUpdate(
+                query.getSql(),
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
-        String sql = "select * from users";
-        List<Object> query = jdbcTemplate.query(sql, new UserRowMapper());
-        return query.stream().map(obj -> (User) obj).toList();
+        Query query = new QueryBuilder()
+                .selectFrom("users")
+                .build();
+        List<Object> results = jdbcTemplate.query(query.getSql(), rowMapper);
+        return results.stream().map(obj -> (User) obj).toList();
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        Object o = jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
+        Query query = resolveEqualSql("id");
+        Object o = jdbcTemplate.queryForObject(query.getSql(), rowMapper, id);
         return (User) o;
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-        Object o = jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
+        Query query = resolveEqualSql("account");
+        Object o = jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
         return (User) o;
+    }
+
+    public Query resolveEqualSql(String fieldName) {
+        return new QueryBuilder()
+                .selectFrom("users")
+                .where(ConditionExpression.eq(fieldName))
+                .build();
     }
 }
