@@ -25,15 +25,6 @@ class UserHistoryRowMapperTest {
         this.userHistoryRowMapper = new UserHistoryRowMapper();
     }
 
-    @DisplayName("resultSet의 값이 없다면 null을 반환한다")
-    @Test
-    void returnNull_When_ResultSetHasNotNext() throws SQLException {
-        ResultSet resultSet = mock(ResultSet.class);
-
-        when(resultSet.next()).thenReturn(false);
-
-        assertThat(userHistoryRowMapper.mapRow(resultSet)).isNull();
-    }
 
     @DisplayName("resultSet을 바탕으로 유저 히스토리를 매핑한다")
     @Test
@@ -42,7 +33,6 @@ class UserHistoryRowMapperTest {
         UserHistory userHistory = new UserHistory(1L, 1L, "testAccount", "testPwd", "testEmail", now, "testCreateBy");
         ResultSet resultSet = mock(ResultSet.class);
 
-        when(resultSet.next()).thenReturn(true);
         when(resultSet.getLong(anyInt())).thenReturn(userHistory.getId(), userHistory.getUserId());
         when(resultSet.getObject(anyInt(), eq(LocalDateTime.class))).thenReturn(now);
         when(resultSet.getString(anyInt()))

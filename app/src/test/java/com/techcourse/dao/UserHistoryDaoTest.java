@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementResolver;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.rowmapper.UserHistoryRowMapper;
 import com.techcourse.domain.User;
@@ -21,7 +22,7 @@ class UserHistoryDaoTest {
     @BeforeEach
     void setUp() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), new PreparedStatementResolver());
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
 

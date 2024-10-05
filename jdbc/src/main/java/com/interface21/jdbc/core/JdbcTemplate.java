@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -17,9 +18,9 @@ public class JdbcTemplate {
     private final DataSource dataSource;
     private final PreparedStatementResolver preparedStatementResolver;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource, PreparedStatementResolver preparedStatementResolver) {
         this.dataSource = dataSource;
-        this.preparedStatementResolver = new PreparedStatementResolver();
+        this.preparedStatementResolver = preparedStatementResolver;
     }
 
     public Object queryForObject(String sql, RowMapper<?> rowMapper, Object... parameters) {
@@ -33,7 +34,7 @@ public class JdbcTemplate {
             throw new DataAccessException("결과가 없습니다.");
         }
 
-        if (results.size() > 2) {
+        if (results.size() >= 2) {
             log.debug("results : {} ", results);
             throw new DataAccessException("결과가 2개 이상입니다.");
         }
@@ -45,14 +46,18 @@ public class JdbcTemplate {
         ) {
             PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
             ResultSet resultSet = resolvedStatement.executeQuery();
-            List<Object> results = new ArrayList<>();
-            do {
-                results.add(rowMapper.mapRow(resultSet));
-            } while (resultSet.next());
-            return results;
+            return makeQueryResult(resultSet, rowMapper);
         } catch (Exception exception) {
             throw new DataAccessException(exception);
         }
+    }
+
+    private List<Object> makeQueryResult(ResultSet resultSet, RowMapper<?> rowMapper) throws SQLException {
+        List<Object> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
     }
 
     public int queryForUpdate(String sql, Object... parameters) {
