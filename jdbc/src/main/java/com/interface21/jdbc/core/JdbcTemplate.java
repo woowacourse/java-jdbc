@@ -31,9 +31,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            for (int index = 1; index <= paramList.size(); index++) {
-                setParam(pstmt, index, paramList.get(index - 1));
-            }
+            setParams(paramList, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -63,10 +61,7 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            for (int index = 1; index <= paramList.size(); index++) {
-                setParam(pstmt, index, paramList.get(index - 1));
-            }
-
+            setParams(paramList, pstmt);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
@@ -110,10 +105,7 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            for (int index = 1; index <= paramList.size(); index++) {
-                setParam(pstmt, index, paramList.get(index - 1));
-            }
-
+            setParams(paramList, pstmt);
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
@@ -145,6 +137,12 @@ public class JdbcTemplate {
                     conn.close();
                 }
             } catch (SQLException ignored) {}
+        }
+    }
+
+    private void setParams(List<Object> paramList, PreparedStatement pstmt) throws SQLException {
+        for (int index = 1; index <= paramList.size(); index++) {
+            setParam(pstmt, index, paramList.get(index - 1));
         }
     }
 
