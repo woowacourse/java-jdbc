@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) throws DataAccessException {
+    public void update(final String sql, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
