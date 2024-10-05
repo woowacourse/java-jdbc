@@ -7,6 +7,8 @@ import javax.sql.DataSource;
 
 public class UserDao {
 
+    private static final UserRowMapper ROW_MAPPER = new UserRowMapper();
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
@@ -29,16 +31,16 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, new UserRowMapper());
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
     
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), String.valueOf(id));
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, String.valueOf(id));
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
