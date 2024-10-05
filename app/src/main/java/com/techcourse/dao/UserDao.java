@@ -133,28 +133,24 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Object o = queryOne(sql, (rs) -> new User(
+        return queryOne(sql, (rs) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
                 rs.getString(4)), id);
-
-        return (User) o;
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Object o = queryOne(sql, (rs) -> new User(
+        return queryOne(sql, (rs) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
                 rs.getString(4)), account);
-
-        return (User) o;
     }
 
-    private Object queryOne(String sql, ResultSetCallBack callBack, Object... args) {
+    private <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -205,8 +201,8 @@ public class UserDao {
         void callback(Connection connection) throws SQLException;
     }
 
-    private interface ResultSetCallBack {
+    private interface ResultSetCallBack<T> {
 
-        Object callback(ResultSet resultSet) throws SQLException;
+        T callback(ResultSet resultSet) throws SQLException;
     }
 }
