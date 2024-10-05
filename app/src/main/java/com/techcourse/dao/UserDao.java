@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
@@ -58,7 +59,7 @@ public class UserDao {
             );
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException();
+            throw new DataAccessException();
         }
     }
 }
