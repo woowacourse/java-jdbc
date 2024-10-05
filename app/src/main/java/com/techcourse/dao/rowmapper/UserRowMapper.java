@@ -7,7 +7,6 @@ import java.sql.SQLException;
 
 public class UserRowMapper implements RowMapper<User> {
 
-
     @Override
     public User mapRow(ResultSet resultSet) {
         try {
