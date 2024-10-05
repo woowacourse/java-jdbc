@@ -25,103 +25,79 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        Connection connection = null;
-        PreparedStatement statement = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
             setStatement(statement, args);
             log.info("update query : {}", sql);
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            close(statement, connection, null);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet rs = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
+        ResultSet resultSet = null;
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
             setStatement(statement, args);
             log.info("select query : {}", sql);
-            rs = statement.executeQuery();
-            final List<T> results = extractData(rs, rowMapper, args);
-            if (results.isEmpty()) {
-                throw new SQLException("sql 결과 데이터가 존재하지 않습니다.");
-            }
-            if (results.size() > 1) {
-                throw new SQLException("sql 결과 데이터가 2개 이상 존재합니다.");
-            }
-            return results.get(0);
+            resultSet = statement.executeQuery();
+            final List<T> data = extractData(resultSet, rowMapper, args);
+            return result(data);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            close(statement, connection, rs);
+            close(resultSet);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet rs = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
+        ResultSet resultSet = null;
+        try(final Connection connection = dataSource.getConnection();
+            final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.info("select query : {}", sql);
-            rs = statement.executeQuery();
-            return extractData(rs, rowMapper);
+            resultSet = statement.executeQuery();
+            return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            close(statement, connection, rs);
+            close(resultSet);
         }
     }
 
     private void setStatement(PreparedStatement statement, final Object... args)
             throws SQLException {
-        int count = 1;
+        int index = 1;
         for (final Object arg : args) {
-            statement.setObject(count++, arg);
+            statement.setObject(index++, arg);
         }
     }
 
-    private <T> List<T> extractData(final ResultSet rs, final RowMapper<T> rowMapper, final Object... args)
+    private <T> List<T> extractData(final ResultSet resultSet, final RowMapper<T> rowMapper, final Object... args)
             throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs, args.length));
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, args.length));
         }
         return results;
     }
 
-    private void close(final PreparedStatement statement, final Connection connection, final ResultSet rs) {
-        try {
-            if (statement != null) {
-                statement.close();
-            }
-        } catch (SQLException ignored) {
+    private <T> T result(final List<T> data) throws SQLException {
+        if (data.isEmpty()) {
+            throw new SQLException("sql 결과 데이터가 존재하지 않습니다.");
         }
+        if (data.size() > 1) {
+            throw new SQLException("sql 결과 데이터가 2개 이상 존재합니다.");
+        }
+        return data.getFirst();
+    }
 
+    private void close(final ResultSet resultSet) {
         try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException ignored) {
-        }
-
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException ignored) {
-        }
+            resultSet.close();
+        } catch (SQLException e) {}
     }
 }
