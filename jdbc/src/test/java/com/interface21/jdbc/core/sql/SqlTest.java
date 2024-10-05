@@ -3,7 +3,6 @@ package com.interface21.jdbc.core.sql;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -91,9 +90,9 @@ class SqlTest {
         assertThat(value).isEqualTo(expect);
     }
 
-    @DisplayName("null 혹은 빈 맵을 입력하면 예외를 발생시킨다.")
+    @DisplayName("null을 입력하면 예외를 발생시킨다.")
     @Test
-    void bindingParametersWithNullOrEmptyMap() {
+    void bindingParametersWithNullMap() {
         // Given
         final String baseQuery = "INSERT INTO users (account, password, email) VALUES (:account, :password, :email)";
         final Sql sql = new Sql(baseQuery);
@@ -102,10 +101,6 @@ class SqlTest {
         final Map<String, Object> nullMap = null;
         assertThatThrownBy(() -> sql.bindingParameters(nullMap))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("parameter map은 null 혹은 빈 값이 입력될 수 없습니다.");
-
-        assertThatThrownBy(() -> sql.bindingParameters(Collections.emptyMap()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("parameter map은 null 혹은 빈 값이 입력될 수 없습니다.");
+                .hasMessage("parameter map은 null이 입력될 수 없습니다.");
     }
 }

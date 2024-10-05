@@ -69,7 +69,7 @@ public class Sql {
     }
 
     public Sql bindingParameters(final Map<String, Object> parameters) {
-        validateParametersIsNullOrEmpty(parameters);
+        validateParametersIsNull(parameters);
         final List<String> bindingParameterNames = parseBindingParameterNames();
         String result = this.value;
         for (final String bindingParameterName : bindingParameterNames) {
@@ -80,9 +80,9 @@ public class Sql {
         return new Sql(result);
     }
 
-    private void validateParametersIsNullOrEmpty(final Map<String, Object> parameters) {
-        if (parameters == null || parameters.isEmpty()) {
-            throw new IllegalArgumentException("parameter map은 null 혹은 빈 값이 입력될 수 없습니다.");
+    private void validateParametersIsNull(final Map<String, Object> parameters) {
+        if (parameters == null) {
+            throw new IllegalArgumentException("parameter map은 null이 입력될 수 없습니다.");
         }
     }
 
