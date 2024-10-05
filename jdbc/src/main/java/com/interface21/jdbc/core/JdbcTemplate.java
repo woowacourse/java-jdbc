@@ -3,7 +3,9 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.dao.IncorrectParameterCountException;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -69,8 +71,17 @@ public class JdbcTemplate {
     }
 
     private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
+        validateParameterCount(preparedStatement, parameters);
         for (int i = 0; i < parameters.length; i++) {
             preparedStatement.setObject(i + 1, parameters[i]);
+        }
+    }
+
+    private void validateParameterCount(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
+        ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
+        int expectedParameterCount = parameterMetaData.getParameterCount();
+        if (expectedParameterCount != parameters.length) {
+            throw new IncorrectParameterCountException(expectedParameterCount, parameters.length);
         }
     }
 

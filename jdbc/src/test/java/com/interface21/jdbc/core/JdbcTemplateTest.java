@@ -11,8 +11,10 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectParameterCountException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,6 +32,7 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbcTemplate;
     private Connection connection;
     private PreparedStatement preparedStatement;
+    private ParameterMetaData parameterMetaData;
     private ResultSet resultSet;
 
     @BeforeEach
@@ -38,9 +41,11 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
+        parameterMetaData = mock(ParameterMetaData.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.getParameterMetaData()).thenReturn(parameterMetaData);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
@@ -54,6 +59,7 @@ class JdbcTemplateTest {
         void executeUpdate() throws SQLException {
             // given
             String sql = "update users set account = ? where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(2);
 
             // when
             jdbcTemplate.executeUpdate(sql, "mia", 1L);
@@ -73,6 +79,7 @@ class JdbcTemplateTest {
         void executeUpdate_throwsException() throws SQLException {
             // given
             String sql = "update users set account = ? where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(2);
             when(preparedStatement.executeUpdate()).thenThrow(SQLException.class);
 
             // when & then
@@ -80,6 +87,18 @@ class JdbcTemplateTest {
                     .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
             verify(connection).close();
+        }
+
+        @DisplayName("파라미터 개수가 일치하지 않을 경우 예외를 발생한다.")
+        @Test
+        void executeUpdate_throwsException_whenIncorrectParameterCount() throws SQLException {
+            // given
+            String sql = "update users set account = ? where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(2);
+
+            // when & then
+            assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, "mia"))
+                    .isInstanceOf(IncorrectParameterCountException.class);
         }
     }
 
@@ -137,6 +156,7 @@ class JdbcTemplateTest {
         void fetchResult() throws SQLException {
             // given
             String sql = "select * from users where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(1);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getLong("id")).thenReturn(1L);
@@ -160,6 +180,7 @@ class JdbcTemplateTest {
         void fetchResult_throwsException_whenEmptyResult() throws SQLException {
             // given
             String sql = "select * from users where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(1);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
@@ -175,6 +196,7 @@ class JdbcTemplateTest {
         void fetchResult_throwException_whenMoreThanOneResult() throws SQLException {
             // given
             String sql = "select * from users where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(1);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true, true, false);
 
@@ -190,6 +212,7 @@ class JdbcTemplateTest {
         void fetchResult_throwsException() throws SQLException {
             // given
             String sql = "select * from users where id = ?";
+            when(parameterMetaData.getParameterCount()).thenReturn(1);
             when(preparedStatement.executeQuery()).thenThrow(SQLException.class);
 
             // when & then
