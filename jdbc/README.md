@@ -25,7 +25,7 @@
     - UserDao도 변경한 클래스를 사용하도록 변경한다.
 - [x] [4] 도메인 의존도 제거
     - UserDao에서 추상 클래스를 객체로 만들어 user 객체에 대한 의존도를 제거한다.
-- [ ] [5] 다시 한 번 클래스 추출
+- [x] [5] 다시 한 번 클래스 추출
     - select도 SelectJdbcTemplate으로 분리한다.
 - [ ] [6] 다시 한 번 템플릿 메서드 패턴 적용
     - SelectJdbcTemplate, JdbcTemplate를 하나의 클래스로 합친다.

@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,12 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDaoImpl implements UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDaoImpl.class);
 
     private final DataSource dataSource;
 
@@ -72,76 +67,115 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                users.add(generateUser(rs));
+            @Override
+            protected DataSource getDataSource() {
+                return UserDaoImpl.this.getDataSource();
             }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                List<User> users = new ArrayList<>();
+                while (rs.next()) {
+                    users.add(
+                            new User(
+                                    rs.getLong(1),
+                                    rs.getString(2),
+                                    rs.getString(3),
+                                    rs.getString(4)
+                            )
+                    );
+                }
+                return users;
+            }
+        };
+
+        Object result = selectJdbcTemplate.query();
+        return (List<User>) result;
     }
 
     @Override
     public Optional<User> findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            pstmt.setLong(1, id);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(generateUser(rs));
-                }
+            @Override
+            protected DataSource getDataSource() {
+                return UserDaoImpl.this.getDataSource();
             }
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setLong(1, id);
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)
+                );
+            }
+        };
+
+        Object result = selectJdbcTemplate.query();
+        if (result == null) {
             return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
+        return Optional.of((User) result);
     }
 
     @Override
     public Optional<User> findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            pstmt.setString(1, account);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(generateUser(rs));
-                }
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where account = ?";
             }
-            return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
 
-    private User generateUser(ResultSet rs) throws SQLException {
-        return new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        );
+            @Override
+            protected DataSource getDataSource() {
+                return UserDaoImpl.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, account);
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)
+                );
+            }
+        };
+
+        Object result = selectJdbcTemplate.query();
+        if (result == null) {
+            return Optional.empty();
+        }
+        return Optional.of((User) result);
     }
 
     private DataSource getDataSource() {
