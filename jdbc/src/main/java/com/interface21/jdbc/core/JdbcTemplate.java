@@ -29,8 +29,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setParameter(pstmt, args);
             log.debug("query : {}", sql);
+            setParameter(pstmt, args);
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> queryResult = new ArrayList<>();
                 while (rs.next()) {
@@ -59,8 +59,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setParameter(pstmt, args);
             log.debug("query : {}", sql);
+            setParameter(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
@@ -72,9 +72,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         ) {
-            setParameter(pstmt, args);
-
             log.debug("query : {}", sql);
+            setParameter(pstmt, args);
             int affectedRows = pstmt.executeUpdate();
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
