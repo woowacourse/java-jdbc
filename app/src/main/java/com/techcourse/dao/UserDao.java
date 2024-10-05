@@ -29,13 +29,10 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        PreparedCallBack callBack = (connection) -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
+        PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-            pstmt.close();
         };
 
         commandTemplate(sql, callBack);
@@ -44,14 +41,11 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        PreparedCallBack callBack = (connection) -> {
-            PreparedStatement pstmt = connection.prepareStatement(sql);
+        PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-            pstmt.close();
         };
 
         commandTemplate(sql, callBack);
@@ -186,22 +180,20 @@ public class UserDao {
 
     // delete, uddate, insert
     // 인자가 필요한 버전, 인자가 필요하지 않은 버전
-    private void commandTemplate(String sql, PreparedCallBack callBack) {
+    private void commandTemplate(String sql, PreparedStatementCallBack callBack) {
         log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection()) {
-            callBack.callback(connection);
-            // executeUpdate를 공통으로 사용해야함
-
-            // 예외 처리
+        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+            callBack.callback(pstmt);
+            pstmt.executeUpdate();
         } catch (Exception ingnore) {
         }
     }
 
-    private interface PreparedCallBack {
+    private interface PreparedStatementCallBack {
 
-
-        void callback(Connection connection) throws SQLException;
+        void callback(PreparedStatement preparedStatement) throws SQLException;
     }
+
     private interface ResultSetCallBack<T> {
 
 
