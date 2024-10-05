@@ -24,11 +24,8 @@ public class JdbcTemplate {
     public <T, R> R execute(
             String sql, RowMapper<T> rowMapper, Object[] args, PreparedStatementCallBack<T, R> callBack
     ) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = dataSource.getConnection();
-            ps = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
@@ -38,20 +35,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
@@ -101,17 +84,8 @@ public class JdbcTemplate {
 
         @Override
         public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
-            ResultSet rs = null;
-            try {
-                rs = ps.executeQuery();
+            try (ResultSet rs = ps.executeQuery()) {
                 return createResult(rs, rowMapper);
-            } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                } catch (SQLException ignored) {
-                }
             }
         }
 
