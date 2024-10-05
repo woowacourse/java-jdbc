@@ -53,12 +53,16 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             validateParameterCount(objects, preparedStatement);
             setParameter(objects, preparedStatement);
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                return getQueryResult(rowMapper, rs);
-            }
+            return getQueryResult(rowMapper, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
+        try (ResultSet rs = preparedStatement.executeQuery()) {
+            return getQueryResult(rowMapper, rs);
         }
     }
 
