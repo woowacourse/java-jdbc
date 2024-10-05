@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -44,12 +45,12 @@ public class UserDao {
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }

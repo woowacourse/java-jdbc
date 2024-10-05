@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -20,13 +21,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeQuery(sql, resultSet -> {
-            if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet);
-            }
-            return null;
-        }, values);
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        return Optional.ofNullable(executeQuery(sql, resultSet -> {
+                    if (resultSet.next()) {
+                        return rowMapper.mapRow(resultSet);
+                    }
+                    return null;
+                }, values)
+        );
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
