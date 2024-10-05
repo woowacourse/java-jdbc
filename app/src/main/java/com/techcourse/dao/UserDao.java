@@ -81,25 +81,32 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users;";
 
+        return query(sql, (rs) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4))
+        );
+    }
+
+    private <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        List<User> results = new ArrayList<>();
+        List<T> results = new ArrayList<>();
         try {
-            conn = dataSource.getConnection();
+            conn = this.dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
+            int index = 1;
+            for (Object arg : args) {
+                pstmt.setObject(index++, arg);
+            }
             rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
             while (rs.next()) {
-                User user = new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-
-                results.add(user);
+                T result = callBack.callback(rs);
+                results.add(result);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -147,7 +154,9 @@ public class UserDao {
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
-                rs.getString(4)), account);
+                rs.getString(4)),
+                account
+        );
     }
 
     private <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
