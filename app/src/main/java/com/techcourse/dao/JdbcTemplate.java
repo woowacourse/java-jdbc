@@ -25,7 +25,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query(String sql, PreparedStatementSetter setter, RowMapper rowMapper) {
+    public <T> T query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);

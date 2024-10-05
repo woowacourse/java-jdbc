@@ -82,10 +82,10 @@ public class UserDaoImpl implements UserDao {
             }
         };
 
-        RowMapper rowMapper = new RowMapper() {
+        RowMapper<List<User>> rowMapper = new RowMapper() {
 
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public List<User> mapRow(ResultSet rs) throws SQLException {
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {
                     users.add(
@@ -101,8 +101,7 @@ public class UserDaoImpl implements UserDao {
             }
         };
 
-        Object result = selectJdbcTemplate.query(sql, setter, rowMapper);
-        return (List<User>) result;
+        return selectJdbcTemplate.query(sql, setter, rowMapper);
     }
 
     @Override
@@ -123,10 +122,10 @@ public class UserDaoImpl implements UserDao {
                 pstmt.setLong(1, id);
             }
         };
-        RowMapper rowMapper = new RowMapper() {
+        RowMapper<User> rowMapper = new RowMapper() {
 
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public User mapRow(ResultSet rs) throws SQLException {
                 return new User(
                         rs.getLong(1),
                         rs.getString(2),
@@ -161,10 +160,10 @@ public class UserDaoImpl implements UserDao {
                 pstmt.setString(1, account);
             }
         };
-        RowMapper rowMapper = new RowMapper() {
+        RowMapper<User> rowMapper = new RowMapper() {
 
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public User mapRow(ResultSet rs) throws SQLException {
                 return new User(
                         rs.getLong(1),
                         rs.getString(2),

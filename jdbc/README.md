@@ -33,5 +33,5 @@
     - mapRow, setValues를 인터페이스로 분리하여 불필요한 구현을 제거한다.
 - [ ] [8] 라이브러리 확장
     - [x] 커스텀 Exception을 추가해 사용자는 Unchecked Exception이 되도록 변경한다.
-    - [ ] RowMapper 인터페이스에서 제네릭을 사용하여 개선한다.
+    - [x] RowMapper 인터페이스에서 제네릭을 사용하여 개선한다.
     - [ ] 람다를 활용해서 PreparedStatementSetter 인터페이스를 구현한다.
