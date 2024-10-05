@@ -71,7 +71,7 @@ public class UserDao {
                 pstmt.setObject(index++, arg);
             }
 
-            ResultSet rs = pstmt.executeQuery(sql);
+            ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 results.add(callBack.callback(rs));
             }
@@ -113,10 +113,11 @@ public class UserDao {
                 pstmt.setObject(index++, arg);
             }
 
-            ResultSet rs = pstmt.executeQuery(sql);
+            ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
+                T result = callBack.callback(rs);
                 rs.close();
-                return callBack.callback(rs);
+                return result;
             }
 
             rs.close();
