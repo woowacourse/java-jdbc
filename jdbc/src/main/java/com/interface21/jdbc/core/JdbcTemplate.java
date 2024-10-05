@@ -21,122 +21,101 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
+    public <T, R> R execute(
+            String sql, RowMapper<T> rowMapper, Object[] args, PreparedStatementCallBack<T, R> callBack
+    ) {
         Connection conn = null;
-        PreparedStatement pstmt = null;
+        PreparedStatement ps = null;
         try {
             conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            ps = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
+                ps.setObject(i + 1, args[i]);
             }
-            pstmt.executeUpdate();
+            return callBack.call(rowMapper, ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
+                if (ps != null) {
+                    ps.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public void update(String sql, Object... args) {
+        execute(sql, null, args, (rm, ps) -> ps.executeUpdate());
+    }
 
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            ResultSet rs = pstmt.executeQuery();
-
-            List<T> entityList = new ArrayList<>();
-            while (rs.next()) {
-                T entity = rowMapper.mapRow(rs, rs.getRow());
-                entityList.add(entity);
-            }
-            return entityList;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        ResultSetClosePreparedStatementCallBack<T, List<T>> callBack = new ResultSetClosePreparedStatementCallBack<>() {
+            @Override
+            List<T> createResult(ResultSet rs, RowMapper<T> rm) throws SQLException {
+                List<T> entityList = new ArrayList<>();
+                while (rs.next()) {
+                    T entity = rm.mapRow(rs, rs.getRow());
+                    entityList.add(entity);
                 }
-            } catch (SQLException ignored) {}
+                return entityList;
+            }
+        };
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return execute(sql, rowMapper, args, callBack);
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                T entity = rowMapper.mapRow(rs, rs.getRow());
+        ResultSetClosePreparedStatementCallBack<T, Optional<T>> callBack = new ResultSetClosePreparedStatementCallBack<>() {
+            @Override
+            Optional<T> createResult(ResultSet rs, RowMapper<T> rm) throws SQLException {
                 if (rs.next()) {
-                    throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+                    T entity = rm.mapRow(rs, rs.getRow());
+                    if (rs.next()) {
+                        throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+                    }
+                    return Optional.ofNullable(entity);
                 }
-                return Optional.ofNullable(entity);
+                return Optional.empty();
             }
-            return Optional.empty();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+        };
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return execute(sql, rowMapper, args, callBack);
     }
 
     public DataSource getDataSource() {
         return dataSource;
     }
+
+    private abstract static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
+
+        @Override
+        public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
+            ResultSet rs = null;
+            try {
+                rs = ps.executeQuery();
+                return createResult(rs, rowMapper);
+            } finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                } catch (SQLException ignored) {
+                }
+            }
+        }
+
+        abstract R createResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException;
+    }
+
 }
