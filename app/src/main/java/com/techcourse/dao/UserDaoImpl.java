@@ -8,65 +8,36 @@ import javax.sql.DataSource;
 
 public class UserDaoImpl implements UserDao {
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDaoImpl(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Override
     public void insert(User user) {
-        JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDaoImpl.this.getDataSource();
-            }
-        };
-
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         PreparedStatementSetter setter = pstmt -> {
             pstmt.setObject(1, user.getAccount());
             pstmt.setObject(2, user.getPassword());
             pstmt.setObject(3, user.getEmail());
         };
-
-        insertJdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(sql, setter);
     }
 
     @Override
     public void update(User user) {
-        JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDaoImpl.this.getDataSource();
-            }
-        };
-
         String sql = "update users set password = ? where id = ?";
         PreparedStatementSetter setter = pstmt -> {
             pstmt.setObject(1, user.getPassword());
             pstmt.setObject(2, user.getId());
         };
-
-        updateJdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(sql, setter);
     }
 
     @Override
     public List<User> findAll() {
-        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDaoImpl.this.getDataSource();
-            }
-        };
-
         String sql = "select id, account, password, email from users";
-        PreparedStatementSetter setter = pstmt -> {
-        };
-
         RowMapper<List<User>> rowMapper = rs -> {
             List<User> users = new ArrayList<>();
             while (rs.next()) {
@@ -82,19 +53,11 @@ public class UserDaoImpl implements UserDao {
             return users;
         };
 
-        return selectJdbcTemplate.query(sql, setter, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     @Override
     public Optional<User> findById(final Long id) {
-        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDaoImpl.this.getDataSource();
-            }
-        };
-
         String sql = "select id, account, password, email from users where id = ?";
         PreparedStatementSetter setter = pstmt -> pstmt.setLong(1, id);
         RowMapper<User> rowMapper = rs -> new User(
@@ -104,7 +67,7 @@ public class UserDaoImpl implements UserDao {
                 rs.getString(4)
         );
 
-        User user = selectJdbcTemplate.query(sql, setter, rowMapper);
+        User user = jdbcTemplate.query(sql, setter, rowMapper);
         if (user == null) {
             return Optional.empty();
         }
@@ -113,14 +76,6 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public Optional<User> findByAccount(final String account) {
-        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-
-            @Override
-            protected DataSource getDataSource() {
-                return UserDaoImpl.this.getDataSource();
-            }
-        };
-
         String sql = "select id, account, password, email from users where account = ?";
         PreparedStatementSetter setter = pstmt -> pstmt.setString(1, account);
         RowMapper<User> rowMapper = rs -> new User(
@@ -130,14 +85,10 @@ public class UserDaoImpl implements UserDao {
                 rs.getString(4)
         );
 
-        User user = selectJdbcTemplate.query(sql, setter, rowMapper);
+        User user = jdbcTemplate.query(sql, setter, rowMapper);
         if (user == null) {
             return Optional.empty();
         }
         return Optional.of(user);
-    }
-
-    private DataSource getDataSource() {
-        return dataSource;
     }
 }
