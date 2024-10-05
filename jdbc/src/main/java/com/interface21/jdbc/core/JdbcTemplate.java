@@ -40,20 +40,16 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
-        ResultSet rs = null;
-
         try (Connection conn = getConnection();
              PreparedStatement pstmt = getPreparedStatement(sql, conn)) {
             assignSqlValues(values, pstmt);
-            rs = pstmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
             return resultSetExtractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            closeResultSet(rs);
         }
     }
 
@@ -82,15 +78,6 @@ public class JdbcTemplate {
     private void assignSqlValues(Object[] values, PreparedStatement pstmt) throws SQLException {
         for (int i = 1; i <= values.length; i++) {
             pstmt.setObject(i, values[i - 1]);
-        }
-    }
-
-    private void closeResultSet(ResultSet rs) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException ignored) {
         }
     }
 }
