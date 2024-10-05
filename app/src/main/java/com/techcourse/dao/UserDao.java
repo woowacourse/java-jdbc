@@ -46,19 +46,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select * from users";
-        List<User> users = jdbcTemplate.query(sql, ROW_MAPPER);
-        return users;
+        return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select * from users where id = ?";
-        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
-        return user;
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select * from users where account = ?";
-        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
-        return user;
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
