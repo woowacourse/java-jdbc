@@ -43,7 +43,7 @@ class LegacyJdbcTemplateTest {
     @Test
     void 데이터_생성_성공() {
         TestUser user = new TestUser("jojo", "1234");
-        String sql = "insert into test-user (account) values (?, ?)";
+        String sql = "insert into test-user (account, password) values (?, ?)";
 
         legacyJdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword());
 
@@ -59,7 +59,7 @@ class LegacyJdbcTemplateTest {
     @Test
     void 데이터_생성_예외_발생() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
-        String sql = "insert into test-user (account) values (?, ?, ?)";
+        String sql = "insert into test-user (account, password) values (?, ?)";
 
         when(pstmt.executeUpdate()).thenThrow(SQLException.class);
 
