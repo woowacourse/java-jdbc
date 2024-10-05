@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -85,5 +87,50 @@ public class JdbcTemplate {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final Map<String, Object> parameters,
+            final RowMapper<T> rowMapper
+    ) {
+        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+
+        Connection conn = null;
+        Statement stmt = null;
+        try {
+            final String value = bindingParametersQuery.getValue();
+            conn = dataSource.getConnection();
+            stmt = conn.createStatement();
+            final ResultSet resultSet = stmt.executeQuery(value);
+            return parseResult(resultSet, rowMapper);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    private <T> List<T> parseResult(final ResultSet resultSet, final RowMapper<T> rowMapper) {
+        final List<T> result = new ArrayList<>();
+        T mappingResult = rowMapper.mapping(resultSet);
+        while (mappingResult != null) {
+            result.add(mappingResult);
+            mappingResult = rowMapper.mapping(resultSet);
+        }
+
+        return result;
     }
 }

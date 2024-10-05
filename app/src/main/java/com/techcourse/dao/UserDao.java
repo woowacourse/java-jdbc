@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +33,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final String baseQuery = "SELECT * FROM users";
+        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        return jdbcTemplate.query(baseQuery, Collections.emptyMap(), rowMapper);
     }
 
     public User findById(final Long id) {
