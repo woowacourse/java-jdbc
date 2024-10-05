@@ -22,16 +22,16 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstm = conn.prepareStatement(sql)) {
-            return executeQueryOne(callBack, pstm, args);
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            return executeQueryOne(callBack, pstmt, args);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> T executeQueryOne(ResultSetCallBack<T> callBack, PreparedStatement pstm, Object... args) throws SQLException {
-        setArg(args, pstm);
-        ResultSet rs = pstm.executeQuery();
+    private <T> T executeQueryOne(ResultSetCallBack<T> callBack, PreparedStatement pstmt, Object... args) throws SQLException {
+        setArg(args, pstmt);
+        ResultSet rs = pstmt.executeQuery();
 
         T result = null;
         if (rs.next()) {
@@ -45,16 +45,16 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstm = conn.prepareStatement(sql)) {
-            return executeQuery(callBack, pstm, args);
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            return executeQuery(callBack, pstmt, args);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> executeQuery(ResultSetCallBack<T> callBack, PreparedStatement pstm, Object... args) throws SQLException {
-        setArg(args, pstm);
-        ResultSet rs = pstm.executeQuery();
+    private <T> List<T> executeQuery(ResultSetCallBack<T> callBack, PreparedStatement pstmt, Object... args) throws SQLException {
+        setArg(args, pstmt);
+        ResultSet rs = pstmt.executeQuery();
 
         List<T> results = new ArrayList<>();
         while (rs.next()) {
@@ -65,25 +65,25 @@ public class JdbcTemplate {
         return results;
     }
 
-    private void setArg(Object[] args, PreparedStatement pstm) throws SQLException {
+    private void setArg(Object[] args, PreparedStatement pstmt) throws SQLException {
         int index = 1;
         for (Object arg : args) {
-            pstm.setObject(index++, arg);
+            pstmt.setObject(index++, arg);
         }
     }
 
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        try (var connection = dataSource.getConnection(); var pstm = connection.prepareStatement(sql)) {
-            executeUpdate(callBack, pstm);
+        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+            executeUpdate(callBack, pstmt);
         } catch (SQLException ignored) {
         }
     }
 
-    private void executeUpdate(PreparedStatementCallBack callBack, PreparedStatement pstm) throws SQLException {
-        callBack.callback(pstm);
-        pstm.executeUpdate();
+    private void executeUpdate(PreparedStatementCallBack callBack, PreparedStatement pstmt) throws SQLException {
+        callBack.callback(pstmt);
+        pstmt.executeUpdate();
     }
 
     private void debugQuery(String sql) {
