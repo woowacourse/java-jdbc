@@ -32,7 +32,7 @@ public class User {
         return account;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
