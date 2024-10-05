@@ -34,6 +34,7 @@ public class JdbcTemplate {
         }
 
         if (results.size() > 2) {
+            log.debug("results : {} ", results);
             throw new DataAccessException("결과가 2개 이상입니다.");
         }
     }
@@ -45,9 +46,9 @@ public class JdbcTemplate {
             PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
             ResultSet resultSet = resolvedStatement.executeQuery();
             List<Object> results = new ArrayList<>();
-            while (resultSet.next()) {
+            do {
                 results.add(rowMapper.mapRow(resultSet));
-            }
+            } while (resultSet.next());
             return results;
         } catch (Exception exception) {
             throw new DataAccessException(exception);
@@ -63,9 +64,5 @@ public class JdbcTemplate {
         } catch (Exception exception) {
             throw new DataAccessException(exception);
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }
