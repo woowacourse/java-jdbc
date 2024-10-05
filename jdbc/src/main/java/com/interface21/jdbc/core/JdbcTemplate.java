@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -123,7 +124,49 @@ public class JdbcTemplate {
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    public List<Object> executeQueryForObjects(String sql, List<Object> paramList, Maker maker) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            for (int index = 1; index <= paramList.size(); index++) {
+                setParam(pstmt, index, paramList.get(index - 1));
+            }
+
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            List<Object> objects = new ArrayList<>();
+            if (rs.next()) {
+                Object object = maker.make(rs);
+                objects.add(object);
+            }
+            return objects;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 }
