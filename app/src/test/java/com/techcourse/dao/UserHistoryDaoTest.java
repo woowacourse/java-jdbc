@@ -20,6 +20,7 @@ class UserHistoryDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("Truncate TABLE user_history RESTART IDENTITY");
         userDao = new UserDao(jdbcTemplate);
         user = new User(1L, "gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
