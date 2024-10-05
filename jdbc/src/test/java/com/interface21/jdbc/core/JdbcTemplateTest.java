@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<User> ROW_MAPPER = rs ->
-            new User(rs.getLong("id"),
+    private static final RowMapper<TestUser> ROW_MAPPER = rs ->
+            new TestUser(rs.getLong("id"),
                     rs.getString("account"),
                     rs.getString("password"),
                     rs.getString("email"));
@@ -51,7 +51,7 @@ class JdbcTemplateTest {
     @Test
     void write_쿼리를_실행한다() throws SQLException {
         // given
-        String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO test_users (account, password, email) VALUES (?, ?, ?)";
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
 
         // when
@@ -69,7 +69,7 @@ class JdbcTemplateTest {
     @Test
     void read_쿼리로_n개의_데이터를_조회한다() throws SQLException {
         // given
-        String sql = "SELECT id, account, password, email FROM users";
+        String sql = "SELECT id, account, password, email FROM test_users";
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
 
         ResultSet resultSet = mock(ResultSet.class);
@@ -81,24 +81,24 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         // when
-        List<User> users = jdbcTemplate.query(sql, ROW_MAPPER);
+        List<TestUser> testUsers = jdbcTemplate.query(sql, ROW_MAPPER);
 
         // then
         assertAll(
                 () -> verify(preparedStatement).executeQuery(),
-                () -> assertThat(users).hasSize(2),
-                () -> assertThat(users).extracting("id").containsExactly(1L, 2L),
-                () -> assertThat(users).extracting("account").containsExactly("prin", "waterfall"),
-                () -> assertThat(users).extracting("password").containsExactly("1q2w3e4r!@", "1q2w3e4r!@"),
-                () -> assertThat(users).extracting("email").containsExactly("prin@gmail.com", "waterfall@gmail.com"),
+                () -> assertThat(testUsers).hasSize(2),
+                () -> assertThat(testUsers).extracting("id").containsExactly(1L, 2L),
+                () -> assertThat(testUsers).extracting("account").containsExactly("prin", "waterfall"),
+                () -> assertThat(testUsers).extracting("password").containsExactly("1q2w3e4r!@", "1q2w3e4r!@"),
+                () -> assertThat(testUsers).extracting("email").containsExactly("prin@gmail.com", "waterfall@gmail.com"),
                 () -> verify(resultSet).close()
         );
     }
 
     @Test
-    void read_쿼리로_한개의_데이터를_조회한다() throws SQLException {
+    void read_쿼리로_한_개의_데이터를_조회한다() throws SQLException {
         // given
-        String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
+        String sql = "SELECT id, account, password, email FROM test_users WHERE id = ?";
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
 
         ResultSet resultSet = mock(ResultSet.class);
@@ -110,22 +110,22 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         // when
-        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
+        TestUser testUser = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         // then
         assertAll(
                 () -> verify(preparedStatement).setObject(1, 1L),
                 () -> verify(preparedStatement).executeQuery(),
-                () -> assertThat(user.id()).isEqualTo(1L),
-                () -> assertThat(user.account()).isEqualTo("prin"),
-                () -> assertThat(user.password()).isEqualTo("1q2w3e4r!@"),
-                () -> assertThat(user.email()).isEqualTo("prin@gmail.com"),
+                () -> assertThat(testUser.id()).isEqualTo(1L),
+                () -> assertThat(testUser.account()).isEqualTo("prin"),
+                () -> assertThat(testUser.password()).isEqualTo("1q2w3e4r!@"),
+                () -> assertThat(testUser.email()).isEqualTo("prin@gmail.com"),
                 () -> verify(resultSet).close()
         );
     }
 
     @Test
-    void read_쿼리로_한개의_데이터_조회_시_데이터가_없으면_예외가_발생한다() throws SQLException {
+    void read_쿼리로_한_개의_데이터_조회_시_데이터가_없으면_예외가_발생한다() throws SQLException {
         // given
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
@@ -140,7 +140,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void read_쿼리로_한개의_데이터_조회_시_데이터가_2개_이상이면_예외가_발생한다() throws SQLException {
+    void read_쿼리로_한_개의_데이터_조회_시_데이터가_2개_이상이면_예외가_발생한다() throws SQLException {
         // given
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
@@ -154,6 +154,6 @@ class JdbcTemplateTest {
                 .hasMessage("Incorrect result size. expected size: 1, actual size: 2");
     }
 
-    private record User(Long id, String account, String password, String email) {
+    private record TestUser(Long id, String account, String password, String email) {
     }
 }
