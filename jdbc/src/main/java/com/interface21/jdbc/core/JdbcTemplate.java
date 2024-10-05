@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,10 +46,10 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
         List<T> queryResult = query(sql, rowMapper, args);
         if (queryResult.size() > 1) {
-            throw new DataAccessException("단건 데이터 조회에서 다중 데이터가 조회되었습니다");
+            throw new IncorrectResultSizeDataAccessException(1, queryResult.size());
         }
         if (queryResult.isEmpty()) {
-            return null;
+            throw new EmptyResultDataAccessException(1);
         }
         return queryResult.getFirst();
     }

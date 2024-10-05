@@ -8,7 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,12 +52,12 @@ class JdbcTemplateTest {
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        final int rowsAffected = jdbcTemplate.update(sql, "John Doe", "john@example.com", 1L);
+        final int rowsAffected = jdbcTemplate.update(sql, "libi", "libi@example.com", 1L);
         assertThat(rowsAffected).isEqualTo(1);
 
         verify(connection).prepareStatement(sql);
-        verify(preparedStatement).setObject(1, "John Doe");
-        verify(preparedStatement).setObject(2, "john@example.com");
+        verify(preparedStatement).setObject(1, "libi");
+        verify(preparedStatement).setObject(2, "libi@example.com");
         verify(preparedStatement).executeUpdate();
     }
 
@@ -71,7 +72,7 @@ class JdbcTemplateTest {
         when(resultSet.getObject(1)).thenReturn(100L);
 
         final GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        final int rowsAffected = jdbcTemplate.update(sql, keyHolder, "Jane Doe", "jane@example.com");
+        final int rowsAffected = jdbcTemplate.update(sql, keyHolder, "mark", "mark@example.com");
 
         Assertions.assertAll(
                 () -> assertThat(rowsAffected).isEqualTo(1),
@@ -79,8 +80,8 @@ class JdbcTemplateTest {
         );
 
         verify(connection).prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        verify(preparedStatement).setObject(1, "Jane Doe");
-        verify(preparedStatement).setObject(2, "jane@example.com");
+        verify(preparedStatement).setObject(1, "mark");
+        verify(preparedStatement).setObject(2, "mark@example.com");
         verify(preparedStatement).executeUpdate();
         verify(preparedStatement).getGeneratedKeys();
         verify(resultSet).next();
@@ -94,8 +95,8 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong("id")).thenReturn(1L, 2L);
-        when(resultSet.getString("name")).thenReturn("User1", "User2");
-        when(resultSet.getString("email")).thenReturn("user1@example.com", "user2@example.com");
+        when(resultSet.getString("name")).thenReturn("libi", "mark");
+        when(resultSet.getString("email")).thenReturn("libi@example.com", "mark@example.com");
 
         final List<User> users = jdbcTemplate.query(sql, new UserRowMapper());
 
@@ -106,11 +107,11 @@ class JdbcTemplateTest {
 
         Assertions.assertAll(
                 () -> assertThat(firstUser.getId()).isEqualTo(1L),
-                () -> assertThat(firstUser.getName()).isEqualTo("User1"),
-                () -> assertThat(firstUser.getEmail()).isEqualTo("user1@example.com"),
+                () -> assertThat(firstUser.getName()).isEqualTo("libi"),
+                () -> assertThat(firstUser.getEmail()).isEqualTo("libi@example.com"),
                 () -> assertThat(secondUser.getId()).isEqualTo(2L),
-                () -> assertThat(secondUser.getName()).isEqualTo("User2"),
-                () -> assertThat(secondUser.getEmail()).isEqualTo("user2@example.com")
+                () -> assertThat(secondUser.getName()).isEqualTo("mark"),
+                () -> assertThat(secondUser.getEmail()).isEqualTo("mark@example.com")
         );
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
@@ -123,16 +124,16 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong("id")).thenReturn(1L);
-        when(resultSet.getString("name")).thenReturn("John Doe");
-        when(resultSet.getString("email")).thenReturn("john@example.com");
+        when(resultSet.getString("name")).thenReturn("libi");
+        when(resultSet.getString("email")).thenReturn("libi@example.com");
 
         final User user = jdbcTemplate.queryForObject(sql, new UserRowMapper(), 1L);
 
         Assertions.assertAll(
                 () -> assertThat(user).isNotNull(),
                 () -> assertThat(user.getId()).isEqualTo(1L),
-                () -> assertThat(user.getName()).isEqualTo("John Doe"),
-                () -> assertThat(user.getEmail()).isEqualTo("john@example.com")
+                () -> assertThat(user.getName()).isEqualTo("libi"),
+                () -> assertThat(user.getEmail()).isEqualTo("libi@example.com")
         );
 
         verify(connection).prepareStatement(sql);
@@ -147,9 +148,8 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(false);
 
-        final User user = jdbcTemplate.queryForObject(sql, new UserRowMapper(), "notfound@example.com");
-
-        assertThat(user).isNull();
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, new UserRowMapper(), "notfound@example.com"))
+                .isInstanceOf(EmptyResultDataAccessException.class);
 
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).setObject(1, "notfound@example.com");
@@ -163,15 +163,14 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong("id")).thenReturn(1L, 2L);
-        when(resultSet.getString("name")).thenReturn("User1", "User2");
-        when(resultSet.getString("email")).thenReturn("user@example.com", "user@example.com");
+        when(resultSet.getString("name")).thenReturn("libi", "mark");
+        when(resultSet.getString("email")).thenReturn("libi@example.com", "mark@example.com");
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, new UserRowMapper(), "user@example.com"))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("단건 데이터 조회에서 다중 데이터가 조회되었습니다");
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, new UserRowMapper(), "libi@example.com"))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
 
         verify(connection).prepareStatement(sql);
-        verify(preparedStatement).setObject(1, "user@example.com");
+        verify(preparedStatement).setObject(1, "libi@example.com");
         verify(preparedStatement).executeQuery();
     }
 
