@@ -17,7 +17,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         log.debug("query : {}", sql);
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
@@ -62,8 +61,6 @@ public class JdbcTemplate {
         return results;
     }
 
-    // delete, uddate, insert
-    // 인자가 필요한 버전, 인자가 필요하지 않은 버전
     public void update(String sql, PreparedStatementCallBack callBack) {
         log.debug("query : {}", sql);
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {

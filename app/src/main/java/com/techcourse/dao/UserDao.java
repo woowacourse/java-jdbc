@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementCallBack;
+import com.interface21.jdbc.core.ResultSetCallBack;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -46,33 +47,27 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users;";
 
-        return jdbcTemplate.query(sql, (rs) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4))
-        );
+        return jdbcTemplate.query(sql, getUserResultSetCallBack());
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryOne(sql, (rs) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), id);
+        return jdbcTemplate.queryOne(sql, getUserResultSetCallBack(), id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryOne(sql, (rs) -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)),
-                account
+        return jdbcTemplate.queryOne(sql, getUserResultSetCallBack(), account);
+    }
+
+    private ResultSetCallBack<User> getUserResultSetCallBack() {
+        return (rs) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4)
         );
     }
 }
