@@ -30,12 +30,6 @@ public class JdbcTemplate {
         });
     }
 
-    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> {
             setValues(pstmt, args);
@@ -45,23 +39,18 @@ public class JdbcTemplate {
         });
     }
 
+    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
     private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
         while (rs.next()) {
             results.add(rowMapper.mapRow(rs));
         }
         return results;
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
-        }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        return results.getFirst();
     }
 
     private <T> T execute(String sql, PreparedStatementCallBack<T> callBack) {
@@ -79,5 +68,16 @@ public class JdbcTemplate {
             throw new IllegalArgumentException("sql must not be blank");
         }
         log.debug("Executing prepared SQL statement : [ {} ]", sql);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.getFirst();
     }
 }
