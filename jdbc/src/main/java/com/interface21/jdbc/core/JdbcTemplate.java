@@ -1,9 +1,7 @@
 package com.interface21.jdbc.core;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -73,15 +71,5 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (Exception ignored) {
         }
-    }
-
-    public interface PreparedStatementCallBack {
-
-        void callback(PreparedStatement preparedStatement) throws SQLException;
-    }
-
-    public interface ResultSetCallBack<T> {
-
-        T callback(ResultSet resultSet) throws SQLException;
     }
 }

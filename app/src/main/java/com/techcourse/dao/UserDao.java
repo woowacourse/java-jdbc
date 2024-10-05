@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import javax.sql.DataSource;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementCallBack;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -20,7 +21,7 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        JdbcTemplate.PreparedStatementCallBack callBack = (pstmt) -> {
+        PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
@@ -32,7 +33,7 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        JdbcTemplate.PreparedStatementCallBack callBack = (pstmt) -> {
+        PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
