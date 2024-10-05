@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.support.DataAccessUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,13 +58,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> result = query(sql, rowMapper, params);
-        if (result == null || result.isEmpty()) {
-            throw new DataAccessException("Expected 1 result but found 0");
-        }
-        if (result.size() > 1) {
-            throw new DataAccessException("Expected 1 result but found " + result.size());
-        }
-        return result.getFirst();
+        return DataAccessUtils.nullableSingleResult(result);
     }
 
     private void setParameters(PreparedStatement statement, Object... params) throws SQLException {
