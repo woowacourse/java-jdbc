@@ -37,6 +37,11 @@ public class UserDaoImpl implements UserDao {
                 pstmt.setObject(2, user.getPassword());
                 pstmt.setObject(3, user.getEmail());
             }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         insertJdbcTemplate.update();
@@ -60,6 +65,11 @@ public class UserDaoImpl implements UserDao {
                 pstmt.setObject(1, user.getPassword());
                 pstmt.setObject(2, user.getId());
             }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         updateJdbcTemplate.update();
@@ -67,7 +77,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public List<User> findAll() {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected DataSource getDataSource() {
@@ -106,7 +116,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public Optional<User> findById(final Long id) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected DataSource getDataSource() {
@@ -143,7 +153,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public Optional<User> findByAccount(final String account) {
-        SelectJdbcTemplate selectJdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
 
             @Override
             protected String createQuery() {

@@ -27,7 +27,7 @@
     - UserDao에서 추상 클래스를 객체로 만들어 user 객체에 대한 의존도를 제거한다.
 - [x] [5] 다시 한 번 클래스 추출
     - select도 SelectJdbcTemplate으로 분리한다.
-- [ ] [6] 다시 한 번 템플릿 메서드 패턴 적용
+- [x] [6] 다시 한 번 템플릿 메서드 패턴 적용
     - SelectJdbcTemplate, JdbcTemplate를 하나의 클래스로 합친다.
 - [ ] [7] 불필요한 mapRow 메서드 제거
     - mapRow, setValues를 인터페이스로 분리하여 불필요한 구현을 제거한다.
