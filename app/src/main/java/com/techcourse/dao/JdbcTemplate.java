@@ -12,14 +12,12 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update() {
-        final var sql = createQuery();
-
+    public void update(String sql, PreparedStatementSetter setter) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setValues(pstmt);
+            setter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -27,17 +25,14 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query() {
-        final var sql = createQuery();
-
+    public Object query(String sql, PreparedStatementSetter setter, RowMapper rowMapper) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setValues(pstmt);
-            ResultSet rs = executeQuery(pstmt);
+            ResultSet rs = executeQuery(setter, pstmt);
             if (rs.next()) {
-                return mapRow(rs);
+                return rowMapper.mapRow(rs);
             }
             rs.close();
             return null;
@@ -47,15 +42,10 @@ public abstract class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+    private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
+        setter.setValues(pstmt);
         return pstmt.executeQuery();
     }
 
-    protected abstract String createQuery();
-
     protected abstract DataSource getDataSource();
-
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
-
-    protected abstract Object mapRow(ResultSet rs) throws SQLException;
 }

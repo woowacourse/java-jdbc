@@ -22,57 +22,46 @@ public class UserDaoImpl implements UserDao {
         JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
 
             @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
             protected DataSource getDataSource() {
                 return UserDaoImpl.this.getDataSource();
             }
+        };
+
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        PreparedStatementSetter setter = new PreparedStatementSetter() {
 
             @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setObject(1, user.getAccount());
                 pstmt.setObject(2, user.getPassword());
                 pstmt.setObject(3, user.getEmail());
             }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
         };
 
-        insertJdbcTemplate.update();
+        insertJdbcTemplate.update(sql, setter);
     }
 
     @Override
     public void update(User user) {
         JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "update users set password = ? where id = ?";
-            }
 
             @Override
             protected DataSource getDataSource() {
                 return UserDaoImpl.this.getDataSource();
             }
+        };
+
+        String sql = "update users set password = ? where id = ?";
+        PreparedStatementSetter setter = new PreparedStatementSetter() {
 
             @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setObject(1, user.getPassword());
                 pstmt.setObject(2, user.getId());
             }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
-                return null;
-            }
         };
 
-        updateJdbcTemplate.update();
+        updateJdbcTemplate.update(sql, setter);
     }
 
     @Override
@@ -83,18 +72,20 @@ public class UserDaoImpl implements UserDao {
             protected DataSource getDataSource() {
                 return UserDaoImpl.this.getDataSource();
             }
+        };
+
+        String sql = "select id, account, password, email from users";
+        PreparedStatementSetter setter = new PreparedStatementSetter() {
 
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users";
+            public void setValues(PreparedStatement pstmt) throws SQLException {
             }
+        };
+
+        RowMapper rowMapper = new RowMapper() {
 
             @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
-            }
-
-            @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
+            public Object mapRow(ResultSet rs) throws SQLException {
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {
                     users.add(
@@ -110,7 +101,7 @@ public class UserDaoImpl implements UserDao {
             }
         };
 
-        Object result = selectJdbcTemplate.query();
+        Object result = selectJdbcTemplate.query(sql, setter, rowMapper);
         return (List<User>) result;
     }
 
@@ -122,19 +113,20 @@ public class UserDaoImpl implements UserDao {
             protected DataSource getDataSource() {
                 return UserDaoImpl.this.getDataSource();
             }
+        };
+
+        String sql = "select id, account, password, email from users where id = ?";
+        PreparedStatementSetter setter = new PreparedStatementSetter() {
 
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
-
-            @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
             }
+        };
+        RowMapper rowMapper = new RowMapper() {
 
             @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
+            public Object mapRow(ResultSet rs) throws SQLException {
                 return new User(
                         rs.getLong(1),
                         rs.getString(2),
@@ -144,7 +136,7 @@ public class UserDaoImpl implements UserDao {
             }
         };
 
-        Object result = selectJdbcTemplate.query();
+        Object result = selectJdbcTemplate.query(sql, setter, rowMapper);
         if (result == null) {
             return Optional.empty();
         }
@@ -156,22 +148,23 @@ public class UserDaoImpl implements UserDao {
         JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
 
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
             protected DataSource getDataSource() {
                 return UserDaoImpl.this.getDataSource();
             }
+        };
+
+        String sql = "select id, account, password, email from users where account = ?";
+        PreparedStatementSetter setter = new PreparedStatementSetter() {
 
             @Override
-            protected void setValues(PreparedStatement pstmt) throws SQLException {
+            public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
             }
+        };
+        RowMapper rowMapper = new RowMapper() {
 
             @Override
-            protected Object mapRow(ResultSet rs) throws SQLException {
+            public Object mapRow(ResultSet rs) throws SQLException {
                 return new User(
                         rs.getLong(1),
                         rs.getString(2),
@@ -181,7 +174,7 @@ public class UserDaoImpl implements UserDao {
             }
         };
 
-        Object result = selectJdbcTemplate.query();
+        Object result = selectJdbcTemplate.query(sql, setter, rowMapper);
         if (result == null) {
             return Optional.empty();
         }

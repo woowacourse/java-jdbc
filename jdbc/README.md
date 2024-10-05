@@ -29,7 +29,7 @@
     - select도 SelectJdbcTemplate으로 분리한다.
 - [x] [6] 다시 한 번 템플릿 메서드 패턴 적용
     - SelectJdbcTemplate, JdbcTemplate를 하나의 클래스로 합친다.
-- [ ] [7] 불필요한 mapRow 메서드 제거
+- [x] [7] 불필요한 mapRow 메서드 제거
     - mapRow, setValues를 인터페이스로 분리하여 불필요한 구현을 제거한다.
 - [ ] [8] 라이브러리 확장
     - 커스텀 Exception을 추가해 사용자는 Unchecked Exception이 되도록 변경한다.
