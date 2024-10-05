@@ -9,6 +9,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -74,7 +77,7 @@ class JdbcTemplateTest {
 
             // when & then
             assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, "mia", 1L))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
             verify(connection).close();
         }
@@ -119,7 +122,7 @@ class JdbcTemplateTest {
 
             // when & then
             assertThatThrownBy(() -> jdbcTemplate.fetchResults(sql, JdbcTemplateTest.this::userResultMapper))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
             verify(connection).close();
         }
@@ -152,6 +155,36 @@ class JdbcTemplateTest {
             verify(connection).close();
         }
 
+        @DisplayName("결과 리스트가 비어 있는 경우 예외를 발생한다.")
+        @Test
+        void fetchResult_throwsException_whenEmptyResult() throws SQLException {
+            // given
+            String sql = "select * from users where id = ?";
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
+                    .isInstanceOf(EmptyResultDataAccessException.class);
+            verify(preparedStatement).close();
+            verify(connection).close();
+        }
+
+        @DisplayName("결과 리스트의 크기가 1보다 큰 경우 예외를 발생한다.")
+        @Test
+        void fetchResult_throwException_whenMoreThanOneResult() throws SQLException {
+            // given
+            String sql = "select * from users where id = ?";
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, true, false);
+
+            // when & then
+            assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
+                    .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+            verify(preparedStatement).close();
+            verify(connection).close();
+        }
+
         @DisplayName("단일 결과 조회 실패 시 예외를 발생한다.")
         @Test
         void fetchResult_throwsException() throws SQLException {
@@ -161,7 +194,7 @@ class JdbcTemplateTest {
 
             // when & then
             assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
             verify(connection).close();
         }

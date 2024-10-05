@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,7 +17,6 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int FIRST_RESULT_INDEX = 0;
 
     private final DataSource dataSource;
 
@@ -50,7 +51,13 @@ public class JdbcTemplate {
 
     public <T> T fetchResult(String sql, Function<ResultSet, T> resultMapper, Object... parameters) {
         List<T> results = fetchResults(sql, resultMapper, parameters);
-        return results.get(FIRST_RESULT_INDEX);
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.getFirst();
     }
 
     private PreparedStatement createPreparedStatement(Connection connection, String sql, Object... parameters)
