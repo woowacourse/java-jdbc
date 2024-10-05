@@ -53,7 +53,7 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users;";
 
-        return query(sql, (rs) -> new User(
+        return templateQuery(sql, (rs) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
@@ -61,32 +61,10 @@ public class UserDao {
         );
     }
 
-    private <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
-        log.debug("query : {}", sql);
-        List<T> results = new ArrayList<>();
-
-        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
-            int index = 1;
-            for (Object arg : args) {
-                pstmt.setObject(index++, arg);
-            }
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                results.add(callBack.callback(rs));
-            }
-
-            rs.close();
-        } catch (Exception ignored) {
-        }
-
-        return results;
-    }
-
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return templateQuery(sql, (rs) -> new User(
+        return templateQueryOne(sql, (rs) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
@@ -96,7 +74,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return templateQuery(sql, (rs) -> new User(
+        return templateQueryOne(sql, (rs) -> new User(
                         rs.getLong(1),
                         rs.getString(2),
                         rs.getString(3),
@@ -105,7 +83,7 @@ public class UserDao {
         );
     }
 
-    private <T> T templateQuery(String sql, ResultSetCallBack<T> callBack, Object... args) {
+    private <T> T templateQueryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         log.debug("query : {}", sql);
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
             int index = 1;
@@ -125,6 +103,28 @@ public class UserDao {
         }
 
         return null;
+    }
+
+    private <T> List<T> templateQuery(String sql, ResultSetCallBack<T> callBack, Object... args) {
+        log.debug("query : {}", sql);
+        List<T> results = new ArrayList<>();
+
+        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+            int index = 1;
+            for (Object arg : args) {
+                pstmt.setObject(index++, arg);
+            }
+
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                results.add(callBack.callback(rs));
+            }
+
+            rs.close();
+        } catch (Exception ignored) {
+        }
+
+        return results;
     }
 
     // delete, uddate, insert
