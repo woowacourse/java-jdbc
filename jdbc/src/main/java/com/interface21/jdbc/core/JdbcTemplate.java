@@ -21,23 +21,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T, R> R execute(
-            String sql, RowMapper<T> rowMapper, Object[] args, PreparedStatementCallBack<T, R> callBack
-    ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                ps.setObject(i + 1, args[i]);
-            }
-            return callBack.call(rowMapper, ps);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
     public void update(String sql, Object... args) {
         execute(sql, null, args, (rm, ps) -> ps.executeUpdate());
     }
@@ -80,7 +63,25 @@ public class JdbcTemplate {
         return dataSource;
     }
 
+    private <T, R> R execute(
+            String sql, RowMapper<T> rowMapper, Object[] args, PreparedStatementCallBack<T, R> callBack
+    ) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
+            return callBack.call(rowMapper, ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private abstract static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
+
 
         @Override
         public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
@@ -90,6 +91,6 @@ public class JdbcTemplate {
         }
 
         abstract R createResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException;
-    }
 
+    }
 }
