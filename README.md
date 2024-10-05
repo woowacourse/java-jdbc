@@ -20,5 +20,5 @@
 
 ## 1단계 - JDBC 라이브러리 구현하기
 
-- [ ] UserDao 미구현 메서드 구현
+- [x] UserDao 미구현 메서드 구현
 - [ ] JdbcTemplate 구현
