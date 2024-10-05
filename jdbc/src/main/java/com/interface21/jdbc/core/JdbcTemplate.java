@@ -81,8 +81,6 @@ public class JdbcTemplate {
     }
 
     private abstract static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
-
-
         @Override
         public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
             try (ResultSet rs = ps.executeQuery()) {
@@ -91,6 +89,5 @@ public class JdbcTemplate {
         }
 
         abstract R createResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException;
-
     }
 }
