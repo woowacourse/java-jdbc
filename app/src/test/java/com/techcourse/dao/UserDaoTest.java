@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +29,7 @@ class UserDaoTest {
         assertThat(users).isNotEmpty();
     }
 
+    @DisplayName("아이디 값을 통해 유저를 찾을 수 있다")
     @Test
     void findById() {
         final var user = userDao.findById(1L);
@@ -35,6 +37,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
+    @DisplayName("계좌를 통해 유저를 찾을 수 있다")
     @Test
     void findByAccount() {
         final var account = "gugu";
@@ -54,6 +57,7 @@ class UserDaoTest {
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
+    @DisplayName("유저 테이블의 컬럼을 전체 업데이트할 수 있다")
     @Test
     void update() {
         final var newPassword = "password99";
