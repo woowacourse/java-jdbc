@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.List;
@@ -72,6 +73,53 @@ public class JdbcTemplate {
         }
         if (param.getClass() == Integer.class) {
             pstmt.setInt(index, (Integer) param);
+        }
+    }
+
+    public Object executeQueryForObject(String sql, List<Object> paramList, Maker maker) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            for (int index = 1; index <= paramList.size(); index++) {
+                setParam(pstmt, index, paramList.get(index - 1));
+            }
+
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            if (rs.next()) {
+                return maker.make(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 
