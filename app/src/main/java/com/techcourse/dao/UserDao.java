@@ -10,7 +10,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
+    public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
     }
 
@@ -18,8 +18,8 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+    public void insert(User user) {
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
@@ -30,8 +30,8 @@ public class UserDao {
         jdbcTemplate.update(sql, callBack);
     }
 
-    public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+    public void update(User user) {
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         PreparedStatementCallBack callBack = (pstmt) -> {
             pstmt.setString(1, user.getAccount());
@@ -44,7 +44,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users;";
+        String sql = "select id, account, password, email from users;";
 
         return jdbcTemplate.query(sql, (rs) -> new User(
                 rs.getLong(1),
@@ -54,8 +54,8 @@ public class UserDao {
         );
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+    public User findById(Long id) {
+        String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryOne(sql, (rs) -> new User(
                 rs.getLong(1),
@@ -64,8 +64,8 @@ public class UserDao {
                 rs.getString(4)), id);
     }
 
-    public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+    public User findByAccount(String account) {
+        String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryOne(sql, (rs) -> new User(
                         rs.getLong(1),
