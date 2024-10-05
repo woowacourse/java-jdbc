@@ -57,7 +57,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void insert(final String sql, final String... arguments) {
+    public void update(final String sql, final String... arguments) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
@@ -72,9 +72,5 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    public void update(final String sql, final String... arguments) {
-        insert(sql, arguments);
     }
 }
