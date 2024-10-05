@@ -35,17 +35,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-
         List<T> result = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                T object = rowMapper.mapRow(rs, rs.getRow());
-                result.add(object);
+
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    T object = rowMapper.mapRow(rs, rs.getRow());
+                    result.add(object);
+                }
             }
 
             return result;
@@ -60,11 +61,13 @@ public class JdbcTemplate {
         ) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
+
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs, rs.getRow());
+                }
+                return null;
             }
-            return null;
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
