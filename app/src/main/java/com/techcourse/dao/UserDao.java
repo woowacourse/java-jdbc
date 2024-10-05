@@ -29,53 +29,32 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        update(sql, (connection) -> {
+        PreparedCallBack callBack = (connection) -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.executeUpdate();
-        });
+            pstmt.close();
+        };
+
+        commandTemplate(sql, callBack);
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        update(sql, (connection) -> {
+        PreparedCallBack callBack = (connection) -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
-        });
-    }
+            pstmt.close();
+        };
 
-    private void update(String sql, PreparedCallBack callBack) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            callBack.callback(dataSource.getConnection());
-            log.debug("query : {}", sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        commandTemplate(sql, callBack);
     }
 
     public List<User> findAll() {
@@ -95,7 +74,7 @@ public class UserDao {
         ResultSet rs = null;
         List<T> results = new ArrayList<>();
         try {
-            conn = this.dataSource.getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
             int index = 1;
             for (Object arg : args) {
@@ -151,10 +130,10 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return queryOne(sql, (rs) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)),
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)),
                 account
         );
     }
@@ -205,12 +184,26 @@ public class UserDao {
         }
     }
 
+    // delete, uddate, insert
+    // 인자가 필요한 버전, 인자가 필요하지 않은 버전
+    private void commandTemplate(String sql, PreparedCallBack callBack) {
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection()) {
+            callBack.callback(connection);
+            // executeUpdate를 공통으로 사용해야함
+
+            // 예외 처리
+        } catch (Exception ingnore) {
+        }
+    }
+
     private interface PreparedCallBack {
+
 
         void callback(Connection connection) throws SQLException;
     }
-
     private interface ResultSetCallBack<T> {
+
 
         T callback(ResultSet resultSet) throws SQLException;
     }
