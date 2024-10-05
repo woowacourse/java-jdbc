@@ -20,12 +20,12 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class JdbcTemplateTest {
+class LegacyJdbcTemplateTest {
 
     private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet rs;
-    private JdbcTemplate jdbcTemplate;
+    private LegacyJdbcTemplate legacyJdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -37,7 +37,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(any())).thenReturn(pstmt);
 
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        legacyJdbcTemplate = new LegacyJdbcTemplate(dataSource);
     }
 
     @Test
@@ -45,7 +45,7 @@ class JdbcTemplateTest {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account) values (?, ?)";
 
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword());
+        legacyJdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword());
 
         assertAll(
                 () -> verify(pstmt).setObject(1, user.getAccount()),
@@ -64,7 +64,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword()))
+                () -> assertThatThrownBy(() -> legacyJdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword()))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt).setObject(2, user.getPassword()),
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("jojo");
         when(rs.getString("password")).thenReturn("1234");
 
-        Optional<TestUser> actual = jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser,
+        Optional<TestUser> actual = legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser,
                 user.getAccount());
 
         assertAll(
@@ -110,7 +110,7 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(
-                        () -> jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, user.getAccount()))
+                        () -> legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, user.getAccount()))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
@@ -128,7 +128,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        Optional<TestUser> actual = jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser,
+        Optional<TestUser> actual = legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser,
                 user.getAccount());
 
         assertAll(
@@ -151,7 +151,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("jojo", "cutehuman");
         when(rs.getString("password")).thenReturn("jojo1234", "cutehuman1234");
 
-        List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
+        List<TestUser> actual = legacyJdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
         assertAll(
                 () -> assertThat(actual).hasSize(2),
@@ -172,7 +172,7 @@ class JdbcTemplateTest {
         when(rs.next()).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser))
+                () -> assertThatThrownBy(() -> legacyJdbcTemplate.executeQueryWithMultiData(sql, this::generateUser))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -188,7 +188,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        List<TestUser> actual = jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
+        List<TestUser> actual = legacyJdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
 
         assertAll(
                 () -> assertThat(actual).isEmpty(),

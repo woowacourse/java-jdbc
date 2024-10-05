@@ -1,7 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.LegacyJdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,44 +10,44 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UserDaoJdbcImpl implements UserDao {
+public class LegacyUserDaoImpl implements UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDaoJdbcImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(LegacyUserDaoImpl.class);
 
-    private final JdbcTemplate jdbcTemplate;
+    private final LegacyJdbcTemplate legacyJdbcTemplate;
 
-    public UserDaoJdbcImpl(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public LegacyUserDaoImpl(final LegacyJdbcTemplate legacyJdbcTemplate) {
+        this.legacyJdbcTemplate = legacyJdbcTemplate;
     }
 
     @Override
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        legacyJdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     @Override
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
-        jdbcTemplate.executeUpdate(sql, user.getPassword(), user.getId());
+        legacyJdbcTemplate.executeUpdate(sql, user.getPassword(), user.getId());
     }
 
     @Override
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
+        return legacyJdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
     }
 
     @Override
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, id);
+        return legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, id);
     }
 
     @Override
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, account);
+        return legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, account);
     }
 
     private User generateUser(ResultSet rs) {

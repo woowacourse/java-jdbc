@@ -1,5 +1,8 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +16,11 @@ public class UserDaoImpl implements UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDaoImpl(final DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
+    }
+
+    public UserDaoImpl(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override

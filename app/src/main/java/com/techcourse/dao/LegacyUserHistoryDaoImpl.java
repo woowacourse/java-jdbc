@@ -1,20 +1,20 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.LegacyJdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
-public class UserHistoryDaoJdbcImpl implements UserHistoryDao {
+public class LegacyUserHistoryDaoImpl implements UserHistoryDao {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final LegacyJdbcTemplate legacyJdbcTemplate;
 
-    public UserHistoryDaoJdbcImpl(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public LegacyUserHistoryDaoImpl(final LegacyJdbcTemplate legacyJdbcTemplate) {
+        this.legacyJdbcTemplate = legacyJdbcTemplate;
     }
 
     @Override
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.executeUpdate(
+        legacyJdbcTemplate.executeUpdate(
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),

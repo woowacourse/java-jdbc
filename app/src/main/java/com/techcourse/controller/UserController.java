@@ -1,14 +1,14 @@
 package com.techcourse.controller;
 
 import com.interface21.context.stereotype.Controller;
-import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.LegacyJdbcTemplate;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JsonView;
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDaoJdbcImpl;
-import com.techcourse.dao.UserHistoryDaoJdbcImpl;
+import com.techcourse.dao.LegacyUserDaoImpl;
+import com.techcourse.dao.LegacyUserHistoryDaoImpl;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,8 +24,8 @@ public class UserController {
 
     public UserController() {
         userService = new UserService(
-                new UserDaoJdbcImpl(new JdbcTemplate(DataSourceConfig.getInstance())),
-                new UserHistoryDaoJdbcImpl(new JdbcTemplate(DataSourceConfig.getInstance()))
+                new LegacyUserDaoImpl(new LegacyJdbcTemplate(DataSourceConfig.getInstance())),
+                new LegacyUserHistoryDaoImpl(new LegacyJdbcTemplate(DataSourceConfig.getInstance()))
         );
     }
 
