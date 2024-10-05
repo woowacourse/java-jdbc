@@ -45,7 +45,10 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final String baseQuery = "select id, account, password, email from users where account = :account";
+        final Map<String, Object> queryParameters = Map.of("account", account);
+        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+
+        return jdbcTemplate.queryForObject(baseQuery, queryParameters, rowMapper);
     }
 }
