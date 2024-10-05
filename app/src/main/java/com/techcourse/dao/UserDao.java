@@ -52,7 +52,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
