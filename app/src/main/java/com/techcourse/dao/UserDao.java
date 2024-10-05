@@ -23,13 +23,20 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final String baseQuery = "insert into users (account, password, email) values (:account, :password, :email)";
+        final String baseQuery = "INSERT INTO users (account, password, email) VALUES (:account, :password, :email)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(user);
         jdbcTemplate.insert(baseQuery, sqlParameterSource);
     }
 
     public void update(final User user) {
-        // todo
+        final String baseQuery = "UPDATE users SET account = :account, password = :password, email = :email WHERE id = :id";
+        final Map<String, Object> parameters = Map.of(
+                "account", user.getAccount(),
+                "password", user.getPassword(),
+                "email", user.getEmail(),
+                "id", user.getId()
+        );
+        jdbcTemplate.update(baseQuery, parameters);
     }
 
     public List<User> findAll() {
@@ -39,7 +46,7 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final String baseQuery = "select id, account, password, email from users where id = :id";
+        final String baseQuery = "SELECT id, account, password, email FROM users WHERE id = :id";
         final Map<String, Object> queryParameters = Map.of("id", id);
         final RowMapper<User> rowMapper = new RowMapper<>(User.class);
 
@@ -47,7 +54,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final String baseQuery = "select id, account, password, email from users where account = :account";
+        final String baseQuery = "SELECT id, account, password, email FROM users WHERE account = :account";
         final Map<String, Object> queryParameters = Map.of("account", account);
         final RowMapper<User> rowMapper = new RowMapper<>(User.class);
 

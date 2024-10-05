@@ -55,6 +55,35 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(final String sql, final Map<String, Object> parameters) {
+        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+
+        Connection conn = null;
+        Statement stmt = null;
+        try {
+            final String value = bindingParametersQuery.getValue();
+            conn = dataSource.getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate(value);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
     public <T> T queryForObject(
             final String sql,
             final Map<String, Object> parameters,
