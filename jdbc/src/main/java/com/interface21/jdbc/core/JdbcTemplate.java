@@ -1,7 +1,8 @@
 package com.interface21.jdbc.core;
 
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.exception.EmptyResultDataAccessException;
+import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,10 +73,10 @@ public class JdbcTemplate {
                 }
             }
             if (result.isEmpty()) {
-                throw new DataAccessException("EmptyResultDataAccessException");
+                throw new EmptyResultDataAccessException();
             }
             if (result.size() != 1) {
-                throw new DataAccessException("IncorrectResultSizeDataAccessException");
+                throw new IncorrectResultSizeDataAccessException();
             }
             return result.getFirst();
         } catch (SQLException e) {

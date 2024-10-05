@@ -8,6 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.jdbc.exception.EmptyResultDataAccessException;
+import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -150,8 +152,7 @@ class JdbcTemplateTest {
                 rs.getLong("id"),
                 rs.getString("name")
         ), 1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("IncorrectResultSizeDataAccessException");
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @DisplayName("단일 데이터 조회에서 데이터가 조회 되지 않으면 예외가 발생한다.")
@@ -167,7 +168,6 @@ class JdbcTemplateTest {
                 rs.getLong("id"),
                 rs.getString("name")
         ), 1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("EmptyResultDataAccessException");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }
