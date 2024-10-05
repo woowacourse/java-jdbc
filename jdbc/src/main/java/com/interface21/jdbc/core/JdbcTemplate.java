@@ -37,13 +37,13 @@ public class JdbcTemplate {
              PreparedStatement ps = conn.prepareStatement(sql);) {
             log.debug("Query: {}, Parameters: {}", sql, args);
             setSQLParameters(ps, args);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
+            ResultSet rs = ps.executeQuery();
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
+            return results;
+
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
