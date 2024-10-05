@@ -1,15 +1,14 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasePopulatorUtils {
 
@@ -32,15 +31,53 @@ public class DatabasePopulatorUtils {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    public static void cleanUp(final DataSource dataSource) {
+        Connection connection = null;
+        Statement statement = null;
+        try {
+            String sql = """
+                            SET REFERENTIAL_INTEGRITY FALSE;
+                            TRUNCATE TABLE users;
+                            TRUNCATE TABLE user_history;
+                            ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+                            ALTER TABLE user_history ALTER COLUMN id RESTART WITH 1;
+                            SET REFERENTIAL_INTEGRITY TRUE;
+                    """;
+
+            connection = dataSource.getConnection();
+            statement = connection.createStatement();
+            statement.execute(sql);
+        } catch (NullPointerException | SQLException e) {
+            log.error(e.getMessage(), e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException ignored) {
+            }
+        }
+    }
+
+    private DatabasePopulatorUtils() {
+    }
 }
