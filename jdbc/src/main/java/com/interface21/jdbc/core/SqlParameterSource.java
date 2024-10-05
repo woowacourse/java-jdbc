@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +29,6 @@ public class SqlParameterSource {
                 .filter(field -> field.getName().equals(parameterName))
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("일치하는 파라미터가 없습니다."));
-
-        if (parameter.getType() != String.class) {
-            throw new NoSuchElementException("해당 키 값을 가진 문자열 타입의 값이 존재하지 않습니다.");
-        }
 
         return parseParameterValue(parameter);
     }
