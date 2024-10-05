@@ -76,7 +76,7 @@ public class JdbcTemplate {
                 throw new EmptyResultDataAccessException();
             }
             if (result.size() != 1) {
-                throw new IncorrectResultSizeDataAccessException();
+                throw new IncorrectResultSizeDataAccessException(result.size());
             }
             return result.getFirst();
         } catch (SQLException e) {
