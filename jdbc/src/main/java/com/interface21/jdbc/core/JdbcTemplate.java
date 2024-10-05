@@ -42,7 +42,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
             ResultSet resultSet = preparedStatement.executeQuery();
-            return rowMapper.mapRow(resultSet, 0);
+            return rowMapper.mapRow(resultSet, resultSet.getRow());
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
