@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class UserDao {
 
@@ -34,7 +35,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
