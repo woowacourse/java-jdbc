@@ -17,16 +17,13 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.dataSource = dataSource;
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.dataSource = null;
     }
 
     private final RowMapper<User> ROW_MAPPER = ((rs, rowNum) -> {
