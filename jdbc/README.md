@@ -14,7 +14,7 @@
 
 - [x] [1] 메서드 추출
     - UserDao update와 insert 메서드에서 사용자가 수정해야 되는 부분을 메서드로 분리한다.
-- [ ] [2] 클래스 추출
+- [x] [2] 클래스 추출
     - update 메서드와 관련된 코드를 UpdateJdbcTemplate 클래스를 만들어 이동시킨다.
     - insert도 마찬가지로 InsertJdbcTemplate 클래스를 만들어 이동한다.
     - UserDao에서 update, insert 각 메서드는 코드를 이동한 클래스를 사용하도록 수정한다.

@@ -17,62 +17,23 @@ public class UserDaoImpl implements UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDaoImpl.class);
 
     private final DataSource dataSource;
+    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDaoImpl(final DataSource dataSource) {
         this.dataSource = dataSource;
+        insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
+        updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
     }
 
     @Override
-    public void insert(final User user) {
-        final var sql = createQueryForInsert();
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setObject(1, user.getAccount());
-        pstmt.setObject(2, user.getPassword());
-        pstmt.setObject(3, user.getEmail());
+    public void insert(User user) {
+        insertJdbcTemplate.insert(user);
     }
 
     @Override
-    public void update(final User user) {
-        final var sql = createQueryForUpdate();
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set password = ? where id = ?";
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setObject(1, user.getPassword());
-        pstmt.setObject(2, user.getId());
+    public void update(User user) {
+        updateJdbcTemplate.update(user);
     }
 
     @Override
