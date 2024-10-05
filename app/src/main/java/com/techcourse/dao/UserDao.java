@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -63,48 +62,22 @@ public class UserDao {
     }
 
     private <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+        log.debug("query : {}", sql);
         List<T> results = new ArrayList<>();
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+
+        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
             int index = 1;
             for (Object arg : args) {
                 pstmt.setObject(index++, arg);
             }
-            rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
 
+            ResultSet rs = pstmt.executeQuery(sql);
             while (rs.next()) {
-                T result = callBack.callback(rs);
-                results.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
+                results.add(callBack.callback(rs));
             }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            rs.close();
+        } catch (Exception ignored) {
         }
 
         return results;
@@ -147,7 +120,7 @@ public class UserDao {
             }
 
             rs.close();
-        } catch (Exception ingnore) {
+        } catch (Exception ignored) {
         }
 
         return null;
@@ -160,7 +133,7 @@ public class UserDao {
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
             callBack.callback(pstmt);
             pstmt.executeUpdate();
-        } catch (Exception ingnore) {
+        } catch (Exception ignored) {
         }
     }
 
