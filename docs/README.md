@@ -3,7 +3,7 @@
 - [ ] JDBC 라이브러리 구현하기
   - [X] `UserDao` 구현
   - [X] `JdbcTemplate` 구현
-  - [ ] `JdbcTemplate`으로 `UserDao` 리팩토링
+  - [X] `JdbcTemplate`으로 `UserDao` 리팩토링
 - [ ] 리팩터링
 - [ ] Transaction 적용하기
 - [ ] Transaction synchronization 적용하기
