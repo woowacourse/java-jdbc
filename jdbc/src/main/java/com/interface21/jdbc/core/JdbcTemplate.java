@@ -23,14 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(String query, Object... parameters) {
+    public int execute(String query, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
 
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
