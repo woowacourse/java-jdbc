@@ -24,14 +24,14 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = createQueryForInsert();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParams(pstmt, user.getAccount(), user.getPassword(), user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,21 +39,40 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setObject(1, user.getAccount());
+        pstmt.setObject(2, user.getPassword());
+        pstmt.setObject(3, user.getEmail());
+    }
+
     @Override
     public void update(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+        final var sql = createQueryForUpdate();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParams(pstmt, user.getPassword(), user.getId());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set password = ? where id = ?";
+    }
+
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setObject(1, user.getPassword());
+        pstmt.setObject(2, user.getId());
     }
 
     @Override
@@ -118,12 +137,6 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
         }
     }
 
