@@ -49,7 +49,7 @@ public class JdbcTemplate {
 
             ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
-                return objectMapper.map(resultSet);
+                return objectMapper.map(resultSet, resultSet.getRow());
             }
             throw new DataAccessException(
                     new NoSuchElementException("\"%s\" 에 해당하는 결과가 존재하지 않습니다.".formatted(query))
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             ResultSet resultSet = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
-                results.add(objectMapper.map(resultSet));
+                results.add(objectMapper.map(resultSet, resultSet.getRow()));
             }
             return results;
         } catch (SQLException e) {

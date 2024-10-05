@@ -20,11 +20,11 @@ import com.techcourse.domain.User;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final ObjectMapper<User> USER_OBJECT_MAPPER = rs -> new User(
-            rs.getLong("id"),
-            rs.getString("account"),
-            rs.getString("password"),
-            rs.getString("email"));
+    private static final ObjectMapper<User> USER_OBJECT_MAPPER = (resultSet, rowNum) -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email"));
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
