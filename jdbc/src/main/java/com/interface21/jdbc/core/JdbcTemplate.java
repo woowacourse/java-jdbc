@@ -37,12 +37,12 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
             }
-            rs.close();
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -54,12 +54,12 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            ResultSet rs = executeQuery(setter, pstmt);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            try (ResultSet rs = executeQuery(setter, pstmt)) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
             }
-            rs.close();
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
