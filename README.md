@@ -17,3 +17,8 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+## 1단계 - JDBC 라이브러리 구현하기
+
+- [ ] UserDao 미구현 메서드 구현
+- [ ] JdbcTemplate 구현
