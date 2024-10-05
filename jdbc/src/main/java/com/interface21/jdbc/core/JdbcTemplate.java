@@ -77,17 +77,7 @@ public class JdbcTemplate {
 
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for (int i = 1; i <= parameters.length; i++) {
-            setParameter(pstmt, parameters[i - 1], i);
-        }
-    }
-
-    private void setParameter(PreparedStatement pstmt, Object parameter, int index) throws SQLException {
-        Class<?> parameterClass = parameter.getClass();
-        if (parameterClass.equals(String.class)) {
-            pstmt.setString(index, (String) parameter);
-        }
-        if (parameterClass.equals(Long.class)) {
-            pstmt.setLong(index, (long) parameter);
+            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }
