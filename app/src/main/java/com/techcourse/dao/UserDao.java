@@ -20,10 +20,12 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> userRowMapper = resultSet -> new User(
-            resultSet.getLong(1),
-            resultSet.getString(2),
-            resultSet.getString(3),
-            resultSet.getString(4));
+            resultSet.getLong("id"),        // 컬럼 이름 사용
+            resultSet.getString("account"), // 컬럼 이름 사용
+            resultSet.getString("password"),// 컬럼 이름 사용
+            resultSet.getString("email")    // 컬럼 이름 사용
+    );
+
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
