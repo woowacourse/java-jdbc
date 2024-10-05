@@ -10,10 +10,10 @@ public class UserRowMapper implements RowMapper {
     public User mapRow(final ResultSet resultSet) {
         try {
             return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
