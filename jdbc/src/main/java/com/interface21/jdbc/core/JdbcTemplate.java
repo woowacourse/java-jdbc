@@ -20,12 +20,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper rowMapper, final String condition) {
+    public <T> T queryForObject(final String sql, final RowMapper rowMapper, final Object... conditions) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            preparedStatement.setString(1, condition);
+
+            for (int argumentIndex = 0; argumentIndex < conditions.length; argumentIndex++) {
+                preparedStatement.setObject(argumentIndex + 1, conditions[argumentIndex]);
+            }
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -57,14 +60,14 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final String... arguments) {
+    public void update(final String sql, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
             for (int argumentIndex = 0; argumentIndex < arguments.length; argumentIndex++) {
-                preparedStatement.setString(argumentIndex + 1, arguments[argumentIndex]);
+                preparedStatement.setObject(argumentIndex + 1, arguments[argumentIndex]);
             }
 
             preparedStatement.executeUpdate();
