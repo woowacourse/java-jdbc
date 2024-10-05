@@ -70,4 +70,9 @@ public class UserDao {
         );
         return result;
     }
+
+    public void reset() {
+        final var sql = "truncate table users restart identity";
+        dataSource.update(sql);
+    }
 }
