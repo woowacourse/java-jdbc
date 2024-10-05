@@ -17,42 +17,6 @@ public class UserDaoImpl implements UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDaoImpl.class);
 
     private final DataSource dataSource;
-    private final JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
-
-        @Override
-        protected String createQuery() {
-            return "insert into users (account, password, email) values (?, ?, ?)";
-        }
-
-        @Override
-        protected DataSource getDataSource() {
-            return UserDaoImpl.this.getDataSource();
-        }
-
-        @Override
-        protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
-            pstmt.setObject(1, user.getAccount());
-            pstmt.setObject(2, user.getPassword());
-            pstmt.setObject(3, user.getEmail());
-        }
-    };
-    private final JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
-        @Override
-        protected String createQuery() {
-            return "update users set password = ? where id = ?";
-        }
-
-        @Override
-        protected DataSource getDataSource() {
-            return UserDaoImpl.this.getDataSource();
-        }
-
-        @Override
-        protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
-            pstmt.setObject(1, user.getPassword());
-            pstmt.setObject(2, user.getId());
-        }
-    };
 
     public UserDaoImpl(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -60,12 +24,50 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void insert(User user) {
-        insertJdbcTemplate.update(user);
+        JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
+
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDaoImpl.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setObject(1, user.getAccount());
+                pstmt.setObject(2, user.getPassword());
+                pstmt.setObject(3, user.getEmail());
+            }
+        };
+
+        insertJdbcTemplate.update();
     }
 
     @Override
     public void update(User user) {
-        updateJdbcTemplate.update(user);
+        JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set password = ? where id = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDaoImpl.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setObject(1, user.getPassword());
+                pstmt.setObject(2, user.getId());
+            }
+        };
+
+        updateJdbcTemplate.update();
     }
 
     @Override
