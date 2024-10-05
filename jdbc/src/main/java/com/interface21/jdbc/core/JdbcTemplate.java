@@ -98,6 +98,8 @@ public class JdbcTemplate {
     private void close(final ResultSet resultSet) {
         try {
             resultSet.close();
-        } catch (SQLException e) {}
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }

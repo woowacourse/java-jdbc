@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -10,6 +11,12 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     private final JdbcTemplate dataSource;
 
@@ -29,45 +36,19 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final List<User> result = dataSource.query(
-                sql,
-                (rs, rowNum) -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)
-                )
-        );
+        final List<User> result = dataSource.query(sql, ROW_MAPPER);
         return result;
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final User result = dataSource.queryForObject(
-                sql,
-                (rs, rowNum) -> new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4)
-                    ),
-                id
-        );
+        final User result = dataSource.queryForObject(sql, ROW_MAPPER, id);
         return result;
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final User result = dataSource.queryForObject(
-                sql,
-                (rs, rowNum) -> new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)
-                ),
-                account
-        );
+        final User result = dataSource.queryForObject(sql, ROW_MAPPER, account);
         return result;
     }
 
