@@ -35,6 +35,14 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> result = query(sql, rowMapper, args);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.getFirst();
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
@@ -52,14 +60,6 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL execution failed. : " + sql);
         }
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> result = query(sql, rowMapper, args);
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.getFirst();
     }
 
     private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
