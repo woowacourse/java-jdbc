@@ -5,5 +5,5 @@ import java.sql.SQLException;
 
 public interface ResultSetExtractor<T> {
 
-    T extractData(ResultSet rs) throws SQLException;
+    T extractData(ResultSet resultSet) throws SQLException;
 }
