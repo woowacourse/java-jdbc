@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, String... parameters) {
+    public void update(String sql, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -30,7 +30,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
-                pstmt.setString(i + PARAMETER_INDEX_OFFSET, parameters[i]);
+                setParameter(i + PARAMETER_INDEX_OFFSET, pstmt, parameters[i]);
             }
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -49,6 +49,18 @@ public class JdbcTemplate {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    private void setParameter(int parameterIndex, PreparedStatement pstmt, Object parameter) throws SQLException {
+        if (parameter instanceof String) {
+            pstmt.setString(parameterIndex, (String) parameter);
+            return;
+        }
+        if (parameter instanceof Long) {
+            pstmt.setLong(parameterIndex, (Long) parameter);
+            return;
+        }
+        throw new IllegalArgumentException("준비되지 않은 파라미터 타입입니다. class = " + parameter.getClass().getCanonicalName());
     }
 
     // TODO: queryForObject() 구현
