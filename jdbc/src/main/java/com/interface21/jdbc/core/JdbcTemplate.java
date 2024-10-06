@@ -1,7 +1,5 @@
 package com.interface21.jdbc.core;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,7 +52,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQueryForObject(String sql, Class<T> clazz, Object... parameters) {
+    public <T> T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -70,7 +68,7 @@ public class JdbcTemplate {
             if (!rs.next()) {
                 return null;
             }
-            return createInstance(clazz, rs);
+            return rowMapper.mapRow(rs);
 
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -99,7 +97,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQuery(String sql, Class<T> clazz, Object... parameters) {
+    public <T> List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -115,7 +113,12 @@ public class JdbcTemplate {
             if (!rs.next()) {
                 return null;
             }
-            return createInstances(clazz, rs);
+
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
 
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -148,29 +151,5 @@ public class JdbcTemplate {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }
-    }
-
-    private <T> List<T> createInstances(Class<T> clazz, ResultSet rs) throws Exception {
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            result.add(createInstance(clazz, rs));
-        }
-        return result;
-    }
-
-    private <T> T createInstance(Class<T> clazz, ResultSet rs) throws Exception {
-        Constructor<T> constructor = clazz.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        T instance = constructor.newInstance();
-        constructor.setAccessible(false);
-
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            Object value = rs.getObject(field.getName(), field.getType());
-            field.set(instance, value);
-            field.setAccessible(false);
-        }
-        return instance;
     }
 }

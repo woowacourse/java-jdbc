@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    static final RowMapper<TestUser> TEST_USER_ROW_MAPPER = (rs) -> new TestUser(
+            rs.getLong("id"),
+            rs.getString("account"));
+
     ResultSet rs;
     JdbcTemplate jdbcTemplate;
 
@@ -40,8 +44,8 @@ class JdbcTemplateTest {
     void executeUpdate() throws SQLException {
         // given
         when(rs.next()).thenReturn(true);
-        when(rs.getObject("id", Long.class)).thenReturn(1L);
-        when(rs.getObject("account", String.class)).thenReturn("ever");
+        when(rs.getLong("id")).thenReturn(1L);
+        when(rs.getString("account")).thenReturn("ever");
 
         // when
         String insertSql = "insert into users (account) values (?)";
@@ -49,22 +53,22 @@ class JdbcTemplateTest {
 
         // then
         String selectSql = "select id, account from users where id = ?";
-        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TestUser.class, 1);
+        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TEST_USER_ROW_MAPPER, 1);
         assertThat(user.getId()).isEqualTo(1);
         assertThat(user.getAccount()).isEqualTo("ever");
     }
 
     @DisplayName("단건 조회 쿼리를 실행하면 해당 데이터를 조회할 수 있다.")
     @Test
-    void executeQuery() throws SQLException {
+    void executeQueryForObject() throws SQLException {
         // given
         when(rs.next()).thenReturn(true);
-        when(rs.getObject("id", Long.class)).thenReturn(1L);
-        when(rs.getObject("account", String.class)).thenReturn("ever");
+        when(rs.getLong("id")).thenReturn(1L);
+        when(rs.getString("account")).thenReturn("ever");
 
         // when
         String selectSql = "select id, account from users where id = ?";
-        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TestUser.class, 1);
+        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TEST_USER_ROW_MAPPER, 1);
 
         // then
         assertThat(user.getId()).isEqualTo(1);
@@ -73,7 +77,7 @@ class JdbcTemplateTest {
 
     @DisplayName("여러건 조회 쿼리를 실행하면 해당 데이터 목록을 조회할 수 있다.")
     @Test
-    void executeQueryReturnList() throws SQLException {
+    void executeQuery() throws SQLException {
         // given
         String insertSql = "insert into users (account) values (?)";
         jdbcTemplate.executeUpdate(insertSql, "ever1");
@@ -86,7 +90,7 @@ class JdbcTemplateTest {
 
         // when
         String selectSql = "select id, account from users";
-        List<TestUser> testUsers = jdbcTemplate.executeQuery(selectSql, TestUser.class);
+        List<TestUser> testUsers = jdbcTemplate.executeQuery(selectSql, TEST_USER_ROW_MAPPER);
 
         // then
         assertThat(testUsers).hasSize(2);
