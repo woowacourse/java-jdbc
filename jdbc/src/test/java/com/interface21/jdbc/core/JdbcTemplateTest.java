@@ -106,10 +106,10 @@ class JdbcTemplateTest {
             ResultSet resultSet = mock(ResultSet.class);
             when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-            when(resultSet.getLong(1)).thenReturn(FIRST_USER.getId(), SECOND_USER.getId());
-            when(resultSet.getString(2)).thenReturn(FIRST_USER.getAccount(), SECOND_USER.getAccount());
-            when(resultSet.getString(3)).thenReturn(FIRST_USER.getPassword(), SECOND_USER.getPassword());
-            when(resultSet.getString(4)).thenReturn(FIRST_USER.getEmail(), SECOND_USER.getEmail());
+            when(resultSet.getLong("id")).thenReturn(FIRST_USER.getId(), SECOND_USER.getId());
+            when(resultSet.getString("account")).thenReturn(FIRST_USER.getAccount(), SECOND_USER.getAccount());
+            when(resultSet.getString("password")).thenReturn(FIRST_USER.getPassword(), SECOND_USER.getPassword());
+            when(resultSet.getString("email")).thenReturn(FIRST_USER.getEmail(), SECOND_USER.getEmail());
 
             when(statement.executeQuery()).thenReturn(resultSet);
         }
@@ -117,10 +117,10 @@ class JdbcTemplateTest {
         private RowMapper<User> getRowMapper() {
            return (rs, size) ->
                     new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
+                            rs.getLong("id"),
+                            rs.getString("account"),
+                            rs.getString("password"),
+                            rs.getString("email"));
         }
 
         @Test

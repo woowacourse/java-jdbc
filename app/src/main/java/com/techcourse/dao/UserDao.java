@@ -14,10 +14,10 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> rowMapper = (rs, size) ->
             new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4));
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email"));
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -33,7 +33,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users  set account = ?, password = ?, email = ?";
+        final var sql = "update users set account = ?, password = ?, email = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
