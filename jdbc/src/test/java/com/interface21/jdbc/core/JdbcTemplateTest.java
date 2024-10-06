@@ -63,7 +63,7 @@ class JdbcTemplateTest {
         );
     }
 
-    @DisplayName("mapper가 올바르게 동작한다.")
+    @DisplayName("mapper로 쿼리 결과를 객체로 변환한다.")
     @Test
     void mapping() throws SQLException {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
