@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +51,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, Parameters parameters, RowMapper rowMapper) {
+    public <T> T queryForObject(String sql, Parameters parameters, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -63,9 +65,52 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return rowMapper.mapRow(rs);
+                return (T) rowMapper.mapRow(rs);
             }
             return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
+    }
+
+    public <T> List<T> query (String sql, Parameters parameters, RowMapper<T> rowMapper) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            parameters.setPreparedStatement(pstmt);
+
+            rs = pstmt.executeQuery();
+            log.debug("query : {}", sql);
+
+            List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                T object = rowMapper.mapRow(rs);
+                objects.add(object);
+            }
+            return objects;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);

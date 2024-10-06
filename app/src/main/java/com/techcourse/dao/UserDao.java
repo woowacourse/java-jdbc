@@ -12,6 +12,12 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+	private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
+		resultSet.getLong(1),
+		resultSet.getString(2),
+		resultSet.getString(3),
+		resultSet.getString(4)
+	);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,8 +47,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+		final var sql = "select id, account, password, email from users";
+
+		return jdbcTemplate.query(sql, new Parameters(), userRowMapper);
     }
 
     public User findById(final Long id) {
@@ -51,13 +58,7 @@ public class UserDao {
         final var parameters = new Parameters();
         parameters.add(1, id);
 
-        RowMapper<User> userRowMapper = (resultSet) -> new User(
-			resultSet.getLong(1),
-			resultSet.getString(2),
-			resultSet.getString(3),
-			resultSet.getString(4)
-		);
-        return (User) jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
+        return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
     }
 
 
