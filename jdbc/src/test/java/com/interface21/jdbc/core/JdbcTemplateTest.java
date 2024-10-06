@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -123,6 +124,7 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
+                        .isInstanceOf(DataAccessException.class)
                         .hasMessageContaining("Expected a single result, but not found for query: "),
                 () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
@@ -148,6 +150,7 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
+                        .isInstanceOf(DataAccessException.class)
                         .hasMessageContaining("Expected a single result, but found multiple for query: "),
                 () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
