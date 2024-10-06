@@ -23,16 +23,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            setStatement(args, statement);
-            statement.executeUpdate();
-            log.info("query : {}", sql);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL execution failed. : " + sql);
-        }
+        execute(sql,
+                PreparedStatement::executeUpdate,
+                args
+        );
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -44,21 +38,29 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql,
+                preparedStatement -> {
+                    ResultSet resultSet = preparedStatement.executeQuery();
+
+                        List<T> result = new ArrayList<>();
+                        while (resultSet.next()) {
+                            result.add(rowMapper.mapRow(resultSet));
+                        }
+                        return result;
+                },
+                args
+        );
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             setStatement(args, statement);
-            ResultSet resultSet = statement.executeQuery();
             log.info("query : {}", sql);
-
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
+            return executor.execute(statement);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL execution failed. : " + sql);
+            throw new DataAccessException("SQL execution failed. : " + sql + " \nCause: " + e.getMessage());
         }
     }
 
