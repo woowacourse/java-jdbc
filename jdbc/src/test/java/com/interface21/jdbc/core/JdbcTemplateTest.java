@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.techcourse.domain.User;
+import com.interface21.jdbc.TestUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,13 +34,10 @@ public class JdbcTemplateTest {
     @Mock
     private ResultSet resultSet;
 
-    private final RowMapper<User> userRowMapper = resultSet -> new User(
-            resultSet.getLong("id"),        // 컬럼 이름 사용
-            resultSet.getString("account"), // 컬럼 이름 사용
-            resultSet.getString("password"),// 컬럼 이름 사용
-            resultSet.getString("email")    // 컬럼 이름 사용
+    private final RowMapper<TestUser> userRowMapper = resultSet -> new TestUser(
+            resultSet.getLong("id"),
+            resultSet.getString("account")
     );
-
 
     @BeforeEach
     public void setUp() throws SQLException {
@@ -72,7 +69,7 @@ public class JdbcTemplateTest {
         // Given
         String sql = "SELECT * FROM users WHERE account = ?";
         Object[] params = {"testAccount"};
-        User expectedUser = new User(1L, "testAccount", "password", "email@example.com");
+        TestUser expectedUser = new TestUser(1L, "testAccount");
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
@@ -82,24 +79,21 @@ public class JdbcTemplateTest {
 
         when(resultSet.getLong("id")).thenReturn(expectedUser.getId());
         when(resultSet.getString("account")).thenReturn(expectedUser.getAccount());
-        when(resultSet.getString("password")).thenReturn(expectedUser.getPassword());
-        when(resultSet.getString("email")).thenReturn(expectedUser.getEmail());
 
         // When
-        User actualUser = jdbcTemplate.queryForObject(sql, userRowMapper, params);
+        TestUser actualUser = jdbcTemplate.queryForObject(sql, userRowMapper, params);
 
         // Then
         assertEquals(expectedUser, actualUser);
     }
-
 
     @Test
     @DisplayName("쿼리로 다수 객체 조회 성공")
     public void testQuery() throws SQLException {
         // Given
         String sql = "SELECT * FROM users";
-        User user1 = new User(1L, "account1", "password1", "email1@example.com");
-        User user2 = new User(2L, "account2", "password2", "email2@example.com");
+        TestUser user1 = new TestUser(1L, "account1");
+        TestUser user2 = new TestUser(2L, "account2");
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
@@ -107,19 +101,15 @@ public class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong("id")).thenReturn(user1.getId(), user2.getId());
         when(resultSet.getString("account")).thenReturn(user1.getAccount(), user2.getAccount());
-        when(resultSet.getString("password")).thenReturn(user1.getPassword(), user2.getPassword());
-        when(resultSet.getString("email")).thenReturn(user1.getEmail(), user2.getEmail());
 
         // When
-        List<User> actualUsers = jdbcTemplate.query(sql, userRowMapper);
+        List<TestUser> actualUsers = jdbcTemplate.query(sql, userRowMapper);
 
         // Then
         assertEquals(2, actualUsers.size());
         assertEquals(user1, actualUsers.get(0));
         assertEquals(user2, actualUsers.get(1));
     }
-
-
 
     @Test
     @DisplayName("객체 조회 실패 시 예외 발생")
@@ -138,3 +128,4 @@ public class JdbcTemplateTest {
         });
     }
 }
+
