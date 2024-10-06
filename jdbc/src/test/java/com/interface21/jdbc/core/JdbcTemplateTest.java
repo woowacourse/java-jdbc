@@ -76,7 +76,10 @@ public class JdbcTemplateTest {
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+
+        // resultSet이 한 행을 반환하고 그다음에 끝나는 시나리오
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
+
         when(resultSet.getLong("id")).thenReturn(expectedUser.getId());
         when(resultSet.getString("account")).thenReturn(expectedUser.getAccount());
         when(resultSet.getString("password")).thenReturn(expectedUser.getPassword());
@@ -101,8 +104,7 @@ public class JdbcTemplateTest {
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        // Simulating the ResultSet behavior
-        when(resultSet.next()).thenReturn(true, true, false); // two users in result set
+        when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong("id")).thenReturn(user1.getId(), user2.getId());
         when(resultSet.getString("account")).thenReturn(user1.getAccount(), user2.getAccount());
         when(resultSet.getString("password")).thenReturn(user1.getPassword(), user2.getPassword());

@@ -10,8 +10,8 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLDataException;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -51,10 +51,10 @@ public class JdbcTemplate {
              PreparedStatement pstmt = createPreparedStatement(conn, sql, params);
              ResultSet rs = executeQuery(pstmt)) {
 
-            T result = mapResult(rs, rowMapper);
-            checkSingleResult(rs);
+            List<T> results = mapResults(rs, rowMapper);
+            validateSingleResult(results);
 
-            return result;
+            return results.get(0);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -71,36 +71,35 @@ public class JdbcTemplate {
         return pstmt.executeQuery();
     }
 
-    private <T> T mapResult(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        if (rs.next()) {
-            return rowMapper.mapRow(rs);
-        } else {
-            throw new NoSuchElementException();
-        }
-    }
-
-    private void checkSingleResult(ResultSet rs) throws SQLException {
-        if (rs.next()) {
+    private <T> void validateSingleResult(List<T> result) throws SQLException {
+        if (result.size() != 1) {
+            System.out.println(result);
             throw new IncorrectResultSizeDataAccessException("Incorrect result size");
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = new ArrayList<>();
-
         try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatement(pstmt, params);
+             PreparedStatement pstmt = createPreparedStatement(conn, sql, params);
+             ResultSet rs = executeQuery(pstmt)) {
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-            }
+            return mapResults(rs, rowMapper);
 
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            log.error("Error during query execution.", e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+
+        if (results.isEmpty()) {
+            throw new NoSuchElementException();
         }
 
         return results;
@@ -110,6 +109,16 @@ public class JdbcTemplate {
     private void setStatement(PreparedStatement pstmt, Object[] params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
+    public void execute(String sql) {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 }
