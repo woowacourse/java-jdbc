@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,6 @@ public class JdbcTemplate {
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
-}
 
     public void update(final String sql, final Object... params) {
         try (Connection connection = getConnection();
@@ -29,6 +29,21 @@ public class JdbcTemplate {
             }
             preparedStatement.executeUpdate();
             log.debug("query : {}", sql);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
+            ResultSet resultSet = preparedStatement.executeQuery();
+            log.debug("query : {}", sql);
+            resultSet.next();//close 해야함
+            return rowMapper.mapRow(resultSet, resultSet.getRow());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
