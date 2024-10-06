@@ -2,8 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
-import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.dao.IncorrectParameterCountException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -27,7 +27,10 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, Object... parameters) {
-        execute(sql, PreparedStatement::executeUpdate, parameters);
+        execute(sql, preparedStatement -> {
+            setParameters(preparedStatement, parameters);
+            return preparedStatement.executeUpdate();
+        }, parameters);
     }
 
     public <T> T fetchResult(String sql, ResultMapper<T> resultMapper, Object... parameters) {
@@ -43,15 +46,18 @@ public class JdbcTemplate {
 
     public <T> List<T> fetchResults(String sql, ResultMapper<T> resultMapper, Object... parameters) {
         return execute(sql, preparedStatement -> {
-           try (ResultSet resultSet = preparedStatement.executeQuery()) {
-               return mapResults(resultSet, resultMapper);
-           }
+            setParameters(preparedStatement, parameters);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return mapResults(resultSet, resultMapper);
+            }
         }, parameters);
     }
 
     private <T> T execute(String sql, PreparedStatementSetter<T> statementSetter, Object... parameters) {
+        log.debug("실행 쿼리: {}", sql);
+        log.debug("파라미터: {}", Arrays.toString(parameters));
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = createPreparedStatement(connection, sql, parameters)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             return statementSetter.setValues(preparedStatement);
 
@@ -67,15 +73,6 @@ public class JdbcTemplate {
             results.add(resultMapper.mapResult(resultSet));
         }
         return results;
-    }
-
-    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object... parameters)
-            throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        log.debug("실행 쿼리: {}", sql);
-        log.debug("파라미터: {}", Arrays.toString(parameters));
-        setParameters(preparedStatement, parameters);
-        return preparedStatement;
     }
 
     private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
