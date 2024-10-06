@@ -1,9 +1,13 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementResolver;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,14 +15,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), new PreparedStatementResolver());
+        userDao = new UserDao(jdbcTemplate);
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.queryForUpdate("DELETE FROM users");
+        jdbcTemplate.queryForUpdate("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
     }
 
     @Test
@@ -28,6 +39,7 @@ class UserDaoTest {
         assertThat(users).isNotEmpty();
     }
 
+    @DisplayName("아이디 값을 통해 유저를 찾을 수 있다")
     @Test
     void findById() {
         final var user = userDao.findById(1L);
@@ -35,6 +47,7 @@ class UserDaoTest {
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
+    @DisplayName("계좌를 통해 유저를 찾을 수 있다")
     @Test
     void findByAccount() {
         final var account = "gugu";
@@ -54,6 +67,7 @@ class UserDaoTest {
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 
+    @DisplayName("유저 테이블의 컬럼을 전체 업데이트할 수 있다")
     @Test
     void update() {
         final var newPassword = "password99";
