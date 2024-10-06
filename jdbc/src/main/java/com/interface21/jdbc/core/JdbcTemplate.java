@@ -1,5 +1,10 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.core.parameter.IntParameterSetter;
+import com.interface21.jdbc.core.parameter.LongParameterSetter;
+import com.interface21.jdbc.core.parameter.ObjectParameterSetter;
+import com.interface21.jdbc.core.parameter.ParameterSetter;
+import com.interface21.jdbc.core.parameter.StringParameterSetter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +21,10 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private static final List<ParameterSetter> PARAMETER_SETTERS = List.of(
+            new IntParameterSetter(), new LongParameterSetter(), new StringParameterSetter());
+    private static final ParameterSetter DEFAULT_PARAMETER_SETTER = new ObjectParameterSetter();
 
     private final DataSource dataSource;
 
@@ -55,10 +65,9 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+             PreparedStatement pstmt = createPreparedStatement(connection, sql, parameters)) {
             log.debug("query = {}, {}", sql, Arrays.toString(parameters));
 
-            setPreparedStatement(pstmt, parameters);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -75,19 +84,11 @@ public class JdbcTemplate {
     private void setPreparedStatement(PreparedStatement pstmt, Object[] parameters) throws SQLException {
         for (int arrayIndex = 0; arrayIndex < parameters.length; arrayIndex++) {
             Object parameter = parameters[arrayIndex];
-            if (parameter instanceof Long longParameter) {
-                pstmt.setLong(toParameterIndex(arrayIndex), longParameter);
-                continue;
-            }
-            if (parameter instanceof Integer intParameter) {
-                pstmt.setInt(toParameterIndex(arrayIndex), intParameter);
-                continue;
-            }
-            if (parameter instanceof String stringParameter) {
-                pstmt.setString(toParameterIndex(arrayIndex), stringParameter);
-                continue;
-            }
-            pstmt.setObject(toParameterIndex(arrayIndex), parameter);
+            ParameterSetter parameterSetter = PARAMETER_SETTERS.stream()
+                    .filter(setter -> setter.isAvailableParameter(parameter))
+                    .findAny()
+                    .orElse(DEFAULT_PARAMETER_SETTER);
+            parameterSetter.setParameter(pstmt, toParameterIndex(arrayIndex), parameter);
         }
     }
 
