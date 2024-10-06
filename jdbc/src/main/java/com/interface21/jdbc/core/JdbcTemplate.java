@@ -23,13 +23,13 @@ public class JdbcTemplate {
         this.preparedStatementResolver = preparedStatementResolver;
     }
 
-    public Object queryForObject(String sql, RowMapper<?> rowMapper, Object... parameters) {
-        List<Object> results = query(sql, rowMapper, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = query(sql, rowMapper, parameters);
         validateResultsLength(results);
         return results.getFirst();
     }
 
-    private void validateResultsLength(List<Object> results) {
+    private void validateResultsLength(List<?> results) {
         if (results.isEmpty()) {
             throw new DataAccessException("결과가 없습니다.");
         }
@@ -40,7 +40,7 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(String sql, RowMapper<?> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
@@ -52,8 +52,8 @@ public class JdbcTemplate {
         }
     }
 
-    private List<Object> makeQueryResult(ResultSet resultSet, RowMapper<?> rowMapper) throws SQLException {
-        List<Object> results = new ArrayList<>();
+    private <T> List<T> makeQueryResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
         }

@@ -50,20 +50,17 @@ public class UserDao {
         Query query = new QueryBuilder()
                 .selectFrom("users")
                 .build();
-        List<Object> results = jdbcTemplate.query(query.getSql(), rowMapper);
-        return results.stream().map(obj -> (User) obj).toList();
+        return jdbcTemplate.query(query.getSql(), rowMapper);
     }
 
     public User findById(final Long id) {
         Query query = resolveEqualSql("id");
-        Object o = jdbcTemplate.queryForObject(query.getSql(), rowMapper, id);
-        return (User) o;
+        return jdbcTemplate.queryForObject(query.getSql(), rowMapper, id);
     }
 
     public User findByAccount(final String account) {
         Query query = resolveEqualSql("account");
-        Object o = jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
-        return (User) o;
+        return jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
     }
 
     public Query resolveEqualSql(String fieldName) {
