@@ -82,24 +82,12 @@ public class JdbcTemplate {
     }
 
     private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(resultSetParser.parse(resultSet));
-            validateToManyData(results);
-        }
-        validateNoData(results);
-        return results.getFirst();
-    }
-
-    private <T> void validateNoData(List<T> results) {
-        if (results.isEmpty()) {
+        if (!resultSet.next()) {
             throw new DataAccessException("행이 하나도 조회되지 않았습니다.");
         }
-    }
-
-    private <T> void validateToManyData(List<T> results) {
-        if (results.size() > 1) {
+        if (!resultSet.isLast()) {
             throw new DataAccessException("여러개의 행이 조회되었습니다.");
         }
+        return resultSetParser.parse(resultSet);
     }
 }

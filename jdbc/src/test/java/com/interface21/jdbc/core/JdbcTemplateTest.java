@@ -93,6 +93,7 @@ public class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true).thenReturn(false);
         when(resultSet.getInt("id")).thenReturn(1);
         when(resultSet.getString("name")).thenReturn("John");
+        when(resultSet.isLast()).thenReturn(true);
 
         ResultSetParser<User> parser = userResultSetParser();
 
@@ -122,6 +123,7 @@ public class JdbcTemplateTest {
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);  // Multiple rows
+        when(resultSet.isLast()).thenReturn(false);
 
         ResultSetParser<User> parser = userResultSetParser();
 
