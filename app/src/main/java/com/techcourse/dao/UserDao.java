@@ -1,14 +1,11 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
@@ -35,8 +32,14 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.queryForObject(sql,
+                (rs, rowNum) -> new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)
+                ));
     }
 
     public User findById(final Long id) {

@@ -6,10 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -49,6 +48,27 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<T> result = new ArrayList<>();
+            log.debug("query : {}", sql);
+            if (resultSet.next()) {
+                result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
+}
+
+
