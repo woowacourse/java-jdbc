@@ -34,14 +34,14 @@ public class JdbcTemplateTest {
     @Mock
     private ResultSet resultSet;
 
-    @InjectMocks
+    @InjectMocks // @Mock을 붙인 객체를 이 어노테이션이 붙은 객체를 생성할때 주입한다. 여기선 DataSource가 주입된다.
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     public void setUp() throws SQLException {
         MockitoAnnotations.openMocks(this);
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(dataSource.getConnection()).thenReturn(connection); // JdbcTemplate에 주입된 DataSource가 모킹 커넥션 반환
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement); // 모킹 커넥션이 모킹 스테이트먼트 반환
     }
 
     @Test
