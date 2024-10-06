@@ -6,11 +6,11 @@
 
 - [x] UserDao 의 미구현된 메서드들 완성
     - [x] findAll, findByAccount, update 구현
-- [] JdbcTemplate 구현해 UserDao 의 중복되는 코드 제거
+- [x] JdbcTemplate 구현해 UserDao 의 중복되는 코드 제거
     - [x] SQL 쿼리에 인자 넣는 작업을 JdbcTemplate이 하도록 수정
     - [x] SQL 쿼리를 실행하는 작업을 JdbcTemplate이 하도록 수정
     - [x] SQL 쿼리 실행 결과를 객체로 매핑하는 작업을 JdbcTemplate이 하도록 수정
-- [ ] JdbcTemplate 이용해 UserHistoryDao 의 중복되는 코드 제거
+- [x] JdbcTemplate 이용해 UserHistoryDao 의 중복되는 코드 제거
 
 ## JDBC 라이브러리 구현하기 가이드
 
