@@ -2,16 +2,14 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -24,16 +22,10 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object ... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            validateParameterCount(objects, preparedStatement);
-            setParameter(objects, preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        execute(sql, preparedStatement -> {
+            ParameterSetter.setParameter(objects, preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
@@ -48,14 +40,17 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ...objects) {
+        return execute(sql, preparedStatement -> {
+            ParameterSetter.setParameter(objects, preparedStatement);
+            return getQueryResult(rowMapper, preparedStatement);
+        });
+    }
+
+    private <T> T execute(String sql, Executor<T> executor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            validateParameterCount(objects, preparedStatement);
-            setParameter(objects, preparedStatement);
-            return getQueryResult(rowMapper, preparedStatement);
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
     }
@@ -72,18 +67,5 @@ public class JdbcTemplate {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
-    }
-
-    private void validateParameterCount(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
-        ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
-        if (objects.length != parameterMetaData.getParameterCount()) {
-            throw new DataAccessException("파라미터 값의 개수가 올바르지 않습니다");
-        }
-    }
-
-    private void setParameter(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
-        }
     }
 }
