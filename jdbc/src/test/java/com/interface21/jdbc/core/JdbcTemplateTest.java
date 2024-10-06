@@ -37,18 +37,6 @@ class JdbcTemplateTest {
     record TestEntity(Long id, String attribute1, String attribute2, String attribute3) {
     }
 
-    static class TestEntityRowMapper implements RowMapper<TestEntity> {
-        @Override
-        public TestEntity mapRow(ResultSet resultSet) throws SQLException {
-            return new TestEntity(
-                    resultSet.getLong("id"),
-                    resultSet.getString("test_attribute1"),
-                    resultSet.getString("test_attribute2"),
-                    resultSet.getString("test_attribute3")
-            );
-        }
-    }
-
     @DisplayName("JdbcTemplate이 query와 parameters로 executeUpdate를 실행할 수 있다.")
     @Test
     void testExecuteUpdate() throws SQLException {
@@ -66,6 +54,8 @@ class JdbcTemplateTest {
         verify(pstmt).executeUpdate();
     }
 
+
+
     @DisplayName("JdbcTemplate이 query와 rowMapper, parameters로 executeQuery를 실행할 수 있다.")
     @Test
     void testExecuteQuery() throws SQLException {
@@ -82,7 +72,7 @@ class JdbcTemplateTest {
         Object[] parameters = {TEST_ID};
 
         // when
-        List<TestEntity> results = jdbcTemplate.executeQuery(query, new TestEntityRowMapper(), parameters);
+        List<TestEntity> results = jdbcTemplate.executeQuery(query, this::mapTestEntityFromResultSet, parameters);
 
         // then
         verify(pstmt).setObject(1, TEST_ID);
@@ -91,5 +81,14 @@ class JdbcTemplateTest {
         assertThat(results.getFirst().attribute1()).isEqualTo("test_value1");
         assertThat(results.getFirst().attribute2()).isEqualTo("test_value2");
         assertThat(results.getFirst().attribute3()).isEqualTo("test_value3");
+    }
+
+    private TestEntity mapTestEntityFromResultSet(final ResultSet resultSet) throws SQLException {
+        return new TestEntity(
+                resultSet.getLong("id"),
+                resultSet.getString("test_attribute1"),
+                resultSet.getString("test_attribute2"),
+                resultSet.getString("test_attribute3")
+        );
     }
 }
