@@ -1,31 +1,36 @@
 package com.techcourse.domain;
 
+import java.util.Objects;
+
 public class User {
 
-    private Long id;
+    private final Long id;
     private final String account;
-    private String password;
+    private final Password password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public User(Long id, String account, String password, String email) {
         this.id = id;
         this.account = account;
-        this.password = password;
+        this.password = new Password(password);
         this.email = email;
+    }
+
+    public User(Long id, User user) {
+        this(id, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public User(String account, String password, String email) {
-        this.account = account;
-        this.password = password;
-        this.email = email;
+        this(null, account, password, email);
     }
 
     public boolean checkPassword(String password) {
-        return this.password.equals(password);
+        Password target = new Password(password);
+        return target.equals(this.password);
     }
 
-    public void changePassword(String password) {
-        this.password = password;
+    public User changePassword(String password) {
+        return new User(this.id, this.account, password, this.getEmail());
     }
 
     public String getAccount() {
@@ -41,7 +46,24 @@ public class User {
     }
 
     public String getPassword() {
-        return password;
+        return password.getValue();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     @Override
