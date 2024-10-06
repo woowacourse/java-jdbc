@@ -40,8 +40,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select * from users";
+        return jdbcTemplate.queryForObjects(sql, rowMapper);
     }
 
     public User findById(final Long id) {

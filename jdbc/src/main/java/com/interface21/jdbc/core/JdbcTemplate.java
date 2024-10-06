@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -52,6 +54,24 @@ public class JdbcTemplate {
                 return rowMapper.mapRow(rs, 1);
             }
             return null;
+        } catch (final SQLException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        log.debug("Executing SQL: " + sql);
+
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParameter(preparedStatement, params);
+
+            final ResultSet rs = preparedStatement.executeQuery();
+            final List<T> values = new ArrayList<>();
+            while (rs.next()) {
+                values.add(rowMapper.mapRow(rs, rs.getFetchSize()));
+            }
+            return values;
         } catch (final SQLException e) {
             throw new IllegalArgumentException(e);
         }
