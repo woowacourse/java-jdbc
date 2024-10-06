@@ -66,7 +66,7 @@ class JdbcTemplateTest {
     @DisplayName("mapper로 쿼리 결과를 객체로 변환한다.")
     @Test
     void mapping() throws SQLException {
-        String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
+        String sql = "SELECT id, account FROM users WHERE id = ?";
         Long id = 2L;
         String account = "daon";
         given(preparedStatement.executeQuery()).willReturn(resultSet);
