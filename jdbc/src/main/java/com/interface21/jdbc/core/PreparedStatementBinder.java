@@ -5,6 +5,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.interface21.dao.DataAccessException;
+
 public class PreparedStatementBinder {
 
     public void bindParameters(final PreparedStatement preparedStatement, final Object... args) {
@@ -17,7 +19,7 @@ public class PreparedStatementBinder {
         try {
             preparedStatement.setObject(index, arg);
         } catch (SQLException e) {
-            throw new IllegalArgumentException("SQL 인자가 올바르지 않아 쿼리 실행 중 에러가 발생했습니다.");
+            throw new DataAccessException("SQL 인자가 올바르지 않거나, 데이터베이스에 엑세스하는 중 에러가 발생했습니다. 재시도해주세요.", e);
         }
     }
 }

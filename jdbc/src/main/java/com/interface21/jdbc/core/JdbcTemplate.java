@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
+import com.interface21.dao.DataAccessException;
+
 public class JdbcTemplate {
 
     private final DataSource dataSource;
@@ -48,7 +50,7 @@ public class JdbcTemplate {
             preparedStatementBinder.bindParameters(preparedStatement, args);
             return action.apply(preparedStatement);
         } catch (SQLException e) {
-            throw new IllegalArgumentException("쿼리 실행 중 에러가 발생했습니다.", e);
+            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
         }
     }
 }
