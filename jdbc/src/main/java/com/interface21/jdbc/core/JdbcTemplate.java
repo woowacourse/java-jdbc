@@ -49,7 +49,7 @@ public class JdbcTemplate {
              ResultSet resultSet = getResultSet(params, preparedStatement)) {
             List<T> result = new ArrayList<>();
             log.debug("query : {}", sql);
-            if (resultSet.next()) {
+            while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
             }
             return result;
