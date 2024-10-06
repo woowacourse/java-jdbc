@@ -157,6 +157,6 @@ class JdbcTemplateTest {
         );
     }
 
-    private static record TestObject(int id, String name) {
+    private record TestObject(int id, String name) {
     }
 }
