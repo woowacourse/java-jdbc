@@ -54,7 +54,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQueryForObject(String sql, Class<T> dataType, Object... parameters) {
+    public <T> T executeQueryForObject(String sql, Class<T> clazz, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             if (!rs.next()) {
                 return null;
             }
-            return createData(dataType, rs);
+            return createInstance(clazz, rs);
 
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -99,7 +99,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQuery(String sql, Class<T> dataType, Object... parameters) {
+    public <T> List<T> executeQuery(String sql, Class<T> clazz, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -115,7 +115,7 @@ public class JdbcTemplate {
             if (!rs.next()) {
                 return null;
             }
-            return createDatas(dataType, rs);
+            return createInstances(clazz, rs);
 
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -150,21 +150,21 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> createDatas(Class<T> dataType, ResultSet rs) throws Exception {
+    private <T> List<T> createInstances(Class<T> clazz, ResultSet rs) throws Exception {
         List<T> result = new ArrayList<>();
         while (rs.next()) {
-            result.add(createData(dataType, rs));
+            result.add(createInstance(clazz, rs));
         }
         return result;
     }
 
-    private <T> T createData(Class<T> dataType, ResultSet rs) throws Exception {
-        Constructor<T> constructor = dataType.getDeclaredConstructor();
+    private <T> T createInstance(Class<T> clazz, ResultSet rs) throws Exception {
+        Constructor<T> constructor = clazz.getDeclaredConstructor();
         constructor.setAccessible(true);
         T instance = constructor.newInstance();
         constructor.setAccessible(false);
 
-        Field[] fields = dataType.getDeclaredFields();
+        Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             Object value = rs.getObject(field.getName(), field.getType());
