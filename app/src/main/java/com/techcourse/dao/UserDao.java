@@ -6,7 +6,6 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,10 +19,6 @@ public class UserDao {
                     rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -61,14 +56,14 @@ public class UserDao {
         return users;
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         String sql = """
                 SELECT id, account, password, email
                 FROM users
                 WHERE id =?
                 """;
 
-        User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id));
         log.info("user findById successful");
         return user;
     }
