@@ -1,7 +1,7 @@
 ### TODO 리스트
 
-- [ ] **단일 객체 조회 메서드 구현**
-    - [ ] `queryForObject(String sql, Object[] params, Class<T> requiredType)`
+- [x] **단일 객체 조회 메서드 구현**
+    - [x] `queryForObject(String sql, RowMapper<T> rowMapper, Object... params)`
         - 파라미터가 있는 SQL 쿼리 실행 후 단일 결과를 반환하는 메서드.
 
 - [ ] **데이터 삽입 및 수정 메서드 구현**

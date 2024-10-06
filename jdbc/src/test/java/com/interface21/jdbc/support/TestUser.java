@@ -2,10 +2,10 @@ package com.interface21.jdbc.support;
 
 public class TestUser {
 
-    private int id;
+    private Long id;
     private String name;
 
-    public TestUser(int id, String name) {
+    public TestUser(Long id, String name) {
         this.id = id;
         this.name = name;
     }
@@ -14,7 +14,7 @@ public class TestUser {
         this.name = name;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 

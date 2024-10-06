@@ -31,6 +31,6 @@ class TestUserRowMapper implements RowMapper<TestUser> {
 
     @Override
     public TestUser mapRow(ResultSet resultSet, int rowNumber) throws SQLException {
-        return new TestUser(resultSet.getInt("id"), resultSet.getString("name"));
+        return new TestUser(resultSet.getLong("id"), resultSet.getString("name"));
     }
 }
