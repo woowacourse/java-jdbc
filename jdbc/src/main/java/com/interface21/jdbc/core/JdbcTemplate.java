@@ -32,9 +32,9 @@ public class JdbcTemplate implements JdbcOperations {
         });
     }
 
-    private <T> T executeStatement(String sql, PreparedStatementCallBack<T> preCallBack) {
+    private <T> T executeStatement(String sql, PreparedStatementCallBack<T> callBack) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            return preCallBack.callback(pstmt);
+            return callBack.callback(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
