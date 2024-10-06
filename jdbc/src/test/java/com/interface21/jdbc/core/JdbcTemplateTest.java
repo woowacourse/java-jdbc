@@ -49,7 +49,7 @@ class JdbcTemplateTest {
 
         // then
         String selectSql = "select id, account from users where id = ?";
-        TestUser user = jdbcTemplate.executeQuery(selectSql, TestUser.class, 1);
+        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TestUser.class, 1);
         assertThat(user.getId()).isEqualTo(1);
         assertThat(user.getAccount()).isEqualTo("ever");
     }
@@ -64,7 +64,7 @@ class JdbcTemplateTest {
 
         // when
         String selectSql = "select id, account from users where id = ?";
-        TestUser user = jdbcTemplate.executeQuery(selectSql, TestUser.class, 1);
+        TestUser user = jdbcTemplate.executeQueryForObject(selectSql, TestUser.class, 1);
 
         // then
         assertThat(user.getId()).isEqualTo(1);
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
 
         // when
         String selectSql = "select id, account from users";
-        List<TestUser> testUsers = jdbcTemplate.executeQueryReturnList(selectSql, TestUser.class);
+        List<TestUser> testUsers = jdbcTemplate.executeQuery(selectSql, TestUser.class);
 
         // then
         assertThat(testUsers).hasSize(2);

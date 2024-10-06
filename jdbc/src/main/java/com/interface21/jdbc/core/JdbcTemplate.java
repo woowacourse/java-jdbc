@@ -54,7 +54,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQuery(String sql, Class<T> dataType, Object... parameters) {
+    public <T> T executeQueryForObject(String sql, Class<T> dataType, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -99,7 +99,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQueryReturnList(String sql, Class<T> dataType, Object... parameters) {
+    public <T> List<T> executeQuery(String sql, Class<T> dataType, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
