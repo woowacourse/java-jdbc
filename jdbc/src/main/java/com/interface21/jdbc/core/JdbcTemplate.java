@@ -24,11 +24,11 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(String sql, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)){
             log.debug("query : {}", sql);
-            setQueryParameter(pstmt, values);
-            return pstmt.executeUpdate();
+            setQueryParameter(preparedStatement, values);
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -36,10 +36,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-            setQueryParameter(pstmt, values);
-            ResultSet rs = pstmt.executeQuery();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+            setQueryParameter(preparedStatement, values);
+            ResultSet rs = preparedStatement.executeQuery();
             return collectResultSet(rs, rowMapper, sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
