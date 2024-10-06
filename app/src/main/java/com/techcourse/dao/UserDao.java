@@ -1,10 +1,8 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.ResultMapper;
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -13,6 +11,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final ResultMapper<User> USER_RESULT_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -36,30 +40,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.fetchResults(sql, this::userResultMapper);
+        return jdbcTemplate.fetchResults(sql, USER_RESULT_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.fetchResult(sql, this::userResultMapper, id);
+        return jdbcTemplate.fetchResult(sql, USER_RESULT_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.fetchResult(sql, this::userResultMapper, account);
-    }
-
-    private User userResultMapper(ResultSet resultSet) {
-        try {
-            return new User(
-                    resultSet.getLong("id"),
-                    resultSet.getString("account"),
-                    resultSet.getString("password"),
-                    resultSet.getString("email")
-            );
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException();
-        }
+        return jdbcTemplate.fetchResult(sql, USER_RESULT_MAPPER, account);
     }
 }
