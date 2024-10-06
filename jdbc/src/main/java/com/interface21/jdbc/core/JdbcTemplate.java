@@ -40,8 +40,8 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
             ResultSet resultSet = pstmt.executeQuery();
+            log.debug("실행된 쿼리입니다. : {}", sql);
 
             return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
@@ -68,9 +68,10 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
+            int changedCount = pstmt.executeUpdate();
+            log.debug("실행된 쿼리입니다. : {}", sql);
 
-            return pstmt.executeUpdate();
+            return changedCount;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
