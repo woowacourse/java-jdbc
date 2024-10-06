@@ -40,6 +40,7 @@ class JdbcTemplateTest {
     @AfterEach
     void tearDown() throws SQLException {
         verify(connection).close();
+        verify(preparedStatement).close();
     }
 
     @Test
@@ -53,8 +54,7 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(jdbcTemplate.update(sql, params)).isEqualTo(1),
                 () -> verify(preparedStatement).setObject(1, 1),
-                () -> verify(preparedStatement).setObject(2, "test"),
-                () -> verify(preparedStatement).close()
+                () -> verify(preparedStatement).setObject(2, "test")
         );
     }
 
@@ -77,7 +77,6 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThat(jdbcTemplate.queryForObject(sql, rowMapper, 1)).isEqualTo(new TestObject(1, "test")),
-                () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
         );
     }
@@ -102,7 +101,6 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(jdbcTemplate.query(sql, rowMapper, 1))
                         .containsExactly(new TestObject(1, "test1"), new TestObject(2, "test2")),
-                () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
         );
     }
@@ -126,7 +124,6 @@ class JdbcTemplateTest {
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
                         .isInstanceOf(DataAccessException.class)
                         .hasMessageContaining("Expected a single result, but not found for query: "),
-                () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
         );
     }
@@ -152,7 +149,6 @@ class JdbcTemplateTest {
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
                         .isInstanceOf(DataAccessException.class)
                         .hasMessageContaining("Expected a single result, but found multiple for query: "),
-                () -> verify(preparedStatement).close(),
                 () -> verify(resultSet).close()
         );
     }
