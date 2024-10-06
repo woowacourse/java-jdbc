@@ -16,7 +16,7 @@ public class HandlerMappings {
 
     public void initialize() {
         BeanContainer beanContainer = BeanContainer.getInstance();
-        List<HandlerMapping> mappings = beanContainer.getHandlers(HandlerMapping.class);
+        List<HandlerMapping> mappings = beanContainer.getBeans(HandlerMapping.class);
         mappings.forEach(HandlerMapping::initialize);
         handlerMappings.addAll(mappings);
     }

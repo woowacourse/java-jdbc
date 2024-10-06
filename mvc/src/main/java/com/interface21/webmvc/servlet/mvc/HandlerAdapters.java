@@ -17,7 +17,7 @@ public class HandlerAdapters {
 
     public void initialize() {
         BeanContainer beanContainer = BeanContainer.getInstance();
-        List<HandlerAdapter> adapters = beanContainer.getHandlers(HandlerAdapter.class);
+        List<HandlerAdapter> adapters = beanContainer.getBeans(HandlerAdapter.class);
         handlerAdapters.addAll(adapters);
     }
 

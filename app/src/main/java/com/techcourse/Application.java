@@ -14,7 +14,7 @@ public class Application {
 
     public static void main(final String[] args) throws Exception {
         BeanContainer beanContainer = BeanContainer.getInstance();
-        beanContainer.initialize(Application.class);
+        beanContainer.initialize();
 
         final int port = defaultPortIfNull(args);
         final var tomcat = new TomcatStarter(port);

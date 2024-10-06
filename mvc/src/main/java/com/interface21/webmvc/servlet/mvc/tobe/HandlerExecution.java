@@ -17,7 +17,7 @@ public class HandlerExecution {
         this.method = method;
         Class<?> declaringClass = method.getDeclaringClass();
         BeanRegistry instance1 = BeanRegistry.getInstance();
-        List<?> handler = instance1.getHandler(declaringClass);
+        List<?> handler = instance1.getBeans(declaringClass);
         this.instance = handler.getFirst();
     }
 
