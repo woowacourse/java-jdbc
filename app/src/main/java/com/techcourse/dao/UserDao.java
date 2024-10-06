@@ -1,9 +1,9 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.dao.mapper.UserRowMapper;
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -14,9 +14,11 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private RowMapper<User> userRowMapper;
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
+        this.userRowMapper = new UserRowMapper();
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -41,37 +43,24 @@ public class UserDao {
         final String sql = "select id, account, password, email from users";
         log(sql);
 
-        return jdbcTemplate.query(sql, this::mapRowToUser);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         log(sql);
 
-        return jdbcTemplate.queryForObject(sql, this::mapRowToUser, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         log(sql);
 
-        return jdbcTemplate.queryForObject(sql, this::mapRowToUser, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
     private void log(String sql) {
         log.debug("query: {}", sql);
-    }
-
-    private User mapRowToUser(ResultSet rs) {
-        try {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email")
-            );
-        } catch (SQLException e) {
-            throw new IllegalArgumentException();
-        }
     }
 }
