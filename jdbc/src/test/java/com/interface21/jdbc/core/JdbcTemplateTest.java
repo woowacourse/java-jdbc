@@ -18,6 +18,7 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.techcourse.domain.User;
@@ -37,133 +38,138 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    @Test
-    @DisplayName("INSERT 문, 데이터 추가 성공")
-    void insert() throws SQLException {
-        var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        when(connection.prepareStatement(sql)).thenReturn(statement);
-        var expected = 1;
-        when(statement.executeUpdate()).thenReturn(expected);
-        var account = "kyummi";
-        var password = "password";
-        var email = "kyum@naver.com";
+    @Nested
+    @DisplayName("update 메서드 테스트")
+    class Update {
 
-        var actual = jdbcTemplate.update(sql, account, password, email);
+        private static final int EXPECTED = 1;
+        private static final String ACCOUNT = "kyummi";
+        private static final String PASSWORD = "password";
+        private static final String EMAIL = "kyum@naver.com";
 
-        assertAll(
-                () -> assertThat(actual).isEqualTo(expected),
-                () -> verify(connection).prepareStatement(sql),
-                () -> verify(statement).setObject(1, account),
-                () -> verify(statement).setObject(2, password),
-                () -> verify(statement).setObject(3, email),
-                () -> verify(statement).executeUpdate()
-        );
+        @BeforeEach
+        void setUp() throws SQLException {
+            when(statement.executeUpdate()).thenReturn(EXPECTED);
+        }
+
+        @Test
+        @DisplayName("INSERT 문, 데이터 추가 성공")
+        void insert() throws SQLException {
+            // given
+            var sql = "insert into users (account, password, email) values (?, ?, ?)";
+            when(connection.prepareStatement(sql)).thenReturn(statement);
+
+            // when
+            var actual = jdbcTemplate.update(sql, ACCOUNT, PASSWORD, EMAIL);
+
+            // then
+            assertAll(
+                    () -> assertThat(actual).isEqualTo(EXPECTED),
+                    () -> verify(connection).prepareStatement(sql),
+                    () -> verify(statement).setObject(1, ACCOUNT),
+                    () -> verify(statement).setObject(2, PASSWORD),
+                    () -> verify(statement).setObject(3, EMAIL),
+                    () -> verify(statement).executeUpdate()
+            );
+        }
+
+        @Test
+        @DisplayName("UPDATE 문, 데이터 수정 성공")
+        void update() throws SQLException {
+            // given
+            var sql = "update users  set account = ?, password = ?, email = ?";
+            when(connection.prepareStatement(sql)).thenReturn(statement);
+
+            // when
+            var actual = jdbcTemplate.update(sql, ACCOUNT, PASSWORD, EMAIL);
+
+            // then
+            assertAll(
+                    () -> assertThat(actual).isEqualTo(EXPECTED),
+                    () -> verify(connection).prepareStatement(sql),
+                    () -> verify(statement).setObject(1, ACCOUNT),
+                    () -> verify(statement).setObject(2, PASSWORD),
+                    () -> verify(statement).setObject(3, EMAIL),
+                    () -> verify(statement).executeUpdate()
+            );
+        }
     }
 
-    @Test
-    @DisplayName("UPDATE 문, 데이터 수정 성공")
-    void update() throws SQLException {
-        var sql = "update users  set account = ?, password = ?, email = ?";
-        when(connection.prepareStatement(sql)).thenReturn(statement);
-        var expected = 1;
-        when(statement.executeUpdate()).thenReturn(expected);
-        var account = "kyummi";
-        var password = "password";
-        var email = "kyum@naver.com";
+    @Nested
+    @DisplayName("query 메서드 테스트")
+    class Query {
 
-        var actual = jdbcTemplate.update(sql, account, password, email);
+        private final User FIRST_USER = new User(1L, "kyummi", "password", "kyum@naver.com");
+        private final User SECOND_USER = new User(2L, "kiki", "password", "kikinaver.com");
 
-        assertAll(
-                () -> assertThat(actual).isEqualTo(expected),
-                () -> verify(connection).prepareStatement(sql),
-                () -> verify(statement).setObject(1, account),
-                () -> verify(statement).setObject(2, password),
-                () -> verify(statement).setObject(3, email),
-                () -> verify(statement).executeUpdate()
-        );
-    }
+        private void setResultSet() throws SQLException {
+            ResultSet resultSet = mock(ResultSet.class);
+            when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-    @Test
-    @DisplayName("SELECT 문, 데이터 검색 성공 (2개)")
-    void query() throws SQLException {
-        // given
-        var sql = "select id, account, password, email from users";
-        when(connection.prepareStatement(sql)).thenReturn(statement);
+            when(resultSet.getLong(1)).thenReturn(FIRST_USER.getId(), SECOND_USER.getId());
+            when(resultSet.getString(2)).thenReturn(FIRST_USER.getAccount(), SECOND_USER.getAccount());
+            when(resultSet.getString(3)).thenReturn(FIRST_USER.getPassword(), SECOND_USER.getPassword());
+            when(resultSet.getString(4)).thenReturn(FIRST_USER.getEmail(), SECOND_USER.getEmail());
 
-        ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+            when(statement.executeQuery()).thenReturn(resultSet);
+        }
 
-        var user1 = new User(1L, "kyummi", "password", "kyum@naver.com");
-        var user2 = new User(2L, "kiki", "password", "kikinaver.com");
-        when(resultSet.getLong(1)).thenReturn(user1.getId()).thenReturn(user2.getId());
-        when(resultSet.getString(2)).thenReturn(user1.getAccount()).thenReturn(user2.getAccount());
-        when(resultSet.getString(3)).thenReturn(user1.getPassword()).thenReturn(user2.getPassword());
-        when(resultSet.getString(4)).thenReturn(user1.getEmail()).thenReturn(user2.getEmail());
+        private RowMapper<User> getRowMapper() {
+           return (rs, size) ->
+                    new User(
+                            rs.getLong(1),
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getString(4));
+        }
 
-        when(statement.executeQuery()).thenReturn(resultSet);
+        @Test
+        @DisplayName("SELECT 문, 데이터 검색 성공 (2개)")
+        void query() throws SQLException {
+            // given
+            var sql = "select id, account, password, email from users";
+            when(connection.prepareStatement(sql)).thenReturn(statement);
+            setResultSet();
 
-        final RowMapper<User> rowMapper = (rs, size) ->
-                new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+            // when
+            var actual = jdbcTemplate.query(sql, getRowMapper());
 
-        // when
-        var actual = jdbcTemplate.query(sql, rowMapper);
+            // then
+            assertAll(
+                    () -> assertThat(actual).hasSize(2),
+                    () -> assertThat(actual).extracting("id")
+                            .containsExactly(FIRST_USER.getId(), SECOND_USER.getId()),
+                    () -> assertThat(actual).extracting("account")
+                            .containsExactly(FIRST_USER.getAccount(), SECOND_USER.getAccount()),
+                    () -> assertThat(actual).extracting("password")
+                            .containsExactly(FIRST_USER.getPassword(), SECOND_USER.getPassword()),
+                    () -> assertThat(actual).extracting("email")
+                            .containsExactly(FIRST_USER.getEmail(), SECOND_USER.getEmail()),
+                    () -> verify(connection).prepareStatement(sql),
+                    () -> verify(statement, never()).setObject(anyInt(), any()),
+                    () -> verify(statement).executeQuery()
+            );
+        }
 
-        // then
-        assertAll(
-                () -> assertThat(actual).hasSize(2),
-                () -> assertThat(actual).extracting("id")
-                        .containsExactly(user1.getId(), user2.getId()),
-                () -> assertThat(actual).extracting("account")
-                        .containsExactly(user1.getAccount(), user2.getAccount()),
-                () -> assertThat(actual).extracting("password")
-                        .containsExactly(user1.getPassword(), user2.getPassword()),
-                () -> assertThat(actual).extracting("email")
-                        .containsExactly(user1.getEmail(), user2.getEmail()),
-                () -> verify(connection).prepareStatement(sql),
-                () -> verify(statement, never()).setObject(anyInt(), any()),
-                () -> verify(statement).executeQuery()
-        );
-    }
+        @Test
+        @DisplayName("SELECT 문, 데이터 검색 성공 (1개)")
+        void queryObject() throws SQLException {
+            // given
+            var sql = "select id, account, password, email from users where id = ?";
+            when(connection.prepareStatement(sql)).thenReturn(statement);
+            setResultSet();
+            var id = 1L;
 
-    @Test
-    @DisplayName("SELECT 문, 데이터 검색 성공 (1개)")
-    void queryObject() throws SQLException {
-        // given
-        var sql = "select id, account, password, email from users where id = ?";
-        when(connection.prepareStatement(sql)).thenReturn(statement);
+            // when
+            var actual = jdbcTemplate.queryObject(sql, getRowMapper(), id);
 
-        ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.next()).thenReturn(true);
-
-        var user1 = new User(1L, "kyummi", "password", "kyum@naver.com");
-        when(resultSet.getLong(1)).thenReturn(user1.getId());
-        when(resultSet.getString(2)).thenReturn(user1.getAccount());
-        when(resultSet.getString(3)).thenReturn(user1.getPassword());
-        when(resultSet.getString(4)).thenReturn(user1.getEmail());
-
-        when(statement.executeQuery()).thenReturn(resultSet);
-
-        final RowMapper<User> rowMapper = (rs, size) ->
-                new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-        var id = 1L;
-
-        // when
-        var actual = jdbcTemplate.queryObject(sql, rowMapper, id);
-
-        // then
-        assertAll(
-                () -> assertThat(actual).isEqualTo(user1),
-                () -> verify(connection).prepareStatement(sql),
-                () -> verify(statement).setObject(1, id),
-                () -> verify(statement).executeQuery()
-        );
+            // then
+            assertAll(
+                    () -> assertThat(actual).isEqualTo(FIRST_USER),
+                    () -> verify(connection).prepareStatement(sql),
+                    () -> verify(statement).setObject(1, id),
+                    () -> verify(statement).executeQuery()
+            );
+        }
     }
 }
