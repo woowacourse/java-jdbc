@@ -37,7 +37,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select * from users";
-        return jdbcTemplate.queryForObjects(sql, rowMapper);
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public User findById(final Long id) {

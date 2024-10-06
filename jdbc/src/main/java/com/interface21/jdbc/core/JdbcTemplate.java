@@ -34,14 +34,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameter(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
-        int index = 1;
-        for (final Object param : params) {
-            log.info("param = {}", param);
-            preparedStatement.setObject(index++, param);
-        }
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("Executing SQL: " + sql);
 
@@ -59,7 +51,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("Executing SQL: " + sql);
 
         try (final Connection connection = dataSource.getConnection();
@@ -74,6 +66,14 @@ public class JdbcTemplate {
             return values;
         } catch (final SQLException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    private void setParameter(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
+        int index = 1;
+        for (final Object param : params) {
+            log.info("param = {}", param);
+            preparedStatement.setObject(index++, param);
         }
     }
 }
