@@ -45,20 +45,16 @@ public class UserDao {
         final var query = "select id, account, password, email from users where id = ?";
         Object[] parameters = {id};
 
-        List<User> users = jdbcTemplate.executeQuery(query, this::mapUserFromResultSet, parameters);
-        return users.stream()
-                .findAny()
-                .orElse(null);
+        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, parameters)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID를 갖는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var query = "select * from users where account = ?";
         Object[] parameters = {account};
 
-        List<User> users = jdbcTemplate.executeQuery(query, this::mapUserFromResultSet, parameters);
-        return users.stream()
-                .findAny()
-                .orElse(null);
+        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, parameters)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 account를 갖는 유저가 없습니다."));
     }
 
     private User mapUserFromResultSet(final ResultSet resultSet) throws SQLException {
