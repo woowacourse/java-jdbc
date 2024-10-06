@@ -70,7 +70,7 @@ public class JdbcTemplate {
             }
             return rowMapper.mapRow(rs);
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
@@ -110,17 +110,13 @@ public class JdbcTemplate {
             setParameter(pstmt, parameters);
             rs = pstmt.executeQuery();
 
-            if (!rs.next()) {
-                return null;
-            }
-
             List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs));
             }
             return result;
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
