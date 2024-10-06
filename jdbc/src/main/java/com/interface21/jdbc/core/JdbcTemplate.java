@@ -11,7 +11,6 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final int OBJECT_INDEX = 0;
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -30,7 +29,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        return query(sql, preparedStatementSetter, rowMapper).get(OBJECT_INDEX);
+        return query(sql, preparedStatementSetter, rowMapper).getFirst();
     }
 
     public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
