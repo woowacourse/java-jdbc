@@ -1,8 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.result.SelectSingleResult;
-import com.interface21.jdbc.util.DataSourceConfig;
-import com.interface21.jdbc.util.DatabasePopulatorUtils;
+import com.interface21.jdbc.config.DataSourceConfig;
+import com.interface21.jdbc.config.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

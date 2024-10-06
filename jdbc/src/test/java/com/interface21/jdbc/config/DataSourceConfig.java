@@ -1,4 +1,4 @@
-package com.interface21.jdbc.util;
+package com.interface21.jdbc.config;
 
 import org.h2.jdbcx.JdbcDataSource;
 
