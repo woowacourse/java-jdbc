@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.ContextLoaderTest;
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.mvc.tobe.HandlerMapping;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ class HandlerMappingsTest {
 
     @BeforeEach
     void setUp() {
-        HandlerContainer instance = HandlerContainer.getInstance();
+        BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
         instance.initialize(ContextLoaderTest.class);
     }

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.ContextLoaderTest;
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import com.interface21.webmvc.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,7 +34,7 @@ class HandlerAdaptersTest {
 
     @BeforeEach
     void setUp() {
-        HandlerContainer instance = HandlerContainer.getInstance();
+        BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
         instance.initialize(ContextLoaderTest.class);
     }

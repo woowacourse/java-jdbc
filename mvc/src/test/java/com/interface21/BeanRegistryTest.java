@@ -10,32 +10,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class HandlerStoreTest {
+class BeanRegistryTest {
 
-    private HandlerStore handlerStore = HandlerStore.getInstance();
+    private BeanRegistry beanRegistry = BeanRegistry.getInstance();
 
     @BeforeEach
     void setUp() {
-        handlerStore.clear();
+        beanRegistry.clear();
     }
 
     @Test
     @DisplayName("Handler를 중복으로 등록할 경우 예외를 발생시킨다")
     void duplicateHandler() {
-        HandlerStore handlerStore = HandlerStore.getInstance();
+        BeanRegistry beanRegistry = BeanRegistry.getInstance();
         List<Object> objects = List.of(this, this);
 
-        assertThatThrownBy(() -> handlerStore.registerHandler(objects))
+        assertThatThrownBy(() -> beanRegistry.registerHandler(objects))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("해당 클래스의 객체를 반환한다")
     void getHandler() {
-        HandlerStore handlerStore = HandlerStore.getInstance();
-        handlerStore.registerHandler(List.of(this, new TestController()));
+        BeanRegistry beanRegistry = BeanRegistry.getInstance();
+        beanRegistry.registerHandler(List.of(this, new TestController()));
 
-        List<TestController> handler = handlerStore.getHandler(TestController.class);
+        List<TestController> handler = beanRegistry.getHandler(TestController.class);
 
         assertThat(handler).hasSize(1);
     }
@@ -43,10 +43,10 @@ class HandlerStoreTest {
     @Test
     @DisplayName("해당 어노테이션이 붙은 객체를 반환한다")
     void getHandlerWithAnnotation() {
-        HandlerStore handlerStore = HandlerStore.getInstance();
-        handlerStore.registerHandler(List.of(this, new TestController()));
+        BeanRegistry beanRegistry = BeanRegistry.getInstance();
+        beanRegistry.registerHandler(List.of(this, new TestController()));
 
-        List<Object> objects = handlerStore.getHandlerWithAnnotation(Controller.class);
+        List<Object> objects = beanRegistry.getHandlerWithAnnotation(Controller.class);
 
         assertThat(objects).hasSize(1);
     }

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import com.interface21.ContextLoaderTest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,7 +19,7 @@ class AnnotationHandlerMappingTest {
 
     @BeforeEach
     void setUp() {
-        HandlerContainer instance = HandlerContainer.getInstance();
+        BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
         instance.initialize(ContextLoaderTest.class);
         handlerMapping = new AnnotationHandlerMapping();

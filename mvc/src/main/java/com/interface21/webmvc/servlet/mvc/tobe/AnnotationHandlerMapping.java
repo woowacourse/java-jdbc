@@ -1,6 +1,6 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import com.interface21.context.stereotype.Controller;
 import com.interface21.web.bind.annotation.RequestMethod;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,8 +19,8 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 
     @Override
     public void initialize() {
-        HandlerContainer handlerContainer = HandlerContainer.getInstance();
-        handlerContainer.getHandlerWithAnnotation(Controller.class).stream()
+        BeanContainer beanContainer = BeanContainer.getInstance();
+        beanContainer.getHandlerWithAnnotation(Controller.class).stream()
                 .map(object -> object.getClass().getDeclaredMethods())
                 .forEach(handlerExecutions::addHandlerExecution);
 

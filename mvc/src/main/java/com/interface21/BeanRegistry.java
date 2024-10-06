@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HandlerStore {
+public class BeanRegistry {
 
     private static final Map<String, Object> MANAGERS = new ConcurrentHashMap<>();
 
-    private HandlerStore() {}
+    private BeanRegistry() {}
 
     private static class Singleton {
-        private static final HandlerStore INSTANCE = new HandlerStore();
+        private static final BeanRegistry INSTANCE = new BeanRegistry();
     }
 
-    public static HandlerStore getInstance() {
+    public static BeanRegistry getInstance() {
         return Singleton.INSTANCE;
     }
 

@@ -1,6 +1,6 @@
 package com.interface21.webmvc.servlet.mvc;
 
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import com.interface21.webmvc.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,8 +16,8 @@ public class HandlerAdapters {
     }
 
     public void initialize() {
-        HandlerContainer handlerContainer = HandlerContainer.getInstance();
-        List<HandlerAdapter> adapters = handlerContainer.getHandlers(HandlerAdapter.class);
+        BeanContainer beanContainer = BeanContainer.getInstance();
+        List<HandlerAdapter> adapters = beanContainer.getHandlers(HandlerAdapter.class);
         handlerAdapters.addAll(adapters);
     }
 
