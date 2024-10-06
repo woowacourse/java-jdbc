@@ -41,15 +41,18 @@ public class JdbcTemplate {
         return execute(sql,
                 preparedStatement -> {
                     ResultSet resultSet = preparedStatement.executeQuery();
-
-                        List<T> result = new ArrayList<>();
-                        while (resultSet.next()) {
-                            result.add(rowMapper.mapRow(resultSet));
-                        }
-                        return result;
+                    return mapResultSet(rowMapper, resultSet);
                 },
                 args
         );
+    }
+
+    private <T> List<T> mapResultSet(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
