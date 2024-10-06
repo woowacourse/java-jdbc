@@ -25,9 +25,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
+        log.debug("query : {}", sql);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
             setParams(ps, params);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -49,10 +49,10 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParams(ps, params);
-            ResultSet rs = ps.executeQuery();
+        log.debug("query : {}", sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(ps, params)) {
             List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
@@ -71,5 +71,10 @@ public class JdbcTemplate {
         if (results.size() > UNIQUE_SIZE) {
             throw new IncorrectResultSizeDataAccessException(UNIQUE_SIZE, results.size());
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement ps, Object... params) throws SQLException {
+        setParams(ps, params);
+        return ps.executeQuery();
     }
 }
