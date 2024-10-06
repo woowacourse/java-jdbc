@@ -2,7 +2,6 @@ package transaction.stage1;
 
 import transaction.stage1.jdbc.JdbcTemplate;
 import transaction.stage1.jdbc.RowMapper;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
@@ -14,6 +13,14 @@ public class UserDao {
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    private static RowMapper<User> createRowMapper() {
+        return (final var rs) -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 
     public void insert(final Connection connection, final User user) {
@@ -54,13 +61,5 @@ public class UserDao {
     public List<User> findAll(final Connection connection) {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(connection, sql, createRowMapper());
-    }
-
-    private static RowMapper<User> createRowMapper() {
-        return (final var rs) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
     }
 }

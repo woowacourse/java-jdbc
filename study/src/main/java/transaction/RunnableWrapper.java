@@ -7,6 +7,9 @@ public final class RunnableWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(RunnableWrapper.class);
 
+    private RunnableWrapper() {
+    }
+
     public static Runnable accept(ThrowingRunnable<Exception> runnable) {
         return () -> {
             try {
@@ -17,6 +20,4 @@ public final class RunnableWrapper {
             }
         };
     }
-
-    private RunnableWrapper() {}
 }

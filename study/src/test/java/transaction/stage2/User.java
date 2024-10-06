@@ -15,12 +15,17 @@ public class User {
     private String password;
     private String email;
 
-    protected User() {}
+    protected User() {
+    }
 
     public User(String account, String password, String email) {
         this.account = account;
         this.password = password;
         this.email = email;
+    }
+
+    public static User createTest() {
+        return new User("gugu", "password", "hkkang@woowahan.com");
     }
 
     public boolean checkPassword(String password) {
@@ -29,10 +34,6 @@ public class User {
 
     public void changePassword(String password) {
         this.password = password;
-    }
-
-    public static User createTest() {
-        return new User("gugu", "password", "hkkang@woowahan.com");
     }
 
     public Long getId() {

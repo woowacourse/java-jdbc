@@ -1,15 +1,19 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
-import com.interface21.webmvc.servlet.mvc.HandlerMapping;
-import jakarta.servlet.http.HttpServletRequest;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
+import com.interface21.webmvc.servlet.mvc.HandlerMapping;
+import jakarta.servlet.http.HttpServletRequest;
 import org.reflections.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
@@ -30,17 +34,20 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         final var methods = getRequestMappingMethods(controllers.keySet());
         for (final var method : methods) {
             final var requestMapping = method.getAnnotation(RequestMapping.class);
-            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
+            log.debug("register handlerExecution : url is {}, request method : {}, method is {}",
+                    requestMapping.value(), requestMapping.method(), method);
             addHandlerExecutions(controllers, method, requestMapping);
         }
 
         log.info("Initialized AnnotationHandlerMapping!");
     }
 
-    private void addHandlerExecutions(final Map<Class<?>, Object> controllers, final Method method, final RequestMapping rm) {
+    private void addHandlerExecutions(final Map<Class<?>, Object> controllers, final Method method,
+                                      final RequestMapping rm) {
         final var handlerKeys = mapHandlerKeys(rm.value(), rm.method());
         handlerKeys.forEach(handlerKey -> {
-            handlerExecutions.put(handlerKey, new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
+            handlerExecutions.put(handlerKey,
+                    new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
         });
     }
 

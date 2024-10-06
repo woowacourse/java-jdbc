@@ -4,8 +4,8 @@ import java.util.Objects;
 
 public class TestUser {
 
-    private Long id;
     private final String account;
+    private Long id;
 
     public TestUser(Long id, String account) {
         this.id = id;

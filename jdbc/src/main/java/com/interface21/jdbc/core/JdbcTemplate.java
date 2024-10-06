@@ -5,7 +5,6 @@ import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,7 +25,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection(){
+    public Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -35,9 +34,9 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object... params){
-        try(Connection conn = getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+    public void update(String sql, Object... params) {
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatement(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -61,7 +60,8 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... params) throws SQLException {
+    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... params)
+            throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
         setStatement(pstmt, params);
         return pstmt;

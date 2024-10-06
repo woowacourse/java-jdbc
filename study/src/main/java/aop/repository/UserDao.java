@@ -4,7 +4,6 @@ import aop.domain.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 
 @Repository
@@ -14,6 +13,14 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private static RowMapper<User> createRowMapper() {
+        return (final var rs, final var i) -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 
     public void insert(final User user) {
@@ -39,13 +46,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, createRowMapper(), account);
-    }
-
-    private static RowMapper<User> createRowMapper() {
-        return (final var rs, final var i) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
     }
 }
