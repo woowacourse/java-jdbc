@@ -35,7 +35,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> result = query(sql, rowMapper, params);
         if (result.isEmpty()) {
-            return null;
+            throw new DataAccessException("Expected a single result, but not found for query: " + sql);
         }
         if (result.size() > MAX_ALLOWED_RESULTS) {
             throw new DataAccessException("Expected a single result, but found multiple for query: " + sql);

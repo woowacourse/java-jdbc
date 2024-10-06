@@ -107,6 +107,29 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단 건 조회 시, 데이터가 없으면 예외가 발생한다.")
+    void queryForObjectWhenNotFound() throws SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        RowMapper<TestObject> rowMapper = rs -> new TestObject(
+                rs.getInt("id"),
+                rs.getString("name")
+        );
+
+        String sql = "SELECT * FROM test WHERE id = ?";
+
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
+                        .hasMessageContaining("Expected a single result, but not found for query: "),
+                () -> verify(preparedStatement).close(),
+                () -> verify(resultSet).close()
+        );
+    }
+
+    @Test
     @DisplayName("단 건 조회 시, 데이터가 두 개 이상이면 예외가 발생한다.")
     void queryForObjectWhenMultipleData() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
