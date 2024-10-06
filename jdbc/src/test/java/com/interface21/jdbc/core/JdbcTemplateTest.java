@@ -102,4 +102,23 @@ class JdbcTemplateTest {
         verify(preparedStatement).executeQuery();
         verify(resultSet).next();
     }
+
+    @DisplayName("INSERT, DELETE, UPDATE 작업을 처리한다.")
+    @Test
+    void update() throws SQLException {
+        // given
+        String sql = "INSERT INTO users (id, name) VALUES (?, ?)";
+
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        // when
+        int affectedRows = jdbcTemplate.update(sql, 1L, "Tebah");
+
+        // then
+        assertThat(affectedRows).isEqualTo(1);
+
+        verify(preparedStatement).setObject(1, 1L);
+        verify(preparedStatement).setObject(2, "Tebah");
+        verify(preparedStatement).executeUpdate();
+    }
 }
