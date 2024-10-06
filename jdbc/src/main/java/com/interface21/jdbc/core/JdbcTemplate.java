@@ -74,10 +74,32 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         ResultSet resultSet = query(sql, parameters);
         try {
-            return parseResults(resultSetParser, resultSet).getFirst();
+            return parseResult(resultSetParser, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(resultSetParser.parse(resultSet));
+            validateToManyData(results);
+        }
+        validateNoData(results);
+        return results.getFirst();
+    }
+
+    private <T> void validateNoData(List<T> results) {
+        if (results.isEmpty()) {
+            throw new DataAccessException("행이 하나도 조회되지 않았습니다.");
+        }
+    }
+
+    private <T> void validateToManyData(List<T> results) {
+        if (results.size() > 1) {
+            throw new DataAccessException("여러개의 행이 조회되었습니다.");
         }
     }
 }
