@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int ONE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -28,7 +29,7 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException();
         }
-        if (results.size() == 1) {
+        if (results.size() == ONE_RESULT_SIZE) {
             throw new IncorrectResultSizeDataAccessException(results.size());
         }
         return results.getFirst();
