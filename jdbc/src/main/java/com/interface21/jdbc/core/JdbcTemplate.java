@@ -25,10 +25,14 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
+        return update(sql, getDefaultPreparedStatementSetter(params));
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
         log.debug("query : {}", sql);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            setParams(ps, params);
+            pss.setValues(ps);
             return ps.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,23 +40,25 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(PreparedStatement ps, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            ps.setObject(i + 1, params[i]);
-        }
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] params) {
+        return new OrderBasedPreparedStatementSetter(params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = queryForList(sql, rowMapper, params);
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(params));
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> results = queryForList(sql, rowMapper, pss);
         validateResultUniqueness(results);
         return results.getFirst();
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         log.debug("query : {}", sql);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(ps, params)) {
+             ResultSet rs = executeQuery(ps, pss)) {
             List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
@@ -73,8 +79,12 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement ps, Object... params) throws SQLException {
-        setParams(ps, params);
+    private ResultSet executeQuery(PreparedStatement ps, PreparedStatementSetter pss) throws SQLException {
+        pss.setValues(ps);
         return ps.executeQuery();
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
+        return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(params));
     }
 }
