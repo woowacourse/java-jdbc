@@ -19,7 +19,8 @@ public class UserHistory {
         this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createBy);
     }
 
-    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createBy) {
+    public UserHistory(final Long id, final long userId, final String account, final String password,
+                       final String email, final String createBy) {
         this.id = id;
         this.userId = userId;
         this.account = account;
