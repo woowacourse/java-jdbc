@@ -1,7 +1,5 @@
 package com.techcourse.service;
 
-import java.sql.SQLException;
-
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
