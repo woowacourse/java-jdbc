@@ -38,34 +38,25 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            rs = executeQuery(pstmt, parameters);
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
                 return rowMapper.doMapping(rs);
             }
             return null;
-
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> List<T> executeList(String sql, RowMapper<T> rowMapper, Object... parameters){
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            rs = executeQuery(pstmt, parameters);
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
 
             List<T> results = new ArrayList<>();
@@ -73,16 +64,9 @@ public class JdbcTemplate {
                 results.add(rowMapper.doMapping(rs));
             }
             return results;
-
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
