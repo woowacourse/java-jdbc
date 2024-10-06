@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,7 +64,7 @@ class JdbcTemplateTest {
 
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
 
         // then
@@ -95,13 +96,13 @@ class JdbcTemplateTest {
 
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.next()).thenReturn(true, true, false);
         jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper);
 
         // then
         verify(preparedStatement).executeQuery();
         verify(preparedStatementSetter).setValues(preparedStatement);
-        verify(rowMapper).mapRow(resultSet);
+        verify(rowMapper, times(2)).mapRow(resultSet);
         verify(connection).close();
         verify(preparedStatement).close();
     }
