@@ -35,7 +35,7 @@ public class MappedResultSet<T> {
         AtomicInteger remainingCount = new AtomicInteger(limitCount);
 
         while (next(resultSet, remainingCount)) {
-            results.add(rowMapper.mapRows(resultSet));
+            results.add(rowMapper.mapRow(resultSet));
         }
 
         return results;
