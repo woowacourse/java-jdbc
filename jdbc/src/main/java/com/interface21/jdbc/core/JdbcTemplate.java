@@ -24,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Object... parameters){
+    public int executeUpdate(String sql, Object... parameters){
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -32,7 +32,7 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, parameters[i]);
             }
 
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
