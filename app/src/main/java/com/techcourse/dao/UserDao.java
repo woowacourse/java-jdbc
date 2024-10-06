@@ -7,7 +7,6 @@ import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public class UserDao {
 
@@ -41,17 +40,8 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         final SelectMultiResult queryResult = jdbcTemplate.selectMulti(sql);
-        final List<Long> ids = queryResult.getColumnList("id");
-        final List<String> accounts = queryResult.getColumnList("account");
-        final List<String> passwords = queryResult.getColumnList("password");
-        final List<String> emails = queryResult.getColumnList("email");
-        return IntStream.rangeClosed(0, queryResult.size())
-                .mapToObj(idx -> new User(
-                        ids.get(idx),
-                        accounts.get(idx),
-                        passwords.get(idx),
-                        emails.get(idx)
-                ))
+        return queryResult.stream()
+                .map(this::mapperToUser)
                 .toList();
     }
 
@@ -69,6 +59,10 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         final SelectSingleResult queryResult = jdbcTemplate.selectOne(sql, account);
+        return mapperToUser(queryResult);
+    }
+
+    private User mapperToUser(final SelectSingleResult queryResult) {
         return new User(
                 queryResult.getColumnValue("id"),
                 queryResult.getColumnValue("account"),

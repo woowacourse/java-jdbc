@@ -66,25 +66,15 @@ public class JdbcTemplate {
 
     private SelectMultiResult parseSelectMulti(final ResultSet resultSet) throws SQLException {
         final ResultSetMetaData metaData = resultSet.getMetaData();
-        final Map<String, List<Object>> resultMap = initialize(metaData);
+
+        final List<SelectSingleResult> results = new ArrayList<>();
         while (resultSet.next()) {
+            final Map<String, Object> map = new HashMap<>();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                final String columnName = metaData.getColumnName(i);
-                final Object columnValue = resultSet.getObject(i);
-
-                resultMap.get(columnName)
-                        .add(columnValue);
+                map.put(metaData.getColumnName(i), resultSet.getObject(i));
             }
+            results.add(new SelectSingleResult(map));
         }
-        final int last = resultSet.getRow();
-        return new SelectMultiResult(resultMap, last);
-    }
-
-    private Map<String, List<Object>> initialize(final ResultSetMetaData metaData) throws SQLException {
-        final Map<String, List<Object>> resultMap = new HashMap<>();
-        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-            resultMap.put(metaData.getColumnName(i), new ArrayList<>());
-        }
-        return resultMap;
+        return new SelectMultiResult(results);
     }
 }
