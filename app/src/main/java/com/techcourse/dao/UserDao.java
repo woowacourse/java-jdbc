@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 
 public class UserDao {
 
@@ -14,21 +13,9 @@ public class UserDao {
             rs.getString("password"),
             rs.getString("email"));
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = null;
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public UserDao(final DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -38,7 +25,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -52,7 +40,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow();
     }
 }
