@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,17 +22,22 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) throws DataAccessException {
-        return query(sql, new RowMapperResultSetExtractor<>(rowMapper));
-    }
-
-    private <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor) throws DataAccessException {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
-            return resultSetExtractor.extractData(resultSet);
+            return extractData(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            T result = rowMapper.mapRow(resultSet);
+            results.add(result);
+        }
+        return results;
     }
 }
