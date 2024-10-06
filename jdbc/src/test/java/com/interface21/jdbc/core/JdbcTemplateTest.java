@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import samples.TestUser;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -119,7 +120,7 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
                 .hasMessage("Incorrect result size: expected 1, actual 2");
     }
 }

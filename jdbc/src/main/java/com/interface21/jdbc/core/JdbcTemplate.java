@@ -9,6 +9,8 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 
 public class JdbcTemplate {
 
@@ -31,7 +33,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -51,7 +53,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -61,7 +63,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new IllegalStateException("Incorrect result size: expected 1, actual " + results.size());
+            throw new IncorrectResultSizeDataAccessException("Incorrect result size: expected 1, actual " + results.size());
         }
         return results.getFirst();
     }
@@ -74,7 +76,7 @@ public class JdbcTemplate {
                 pstmt.setObject(position, argument);
             } catch (SQLException e) {
                 log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         }
     }
