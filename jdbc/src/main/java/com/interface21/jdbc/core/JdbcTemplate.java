@@ -62,7 +62,7 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> getResultSet(final String sql, final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery();) {
+        try (ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             List<T> results = new ArrayList<>();
             while (rs.next()) {

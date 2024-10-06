@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
     private static final Long TEST_ID = 1L;
-    private static final String TEST_PARAM = "test_param";
 
     private JdbcTemplate jdbcTemplate;
     private PreparedStatement pstmt;
