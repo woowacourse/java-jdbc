@@ -44,6 +44,7 @@ public class JdbcTemplateTest {
         MockitoAnnotations.openMocks(this); // Initialize mocks
         jdbcTemplate = new JdbcTemplate(dataSource);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
     }
 
     @Test
@@ -72,13 +73,7 @@ public class JdbcTemplateTest {
         TestUser expectedUser = new TestUser(1L, "testAccount");
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-
-        // resultSet이 한 행을 반환하고 그다음에 끝나는 시나리오
-        when(resultSet.next()).thenReturn(true).thenReturn(false);
-
-        when(resultSet.getLong("id")).thenReturn(expectedUser.getId());
-        when(resultSet.getString("account")).thenReturn(expectedUser.getAccount());
+        setupResultSetForSingleUser(expectedUser);
 
         // When
         TestUser actualUser = jdbcTemplate.queryForObject(sql, userRowMapper, params);
@@ -96,11 +91,7 @@ public class JdbcTemplateTest {
         TestUser user2 = new TestUser(2L, "account2");
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getLong("id")).thenReturn(user1.getId(), user2.getId());
-        when(resultSet.getString("account")).thenReturn(user1.getAccount(), user2.getAccount());
+        setupResultSetForMultipleUsers(user1, user2);
 
         // When
         List<TestUser> actualUsers = jdbcTemplate.query(sql, userRowMapper);
@@ -127,5 +118,18 @@ public class JdbcTemplateTest {
             jdbcTemplate.queryForObject(sql, userRowMapper, params);
         });
     }
+
+    private void setupResultSetForSingleUser(TestUser expectedUser) throws SQLException {
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
+        when(resultSet.getLong("id")).thenReturn(expectedUser.getId());
+        when(resultSet.getString("account")).thenReturn(expectedUser.getAccount());
+    }
+
+    private void setupResultSetForMultipleUsers(TestUser user1, TestUser user2) throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong("id")).thenReturn(user1.getId(), user2.getId());
+        when(resultSet.getString("account")).thenReturn(user1.getAccount(), user2.getAccount());
+    }
 }
+
 
