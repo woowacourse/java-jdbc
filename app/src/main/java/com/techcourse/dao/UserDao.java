@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,17 +51,23 @@ public class UserDao {
         return result;
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        User result = jdbcTemplate.queryForObject(sql, userRowMapper, id);
-        log.debug("select 성공한 row id : {}", result.getId());
+        Optional<User> result = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        result.ifPresentOrElse(
+                user -> log.debug("select 성공한 row id : {}", user.getId()),
+                () -> log.debug("다음 id에 해당하는 값이 존재하지 않습니다 : {}", id)
+        );
         return result;
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        User result = jdbcTemplate.queryForObject(sql, userRowMapper, account);
-        log.debug("select 성공한 row id : {}", result.getId());
+        Optional<User> result = jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        result.ifPresentOrElse(
+                user -> log.debug("select 성공한 row id : {}", user.getId()),
+                () -> log.debug("다음 account에 해당하는 값이 존재하지 않습니다 : {}", account)
+        );
         return result;
     }
 }

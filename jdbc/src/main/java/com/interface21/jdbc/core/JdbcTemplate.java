@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,9 +56,13 @@ public class JdbcTemplate {
         return resultSets;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
         List<T> resultSets = query(sql, rowMapper, values);
-        return resultSets.getFirst();
+        try {
+            return Optional.of(resultSets.getFirst());
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        }
     }
 
     private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
