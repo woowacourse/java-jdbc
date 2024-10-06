@@ -106,13 +106,8 @@ public class JdbcTemplateTest {
         verify(preparedStatement).executeQuery();
     }
 
-    private CastingResultSetParser<User> userResultSetParser() {
-        return new CastingResultSetParser<>(User.class) {
-            @Override
-            protected Object parseInternal(ResultSet resultSet) throws SQLException {
-                return new User(resultSet.getInt("id"), resultSet.getString("name"));
-            }
-        };
+    private ResultSetParser<User> userResultSetParser() {
+        return resultSet -> new User(resultSet.getInt("id"), resultSet.getString("name"));
     }
 
     @Test

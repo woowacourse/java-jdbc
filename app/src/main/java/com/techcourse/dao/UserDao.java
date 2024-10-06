@@ -1,10 +1,8 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.CastingResultSetParser;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.ResultSetParser;
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,17 +32,13 @@ public class UserDao {
         return jdbcTemplate.query(sql, userResultSetParser());
     }
 
-    private CastingResultSetParser<User> userResultSetParser() {
-        return new CastingResultSetParser<>(User.class) {
-            @Override
-            protected Object parseInternal(ResultSet resultSet) throws SQLException {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-        };
+    private ResultSetParser<User> userResultSetParser() {
+        return resultSet -> new User(
+                resultSet.getLong(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                resultSet.getString(4)
+        );
     }
 
     public User findById(final Long id) {
