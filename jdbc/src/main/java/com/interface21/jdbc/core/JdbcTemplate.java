@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -32,8 +33,10 @@ public class JdbcTemplate {
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            String errorMessage = String.format("Error executing update: %s with arguments: %s", sql,
+                    Arrays.toString(arguments));
+            log.error(errorMessage);
+            throw new IllegalStateException(errorMessage, e);
         }
     }
 
@@ -52,8 +55,10 @@ public class JdbcTemplate {
                 return objects;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
+                    Arrays.toString(arguments));
+            log.error(errorMessage);
+            throw new IllegalStateException(errorMessage, e);
         }
     }
 
@@ -71,8 +76,10 @@ public class JdbcTemplate {
                 return null;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
+                    Arrays.toString(arguments));
+            log.error(errorMessage);
+            throw new IllegalStateException(errorMessage, e);
         }
     }
 
