@@ -13,20 +13,20 @@ public class UserHistory {
 
     private final LocalDateTime createdAt;
 
-    private final String createBy;
+    private final String createdBy;
 
     public UserHistory(final User user, final String createBy) {
         this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createBy);
     }
 
-    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createBy) {
+    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createdBy) {
         this.id = id;
         this.userId = userId;
         this.account = account;
         this.password = password;
         this.email = email;
         this.createdAt = LocalDateTime.now();
-        this.createBy = createBy;
+        this.createdBy = createdBy;
     }
 
     public Long getId() {
@@ -54,6 +54,6 @@ public class UserHistory {
     }
 
     public String getCreateBy() {
-        return createBy;
+        return createdBy;
     }
 }
