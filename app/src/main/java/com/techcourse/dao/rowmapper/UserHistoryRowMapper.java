@@ -12,13 +12,13 @@ public class UserHistoryRowMapper implements RowMapper<UserHistory> {
     public UserHistory mapRow(ResultSet resultSet) {
         try {
             return new UserHistory(
-                    resultSet.getLong(1),
-                    resultSet.getLong(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4),
-                    resultSet.getString(5),
-                    resultSet.getObject(6, LocalDateTime.class),
-                    resultSet.getString(7)
+                    resultSet.getLong("id"),
+                    resultSet.getLong("user_id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"),
+                    resultSet.getObject("created_at", LocalDateTime.class),
+                    resultSet.getString("created_by")
             );
         } catch (SQLException sqlException) {
             throw new RuntimeException("UserHistory를 mapping하는 과정에서 문제가 발생했습니다.", sqlException);

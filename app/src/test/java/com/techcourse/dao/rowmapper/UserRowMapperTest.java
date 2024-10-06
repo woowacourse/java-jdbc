@@ -2,13 +2,8 @@ package com.techcourse.dao.rowmapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.techcourse.domain.User;
@@ -33,8 +28,8 @@ class UserRowMapperTest {
         User user = new User(1L, "testAccount", "testPwd", "testEmail");
         ResultSet resultSet = mock(ResultSet.class);
 
-        when(resultSet.getLong(anyInt())).thenReturn(user.getId());
-        when(resultSet.getString(anyInt())).thenReturn(user.getAccount(), user.getPassword(), user.getEmail());
+        when(resultSet.getLong(anyString())).thenReturn(user.getId());
+        when(resultSet.getString(anyString())).thenReturn(user.getAccount(), user.getPassword(), user.getEmail());
 
         User mappedUser = userRowMapper.mapRow(resultSet);
 
@@ -47,9 +42,9 @@ class UserRowMapperTest {
     @Test
     void throwRuntimeException_When_ThrowSqlException() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.next()).thenThrow(SQLException.class);
+        when(resultSet.getLong(anyString())).thenThrow(SQLException.class);
 
-        assertThatThrownBy(()-> userRowMapper.mapRow(resultSet))
+        assertThatThrownBy(() -> userRowMapper.mapRow(resultSet))
                 .isInstanceOf(RuntimeException.class);
     }
 }

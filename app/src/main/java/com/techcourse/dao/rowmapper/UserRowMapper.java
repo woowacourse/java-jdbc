@@ -11,10 +11,10 @@ public class UserRowMapper implements RowMapper<User> {
     public User mapRow(ResultSet resultSet) {
         try {
             return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
         } catch (SQLException sqlException) {
             throw new RuntimeException("User를 mapping하는 과정에서 문제가 발생했습니다.", sqlException);
         }

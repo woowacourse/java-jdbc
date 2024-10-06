@@ -3,11 +3,11 @@ package com.techcourse.dao.rowmapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,9 +33,9 @@ class UserHistoryRowMapperTest {
         UserHistory userHistory = new UserHistory(1L, 1L, "testAccount", "testPwd", "testEmail", now, "testCreateBy");
         ResultSet resultSet = mock(ResultSet.class);
 
-        when(resultSet.getLong(anyInt())).thenReturn(userHistory.getId(), userHistory.getUserId());
-        when(resultSet.getObject(anyInt(), eq(LocalDateTime.class))).thenReturn(now);
-        when(resultSet.getString(anyInt()))
+        when(resultSet.getLong(anyString())).thenReturn(userHistory.getId(), userHistory.getUserId());
+        when(resultSet.getObject(anyString(), eq(LocalDateTime.class))).thenReturn(now);
+        when(resultSet.getString(anyString()))
                 .thenReturn(userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreateBy());
 
         UserHistory mappedUserHistory = userHistoryRowMapper.mapRow(resultSet);
@@ -49,7 +49,7 @@ class UserHistoryRowMapperTest {
     @Test
     void throwRuntimeException_When_ThrowSqlException() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.next()).thenThrow(SQLException.class);
+        when(resultSet.getLong(anyString())).thenThrow(SQLException.class);
 
         assertThatThrownBy(() -> userHistoryRowMapper.mapRow(resultSet))
                 .isInstanceOf(RuntimeException.class);
