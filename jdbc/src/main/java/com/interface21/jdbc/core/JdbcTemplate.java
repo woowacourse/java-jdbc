@@ -31,8 +31,8 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params){
-        try(Connection conn = getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)){
             setStatement(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
