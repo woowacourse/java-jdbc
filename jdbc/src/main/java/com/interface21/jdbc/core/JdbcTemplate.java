@@ -79,10 +79,10 @@ public class JdbcTemplate {
         if (parameters == null) {
             return;
         }
-        for (int i = 0; i < parameters.length; i++) {
-            Object parameter = parameters[i];
+        for (int index = 0; index < parameters.length; index++) {
+            Object parameter = parameters[index];
             parameter = convertDataSourceTime(parameter);
-            preparedStatement.setObject(i + 1, parameter);
+            preparedStatement.setObject(index + 1, parameter);
         }
     }
 
