@@ -70,6 +70,6 @@ public class User {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, account, password, email);
+        return Objects.hash(id);
     }
 }
