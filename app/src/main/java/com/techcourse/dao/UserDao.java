@@ -36,6 +36,11 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
+    void delete(final User user) {
+        final var sql = "delete from users where account=?";
+        jdbcTemplate.update(sql, user.getAccount());
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.queryForObject(sql, userRowMapper);
