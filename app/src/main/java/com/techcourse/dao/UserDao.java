@@ -31,10 +31,10 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, UserResultSetParser());
+        return jdbcTemplate.query(sql, userResultSetParser());
     }
 
-    private CastingResultSetParser<User> UserResultSetParser() {
+    private CastingResultSetParser<User> userResultSetParser() {
         return new CastingResultSetParser<>(User.class) {
             @Override
             protected Object parseInternal(ResultSet resultSet) throws SQLException {
@@ -49,11 +49,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryOne(sql, UserResultSetParser(), id);
+        return jdbcTemplate.queryOne(sql, userResultSetParser(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryOne(sql, UserResultSetParser(), account);
+        return jdbcTemplate.queryOne(sql, userResultSetParser(), account);
     }
 }
