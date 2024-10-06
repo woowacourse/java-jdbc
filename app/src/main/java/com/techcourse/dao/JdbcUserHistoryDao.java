@@ -35,7 +35,7 @@ public class JdbcUserHistoryDao implements UserHistoryDao {
             pstmt.setString(3, userHistory.getPassword());
             pstmt.setString(4, userHistory.getEmail());
             pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
+            pstmt.setString(6, userHistory.getCreatedBy());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

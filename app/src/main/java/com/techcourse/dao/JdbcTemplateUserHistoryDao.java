@@ -22,7 +22,7 @@ public class JdbcTemplateUserHistoryDao implements UserHistoryDao {
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
+                userHistory.getCreatedBy()
         );
     }
 }
