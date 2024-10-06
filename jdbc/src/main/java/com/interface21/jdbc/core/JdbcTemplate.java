@@ -8,10 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -25,7 +24,7 @@ public class JdbcTemplate {
 
     public int executeUpdate(String sql, Object... values) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setQueryParameter(preparedStatement, values);
             return preparedStatement.executeUpdate();
@@ -37,7 +36,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setQueryParameter(preparedStatement, values);
             ResultSet rs = preparedStatement.executeQuery();
             return collectResultSet(rs, rowMapper, sql);
@@ -66,7 +65,7 @@ public class JdbcTemplate {
     }
 
     private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
-        for(int i = 0; i < values.length; i++) {
+        for (int i = 0; i < values.length; i++) {
             statement.setObject(i + 1, values[i]);
         }
     }

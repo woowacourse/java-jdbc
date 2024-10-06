@@ -1,14 +1,13 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.domain.User;
+import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.util.List;
 
 public class UserDao {
 
@@ -39,7 +38,8 @@ public class UserDao {
 
     public int update(final User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(), user.getId());
+        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(),
+                user.getId());
         log.debug("update 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }
