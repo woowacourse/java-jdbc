@@ -83,7 +83,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             List<T> found = new ArrayList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 found.add(rowMapper.mapRow(rs));
             }
             return found;
