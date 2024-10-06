@@ -8,7 +8,7 @@ public class OrderBasedPreparedStatementSetter implements PreparedStatementSette
     private static final int PARAMETER_START_INDEX = 1;
     private final Object[] values;
 
-    public OrderBasedPreparedStatementSetter(Object[] values) {
+    public OrderBasedPreparedStatementSetter(Object... values) {
         this.values = values;
     }
 
