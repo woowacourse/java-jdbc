@@ -1,15 +1,15 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -21,17 +21,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(String sql, Object ... parameters) {
+    public int execute(String sql, Object... parameters) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ){
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             log.debug("query : {}", sql);
             setParameters(parameters, pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -41,17 +41,17 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object ... parameters) {
+    public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         ResultSet resultSet = query(sql, parameters);
         try {
             return parseResults(resultSetParser, resultSet);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private ResultSet query(String sql, Object ... parameters) {
-        try{
+    private ResultSet query(String sql, Object... parameters) {
+        try {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
@@ -59,7 +59,7 @@ public class JdbcTemplate {
             return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -71,13 +71,13 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object ... parameters) {
+    public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         ResultSet resultSet = query(sql, parameters);
         try {
             return parseResults(resultSetParser, resultSet).getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }

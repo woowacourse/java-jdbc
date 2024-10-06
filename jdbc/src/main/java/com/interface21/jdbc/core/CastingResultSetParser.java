@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.slf4j.Logger;
@@ -19,9 +20,9 @@ public abstract non-sealed class CastingResultSetParser<T> implements ResultSetP
     public final T parse(ResultSet resultSet) {
         try {
             return extractData(resultSet);
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -30,7 +31,7 @@ public abstract non-sealed class CastingResultSetParser<T> implements ResultSetP
         if (castingType.isInstance(rawData)) {
             return castingType.cast(rawData);
         }
-        throw new RuntimeException("반환값의 타입을 변환할 수 없습니다!");
+        throw new ClassCastException("반환값의 타입을 변환할 수 없습니다!");
     }
 
     protected abstract Object parseInternal(ResultSet resultSet) throws SQLException;
