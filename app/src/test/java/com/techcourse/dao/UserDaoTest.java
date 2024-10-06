@@ -18,15 +18,13 @@ class UserDaoTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserRowMapper userRowMapper;
-    private UserDao userDao2;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userRowMapper = new UserRowMapper();
-        this.userDao2 = new UserDao(jdbcTemplate, userRowMapper);
-        this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.userDao = new UserDao(jdbcTemplate, userRowMapper);
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
     }
 
@@ -38,7 +36,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final List<User> users = userDao2.findAll();
+            final List<User> users = userDao.findAll();
 
             // then
             assertThat(users).isNotEmpty();
@@ -51,7 +49,7 @@ class UserDaoTest {
             userDao.insert(DORA.user());
 
             // when
-            final List<User> users = userDao2.findAll();
+            final List<User> users = userDao.findAll();
 
             // then
             assertThat(users.size()).isEqualTo(2);
@@ -60,7 +58,7 @@ class UserDaoTest {
         @Test
         void findAllWithZeroUser() {
             // when
-            final List<User> users = userDao2.findAll();
+            final List<User> users = userDao.findAll();
 
             // then
             assertThat(users).isEmpty();
@@ -75,7 +73,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final User user = userDao2.findById(1L).get();
+            final User user = userDao.findById(1L).get();
 
             // then
             assertThat(user.getAccount()).isEqualTo(GUGU.account());
@@ -90,7 +88,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final User user = userDao2.findByAccount(GUGU.account()).get();
+            final User user = userDao.findByAccount(GUGU.account()).get();
 
             // then
             assertThat(user.getAccount()).isEqualTo(GUGU.account());
@@ -105,7 +103,7 @@ class UserDaoTest {
             userDao.insert(DORA.user());
 
             // then
-            final User actual = userDao2.findById(1L).get();
+            final User actual = userDao.findById(1L).get();
             assertThat(actual.getAccount()).isEqualTo(DORA.account());
         }
     }
@@ -116,7 +114,7 @@ class UserDaoTest {
         void update() {
             // given
             userDao.insert(GUGU.user());
-            final User user = userDao2.findById(1L).get();
+            final User user = userDao.findById(1L).get();
             final String newPassword = "password99";
             user.changePassword(newPassword);
 
@@ -124,7 +122,7 @@ class UserDaoTest {
             userDao.update(user);
 
             // then
-            final User actual = userDao2.findById(1L).get();
+            final User actual = userDao.findById(1L).get();
             assertThat(actual.getPassword()).isEqualTo(newPassword);
         }
     }
