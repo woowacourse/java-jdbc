@@ -50,7 +50,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select * from users where account = ?";
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }
