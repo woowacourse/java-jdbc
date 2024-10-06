@@ -24,20 +24,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args)
             throws DataAccessException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setPreparedStatementArgs(statement, args);
-            return query(rowMapper, statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setPreparedStatementArgs(final PreparedStatement statement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(FIRST_PARAMETER_INDEX + i, args[i]);
-        }
+        return execute(sql, statement -> query(rowMapper, statement), args);
     }
 
     private <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatement statement) throws SQLException {
@@ -56,17 +43,27 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) throws DataAccessException {
-        try (Connection connection = dataSource.getConnection();  // TODO: query 메서드와 공통되는 로직 분리
+        return execute(sql, this::update, args);
+    }
+
+    private int update(final PreparedStatement statement) throws SQLException {
+        return statement.executeUpdate();
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             setPreparedStatementArgs(statement, args);
-            return update(statement);
+            return action.doInPreparedStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private int update(final PreparedStatement statement) throws SQLException {
-        return statement.executeUpdate();
+    private void setPreparedStatementArgs(final PreparedStatement statement, final Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(FIRST_PARAMETER_INDEX + i, args[i]);
+        }
     }
 }
