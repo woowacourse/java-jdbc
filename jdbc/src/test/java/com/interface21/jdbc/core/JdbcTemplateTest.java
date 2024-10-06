@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -17,9 +18,12 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import com.interface21.dao.IncorrectResultSizeException;
 
 class JdbcTemplateTest {
 
@@ -48,90 +52,112 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    @Test
-    @DisplayName("query 메소드는 리스트를 반환한다.")
-    void queryReturnsList() throws SQLException {
-        // given
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getInt("age")).thenReturn(20, 25);
+    @Nested
+    @DisplayName("query")
+    class Query {
+        @Test
+        @DisplayName("리스트를 반환한다.")
+        void returnsList() throws SQLException {
+            // given
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, true, false);
+            when(resultSet.getInt("age")).thenReturn(20, 25);
 
-        // when
-        List<User> users = jdbcTemplate.query(
-                "select * from users where age = ?",
-                ROW_MAPPER,
-                18
-        );
+            // when
+            List<User> users = jdbcTemplate.query(
+                    "select * from users where age = ?",
+                    ROW_MAPPER,
+                    18
+            );
 
-        // then
-        verify(preparedStatement).executeQuery();
-        verify(preparedStatement).setObject(1, 18);
-        assertThat(users).hasSize(2);
-        assertThat(users.get(0).getAge()).isEqualTo(20);
-        assertThat(users.get(1).getAge()).isEqualTo(25);
+            // then
+            verify(preparedStatement).executeQuery();
+            verify(preparedStatement).setObject(1, 18);
+            assertThat(users).hasSize(2);
+            assertThat(users.get(0).getAge()).isEqualTo(20);
+            assertThat(users.get(1).getAge()).isEqualTo(25);
+        }
+
+        @Test
+        @DisplayName("파라미터를 전달하지 않은 경우에도 동작한다.")
+        void withoutParam() throws SQLException {
+            // given
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, true, false);
+            when(resultSet.getString("name")).thenReturn("user 1", "user 2");
+
+            // when
+            List<User> users = jdbcTemplate.query(
+                    "select * from users",
+                    ROW_MAPPER
+            );
+
+            // then
+            verify(preparedStatement).executeQuery();
+            verify(preparedStatement, never()).setObject(anyInt(), anyString());
+            assertThat(users).hasSize(2);
+            assertThat(users.get(0).getName()).isEqualTo("user 1");
+            assertThat(users.get(1).getName()).isEqualTo("user 2");
+        }
     }
 
-    @Test
-    @DisplayName("파라미터를 전달하지 않은 경우에도 query 메소드가 동작한다.")
-    void queryReturnsListWithoutParam() throws SQLException {
-        // given
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getString("name")).thenReturn("user 1", "user 2");
+    @Nested
+    @DisplayName("queryForObject")
+    class QueryForObject {
+        @Test
+        @DisplayName("객체를 반환한다.")
+        void returnObject() throws SQLException {
+            // given
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, false);
+            when(resultSet.getString("name")).thenReturn("user 1");
 
-        // when
-        List<User> users = jdbcTemplate.query(
-                "select * from users",
-                ROW_MAPPER
-        );
+            // when
+            User user = jdbcTemplate.queryForObject(
+                    "select * from users where id = ?",
+                    ROW_MAPPER,
+                    1
+            );
 
-        // then
-        verify(preparedStatement).executeQuery();
-        verify(preparedStatement, never()).setObject(anyInt(), anyString());
-        assertThat(users).hasSize(2);
-        assertThat(users.get(0).getName()).isEqualTo("user 1");
-        assertThat(users.get(1).getName()).isEqualTo("user 2");
-    }
+            // then
+            verify(preparedStatement).executeQuery();
+            verify(preparedStatement).setObject(1, 1);
+            assertThat(user.getName()).isEqualTo("user 1");
+        }
 
-    @Test
-    @DisplayName("queryForObject는 객체를 반환한다.")
-    void queryForObjectReturnObject() throws SQLException {
-        // given
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getString("name")).thenReturn("user 1");
+        @Test
+        @DisplayName("파라미터를 전달하지 않은 경우에도 동작한다.")
+        void withoutParam() throws SQLException {
+            // given
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, false);
+            when(resultSet.getString("name")).thenReturn("user 1");
 
-        // when
-        User user = jdbcTemplate.queryForObject(
-                "select * from users where id = ?",
-                ROW_MAPPER,
-                1
-        );
+            // when
+            User user = jdbcTemplate.queryForObject(
+                    "select * from users where id = 1",
+                    ROW_MAPPER
+            );
 
-        // then
-        verify(preparedStatement).executeQuery();
-        verify(preparedStatement).setObject(1, 1);
-        assertThat(user.getName()).isEqualTo("user 1");
-    }
+            // then
+            verify(preparedStatement).executeQuery();
+            verify(preparedStatement, never()).setObject(anyInt(), anyInt());
+            assertThat(user.getName()).isEqualTo("user 1");
+        }
 
-    @Test
-    @DisplayName("파라미터를 전달하지 않은 경우에도 queryForObject가 동작한다.")
-    void queryForObjectReturnObjectWithoutParam() throws SQLException {
-        // given
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getString("name")).thenReturn("user 1");
+        @Test
+        @DisplayName("결과값이 여러개인 경우 IncorrectResultSizeException을 던진다.")
+        void incorrectResultSizeException() throws SQLException {
+            // given
+            when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            when(resultSet.next()).thenReturn(true, true, false);
+            when(resultSet.getString("name")).thenReturn("user 1", "user 2");
 
-        // when
-        User user = jdbcTemplate.queryForObject(
-                "select * from users where id = 1",
-                ROW_MAPPER
-        );
-
-        // then
-        verify(preparedStatement).executeQuery();
-        verify(preparedStatement, never()).setObject(anyInt(), anyInt());
-        assertThat(user.getName()).isEqualTo("user 1");
+            // when & then
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from users where id = ?", ROW_MAPPER, 1))
+                    .isInstanceOf(IncorrectResultSizeException.class)
+                    .hasMessage("Expected: 1, but actual: 2");
+        }
     }
 
     @Test
