@@ -27,7 +27,7 @@ class JdbcTemplateTest {
     private PreparedStatement pstmt;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setUp() throws SQLException {
         final DataSource dataSource = mock(DataSource.class);
         final Connection conn = mock(Connection.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
