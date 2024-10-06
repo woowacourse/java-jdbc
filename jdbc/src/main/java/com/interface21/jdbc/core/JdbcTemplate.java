@@ -2,7 +2,10 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +34,30 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
+        try {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            setQueryParameter(pstmt, values);
+            ResultSet rs = pstmt.executeQuery();
+            List<T> resultSets = new ArrayList<>();
+            log.debug("query : {}", sql);
+
+            while (rs.next()) {
+                resultSets.add(rowMapper.mapRow(rs));
+            }
+            return resultSets;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        List<T> resultSets = query(sql, rowMapper, values);
+        return resultSets.getFirst();
     }
 
     private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
