@@ -42,9 +42,10 @@ public class UserDao {
         return jdbcTemplate.query(sql, rowMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryObject(sql, rowMapper, id);
+        User user = jdbcTemplate.queryObject(sql, rowMapper, id);
+        return Optional.ofNullable(user);
     }
 
     public Optional<User> findByAccount(final String account) {
