@@ -64,9 +64,4 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
-
-    @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
-    }
 }
