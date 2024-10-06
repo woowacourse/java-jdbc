@@ -4,14 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class JdbcTemplate {
@@ -25,7 +22,8 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(String sql, Object... parameters){
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
@@ -39,122 +37,56 @@ public class JdbcTemplate {
         }
     }
 
-    public Object execute(String sql, Class<?> clazz, Object... parameters){
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    public <T> T execute(String sql, RowMapper<T> rowMapper, Object... parameters) {
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < parameters.length; i++) {
                 pstmt.setObject(i + 1, parameters[i]);
             }
             rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
-            int columnCount = rs.getMetaData().getColumnCount();
-            Object[] data = new Object[columnCount];
-
-            rs.next();
-            for (int i = 0; i < columnCount; i++) {
-                data[i] = (rs.getObject(i + 1));
+            if (rs.next()) {
+                return rowMapper.doMapping(rs);
             }
-
-            Class<?>[] classes = Arrays.stream(data)
-                    .map(Object::getClass)
-                    .toArray(Class[]::new);
-
-            Constructor<?> constructor = clazz.getConstructor(classes);
-
-            return constructor.newInstance(data);
+            return null;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (SQLException ignored) {}
         }
     }
 
-    public List<Object> executeList(String sql, Class<?> clazz, Object... parameters){
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    public <T> List<T> executeList(String sql, RowMapper<T> rowMapper, Object... parameters){
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < parameters.length; i++) {
                 pstmt.setObject(i + 1, parameters[i]);
             }
             rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
-            int columnCount = rs.getMetaData().getColumnCount();
-            Object[] data = new Object[columnCount];
-
-            rs.next();
-            for (int i = 0; i < columnCount; i++) {
-                data[i] = (rs.getObject(i + 1));
-            }
-
-            Class<?>[] classes = Arrays.stream(data)
-                    .map(Object::getClass)
-                    .toArray(Class[]::new);
-
-            Constructor<?> constructor = clazz.getConstructor(classes);
-
-            List<Object> objects = new ArrayList<>();
-            objects.add(constructor.newInstance(data));
+            List<T> results = new ArrayList<>();
             while (rs.next()) {
-                for (int i = 0; i < columnCount; i++) {
-                    data[i] = (rs.getObject(i + 1));
-                }
-                objects.add(constructor.newInstance(data));
+                results.add(rowMapper.doMapping(rs));
             }
-
-            return objects;
+            return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         } finally {
             try {
                 if (rs != null) {
                     rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (SQLException ignored) {}
         }
