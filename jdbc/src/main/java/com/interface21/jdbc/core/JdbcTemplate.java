@@ -38,16 +38,20 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)){
             setQueryParameter(pstmt, values);
             ResultSet rs = pstmt.executeQuery();
-            List<T> resultSets = new ArrayList<>();
-            log.debug("query : {}", sql);
-            while (rs.next()) {
-                resultSets.add(rowMapper.mapRow(rs));
-            }
-            return resultSets;
+            return collectResultSet(rs, rowMapper, sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private <T> List<T> collectResultSet(ResultSet resultSet, RowMapper<T> rowMapper, String sql) throws SQLException {
+        List<T> resultSets = new ArrayList<>();
+        log.debug("query : {}", sql);
+        while (resultSet.next()) {
+            resultSets.add(rowMapper.mapRow(resultSet));
+        }
+        return resultSets;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
