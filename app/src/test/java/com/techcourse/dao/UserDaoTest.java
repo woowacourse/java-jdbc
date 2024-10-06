@@ -16,14 +16,12 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
-    private JdbcTemplate jdbcTemplate;
-    private UserRowMapper userRowMapper;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userRowMapper = new UserRowMapper();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        UserRowMapper userRowMapper = new UserRowMapper();
         this.userDao = new UserDao(jdbcTemplate, userRowMapper);
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
     }
