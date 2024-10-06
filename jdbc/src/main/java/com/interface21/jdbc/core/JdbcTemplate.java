@@ -32,18 +32,22 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T query(PreparedStatement preparedStatement, ResultSetExtractor<T> resultSetExtractor) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = preparedStatement) {
+            ResultSet rs = ps.executeQuery();
+            return resultSetExtractor.extractData(rs);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);) {
             log.debug("Query: {}, Parameters: {}", sql, args);
             setSQLParameters(ps, args);
-            ResultSet rs = ps.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-
+            return query(ps, new RowMapperResultSetExtractor<>(rowMapper));
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
