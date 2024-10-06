@@ -46,7 +46,7 @@ public class JdbcTemplate {
             return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException("올바르지 않은 쿼리입니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -58,7 +58,7 @@ public class JdbcTemplate {
                 results.add(row);
             }
         } catch (SQLException e) {
-            throw new DataAccessException("쿼리 값과 mapper가 맞지 않습니다.", e);
+            throw new DataAccessException(e);
         }
         return results;
     }
@@ -73,7 +73,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException("올바르지 않은 업데이트 쿼리입니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -83,7 +83,7 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, parameters[i]);
             }
         } catch (SQLException e) {
-            throw new DataAccessException("쿼리의 파라미터가 올바르지 않습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 }
