@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
 
 public class JdbcTemplate {
@@ -61,7 +62,7 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 }
