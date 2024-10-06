@@ -4,12 +4,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+
+    public UserDao(final DataSource dataSource) {
+        this(new JdbcTemplate(dataSource));
+    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
