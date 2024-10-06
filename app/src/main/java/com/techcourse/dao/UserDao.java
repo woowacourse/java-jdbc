@@ -1,8 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -41,8 +38,9 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, (resultSet, rowNumber) ->
+            new User(resultSet.getLong("id"), resultSet.getString("account"), resultSet.getString("password"), resultSet.getString("email")));
     }
 
     public User findById(final Long id) {

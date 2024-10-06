@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -51,6 +53,25 @@ public class JdbcTemplate {
 
             log.info("SQL : {}", sql);
             return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error("SQL error: {}", e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            log.info("SQL : {}", sql);
+            List<T> instances = new ArrayList<>();
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                while (resultSet.next()) {
+                    T instance = rowMapper.mapRow(resultSet, resultSet.getRow());
+                    instances.add(instance);
+                }
+                return instances;
+            }
         } catch (SQLException e) {
             log.error("SQL error: {}", e.getMessage(), e);
             throw new RuntimeException(e);

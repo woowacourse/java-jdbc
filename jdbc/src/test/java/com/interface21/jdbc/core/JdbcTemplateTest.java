@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -120,5 +121,35 @@ class JdbcTemplateTest {
         verify(preparedStatement).setObject(1, 1L);
         verify(preparedStatement).setObject(2, "Tebah");
         verify(preparedStatement).executeUpdate();
+    }
+
+    @DisplayName("복수 객체를 반환한다.")
+    @Test
+    void query() throws SQLException {
+        // given
+        String sql = "SELECT id, name FROM users";
+
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong("id")).thenReturn(1L, 2L);
+        when(resultSet.getString("name")).thenReturn("Tebah", "Bahte");
+
+        // when
+        List<TestUser> users = jdbcTemplate.query(
+            sql,
+            (resultSet, rowNumber) ->
+                new TestUser(
+                    resultSet.getLong("id"),
+                    resultSet.getString("name"))
+        );
+
+        // then
+        assertThat(users).hasSize(2);
+        assertThat(users.get(0).getId()).isEqualTo(1L);
+        assertThat(users.get(0).getName()).isEqualTo("Tebah");
+        assertThat(users.get(1).getId()).isEqualTo(2L);
+        assertThat(users.get(1).getName()).isEqualTo("Bahte");
+
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(3)).next();
     }
 }
