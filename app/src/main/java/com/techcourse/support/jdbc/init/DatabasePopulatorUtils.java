@@ -1,5 +1,8 @@
 package com.techcourse.support.jdbc.init;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,12 +23,13 @@ public class DatabasePopulatorUtils {
         Statement statement = null;
         try {
             final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            URI uri = url.toURI();
+            Path path = Path.of(uri);
+            final var sql = Files.readString(path);
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
+        } catch (NullPointerException | IOException | SQLException | URISyntaxException e) {
             log.error(e.getMessage(), e);
         } finally {
             try {
