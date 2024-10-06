@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.dao.mapper.UserMapper;
 import com.techcourse.domain.User;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplateUserDao implements UserDao {
 
@@ -36,13 +35,13 @@ public class JdbcTemplateUserDao implements UserDao {
     }
 
     @Override
-    public Optional<User> findById(Long id) {
+    public User findById(Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     @Override
-    public Optional<User> findByAccount(String account) {
+    public User findByAccount(String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account=?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }

@@ -12,7 +12,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,14 +79,11 @@ class JdbcTemplateTest {
                 result.getString("account")
         );
 
-        Optional<TestObject> testObject = jdbcTemplate.queryForObject(sql, mapper, id);
+        TestObject result = jdbcTemplate.queryForObject(sql, mapper, id);
 
         assertAll(
-                () -> assertThat(testObject).isPresent(),
-                () -> assertThat(testObject).hasValueSatisfying(result -> assertAll(
-                        () -> assertThat(result.id).isEqualTo(id),
-                        () -> assertThat(result.account).isEqualTo(account)
-                ))
+                () -> assertThat(result.id).isEqualTo(id),
+                () -> assertThat(result.account).isEqualTo(account)
         );
     }
 
@@ -97,9 +93,9 @@ class JdbcTemplateTest {
         given(preparedStatement.executeUpdate()).willThrow(SQLException.class);
 
         assertThatThrownBy(() -> jdbcTemplate.update("BAD SQL GRAMMAR"))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
     }
-
 
     private record TestObject(Long id, String account) {
     }

@@ -16,8 +16,7 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id)
-                .orElseThrow(IllegalArgumentException::new);
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {

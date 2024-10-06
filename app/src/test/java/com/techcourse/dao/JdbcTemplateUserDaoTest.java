@@ -35,8 +35,7 @@ class JdbcTemplateUserDaoTest {
     @DisplayName("아이디로 유저 정보를 조회한다.")
     @Test
     void findById() {
-        final var user = userDao.findById(1L)
-                .orElseThrow(IllegalArgumentException::new);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -45,8 +44,7 @@ class JdbcTemplateUserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account)
-                .orElseThrow(IllegalArgumentException::new);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -58,8 +56,7 @@ class JdbcTemplateUserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L)
-                .orElseThrow(IllegalArgumentException::new);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -68,14 +65,11 @@ class JdbcTemplateUserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L)
-                .orElseThrow(IllegalArgumentException::new);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
         userDao.update(user);
-
-        final var actual = userDao.findById(1L)
-                .orElseThrow(IllegalArgumentException::new);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
