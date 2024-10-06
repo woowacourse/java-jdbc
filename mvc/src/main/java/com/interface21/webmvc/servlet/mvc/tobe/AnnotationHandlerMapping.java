@@ -1,20 +1,22 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
-import com.interface21.webmvc.servlet.mvc.HandlerMapping;
-import jakarta.servlet.http.HttpServletRequest;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
-import org.reflections.ReflectionUtils;
+import com.interface21.webmvc.servlet.mvc.HandlerMapping;
+import jakarta.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
+    private static final int DEFAULT_REQUEST_METHOD_COUNT = 0;
 
     private final Object[] basePackage;
     private final Map<HandlerKey, HandlerExecution> handlerExecutions;
@@ -24,50 +26,55 @@ public class AnnotationHandlerMapping implements HandlerMapping {
         this.handlerExecutions = new HashMap<>();
     }
 
+    @Override
     public void initialize() {
-        final var controllerScanner = new ControllerScanner(basePackage);
-        final var controllers = controllerScanner.getControllers();
-        final var methods = getRequestMappingMethods(controllers.keySet());
-        for (final var method : methods) {
-            final var requestMapping = method.getAnnotation(RequestMapping.class);
-            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
-            addHandlerExecutions(controllers, method, requestMapping);
+        final ControllerScanner controllerScanner = new ControllerScanner(basePackage);
+        final Map<Class<?>, Object> controllers = controllerScanner.getControllers();
+        final Set<Method> methods = getRequestMappingMethods(controllers.keySet());
+        for (final Method method : methods) {
+            final Object controller = controllers.get(method.getDeclaringClass());
+            addHandlerExecutions(controller, method);
         }
-
         log.info("Initialized AnnotationHandlerMapping!");
     }
 
-    private void addHandlerExecutions(final Map<Class<?>, Object> controllers, final Method method, final RequestMapping rm) {
-        final var handlerKeys = mapHandlerKeys(rm.value(), rm.method());
-        handlerKeys.forEach(handlerKey -> {
-            handlerExecutions.put(handlerKey, new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
-        });
-    }
-
-    private List<HandlerKey> mapHandlerKeys(final String value, final RequestMethod[] originalMethods) {
-        var targetMethods = originalMethods;
-        if (targetMethods.length == 0) {
-            targetMethods = RequestMethod.values();
-        }
-        return Arrays.stream(targetMethods)
-                .map(method -> new HandlerKey(value, method))
-                .collect(Collectors.toList());
-    }
-
-    @SuppressWarnings("unchecked")
     private Set<Method> getRequestMappingMethods(final Set<Class<?>> controllers) {
-        final var requestMappingMethods = new HashSet<Method>();
-        for (final var clazz : controllers) {
-            requestMappingMethods
-                    .addAll(ReflectionUtils.getAllMethods(clazz, ReflectionUtils.withAnnotation(RequestMapping.class)));
-        }
-        return requestMappingMethods;
+        return controllers.stream()
+                .flatMap(clazz -> Arrays.stream(clazz.getMethods()))
+                .filter(method -> method.isAnnotationPresent(RequestMapping.class))
+                .collect(Collectors.toSet());
     }
 
+    private void addHandlerExecutions(final Object controller, final Method method) {
+        final HandlerExecution execution = new HandlerExecution(controller, method); // TODO: execution 객체 재사용 문제 고려
+        final RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
+        final String requestUrl = requestMapping.value();
+        for (final RequestMethod requestMethod : getRequestMethods(requestMapping)) {
+            final HandlerKey key = new HandlerKey(requestUrl, requestMethod);
+            addHandlerExecution(key, execution);
+        }
+    }
+
+    private RequestMethod[] getRequestMethods(final RequestMapping requestMapping) {
+        final RequestMethod[] requestMethods = requestMapping.method();
+        if (requestMethods.length == DEFAULT_REQUEST_METHOD_COUNT) {
+            return RequestMethod.values();
+        }
+        return requestMethods;
+    }
+
+    private void addHandlerExecution(final HandlerKey key, final HandlerExecution execution) {
+        if (handlerExecutions.containsKey(key)) {
+            throw new IllegalArgumentException("이미 등록된 URL과 HTTP 메서드 조합입니다: " + key);
+        }
+        handlerExecutions.put(key, execution);
+    }
+
+    @Override
     public Object getHandler(final HttpServletRequest request) {
-        final var requestUri = request.getRequestURI();
-        final var requestMethod = RequestMethod.valueOf(request.getMethod().toUpperCase());
-        log.debug("requestUri : {}, requestMethod : {}", requestUri, requestMethod);
-        return handlerExecutions.get(new HandlerKey(requestUri, requestMethod));
+        final String requestUri = request.getRequestURI();
+        final RequestMethod requestMethod = RequestMethod.valueOf(request.getMethod().toUpperCase());
+        final HandlerKey key = new HandlerKey(requestUri, requestMethod);
+        return handlerExecutions.get(key);
     }
 }

@@ -1,15 +1,11 @@
-package com.techcourse;
+package samples.legacy;
 
-import com.techcourse.controller.*;
-import jakarta.servlet.http.HttpServletRequest;
 import com.interface21.webmvc.servlet.mvc.HandlerMapping;
-import com.interface21.webmvc.servlet.mvc.asis.Controller;
-import com.interface21.webmvc.servlet.mvc.asis.ForwardController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ManualHandlerMapping implements HandlerMapping {
 
@@ -19,9 +15,6 @@ public class ManualHandlerMapping implements HandlerMapping {
 
     @Override
     public void initialize() {
-        controllers.put("/", new ForwardController("/index.jsp"));
-        controllers.put("/logout", new LogoutController());
-
         log.info("Initialized Handler Mapping!");
         controllers.keySet()
                 .forEach(path -> log.info("Path : {}, Controller : {}", path, controllers.get(path).getClass()));
@@ -29,8 +22,7 @@ public class ManualHandlerMapping implements HandlerMapping {
 
     @Override
     public Controller getHandler(final HttpServletRequest request) {
-        final var requestURI = request.getRequestURI();
-        log.debug("Request Mapping Uri : {}", requestURI);
-        return controllers.get(requestURI);
+        log.debug("Request Mapping Uri : {}", request.getRequestURI());
+        return controllers.get(request.getRequestURI());
     }
 }

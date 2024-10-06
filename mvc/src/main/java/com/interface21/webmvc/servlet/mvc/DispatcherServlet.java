@@ -1,10 +1,14 @@
 package com.interface21.webmvc.servlet.mvc;
 
+import com.interface21.web.http.StatusCode;
+import com.interface21.webmvc.servlet.ModelAndView;
+import com.interface21.webmvc.servlet.mvc.exception.NotFoundHandlerException;
+import com.interface21.webmvc.servlet.mvc.exception.WebMvcServletException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.interface21.webmvc.servlet.ModelAndView;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,26 +40,54 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(final HttpServletRequest request, final HttpServletResponse response) throws ServletException {
-        log.debug("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
-
+    protected void service(final HttpServletRequest request,
+                           final HttpServletResponse response) throws ServletException, IOException {
+        logRequest(request);
         try {
-            final var handler = handlerMappingRegistry.getHandler(request);
-            if (!handler.isPresent()) {
-                response.setStatus(404);
-                return;
-            }
-
-            final var modelAndView = handlerExecutor.handle(request, response, handler.get());
+            final Object handler = getHandler(request);
+            final ModelAndView modelAndView = handlerExecutor.handle(request, response, handler);
             render(modelAndView, request, response);
+        } catch (WebMvcServletException e) {
+            handleWebMvcServletException(e, response);
         } catch (Throwable e) {
-            log.error("Exception : {}", e.getMessage(), e);
-            throw new ServletException(e.getMessage());
+            handleException(e);
         }
     }
 
-    private void render(final ModelAndView modelAndView, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    private void logRequest(final HttpServletRequest request) {
+        log.info("Method : {}, Request URI : {}", request.getMethod(), request.getRequestURI());
+    }
+
+    private Object getHandler(final HttpServletRequest request) {
+        return handlerMappingRegistry.findHandler(request)
+                .orElseThrow(NotFoundHandlerException::new);
+    }
+
+    private void render(final ModelAndView modelAndView,
+                        final HttpServletRequest request,
+                        final HttpServletResponse response) throws Exception {
         final var view = modelAndView.getView();
         view.render(modelAndView.getModel(), request, response);
+    }
+
+    private void handleWebMvcServletException(final WebMvcServletException exception,
+                                              final HttpServletResponse response) throws IOException {
+        StatusCode statusCode = exception.getStatusCode();
+        String message = exception.getMessage();
+        response.sendError(statusCode.value(), message);
+        if (statusCode.is4xxClientError()) {
+            log.info("WebMvcServletException : {}", message, exception);
+            return;
+        }
+        if (statusCode.is5xxServerError()) {
+            log.error("WebMvcServletException : {}", message, exception);
+            return;
+        }
+        log.debug("WebMvcServletException : {}", message, exception);
+    }
+
+    private void handleException(final Throwable e) throws ServletException {
+        log.error("Exception : {}", e.getMessage(), e);
+        throw new ServletException(e.getMessage());
     }
 }
