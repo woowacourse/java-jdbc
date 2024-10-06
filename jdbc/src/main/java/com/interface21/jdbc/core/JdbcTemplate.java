@@ -22,22 +22,19 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            return executeQueryAndGet(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return executeStatement(sql, (pstmt) -> executeQueryAndGet(pstmt, rowMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        return executeStatement(sql, (pstmt) -> {
             bindValues(pstmt, values);
             return executeQueryAndGet(pstmt, rowMapper);
+        });
+    }
+
+    private <T> T executeStatement(String sql, PreparedStatementCallBack<T> preCallBack) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            return preCallBack.callback(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -46,16 +43,23 @@ public class JdbcTemplate implements JdbcOperations {
 
     private <T> List<T> executeQueryAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         List<T> result = new ArrayList<>();
-        ResultSet rs = pstmt.executeQuery();
-        while (rs.next()) {
-            result.add(rowMapper.mapRow(rs));
+        try (ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
         }
-        rs.close();
         return result;
     }
 
+    private void bindValues(PreparedStatement pstmt, Object... values) throws SQLException {
+        for (int idx = 1; idx <= values.length; idx++) {
+            pstmt.setObject(idx, values[idx - 1]);
+        }
+    }
+
     public <T> T queryForObject(String sql, Class<T> clazz, Object... values) {
-        List<T> result = query(sql, RowMapperFactory.getRowMapper(clazz), values);
+        RowMapper<T> rowMapper = RowMapperFactory.getRowMapper(clazz);
+        List<T> result = query(sql, rowMapper, values);
         validateSingleResult(result);
         return result.getFirst();
     }
@@ -67,27 +71,14 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     public void update(String sql, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        executeStatement(sql, (pstmt) -> {
             bindValues(pstmt, values);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void bindValues(PreparedStatement pstmt, Object... values) throws SQLException {
-        for (int idx = 1; idx <= values.length; idx++) {
-            pstmt.setObject(idx, values[idx - 1]);
-        }
+            return pstmt.executeUpdate();
+        });
     }
 
     public void execute(String sql) {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
