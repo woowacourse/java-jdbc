@@ -4,7 +4,9 @@ import static com.techcourse.fixture.UserFixture.DORA;
 import static com.techcourse.fixture.UserFixture.GUGU;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.util.List;
@@ -14,12 +16,18 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
+    private JdbcTemplate jdbcTemplate;
+    private UserRowMapper userRowMapper;
+    private UserDao userDao2;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.userRowMapper = new UserRowMapper();
+        this.userDao2 = new UserDao(jdbcTemplate, userRowMapper);
+        this.userDao = new UserDao(DataSourceConfig.getInstance());
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        userDao = new UserDao(DataSourceConfig.getInstance());
     }
 
     @Nested
@@ -30,7 +38,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final List<User> users = userDao.findAll();
+            final List<User> users = userDao2.findAll();
 
             // then
             assertThat(users).isNotEmpty();
@@ -43,7 +51,7 @@ class UserDaoTest {
             userDao.insert(DORA.user());
 
             // when
-            final List<User> users = userDao.findAll();
+            final List<User> users = userDao2.findAll();
 
             // then
             assertThat(users.size()).isEqualTo(2);
@@ -52,7 +60,7 @@ class UserDaoTest {
         @Test
         void findAllWithZeroUser() {
             // when
-            final List<User> users = userDao.findAll();
+            final List<User> users = userDao2.findAll();
 
             // then
             assertThat(users).isEmpty();

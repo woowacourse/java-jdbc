@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -17,13 +17,19 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource; // TODO: 해당 필드 제거 하고 jdbcTemplate 필드 추가
+    private final JdbcTemplate jdbcTemplate;
+    private final UserRowMapper userRowMapper;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.jdbcTemplate = null;
+        this.userRowMapper = null;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(final JdbcTemplate jdbcTemplate, final UserRowMapper userRowMapper) {
         this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
+        this.userRowMapper = userRowMapper;
     }
 
     public void insert(final User user) {
@@ -98,52 +104,8 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final String sql = "select id, account, password, email from users";
-
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
-            resultSet = statement.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            List<User> users = new ArrayList<>();
-            while (resultSet.next()) {
-                User user = new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4)
-                );
-                users.add(user);
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {
-            }
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        final String sql = "SELECT * FROM users";
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) { // TODO: Optional 반환하도록 처리
