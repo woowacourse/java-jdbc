@@ -20,32 +20,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, ParameterSetter parameterSetter) {
+    public int update(String sql, Object... values) {
+        return update(sql, new TypedPreparedStatementSetter(values));
+    }
+
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
-            parameterSetter.setParameters(preparedStatement);
+            preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         });
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        return queryForList(sql, rowMapper, preparedStatement -> {});
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... values) {
+        return queryForList(sql, rowMapper, new TypedPreparedStatementSetter(values));
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, (preparedStatement) -> {
-            parameterSetter.setParameters(preparedStatement);
+            preparedStatementSetter.setValues(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement)
                     .getResults();
         });
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
-        return queryForObject(sql, rowMapper, preparedStatement -> {});
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        return queryForObject(sql, rowMapper, new TypedPreparedStatementSetter(values));
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, (preparedStatement) -> {
-            parameterSetter.setParameters(preparedStatement);
+            preparedStatementSetter.setValues(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement, 1)
                     .getFirst();
         });
