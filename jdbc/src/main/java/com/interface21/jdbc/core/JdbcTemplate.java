@@ -52,24 +52,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            setParameter(i + PARAMETER_INDEX_OFFSET, pstmt, parameters[i]);
-        }
-    }
-
-    private void setParameter(int parameterIndex, PreparedStatement pstmt, Object parameter) throws SQLException {
-        if (parameter instanceof String) {
-            pstmt.setString(parameterIndex, (String) parameter);
-            return;
-        }
-        if (parameter instanceof Long) {
-            pstmt.setLong(parameterIndex, (Long) parameter);
-            return;
-        }
-        throw new IllegalArgumentException("준비되지 않은 파라미터 타입입니다. class = " + parameter.getClass().getCanonicalName());
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -152,5 +134,23 @@ public class JdbcTemplate {
             } catch (SQLException ignored) {
             }
         }
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            setParameter(i + PARAMETER_INDEX_OFFSET, pstmt, parameters[i]);
+        }
+    }
+
+    private void setParameter(int parameterIndex, PreparedStatement pstmt, Object parameter) throws SQLException {
+        if (parameter instanceof String) {
+            pstmt.setString(parameterIndex, (String) parameter);
+            return;
+        }
+        if (parameter instanceof Long) {
+            pstmt.setLong(parameterIndex, (Long) parameter);
+            return;
+        }
+        throw new IllegalArgumentException("준비되지 않은 파라미터 타입입니다. class = " + parameter.getClass().getCanonicalName());
     }
 }
