@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,8 +29,7 @@ public class JdbcTemplate {
             setParameters(ps, args);
             return ps.executeUpdate();
         } catch (SQLException e) {
-            log.error("Update에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -44,8 +44,7 @@ public class JdbcTemplate {
                 }
             }
         } catch (SQLException e) {
-            log.error("Query에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
         return results;
     }
@@ -61,8 +60,7 @@ public class JdbcTemplate {
                 return null;
             }
         } catch (SQLException e) {
-            log.error("queryForObject에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -71,8 +69,7 @@ public class JdbcTemplate {
             try {
                 ps.setObject(parameterIndex + 1, args[parameterIndex]);
             } catch (SQLException e) {
-                log.error("Parameter 설정에 실패했습니다.", e);
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         });
     }
