@@ -69,27 +69,12 @@ public class JdbcTemplate implements JdbcOperations {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            validateBindingValuesCount(sql, values);
             bindValues(pstmt, values);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    private void validateBindingValuesCount(String sql, Object[] values) {
-        int bindingVariableCount = getBindingVariableCount(sql);
-        if (bindingVariableCount != values.length) {
-            throw new IllegalArgumentException("SQL 바인딩 오류: " + bindingVariableCount + "개의 바인딩 변수가 필요하지만, " +
-                    values.length + "개의 값이 전달되었습니다. SQL: " + sql);
-        }
-    }
-
-    private int getBindingVariableCount(String sql) {
-        return (int) sql.chars()
-                .filter(str -> str == '?')
-                .count();
     }
 
     private void bindValues(PreparedStatement pstmt, Object... values) throws SQLException {
