@@ -28,13 +28,6 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public void update(final String sql, final Object... args) {
-        executeQuery(sql, preparedStatement -> {
-            preparedStatement.executeUpdate();
-            return null;
-        }, args);
-    }
-
     public <T> Optional<T> read(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return executeQuery(sql, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
