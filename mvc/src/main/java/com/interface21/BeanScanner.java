@@ -1,29 +1,31 @@
 package com.interface21;
 
-import com.interface21.core.util.ReflectionUtils;
+import com.interface21.context.stereotype.Component;
+import com.interface21.context.stereotype.Configuration;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Set;
 import org.reflections.Reflections;
+import org.reflections.util.ClasspathHelper;
 
 public class BeanScanner {
 
     private BeanScanner() {}
 
-    public static List<Object> scanTypesAnnotatedWith(Class<?> clazz, Class<? extends Annotation> annotation) {
-        Reflections reflections = new Reflections(clazz.getPackageName());
-        return reflections.getTypesAnnotatedWith(annotation).stream()
-                .map(BeanScanner::createObject)
+    public static List<Object> scanTypesAnnotatedWith() {
+        Reflections reflections = new Reflections(ClasspathHelper.forJavaClassPath());
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Component.class);
+        Set<Class<?>> typesAnnotatedWith = reflections.getTypesAnnotatedWith(Configuration.class);
+        Set<Object> objects = BeanCreator.makeConfiguration(typesAnnotatedWith);
+        objects.addAll(BeanCreator.makeBeans(classes));
+        return objects.stream()
                 .toList();
     }
 
-    private static Object createObject(Class<?> clazz) {
-        try {
-            return ReflectionUtils.accessibleConstructor(clazz).newInstance();
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("기본 생성자가 존재하지 않습니다");
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
+    public static List<Object> scanTypesAnnotatedWith(Class<?> clazz, Class<? extends Annotation> annotation) {
+        Reflections reflections = new Reflections(clazz.getPackageName());
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
+        return BeanCreator.makeBeans(classes).stream()
+                .toList();
     }
 }

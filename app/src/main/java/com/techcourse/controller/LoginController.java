@@ -2,12 +2,14 @@ package com.techcourse.controller;
 
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Controller;
+import com.interface21.context.stereotype.Inject;
+import com.interface21.dao.DataAccessException;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JspView;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -19,18 +21,21 @@ public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
+    @Inject
+    private UserService userService;
+
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ModelAndView login(final HttpServletRequest req, final HttpServletResponse res) throws Exception {
         if (UserSession.isLoggedIn(req.getSession())) {
             return new ModelAndView(new JspView("redirect:/index.jsp"));
         }
 
-        return InMemoryUserRepository.findByAccount(req.getParameter("account"))
-                .map(user -> {
-                    log.info("User : {}", user);
-                    return login(req, user);
-                })
-                .orElse(new ModelAndView(new JspView("redirect:/401.jsp")));
+        try {
+            User user = userService.findByAccount(req.getParameter("account"));
+            return login(req, user);
+        } catch (DataAccessException e) {
+            return new ModelAndView(new JspView("redirect:/401.jsp"));
+        }
     }
 
     private ModelAndView login(final HttpServletRequest request, final User user) {

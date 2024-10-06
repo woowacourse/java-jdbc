@@ -1,11 +1,12 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
+import com.interface21.BeanRegistry;
 import com.interface21.webmvc.servlet.ModelAndView;
-import com.interface21.webmvc.servlet.mvc.SingletonManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 public class HandlerExecution {
 
@@ -15,7 +16,9 @@ public class HandlerExecution {
     public HandlerExecution(Method method) {
         this.method = method;
         Class<?> declaringClass = method.getDeclaringClass();
-        this.instance = SingletonManager.getOrSaveObject(declaringClass);
+        BeanRegistry instance1 = BeanRegistry.getInstance();
+        List<?> handler = instance1.getHandler(declaringClass);
+        this.instance = handler.getFirst();
     }
 
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response) {

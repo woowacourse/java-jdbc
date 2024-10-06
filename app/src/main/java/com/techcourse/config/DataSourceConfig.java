@@ -1,13 +1,17 @@
 package com.techcourse.config;
 
+import com.interface21.context.stereotype.Bean;
+import com.interface21.context.stereotype.Configuration;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
 
+@Configuration
 public class DataSourceConfig {
 
     private static javax.sql.DataSource INSTANCE;
 
+    @Bean
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();

@@ -2,12 +2,13 @@ package com.techcourse.controller;
 
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Controller;
+import com.interface21.context.stereotype.Inject;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JspView;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,6 +19,9 @@ public class RegisterController {
 
     private final AtomicLong atomicLong = new AtomicLong(2);
 
+    @Inject
+    private UserService userService;
+
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView save(HttpServletRequest req, HttpServletResponse res) {
         final var user = new User(
@@ -26,7 +30,7 @@ public class RegisterController {
                 req.getParameter("password"),
                 req.getParameter("email")
         );
-        InMemoryUserRepository.save(user);
+        userService.insert(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }

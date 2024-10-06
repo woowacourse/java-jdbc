@@ -21,10 +21,15 @@ public class BeanContainer {
     }
 
     public void initialize(Class<?> clazz) {
-        registerHandlerManagement(clazz);
-        if (!clazz.getPackageName().equals(this.getClass().getPackageName())) {
+        registerHandlerManagement();
+        /*if (!clazz.getPackageName().equals(this.getClass().getPackageName())) {
             registerHandlerManagement(this.getClass());
-        }
+        }*/
+    }
+
+    public void registerHandlerManagement() {
+        List<Object> controllers = BeanScanner.scanTypesAnnotatedWith();
+//        beanRegistry.registerHandler(controllers);
     }
 
     public void registerHandlerManagement(Class<?> clazz) {

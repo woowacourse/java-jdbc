@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.context.stereotype.Component;
+import com.interface21.context.stereotype.Inject;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,11 +13,15 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Component
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    @Inject
+    private DataSource dataSource;
+
+    private JdbcTemplate() {}
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
