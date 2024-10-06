@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final int MAX_ALLOWED_RESULTS = 1;
 
     private final DataSource dataSource;
 
@@ -36,7 +37,7 @@ public class JdbcTemplate {
         if (result.isEmpty()) {
             return null;
         }
-        if (result.size() > 1) {
+        if (result.size() > MAX_ALLOWED_RESULTS) {
             throw new DataAccessException("Expected a single result, but found multiple for query: " + sql);
         }
         return result.getFirst();
