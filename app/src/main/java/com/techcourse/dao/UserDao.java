@@ -31,7 +31,7 @@ public class UserDao {
     }
 
     public int insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
         int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
         log.debug("insert 성공한 row 개수 : {}", rowCount);
         return rowCount;
