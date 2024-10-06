@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import com.interface21.jdbc.exception.JdbcAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,7 +148,7 @@ class JdbcTemplateTest {
         };
 
         assertThatThrownBy(() -> jdbcTemplate.execute("INSERT into", action))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("잘못된 요청입니다.");
+                .isInstanceOf(JdbcAccessException.class)
+                .hasMessageContaining("INSERT into");
     }
 }

@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.JdbcAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -63,7 +64,7 @@ public class JdbcTemplate {
             return action.apply(preparedStatement);
         } catch (SQLException e) {
             log.error("Error executing query: {}", e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new JdbcAccessException("Error executing query: " + sql, e);
         }
     }
 }
