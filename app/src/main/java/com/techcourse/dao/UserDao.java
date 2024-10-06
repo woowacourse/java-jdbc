@@ -24,16 +24,16 @@ public class UserDao {
 
     public void insert(User user) {
         Query query = new QueryBuilder()
-                .insert(List.of("account", "password", "email"))
-                .from("users")
+                .insert("account", "password", "email")
+                .into("users")
                 .build();
         jdbcTemplate.queryForUpdate(query.getSql(), user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         Query query = new QueryBuilder()
-                .update(List.of("account", "password", "email"))
-                .from("users")
+                .update("users")
+                .set("account", "password", "email")
                 .where(ConditionExpression.eq("id"))
                 .build();
 

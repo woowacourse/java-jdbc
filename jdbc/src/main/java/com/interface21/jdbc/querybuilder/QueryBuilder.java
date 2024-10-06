@@ -2,6 +2,7 @@ package com.interface21.jdbc.querybuilder;
 
 import com.interface21.jdbc.querybuilder.query.Query;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class QueryBuilder {
@@ -21,36 +22,46 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder condition(List<ConditionExpression> condition) {
-        conditions.addAll(condition);
+    public QueryBuilder into(String tableName) {
+        this.table = tableName;
         return this;
     }
 
-    public QueryBuilder where(ConditionExpression condition) {
-        return condition(List.of(condition));
+    public QueryBuilder update(String tableName) {
+        this.table = tableName;
+        return this;
     }
 
-    public QueryBuilder select(List<String> fieldNames) {
+    public QueryBuilder where(ConditionExpression condition, ConditionExpression ... conditions) {
+        this.conditions.add(condition);
+        this.conditions.addAll(Arrays.asList(conditions));
+        return this;
+    }
+
+    public QueryBuilder select(String firstField, String...fieldNames) {
         this.method = QueryMethod.SELECT;
-        this.fieldNames.addAll(fieldNames);
+        this.fieldNames.add(firstField);
+        this.fieldNames.addAll(Arrays.asList(fieldNames));
         return this;
     }
 
     public QueryBuilder selectFrom(String tableName) {
-        select(List.of("*"));
+        select("*");
         from(tableName);
         return this;
     }
 
-    public QueryBuilder insert(List<String> fieldNames) {
+    public QueryBuilder insert(String firstField, String...fieldNames) {
         this.method = QueryMethod.INSERT;
-        this.fieldNames.addAll(fieldNames);
+        this.fieldNames.add(firstField);
+        this.fieldNames.addAll(Arrays.asList(fieldNames));
         return this;
     }
 
-    public QueryBuilder update(List<String> fieldNames) {
+    public QueryBuilder set(String firstField, String... fieldNames) {
         this.method = QueryMethod.UPDATE;
-        this.fieldNames.addAll(fieldNames);
+        this.fieldNames.add(firstField);
+        this.fieldNames.addAll(Arrays.asList(fieldNames));
         return this;
     }
 
