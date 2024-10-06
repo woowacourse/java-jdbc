@@ -63,7 +63,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        return execute(sql, ps -> executeQuery(ps, pss, rowMapper));
+        return execute(sql, ps -> executeQuery(ps, rowMapper, pss));
     }
 
     private <T> void validateResultUniqueness(List<T> results) {
@@ -75,9 +75,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> executeQuery(PreparedStatement ps, PreparedStatementSetter pss, RowMapper<T> rowMapper)
+    private <T> List<T> executeQuery(PreparedStatement ps, RowMapper<T> rowMapper, PreparedStatementSetter pss)
             throws SQLException {
         pss.setValues(ps);
+        return executeQuery(ps, rowMapper);
+    }
+
+    private <T> List<T> executeQuery(PreparedStatement ps, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = ps.executeQuery()) {
             return getResults(rs, rowMapper);
         }
@@ -93,5 +97,9 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(params));
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+        return execute(sql, ps -> executeQuery(ps, rowMapper));
     }
 }
