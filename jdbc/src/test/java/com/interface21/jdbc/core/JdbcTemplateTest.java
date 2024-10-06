@@ -104,6 +104,7 @@ class JdbcTemplateTest {
     private Food mapToObject(ResultSet rs) {
         try {
             return new Food(
+                    rs.getLong("id"),
                     rs.getString("name"),
                     rs.getInt("cost")
             );
@@ -112,14 +113,5 @@ class JdbcTemplateTest {
         }
     }
 
-    static class Food {
-
-        private String name;
-        private int cost;
-
-        public Food(String name, int cost) {
-            this.name = name;
-            this.cost = cost;
-        }
-    }
+    record Food (long id, String name, int cost) {}
 }
