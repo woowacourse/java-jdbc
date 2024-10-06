@@ -1,11 +1,15 @@
 package com.techcourse.dao;
 
+import static com.techcourse.fixture.UserFixture.DORA;
+import static com.techcourse.fixture.UserFixture.GUGU;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
@@ -15,55 +19,105 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
     }
 
-    @Test
-    void findAll() {
-        final var users = userDao.findAll();
+    @Nested
+    class FindAll {
+        @Test
+        void findAllWithOneUser() {
+            // given
+            userDao.insert(GUGU.user());
 
-        assertThat(users).isNotEmpty();
+            // when
+            final List<User> users = userDao.findAll();
+
+            // then
+            assertThat(users).isNotEmpty();
+        }
+
+        @Test
+        void findAllWithTwoUser() {
+            // given
+            userDao.insert(GUGU.user());
+            userDao.insert(DORA.user());
+
+            // when
+            final List<User> users = userDao.findAll();
+
+            // then
+            assertThat(users.size()).isEqualTo(2);
+        }
+
+        @Test
+        void findAllWithZeroUser() {
+            // when
+            final List<User> users = userDao.findAll();
+
+            // then
+            assertThat(users).isEmpty();
+        }
     }
 
-    @Test
-    void findById() {
-        final var user = userDao.findById(1L);
+    @Nested
+    class FindById {
+        @Test
+        void findById() {
+            // given
+            userDao.insert(GUGU.user());
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+            // when
+            final User user = userDao.findById(1L);
+
+            // then
+            assertThat(user.getAccount()).isEqualTo(GUGU.account());
+        }
     }
 
-    @Test
-    void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+    @Nested
+    class FindByAccount {
+        @Test
+        void findByAccount() {
+            // given
+            userDao.insert(GUGU.user());
 
-        assertThat(user.getAccount()).isEqualTo(account);
+            // when
+            final User user = userDao.findByAccount(GUGU.account());
+
+            // then
+            assertThat(user.getAccount()).isEqualTo(GUGU.account());
+        }
     }
 
-    @Test
-    void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+    @Nested
+    class Insert {
+        @Test
+        void insert() {
+            // when
+            userDao.insert(DORA.user());
 
-        final var actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
+            // then
+            final User actual = userDao.findById(1L);
+            assertThat(actual.getAccount()).isEqualTo(DORA.account());
+        }
     }
 
-    @Test
-    void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+    @Nested
+    class Update {
+        @Test
+        void update() {
+            // given
+            userDao.insert(GUGU.user());
+            final User user = userDao.findById(1L);
+            final String newPassword = "password99";
+            user.changePassword(newPassword);
 
-        userDao.update(user);
+            // when
+            userDao.update(user);
 
-        final var actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+            // then
+            final User actual = userDao.findById(1L);
+            assertThat(actual.getPassword()).isEqualTo(newPassword);
+        }
     }
 }
