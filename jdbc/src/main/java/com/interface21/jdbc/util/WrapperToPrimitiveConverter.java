@@ -1,6 +1,9 @@
 package com.interface21.jdbc.util;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public enum WrapperToPrimitiveConverter {
     BOOLEAN(Boolean.class, boolean.class, (Object o) -> ((Boolean) o).booleanValue()),
@@ -12,6 +15,9 @@ public enum WrapperToPrimitiveConverter {
     LONG(Long.class, long.class, (Object o) -> ((Long) o).longValue()),
     SHORT(Short.class, short.class, (Object o) -> ((Short) o).shortValue());
 
+    private static final Map<Class<?>, Class<?>> CLASSIFY =
+            Arrays.stream(values())
+                    .collect(Collectors.toMap(v -> v.wrapperClass, v -> v.primitiveClass));
     private final Class<?> wrapperClass;
     private final Class<?> primitiveClass;
     private final Function<Object, ?> converter;
@@ -32,12 +38,7 @@ public enum WrapperToPrimitiveConverter {
     }
 
     public static Class<?> getPrimitiveClass(final Class<?> clazz) {
-        for (final WrapperToPrimitiveConverter type : values()) {
-            if (type.wrapperClass.equals(clazz)) {
-                return type.primitiveClass;
-            }
-        }
-        return clazz;
+        return CLASSIFY.getOrDefault(clazz, clazz);
     }
 }
 
