@@ -2,16 +2,15 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.result.SelectMultiResult;
 import com.interface21.jdbc.result.SelectSingleResult;
-import com.interface21.jdbc.util.WrapperToPrimitiveConverter;
 
 import javax.sql.DataSource;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.interface21.jdbc.core.StatementSetter.setStatementsWithPOJOType;
 
 public class JdbcTemplate {
 
@@ -53,34 +52,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setStatementsWithPOJOType(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            setStatementWithPOJOType(pstmt, i, params[i]);
-        }
-    }
-
-    private void setStatementWithPOJOType(final PreparedStatement pstmt, final int index, final Object param) {
-        try {
-            final Method method = findMethodWithPOJO(param);
-            method.invoke(pstmt, index + 1, param);
-        } catch (final InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Method findMethodWithPOJO(final Object param) {
-        final Class<?> paramClass = param.getClass();
-        final String typeName = paramClass.getSimpleName();
-        try {
-            return PreparedStatement.class.getMethod("set" + typeName, int.class, WrapperToPrimitiveConverter.getPrimitiveClass(paramClass));
-        } catch (final NoSuchMethodException e) {
-            try {
-                return PreparedStatement.class.getMethod("setObject", int.class, Object.class);
-            } catch (final NoSuchMethodException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
 
     private SelectSingleResult parseSelectSingle(final ResultSet resultSet) throws SQLException {
         final ResultSetMetaData metaData = resultSet.getMetaData();
