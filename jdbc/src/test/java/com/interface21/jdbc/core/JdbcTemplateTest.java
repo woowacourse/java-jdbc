@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,11 @@ class JdbcTemplateTest {
         when(prepareStatement.executeQuery()).thenReturn(resultSet);
     }
 
+    @AfterEach
+    void verifyClose() throws SQLException {
+        verify(connection, times(1)).close();
+    }
+
     @DisplayName("jdbc를 이용해 INSERT문을 실행한다. ")
     @Test
     void update_insert() {
@@ -57,8 +63,7 @@ class JdbcTemplateTest {
                 () -> verify(prepareStatement).setObject(2, password),
                 () -> verify(prepareStatement).setObject(3, email),
                 () -> verify(connection).prepareStatement(sql),
-                () -> verify(prepareStatement).executeUpdate(),
-                () -> verify(connection).close()
+                () -> verify(prepareStatement).executeUpdate()
         );
     }
 
@@ -80,8 +85,7 @@ class JdbcTemplateTest {
                 () -> verify(prepareStatement).setObject(2, password),
                 () -> verify(prepareStatement).setObject(3, email),
                 () -> verify(connection).prepareStatement(sql),
-                () -> verify(prepareStatement).executeUpdate(),
-                () -> verify(connection).close()
+                () -> verify(prepareStatement).executeUpdate()
         );
     }
 
