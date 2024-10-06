@@ -21,8 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.techcourse.domain.User;
-
 class JdbcTemplateTest {
 
     private Connection connection;
@@ -99,23 +97,23 @@ class JdbcTemplateTest {
     @DisplayName("query 메서드 테스트")
     class Query {
 
-        private final User FIRST_USER = new User(1L, "kyummi", "password", "kyum@naver.com");
-        private final User SECOND_USER = new User(2L, "kiki", "password", "kikinaver.com");
+        private static final User FIRST_USER = new User(1L, "kyummi", "password", "kyum@naver.com");
+        private static final User SECOND_USER = new User(2L, "kiki", "password", "kikinaver.com");
 
         private void setResultSet() throws SQLException {
             ResultSet resultSet = mock(ResultSet.class);
             when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-            when(resultSet.getLong("id")).thenReturn(FIRST_USER.getId(), SECOND_USER.getId());
-            when(resultSet.getString("account")).thenReturn(FIRST_USER.getAccount(), SECOND_USER.getAccount());
-            when(resultSet.getString("password")).thenReturn(FIRST_USER.getPassword(), SECOND_USER.getPassword());
-            when(resultSet.getString("email")).thenReturn(FIRST_USER.getEmail(), SECOND_USER.getEmail());
+            when(resultSet.getLong("id")).thenReturn(FIRST_USER.id(), SECOND_USER.id());
+            when(resultSet.getString("account")).thenReturn(FIRST_USER.account(), SECOND_USER.account());
+            when(resultSet.getString("password")).thenReturn(FIRST_USER.password(), SECOND_USER.password());
+            when(resultSet.getString("email")).thenReturn(FIRST_USER.email(), SECOND_USER.email());
 
             when(statement.executeQuery()).thenReturn(resultSet);
         }
 
         private RowMapper<User> getRowMapper() {
-           return (rs, size) ->
+            return (rs, size) ->
                     new User(
                             rs.getLong("id"),
                             rs.getString("account"),
@@ -137,14 +135,7 @@ class JdbcTemplateTest {
             // then
             assertAll(
                     () -> assertThat(actual).hasSize(2),
-                    () -> assertThat(actual).extracting("id")
-                            .containsExactly(FIRST_USER.getId(), SECOND_USER.getId()),
-                    () -> assertThat(actual).extracting("account")
-                            .containsExactly(FIRST_USER.getAccount(), SECOND_USER.getAccount()),
-                    () -> assertThat(actual).extracting("password")
-                            .containsExactly(FIRST_USER.getPassword(), SECOND_USER.getPassword()),
-                    () -> assertThat(actual).extracting("email")
-                            .containsExactly(FIRST_USER.getEmail(), SECOND_USER.getEmail()),
+                    () -> assertThat(actual).containsExactly(FIRST_USER, SECOND_USER),
                     () -> verify(connection).prepareStatement(sql),
                     () -> verify(statement, never()).setObject(anyInt(), any()),
                     () -> verify(statement).executeQuery()
@@ -171,5 +162,8 @@ class JdbcTemplateTest {
                     () -> verify(statement).executeQuery()
             );
         }
+    }
+
+    record User(Long id, String account, String password, String email) {
     }
 }
