@@ -78,8 +78,4 @@ public class JdbcTemplate {
             }
         }
     }
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
 }
