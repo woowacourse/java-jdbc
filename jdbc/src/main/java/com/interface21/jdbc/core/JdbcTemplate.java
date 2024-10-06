@@ -20,12 +20,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object ... objects) {
+    public int update(String sql, Object ... objects) {
         try (Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParameterIntoStatement(preparedStatement, objects);
             int rowCount = preparedStatement.executeUpdate();
             log.debug("query : {}, rowCount : {}", sql, rowCount);
+            return rowCount;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
