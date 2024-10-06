@@ -50,6 +50,7 @@ public class JdbcTemplate implements JdbcOperations {
         while (rs.next()) {
             result.add(rowMapper.mapRow(rs));
         }
+        rs.close();
         return result;
     }
 
