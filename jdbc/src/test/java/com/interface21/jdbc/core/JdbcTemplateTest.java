@@ -69,14 +69,14 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         // given
-        String sql = "select id, name, age from people where id = 1";
+        String sql = "select id, name, age from people where id = ?";
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong(1)).thenReturn(1L);
         when(resultSet.getString(2)).thenReturn("myungoh");
         when(resultSet.getInt(3)).thenReturn(25);
 
         // when
-        Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER);
+        Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1);
 
         // then
         verify(dataSource).getConnection();
@@ -90,11 +90,11 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_none() throws SQLException {
         // given
-        String sql = "select id, name, age from people where id = 3";
+        String sql = "select id, name, age from people where id = ?";
         when(resultSet.next()).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 3))
                 .isInstanceOf(EmptyResultDataAccessException.class);
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
@@ -106,14 +106,14 @@ class JdbcTemplateTest {
     @Test
     void queryForObject_notUnique() throws SQLException {
         // given
-        String sql = "select id, name, age from people where age = 25";
+        String sql = "select id, name, age from people where age = ?";
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong(1)).thenReturn(1L, 2L);
         when(resultSet.getString(2)).thenReturn("myungoh", "paper");
         when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 25))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
