@@ -19,41 +19,48 @@ public class UserDao {
             resultSet.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public int insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        log.debug("insert 성공한 row 개수 : {}", rowCount);
+        return rowCount;
     }
 
-    public void update(final User user) {
+    public int update(final User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(), user.getId());
+        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(), user.getId());
+        log.debug("update 성공한 row 개수 : {}", rowCount);
+        return rowCount;
     }
 
     public List<User> findAll() {
         String sql = "select * from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        List<User> result = jdbcTemplate.query(sql, userRowMapper);
+        log.debug("select 성공한 row 개수 : {}", result.size());
+        return result;
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        String sql = "select id, account, password, email from users where id = ?";
+        User result = jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        log.debug("select 성공한 row id : {}", result.getId());
+        return result;
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        User result = jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        log.debug("select 성공한 row id : {}", result.getId());
+        return result;
     }
 }
