@@ -50,10 +50,7 @@ public class UserDao {
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         User user = jdbcTemplate.queryObject(sql, rowMapper, account);
-        if (user == null) {
-            return Optional.empty();
-        }
-        return Optional.of(user);
+        return Optional.ofNullable(user);
     }
 
 }
