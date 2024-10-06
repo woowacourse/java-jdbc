@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -32,6 +33,15 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> resultSet = executeQuery(sql, rowMapper, params);
+        if (resultSet.size() > 1) {
+            throw new IllegalArgumentException("Multiple results returned for query, but only one result expected.");
+        }
+
+        return resultSet.stream().findFirst();
     }
 
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... params) {
