@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,18 +48,40 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatement(pstmt, params);
+             PreparedStatement pstmt = createPreparedStatement(conn, sql, params);
+             ResultSet rs = executeQuery(pstmt)) {
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                throw new NoSuchElementException();
-            }
+            T result = mapResult(rs, rowMapper);
+            checkSingleResult(rs);
+
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... params) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        setStatement(pstmt, params);
+        return pstmt;
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        return pstmt.executeQuery();
+    }
+
+    private <T> T mapResult(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        if (rs.next()) {
+            return rowMapper.mapRow(rs);
+        } else {
+            throw new NoSuchElementException();
+        }
+    }
+
+    private void checkSingleResult(ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            throw new IncorrectResultSizeDataAccessException("Incorrect result size");
         }
     }
 
