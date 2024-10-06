@@ -29,7 +29,7 @@ public class JdbcTemplate {
             setParameters(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
             List<T> result = new LinkedList<>();
-            if (rs.next()) {
+            while (rs.next()) {
                 result.add(mapper.apply(rs));
             }
             return result;
