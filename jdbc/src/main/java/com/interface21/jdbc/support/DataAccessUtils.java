@@ -10,10 +10,7 @@ public class DataAccessUtils {
     }
 
     public static <T> T nullableSingleResult(@Nullable Collection<T> results) throws IncorrectResultSizeDataAccessException {
-        if (results == null || results.isEmpty()) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        if (results.size() > 1) {
+        if (results == null || results.size() != 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.iterator().next();
