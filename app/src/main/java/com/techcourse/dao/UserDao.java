@@ -2,11 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -17,234 +12,69 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        jdbcTemplate.excute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        log.debug("query : {}", sql);
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        jdbcTemplate.excute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery(sql);
+        List<List<Object>> results = jdbcTemplate.queryList(sql);
 
-            log.debug("query : {}", sql);
-
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                User user = new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)
-                );
-                users.add(user);
-            }
-            return users;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (stmt != null) {
-                    stmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+        List<User> users = new ArrayList<>();
+        for (List<Object> result : results) {
+            User user = new User(
+                    (Long) result.get(0),
+                    (String) result.get(1),
+                    (String) result.get(2),
+                    (String) result.get(3)
+            );
+            users.add(user);
         }
+        return users;
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
+        List<Object> result = jdbcTemplate.query(sql, id);
 
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return new User(
+                (Long) result.get(0),
+                (String) result.get(1),
+                (String) result.get(2),
+                (String) result.get(3)
+        );
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, account);
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        List<Object> result = jdbcTemplate.query(sql, account);
+        return new User(
+                (Long) result.get(0),
+                (String) result.get(1),
+                (String) result.get(2),
+                (String) result.get(3)
+        );
     }
 }
+
+
