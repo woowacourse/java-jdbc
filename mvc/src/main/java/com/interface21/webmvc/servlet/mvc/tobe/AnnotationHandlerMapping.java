@@ -1,12 +1,14 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
 import com.interface21.BeanContainer;
+import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Controller;
 import com.interface21.web.bind.annotation.RequestMethod;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Component
 public class AnnotationHandlerMapping implements HandlerMapping {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationHandlerMapping.class);

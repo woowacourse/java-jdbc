@@ -17,13 +17,6 @@ public class BeanScanner {
                 .toList();
     }
 
-    public static List<Object> scanSubTypeOf(Class<?> clazz, Class<?> type) {
-        Reflections reflections = new Reflections(clazz.getPackageName());
-        return reflections.getSubTypesOf(type).stream()
-                .map(BeanScanner::createObject)
-                .toList();
-    }
-
     private static Object createObject(Class<?> clazz) {
         try {
             return ReflectionUtils.accessibleConstructor(clazz).newInstance();

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class HandlerAdaptersTest {
+class ComponentAdaptersTest {
 
     static class DummyHandlerAdapter implements HandlerAdapter {
 

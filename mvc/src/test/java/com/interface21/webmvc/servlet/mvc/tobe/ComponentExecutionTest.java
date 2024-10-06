@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.interface21.webmvc.servlet.mvc.sample.TestController;
 
-class HandlerExecutionTest {
+class ComponentExecutionTest {
 
     static class NotExistDefaultConstructorController {
 

@@ -1,8 +1,6 @@
 package com.interface21;
 
-import com.interface21.context.stereotype.Controller;
-import com.interface21.webmvc.servlet.mvc.HandlerAdapter;
-import com.interface21.webmvc.servlet.mvc.tobe.HandlerMapping;
+import com.interface21.context.stereotype.Component;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
@@ -30,11 +28,7 @@ public class BeanContainer {
     }
 
     public void registerHandlerManagement(Class<?> clazz) {
-        List<Object> mappings = BeanScanner.scanSubTypeOf(clazz, HandlerMapping.class);
-        beanRegistry.registerHandler(mappings);
-        List<Object> adapters = BeanScanner.scanSubTypeOf(clazz, HandlerAdapter.class);
-        beanRegistry.registerHandler(adapters);
-        List<Object> controllers = BeanScanner.scanTypesAnnotatedWith(clazz, Controller.class);
+        List<Object> controllers = BeanScanner.scanTypesAnnotatedWith(clazz, Component.class);
         beanRegistry.registerHandler(controllers);
     }
 
