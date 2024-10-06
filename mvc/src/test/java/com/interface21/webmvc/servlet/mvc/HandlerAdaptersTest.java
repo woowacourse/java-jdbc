@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.ContextLoaderTest;
 import com.interface21.BeanContainer;
+import com.interface21.context.stereotype.Component;
 import com.interface21.webmvc.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,8 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class ComponentAdaptersTest {
+class HandlerAdaptersTest {
 
+    @Component
     static class DummyHandlerAdapter implements HandlerAdapter {
 
         @Override
@@ -36,7 +37,7 @@ class ComponentAdaptersTest {
     void setUp() {
         BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
-        instance.initialize(ContextLoaderTest.class);
+        instance.initialize();
     }
 
     @DisplayName("HandlerAdapter를 구현하는 클래스를 저장한 뒤 적절한 Adapter를 활용해 들어온 요청을 처리한다")

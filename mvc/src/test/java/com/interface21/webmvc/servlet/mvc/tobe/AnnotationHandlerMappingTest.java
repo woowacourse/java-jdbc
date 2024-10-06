@@ -6,14 +6,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.BeanContainer;
-import com.interface21.ContextLoaderTest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class AnnotationComponentMappingTest {
+class AnnotationHandlerMappingTest {
 
     private AnnotationHandlerMapping handlerMapping;
 
@@ -21,7 +20,7 @@ class AnnotationComponentMappingTest {
     void setUp() {
         BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
-        instance.initialize(ContextLoaderTest.class);
+        instance.initialize();
         handlerMapping = new AnnotationHandlerMapping();
         handlerMapping.initialize();
     }

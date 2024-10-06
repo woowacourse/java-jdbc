@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.ContextLoaderTest;
 import com.interface21.BeanContainer;
+import com.interface21.context.stereotype.Component;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.mvc.tobe.HandlerMapping;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 class HandlerMappingsTest {
 
+    @Component
     static class DummyHandlerMapping implements HandlerMapping {
 
         private List<String> mappings;
@@ -41,7 +42,7 @@ class HandlerMappingsTest {
     void setUp() {
         BeanContainer instance = BeanContainer.getInstance();
         instance.clear();
-        instance.initialize(ContextLoaderTest.class);
+        instance.initialize();
     }
 
     @DisplayName("HandlerMapping을 구현하는 클래스를 저장한 뒤 적절한 Mapping을 활용해 들어온 요청을 처리한다")

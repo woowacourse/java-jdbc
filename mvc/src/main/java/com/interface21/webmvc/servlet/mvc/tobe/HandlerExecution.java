@@ -1,6 +1,6 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
-import com.interface21.BeanRegistry;
+import com.interface21.BeanContainer;
 import com.interface21.webmvc.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,11 +14,11 @@ public class HandlerExecution {
     private final Object instance;
 
     public HandlerExecution(Method method) {
+        BeanContainer beanContainer = BeanContainer.getInstance();
         this.method = method;
         Class<?> declaringClass = method.getDeclaringClass();
-        BeanRegistry instance1 = BeanRegistry.getInstance();
-        List<?> handler = instance1.getBeans(declaringClass);
-        this.instance = handler.getFirst();
+        List<?> beans = beanContainer.getBeans(declaringClass);
+        this.instance = beans.getFirst();
     }
 
     public ModelAndView handle(final HttpServletRequest request, final HttpServletResponse response) {

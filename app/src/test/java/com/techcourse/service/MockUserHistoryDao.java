@@ -8,7 +8,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 public class MockUserHistoryDao extends UserHistoryDao {
 
     public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        super();
+        super(jdbcTemplate);
     }
 
     @Override

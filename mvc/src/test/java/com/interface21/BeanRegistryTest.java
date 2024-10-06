@@ -24,7 +24,8 @@ class BeanRegistryTest {
     @DisplayName("Handler를 중복으로 등록할 경우 예외를 발생시킨다")
     void duplicateHandler() {
         BeanRegistry beanRegistry = BeanRegistry.getInstance();
-        Set<Object> objects = Set.of(this, this);
+        Set<Object> objects = Set.of(this);
+        beanRegistry.registerBeans(objects);
 
         assertThatThrownBy(() -> beanRegistry.registerBeans(objects))
                 .isInstanceOf(IllegalArgumentException.class);
