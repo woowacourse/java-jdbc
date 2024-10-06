@@ -41,14 +41,12 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper))
-                .isInstanceOf(EmptyResultDataAccessException.class);
+                .isExactlyInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @DisplayName("queryForObject() 호출시, 조회 되는 값이 1개 이상이면 예외를 발생시킨다.")
     @Test
     void queryForObject_ifMoreThanOneResult_throwException() throws SQLException {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
         final var sql = "select * from users";
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(pstmt);
@@ -56,6 +54,6 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper))
-                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 }
