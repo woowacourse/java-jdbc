@@ -1,15 +1,25 @@
 package com.interface21.jdbc.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.sample.Person;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
@@ -27,14 +37,13 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        preparedStatement = Mockito.mock(PreparedStatement.class);
-        connection = Mockito.mock(Connection.class);
-        dataSource = Mockito.mock(DataSource.class);
-        resultSet = Mockito.mock(ResultSet.class);
-        Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
-        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        Mockito.when(resultSet.next()).thenReturn(false);
+        preparedStatement = mock(PreparedStatement.class);
+        connection = mock(Connection.class);
+        dataSource = mock(DataSource.class);
+        resultSet = mock(ResultSet.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -45,45 +54,91 @@ class JdbcTemplateTest {
         String sql = "insert into people (name, age) values (?, ?)";
 
         // when
-        jdbcTemplate.update(sql, "name", 15);
+        int updated = jdbcTemplate.update(sql, "name", 15);
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement(sql);
-        Mockito.verify(preparedStatement).setObject(1, "name");
-        Mockito.verify(preparedStatement).setObject(2, 15);
-        Mockito.verify(preparedStatement).executeUpdate();
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).setObject(1, "name");
+        verify(preparedStatement).setObject(2, 15);
+        verify(preparedStatement).executeUpdate();
+        assertThat(updated).isEqualTo(0);
     }
 
     @DisplayName("입력된 RowMapper에 따라 값을 가져온다.")
     @Test
     void queryForObject() throws SQLException {
         // given
-        String sql = "select id, name, age from people where id = ?";
+        String sql = "select id, name, age from people where id = 1";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong(1)).thenReturn(1L);
+        when(resultSet.getString(2)).thenReturn("myungoh");
+        when(resultSet.getInt(3)).thenReturn(25);
 
         // when
-        jdbcTemplate.queryForObject(sql, ROW_MAPPER);
+        Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER);
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement(sql);
-        Mockito.verify(preparedStatement).executeQuery();
-        Mockito.verify(resultSet).next();
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(2)).next();
+        assertThat(person).isEqualTo(new Person(1L, "myungoh", 25));
+    }
+
+    @DisplayName("입력된 RowMapper에 따라 가져온 값이 0개인 경우 예외를 던진다.")
+    @Test
+    void queryForObject_none() throws SQLException {
+        // given
+        String sql = "select id, name, age from people where id = 3";
+        when(resultSet.next()).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER))
+                .isInstanceOf(EmptyResultDataAccessException.class);
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet).next();
+    }
+
+    @DisplayName("입력된 RowMapper에 따라 가져온 값이 1개가 아닌 경우 예외가 발생한다.")
+    @Test
+    void queryForObject_notUnique() throws SQLException {
+        // given
+        String sql = "select id, name, age from people where age = 25";
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong(1)).thenReturn(1L, 2L);
+        when(resultSet.getString(2)).thenReturn("myungoh", "paper");
+        when(resultSet.getInt(3)).thenReturn(25, 25);
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(3)).next();
     }
 
     @DisplayName("입력된 RowMapper에 따라 리스트를 가져온다.")
     @Test
     void queryForList() throws SQLException {
         // given
-        String sql = "select id, name, age from people where id = ?";
+        String sql = "select id, name, age from people where age = 25";
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong(1)).thenReturn(1L, 2L);
+        when(resultSet.getString(2)).thenReturn("myungoh", "paper");
+        when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when
-        jdbcTemplate.queryForList(sql, ROW_MAPPER);
+        List<Person> people = jdbcTemplate.queryForList(sql, ROW_MAPPER);
 
         // then
-        Mockito.verify(dataSource).getConnection();
-        Mockito.verify(connection).prepareStatement(sql);
-        Mockito.verify(preparedStatement).executeQuery();
-        Mockito.verify(resultSet).next();
+        verify(dataSource).getConnection();
+        verify(connection).prepareStatement(sql);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(3)).next();
+        assertThat(people).contains(new Person(1L, "myungoh", 25), new Person(2L, "paper", 25));
     }
 }
