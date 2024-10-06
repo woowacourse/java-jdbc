@@ -48,9 +48,9 @@ class JdbcTemplateTest {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
         int result = jdbcTemplate.update("UPDATE users SET name = ? WHERE id = ?", preparedStatement -> {
-                    preparedStatement.setString(1, "TRE");
-                    preparedStatement.setLong(2, 1L);
-                });
+            preparedStatement.setString(1, "TRE");
+            preparedStatement.setLong(2, 1L);
+        });
 
         assertThat(result).isEqualTo(1);
         verify(preparedStatement).setString(1, "TRE");
@@ -122,7 +122,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt("count")).thenReturn(1);
 
         int result = jdbcTemplate.queryForObject("SELECT COUNT(id) AS count FROM users",
-                rs -> rs.getInt("count"))
+                        rs -> rs.getInt("count"))
                 .orElseThrow();
 
         assertThat(result).isEqualTo(1);
