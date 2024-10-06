@@ -4,6 +4,8 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class UserService {
 
@@ -16,7 +18,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
     }
 
     public void insert(final User user) {
