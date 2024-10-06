@@ -29,19 +29,27 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter pss) {
+        return execute(sql, ps -> executeUpdate(ps, pss));
+    }
+
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] params) {
+        return new OrderBasedPreparedStatementSetter(params);
+    }
+
+    private <T> T execute(String sql, SQLFunction<PreparedStatement, T> function) {
         log.debug("query : {}", sql);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            pss.setValues(ps);
-            return ps.executeUpdate();
+            return function.apply(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] params) {
-        return new OrderBasedPreparedStatementSetter(params);
+    private int executeUpdate(PreparedStatement ps, PreparedStatementSetter pss) throws SQLException {
+        pss.setValues(ps);
+        return ps.executeUpdate();
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -55,19 +63,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        log.debug("query : {}", sql);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(ps, pss)) {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql, ps -> executeQuery(ps, pss, rowMapper));
     }
 
     private <T> void validateResultUniqueness(List<T> results) {
@@ -79,9 +75,20 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement ps, PreparedStatementSetter pss) throws SQLException {
+    private <T> List<T> executeQuery(PreparedStatement ps, PreparedStatementSetter pss, RowMapper<T> rowMapper)
+            throws SQLException {
         pss.setValues(ps);
-        return ps.executeQuery();
+        try (ResultSet rs = ps.executeQuery()) {
+            return getResults(rs, rowMapper);
+        }
+    }
+
+    private <T> List<T> getResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
