@@ -30,13 +30,12 @@ public class JdbcTemplate {
             throw new EmptyResultDataAccessException();
         }
         if (results.size() == ONE_RESULT_SIZE) {
-            throw new IncorrectResultSizeDataAccessException(results.size());
+            return results.getFirst();
         }
-        return results.getFirst();
+        throw new IncorrectResultSizeDataAccessException(results.size());
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -44,8 +43,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             ResultSet resultSet = pstmt.executeQuery();
 
-            mapResults(rowMapper, resultSet);
-            return results;
+            return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("올바르지 않은 쿼리입니다.", e);
