@@ -1,17 +1,55 @@
 package com.interface21.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.interface21.jdbc.DataAccessException;
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (SQLException sqlException) {
+            throw new DataAccessException("update 메서드를 실행하는 과정에서 예상치 못한 예외가 발생했습니다.", sqlException);
+        }
+    }
+
+    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        return query(sql, preparedStatementSetter, rowMapper).getFirst();
+    }
+
+    public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        return query(sql, preparedStatementSetter, rowMapper);
+    }
+
+    private <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
+        } catch (SQLException sqlException) {
+            throw new DataAccessException("query 메서드를 실행하는 과정에서 예상치 못한 예외가 발생했습니다.", sqlException);
+        }
     }
 }
