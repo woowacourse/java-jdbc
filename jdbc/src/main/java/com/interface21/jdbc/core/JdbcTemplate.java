@@ -23,7 +23,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        log.debug("Executing SQL: " + sql);
+        log.debug("update Executing SQL: {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -35,7 +35,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        log.debug("Executing SQL: " + sql);
+        log.debug("queryForObject Executing SQL: {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -52,7 +52,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        log.debug("Executing SQL: " + sql);
+        log.debug("queryForList Executing SQL: {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -72,7 +72,6 @@ public class JdbcTemplate {
     private void setParameter(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
         int index = 1;
         for (final Object param : params) {
-            log.info("param = {}", param);
             preparedStatement.setObject(index++, param);
         }
     }
