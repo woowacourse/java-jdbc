@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.support.TestUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -57,8 +58,8 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(SQLException.class);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(anyString()))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(INSERT_SQL))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @DisplayName("해제된 connection에 대해 preparedStatement를 불러오려는 경우 예외가 발생한다.")
@@ -68,8 +69,8 @@ class JdbcTemplateTest {
         when(conn.prepareStatement(anyString())).thenThrow(SQLException.class);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(anyString()))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(INSERT_SQL))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @DisplayName("해제된 preparedStatement에 대해 setObject를 수행하는 경우 예외가 발생한다.")
@@ -79,8 +80,8 @@ class JdbcTemplateTest {
         doThrow(SQLException.class).when(pstmt).setObject(anyInt(), any(Object.class));
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(anyString()))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @DisplayName("executeUpdate를 통해 조회 쿼리를 수행하는 경우 예외가 발생한다.")
@@ -91,7 +92,7 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.executeUpdate(SELECT_ALL_SQL))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(DataAccessException.class);
     }
 
     @DisplayName("삽입 쿼리를 실행하면 파라미터 주입 후 쿼리가 실행된다.")
