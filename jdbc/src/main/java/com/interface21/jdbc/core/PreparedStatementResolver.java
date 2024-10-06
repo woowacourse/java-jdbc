@@ -9,7 +9,7 @@ public class PreparedStatementResolver {
     public PreparedStatement resolve(PreparedStatement preparedStatement, Object... parameters) {
         try {
             for (int i = 0; i < parameters.length; i++) {
-                preparedStatement.setString(i + 1, String.valueOf(parameters[i]));
+                preparedStatement.setObject(i + 1, parameters[i]);
             }
             return preparedStatement;
         } catch (SQLException sqlException) {
