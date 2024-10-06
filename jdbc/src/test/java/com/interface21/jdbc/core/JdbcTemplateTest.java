@@ -80,6 +80,24 @@ class JdbcTemplateTest {
         );
     }
 
+    @DisplayName("전달받은 sql과 파라미터의 조건에 맞는 객체를 반환한다.")
+    @Test
+    void queryForObject() throws SQLException {
+        //given
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getLong(1)).thenReturn(1L);
+        when(resultSet.getString(2)).thenReturn("pola");
+        String sql = "select id, name from test_users where id = ?";
+        Long targetId = 1L;
+
+        // when
+        TestUser found = jdbcTemplate.queryForObject(sql, getRowMapper(), targetId);
+
+        // then
+        verify(preparedStatement).setLong(1, targetId);
+        assertThat(found).isEqualTo(new TestUser(1L, "pola"));
+    }
+
     private RowMapper<TestUser> getRowMapper() {
         return rs -> new TestUser(
                 rs.getLong(1),
