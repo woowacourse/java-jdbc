@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
+import java.util.Optional;
+
 public class UserService {
 
     private final UserDao userDao;
@@ -16,7 +18,12 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    }
+
+    public Optional<User> findByAccount(String account) {
+        return userDao.findByAccount(account);
     }
 
     public void insert(final User user) {
@@ -27,6 +34,6 @@ public class UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        userHistoryDao.update(new UserHistory(user, createBy));
     }
 }
