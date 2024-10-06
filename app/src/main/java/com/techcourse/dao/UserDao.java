@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -16,6 +17,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> rowMapper = (resultSet) -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+    );
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
@@ -56,27 +63,7 @@ public class UserDao {
     public List<User> findAll() {
         var sql = "select id, account, password, email from users";
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            List<User> users = new ArrayList<>();
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                users.add(
-                        new User(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4)
-                        )
-                );
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
