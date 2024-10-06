@@ -40,6 +40,14 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
+        List<T> result = query(sql, rowMapper, arguments);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.getFirst();
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         log.debug("query : {}", sql);
 
@@ -47,34 +55,12 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArguments(arguments, pstmt);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> objects = new ArrayList<>();
-                while (rs.next()) {
-                    objects.add(rowMapper.mapRow(rs, rs.getFetchSize()));
-                }
-                return objects;
+            ResultSet rs = pstmt.executeQuery();
+            List<T> objects = new ArrayList<>();
+            while (rs.next()) {
+                objects.add(rowMapper.mapRow(rs, rs.getFetchSize()));
             }
-        } catch (SQLException e) {
-            String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
-                    Arrays.toString(arguments));
-            log.error(errorMessage);
-            throw new IllegalStateException(errorMessage, e);
-        }
-    }
-
-    public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
-        log.debug("queryObject query : {}", sql);
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(arguments, pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getFetchSize());
-                }
-                return null;
-            }
+            return objects;
         } catch (SQLException e) {
             String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
                     Arrays.toString(arguments));
