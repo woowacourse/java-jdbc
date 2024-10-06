@@ -75,7 +75,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final User user = userDao.findById(1L);
+            final User user = userDao2.findById(1L).get();
 
             // then
             assertThat(user.getAccount()).isEqualTo(GUGU.account());
@@ -90,7 +90,7 @@ class UserDaoTest {
             userDao.insert(GUGU.user());
 
             // when
-            final User user = userDao.findByAccount(GUGU.account());
+            final User user = userDao2.findByAccount(GUGU.account()).get();
 
             // then
             assertThat(user.getAccount()).isEqualTo(GUGU.account());
@@ -105,7 +105,7 @@ class UserDaoTest {
             userDao.insert(DORA.user());
 
             // then
-            final User actual = userDao.findById(1L);
+            final User actual = userDao2.findById(1L).get();
             assertThat(actual.getAccount()).isEqualTo(DORA.account());
         }
     }
@@ -116,7 +116,7 @@ class UserDaoTest {
         void update() {
             // given
             userDao.insert(GUGU.user());
-            final User user = userDao.findById(1L);
+            final User user = userDao2.findById(1L).get();
             final String newPassword = "password99";
             user.changePassword(newPassword);
 
@@ -124,7 +124,7 @@ class UserDaoTest {
             userDao.update(user);
 
             // then
-            final User actual = userDao.findById(1L);
+            final User actual = userDao2.findById(1L).get();
             assertThat(actual.getPassword()).isEqualTo(newPassword);
         }
     }

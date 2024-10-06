@@ -42,7 +42,7 @@ class UserServiceTest {
         final String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -59,7 +59,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

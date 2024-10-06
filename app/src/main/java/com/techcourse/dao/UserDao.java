@@ -1,13 +1,14 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,101 +109,15 @@ public class UserDao {
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    public User findById(final Long id) { // TODO: Optional 반환하도록 처리
+    public Optional<User> findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
-            statement.setLong(1, id);
-            resultSet = statement.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        List<User> users = jdbcTemplate.query(sql, userRowMapper, id);
+        return DataAccessUtils.optionalResult(users);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = dataSource.getConnection();
-            statement = connection.prepareStatement(sql);
-            statement.setString(1, account);
-            resultSet = statement.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (resultSet.next()) {
-                return new User(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getString(3),
-                        resultSet.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        List<User> users = jdbcTemplate.query(sql, userRowMapper, account);
+        return DataAccessUtils.optionalResult(users);
     }
 }
