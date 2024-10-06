@@ -32,6 +32,10 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    private void log(String sql) {
+        log.debug("query: {}", sql);
+    }
+
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         log(sql);
@@ -58,9 +62,5 @@ public class UserDao {
         log(sql);
 
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
-    }
-
-    private void log(String sql) {
-        log.debug("query: {}", sql);
     }
 }
