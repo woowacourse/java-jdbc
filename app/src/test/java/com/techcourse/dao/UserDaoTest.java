@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
+
 class UserDaoTest {
 
     private UserDao userDao;
@@ -37,8 +39,8 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final String account = "gugu";
+        final User user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
