@@ -37,34 +37,28 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet resultSet = null;
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             setStatement(statement, args);
             log.info("select query : {}", sql);
-            resultSet = statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
             final List<T> data = extractData(resultSet, rowMapper, args);
             return result(data);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            close(resultSet);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        ResultSet resultSet = null;
         try(final Connection connection = dataSource.getConnection();
             final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.info("select query : {}", sql);
-            resultSet = statement.executeQuery();
+            final ResultSet resultSet = statement.executeQuery();
             return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            close(resultSet);
         }
     }
 
@@ -93,13 +87,5 @@ public class JdbcTemplate {
             throw new SQLException("sql 결과 데이터가 2개 이상 존재합니다.");
         }
         return data.getFirst();
-    }
-
-    private void close(final ResultSet resultSet) {
-        try {
-            resultSet.close();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 }
