@@ -1,0 +1,11 @@
+package com.interface21.jdbc.core;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.annotation.Nullable;
+
+public interface RowMapper<T> {
+
+    @Nullable
+    T mapRow(ResultSet rs, int rowNum) throws SQLException;
+}
