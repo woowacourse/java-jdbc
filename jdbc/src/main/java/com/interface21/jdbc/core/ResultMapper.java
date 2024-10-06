@@ -26,18 +26,18 @@ public class ResultMapper {
         return results;
     }
 
-    public <T> T getResult(final ResultSet resultSet, final RowMapper<T> rowMapper, final int rowNum) {
-        try {
-            return rowMapper.mapRow(resultSet, rowNum);
-        } catch (SQLException e) {
-            throw new IllegalStateException("ResultSet을 가져오는 중 에러가 발생했습니다.");
-        }
-    }
-
     private boolean existsNext(final ResultSet resultSet) {
         try {
             return resultSet.next();
         } catch (Exception e) {
+            throw new IllegalStateException("ResultSet을 가져오는 중 에러가 발생했습니다.");
+        }
+    }
+
+    public <T> T getResult(final ResultSet resultSet, final RowMapper<T> rowMapper, final int rowNum) {
+        try {
+            return rowMapper.mapRow(resultSet, rowNum);
+        } catch (SQLException e) {
             throw new IllegalStateException("ResultSet을 가져오는 중 에러가 발생했습니다.");
         }
     }
