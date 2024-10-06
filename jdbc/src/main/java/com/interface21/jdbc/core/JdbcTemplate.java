@@ -41,10 +41,7 @@ public class JdbcTemplate {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-            rs = pstmt.executeQuery();
+            rs = executeQuery(pstmt, parameters);
             log.debug("query : {}", sql);
 
             if (rs.next()) {
@@ -68,10 +65,7 @@ public class JdbcTemplate {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-            rs = pstmt.executeQuery();
+            rs = executeQuery(pstmt, parameters);
             log.debug("query : {}", sql);
 
             List<T> results = new ArrayList<>();
@@ -90,5 +84,12 @@ public class JdbcTemplate {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt, Object... parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
+        }
+        return pstmt.executeQuery();
     }
 }
