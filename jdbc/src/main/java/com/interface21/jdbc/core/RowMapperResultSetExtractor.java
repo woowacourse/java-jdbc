@@ -17,9 +17,8 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
     @Override
     public List<T> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
         List<T> results = new ArrayList<>();
-        int rowNum = 0;
         while (resultSet.next()) {
-            T result = rowMapper.mapRow(resultSet, rowNum++);
+            T result = rowMapper.mapRow(resultSet);
             results.add(result);
         }
         return results;
