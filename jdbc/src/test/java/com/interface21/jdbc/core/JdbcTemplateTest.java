@@ -14,8 +14,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,10 +85,11 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("jojo");
         when(rs.getString("password")).thenReturn("1234");
 
-        TestUser actual = jdbcTemplate.query(sql, this::createTestUser, user.getAccount());
+        Optional<TestUser> actual = jdbcTemplate.queryForObject(sql, this::createTestUser, user.getAccount());
 
         assertAll(
-                () -> assertThat(actual).isNotNull().extracting(TestUser::getAccount).isEqualTo(user.getAccount()),
+                () -> assertThat(actual).isPresent()
+                        .get().extracting(TestUser::getAccount).isEqualTo(user.getAccount()),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -107,7 +108,8 @@ class JdbcTemplateTest {
         when(rs.getLong("id")).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, this::createTestUser, user.getAccount()))
+                () -> assertThatThrownBy(
+                        () -> jdbcTemplate.queryForObject(sql, this::createTestUser, user.getAccount()))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
@@ -125,10 +127,10 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        TestUser actual = jdbcTemplate.query(sql, this::createTestUser, user.getAccount());
+        Optional<TestUser> actual = jdbcTemplate.queryForObject(sql, this::createTestUser, user.getAccount());
 
         assertAll(
-                () -> assertThat(actual).isNull(),
+                () -> assertThat(actual).isEmpty(),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -142,12 +144,12 @@ class JdbcTemplateTest {
         String sql = "select id, account, password from users";
 
         when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true, true, true, false);
+        when(rs.next()).thenReturn(true, true, false);
         when(rs.getLong("id")).thenReturn(1L, 2L);
         when(rs.getString("account")).thenReturn("jojo", "cutehuman");
         when(rs.getString("password")).thenReturn("jojo1234", "cutehuman1234");
 
-        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUsers);
+        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUser);
 
         assertAll(
                 () -> assertThat(actual).hasSize(2),
@@ -168,7 +170,7 @@ class JdbcTemplateTest {
         when(rs.next()).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, this::createTestUsers))
+                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, this::createTestUser))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -184,23 +186,15 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUsers);
+        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUser);
 
         assertAll(
-                () -> assertThat(actual).isNull(),
+                () -> assertThat(actual).isEmpty(),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
                 () -> verify(conn, times(1)).close(),
                 () -> verify(rs, times(1)).close()
         );
-    }
-
-    private List<TestUser> createTestUsers(ResultSet rs) throws SQLException {
-        List<TestUser> users = new ArrayList<>();
-        while (rs.next()) {
-            users.add(createTestUser(rs));
-        }
-        return users;
     }
 
     private TestUser createTestUser(ResultSet rs) throws SQLException {
