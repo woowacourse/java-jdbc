@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ public class JdbcTemplate {
             return rows;
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new IllegalArgumentException("데이터베이스 연결에 실패했습니다.");
+            throw new IllegalStateException("데이터베이스 연결에 실패했습니다.");
         }
     }
 
@@ -50,7 +49,7 @@ public class JdbcTemplate {
             return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new DataAccessException("데이터베이스 연결에 실패했습니다.");
+            throw new IllegalStateException("데이터베이스 연결에 실패했습니다.");
         }
     }
 
