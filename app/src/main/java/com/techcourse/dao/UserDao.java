@@ -33,17 +33,17 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where id = ? limit 1";
         List<User> users = jdbcTemplate.queryForObject(sql, User.class, id);
 
-        if (users.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(users.getFirst());
+        return getOptionalResult(users);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         List<User> users = jdbcTemplate.queryForObject(sql, User.class, account);
 
+        return getOptionalResult(users);
+    }
+
+    private Optional<User> getOptionalResult(List<User> users) {
         if (users.isEmpty()) {
             return Optional.empty();
         }
