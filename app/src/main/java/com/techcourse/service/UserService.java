@@ -16,7 +16,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 id인 user가 존재하지 않습니다."));
     }
 
     public void insert(final User user) {
@@ -28,5 +29,10 @@ public class UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+    }
+
+    public User findByAccount(String account) {
+        return userDao.findByAccount(account)
+                .orElseThrow(() -> new IllegalArgumentException("해당 account인 user가 존재하지 않습니다."));
     }
 }

@@ -17,3 +17,14 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+## 기능 구현 목록
+
+### 1단계
+
+- 사용자 데이터를 메모리가 아닌 DB에 저장할 수 있도록 개선
+  - [x] InMemoryUserRepository 사용 로직 UserDao 사용으로 전환
+  - [x] UserDao 테스트 성공
+
+- 반복적인 DB 관련 작업 코드 개선 
+    - [x] JdbcTemplate 클래스에 구현
