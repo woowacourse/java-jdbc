@@ -30,7 +30,7 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
