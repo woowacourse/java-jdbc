@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,18 +57,20 @@ public class JdbcTemplate {
             log.info("query = {}", sql);
 
             List<T> result = getQueryResult(rowMapper, pstmt);
-            validateSingleResult(result);
-
-            return result.get(0);
+            return requiredSingleResult(result);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    private <T> void validateSingleResult(List<T> result) {
-        if(result.size() != 1) {
-            throw new DataAccessException("데이터 개수가 1개가 아닙니다. (size: %d)".formatted(result.size()));
+    private <T> T requiredSingleResult(List<T> result) {
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException("데이터 개수가 0개입니다.");
         }
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("데이터 개수가 올바르지 않습니다. (size: %d)".formatted(result.size()));
+        }
+        return result.get(0);
     }
 
     private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
