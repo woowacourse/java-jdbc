@@ -12,18 +12,19 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-	private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
-		resultSet.getLong(1),
-		resultSet.getString(2),
-		resultSet.getString(3),
-		resultSet.getString(4)
-	);
+
+    private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-		this.jdbcTemplate = jdbcTemplate;
-	}
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -37,19 +38,19 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-		final var parameters = new Parameters();
-		parameters.add(1, user.getAccount());
-		parameters.add(2, user.getPassword());
-		parameters.add(3, user.getEmail());
-		parameters.add(4, user.getId());
+        final var parameters = new Parameters();
+        parameters.add(1, user.getAccount());
+        parameters.add(2, user.getPassword());
+        parameters.add(3, user.getEmail());
+        parameters.add(4, user.getId());
 
-		jdbcTemplate.update(sql, parameters);
+        jdbcTemplate.update(sql, parameters);
     }
 
     public List<User> findAll() {
-		final var sql = "select id, account, password, email from users";
+        final var sql = "select id, account, password, email from users";
 
-		return jdbcTemplate.query(sql, new Parameters(), userRowMapper);
+        return jdbcTemplate.query(sql, new Parameters(), userRowMapper);
     }
 
     public User findById(final Long id) {
@@ -61,14 +62,12 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
     }
 
-
-
     public User findByAccount(final String account) {
-		final var sql = "select id, account, password, email from users where account = ?";
+        final var sql = "select id, account, password, email from users where account = ?";
 
-		final var parameters = new Parameters();
-		parameters.add(1, account);
+        final var parameters = new Parameters();
+        parameters.add(1, account);
 
-		return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
+        return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
     }
 }
