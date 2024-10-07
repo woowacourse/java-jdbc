@@ -43,41 +43,6 @@ public class DatabasePopulatorUtils {
         }
     }
 
-    public static void cleanUp(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            String sql = """
-                            SET REFERENTIAL_INTEGRITY FALSE;
-                            TRUNCATE TABLE users;
-                            TRUNCATE TABLE user_history;
-                            ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
-                            ALTER TABLE user_history ALTER COLUMN id RESTART WITH 1;
-                            SET REFERENTIAL_INTEGRITY TRUE;
-                    """;
-
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
-            statement.execute(sql);
-        } catch (NullPointerException | SQLException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
     private DatabasePopulatorUtils() {
     }
 }

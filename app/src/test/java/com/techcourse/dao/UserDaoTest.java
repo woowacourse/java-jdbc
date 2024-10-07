@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.techcourse.support.jdbc.init.TestDatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,7 @@ class UserDaoTest {
 
     @BeforeEach
     void setUp() {
-        DatabasePopulatorUtils.execute(dataSource);
+        TestDatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(dataSource);
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -25,7 +25,7 @@ class UserDaoTest {
 
     @AfterEach
     void tearDown() {
-        DatabasePopulatorUtils.cleanUp(dataSource);
+        TestDatabasePopulatorUtils.cleanUp(dataSource);
     }
 
     @Test
