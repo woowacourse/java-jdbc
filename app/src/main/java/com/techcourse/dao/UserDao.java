@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -19,8 +20,12 @@ public class UserDao {
                     rs.getString("password"),
                     rs.getString("email"));
 
+    public UserDao() {
+        this(DataSourceConfig.getInstance());
+    }
+
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {

@@ -1,7 +1,5 @@
 package com.techcourse.controller;
 
-import javax.sql.DataSource;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -13,7 +11,6 @@ import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JsonView;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.service.UserService;
@@ -26,10 +23,7 @@ public class UserController {
     private final UserService userService;
 
     public UserController() {
-        DataSource instance = DataSourceConfig.getInstance();
-        UserDao userDao = new UserDao(instance);
-        UserHistoryDao userHistoryDao = new UserHistoryDao(instance);
-        this.userService = new UserService(userDao, userHistoryDao);
+        this.userService = new UserService(new UserDao(), new UserHistoryDao());
     }
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)

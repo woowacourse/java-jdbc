@@ -3,14 +3,19 @@ package com.techcourse.dao;
 import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
+    public UserHistoryDao() {
+        this(DataSourceConfig.getInstance());
+    }
+
     public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
