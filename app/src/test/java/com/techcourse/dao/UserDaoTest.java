@@ -20,7 +20,7 @@ class UserDaoTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         jdbcTemplate.update("truncate table users restart identity");
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
