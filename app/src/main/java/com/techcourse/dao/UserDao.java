@@ -23,37 +23,42 @@ public class UserDao {
 
     public void insert(final User user) {
         final var query = "insert into users (account, password, email) values (?, ?, ?)";
-        Object[] parameters = {user.getAccount(), user.getPassword(), user.getEmail()};
 
-        jdbcTemplate.executeUpdate(query, parameters);
+        jdbcTemplate.executeUpdate(query, pstmt -> {
+            pstmt.setObject(1, user.getAccount());
+            pstmt.setObject(2, user.getPassword());
+            pstmt.setObject(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
         final var query = "update users set account = ?, password = ?, email = ?";
-        Object[] parameters = {user.getAccount(), user.getPassword(), user.getEmail()};
 
-        jdbcTemplate.executeUpdate(query, parameters);
+        jdbcTemplate.executeUpdate(query, pstmt -> {
+            pstmt.setObject(1, user.getAccount());
+            pstmt.setObject(2, user.getPassword());
+            pstmt.setObject(3, user.getEmail());
+        });
     }
 
     public List<User> findAll() {
         final var query = "select id, account, password, email from users";
 
-        return jdbcTemplate.executeQuery(query, this::mapUserFromResultSet);
+        return jdbcTemplate.executeQuery(query, this::mapUserFromResultSet, pstmt -> {
+        });
     }
 
     public User findById(final Long id) {
         final var query = "select id, account, password, email from users where id = ?";
-        Object[] parameters = {id};
 
-        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, parameters)
+        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, id))
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID를 갖는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var query = "select * from users where account = ?";
-        Object[] parameters = {account};
 
-        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, parameters)
+        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, account))
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 account를 갖는 유저가 없습니다."));
     }
 

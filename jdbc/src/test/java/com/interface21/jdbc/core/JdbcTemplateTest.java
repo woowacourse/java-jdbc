@@ -44,10 +44,13 @@ class JdbcTemplateTest {
     void testExecuteUpdate() throws SQLException {
         // given
         final var query = "update test_table set test_attribute1 = ?, test_attribute2 = ?, test_attribute3 = ?";
-        Object[] parameters = {"test_value1", "test_value2", "test_value3"};
 
         // when
-        jdbcTemplate.executeUpdate(query, parameters);
+        jdbcTemplate.executeUpdate(query, pstmt -> {
+            pstmt.setObject(1, "test_value1");
+            pstmt.setObject(2, "test_value2");
+            pstmt.setObject(3, "test_value3");
+        });
 
         // then
         verify(pstmt).setObject(1, "test_value1");
@@ -71,7 +74,7 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
-        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, TEST_ID);
+        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
         assert(optionalResult.isPresent());
         TestEntity result = optionalResult.get();
 
@@ -94,7 +97,7 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
-        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, TEST_ID);
+        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
 
         // then
         assertThat(optionalResult).isEqualTo(Optional.empty());
@@ -111,7 +114,7 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, TEST_ID))
+        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Multiple results returned for query, but only one result expected.");
     }
@@ -126,7 +129,7 @@ class JdbcTemplateTest {
 
         // when
         final String query = "select * from test_table";
-        List<TestEntity> results = jdbcTemplate.executeQuery(query, this::mapTestEntityFromResultSet);
+        List<TestEntity> results = jdbcTemplate.executeQuery(query, this::mapTestEntityFromResultSet, pstmt -> {});
 
         // then
         verify(pstmt).executeQuery();
