@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -24,7 +26,7 @@ class JdbcTemplateTest {
                     rs.getLong("id"),
                     rs.getString("account")
             );
-    
+
     private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
@@ -62,16 +64,23 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("업데이트 쿼리 실행이 실패한다.")
+    void update_fail() throws SQLException {
+        //given
+        String sql = "update users set account = ? where id = ?";
+        doThrow(new SQLException("에러 테스트")).when(preparedStatement).executeUpdate();
+
+        //when, then
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, "test-ash", 1L))
+                .isExactlyInstanceOf(DataAccessException.class)
+                .hasMessageContaining("에러 테스트");
+    }
+
+    @Test
     @DisplayName("단건 조희 쿼리 실행이 성공한다.")
     void queryForObject() throws SQLException {
         //given
         String sql = "select id, account, password, email from users where id = ?";
-        RowMapper<User> rowMapper = (rs, rowNum) ->
-                new User(
-                        rs.getLong("id"),
-                        rs.getString("account")
-                );
-        ResultSet resultSet = mock(ResultSet.class);
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
@@ -93,7 +102,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단건 조희 쿼리 실행이 실패한다.")
+    @DisplayName("단건 조희 쿼리 실행은 성공했지만 해당 값이 없다.")
     void queryForObject_fail_noSuchElement() throws SQLException {
         //given
         String sql = "select id, account, password, email from users where id = ?";
@@ -106,6 +115,8 @@ class JdbcTemplateTest {
 
         //then
         assertNull(user);
+
+        verify(resultSet).close();
     }
 
     @Test
@@ -130,6 +141,7 @@ class JdbcTemplateTest {
 
         verify(resultSet, times(3)).next();
         verify(resultSet, times(2)).getLong("id");
+        verify(resultSet).close();
     }
 
     static class User {
