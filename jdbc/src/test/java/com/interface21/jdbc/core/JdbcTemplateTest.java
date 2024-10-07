@@ -44,7 +44,7 @@ class JdbcTemplateTest {
         when(rs.next()).thenReturn(true, false);
         String sql = "select * from users where account = ?";
 
-        User user = jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello");
+        User user = jdbcTemplate.queryForObject(sql, ps -> ps.setString(1, "hello"), getUserRowMapper());
 
         assertThat(user).isEqualTo(new User("hello", "1234", "my@email.com"));
     }
@@ -55,17 +55,17 @@ class JdbcTemplateTest {
         when(rs.next()).thenReturn(false);
         String sql = "select * from users where account = ?";
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ps -> ps.setString(1, "account"), getUserRowMapper()))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
     @DisplayName("값 하나를 조회할 때, 조회 가능한 값이 여러개라면 예외가 발생한다.")
     void incorrectResultSize() throws SQLException {
-        when(rs.next()).thenReturn(true, true);
+        when(rs.next()).thenReturn(true, true, false);
         String sql = "select * from users where account = ?";
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getUserRowMapper(), "hello"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ps -> ps.setString(1, "account"), getUserRowMapper()))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
@@ -85,7 +85,12 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         String sql = "update users set account=?, password=?, email=? where id=?";
 
-        jdbcTemplate.update(sql, "account", "password", "email", 1L);
+        jdbcTemplate.update(sql, ps -> {
+            ps.setString(1, "account");
+            ps.setString(2, "password");
+            ps.setString(3, "email");
+            ps.setLong(4, 1L);
+        });
 
         verify(pstmt).executeUpdate();
     }

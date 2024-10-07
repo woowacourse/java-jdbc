@@ -28,13 +28,22 @@ public class UserDao {
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
@@ -46,12 +55,12 @@ public class UserDao {
     public User findById(Long id) {
         String sql = "select * from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, pstmt -> pstmt.setLong(1, id), USER_ROW_MAPPER);
     }
 
     public User findByAccount(String account) {
         String sql = "select * from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, pstmt -> pstmt.setString(1, account), USER_ROW_MAPPER);
     }
 }
