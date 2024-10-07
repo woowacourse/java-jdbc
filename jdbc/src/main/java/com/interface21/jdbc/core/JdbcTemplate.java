@@ -15,9 +15,9 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    public static final String QUERY_RESULT_EXCEPTION_MESSAGE = "Incorrect result size: expected 1, actual ";
-    public static final int EMPTY_COUNT = 0;
-    public static final int MAXIMUM_QUERY_FOR_OBJECT_RESULT = 1;
+    private static final String QUERY_RESULT_EXCEPTION_MESSAGE = "Incorrect result size: expected 1, actual ";
+    private static final int MAXIMUM_QUERY_FOR_OBJECT_RESULT = 1;
+    private static final int BASE_PARAMETER_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -40,8 +40,8 @@ public class JdbcTemplate {
     }
 
     private void setPreparedStatement(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = EMPTY_COUNT; i < args.length; i++) {
-            pstmt.setObject(i + MAXIMUM_QUERY_FOR_OBJECT_RESULT, args[i]);
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + BASE_PARAMETER_INDEX, args[i]);
         }
     }
 
@@ -91,10 +91,7 @@ public class JdbcTemplate {
     }
 
     private <T> T getSingleResult(final List<T> results) {
-        if (results.isEmpty()) {
-            throw new DataAccessException(QUERY_RESULT_EXCEPTION_MESSAGE + EMPTY_COUNT);
-        }
-        if (results.size() > MAXIMUM_QUERY_FOR_OBJECT_RESULT) {
+        if (results.size() != MAXIMUM_QUERY_FOR_OBJECT_RESULT) {
             throw new DataAccessException(QUERY_RESULT_EXCEPTION_MESSAGE + results.size());
         }
         return results.getFirst();
