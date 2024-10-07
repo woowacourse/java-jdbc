@@ -1,8 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementSetter;
-import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,30 +24,19 @@ public class UserDaoImpl implements UserDao {
     @Override
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setObject(1, user.getAccount());
-            pstmt.setObject(2, user.getPassword());
-            pstmt.setObject(3, user.getEmail());
-        };
-        jdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     @Override
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setObject(1, user.getPassword());
-            pstmt.setObject(2, user.getId());
-        };
-        jdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     @Override
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        RowMapper<List<User>> rowMapper = this::createUsers;
-
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, this::createUsers);
     }
 
     private List<User> createUsers(ResultSet rs) throws SQLException {
@@ -63,10 +50,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public Optional<User> findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        PreparedStatementSetter setter = pstmt -> pstmt.setLong(1, id);
-        RowMapper<User> rowMapper = this::createUser;
-
-        User user = jdbcTemplate.query(sql, setter, rowMapper);
+        User user = jdbcTemplate.query(sql, this::createUser, id);
         if (user == null) {
             return Optional.empty();
         }
@@ -85,10 +69,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        PreparedStatementSetter setter = pstmt -> pstmt.setString(1, account);
-        RowMapper<User> rowMapper = this::createUser;
-
-        User user = jdbcTemplate.query(sql, setter, rowMapper);
+        User user = jdbcTemplate.query(sql, this::createUser, account);
         if (user == null) {
             return Optional.empty();
         }

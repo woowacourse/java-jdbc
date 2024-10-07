@@ -44,12 +44,8 @@ class JdbcTemplateTest {
     void 데이터_생성_성공() {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account, password) values (?, ?)";
-        PreparedStatementSetter setter = ps -> {
-            ps.setObject(1, user.getAccount());
-            ps.setObject(2, user.getPassword());
-        };
 
-        jdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword());
 
         assertAll(
                 () -> verify(pstmt).setObject(1, user.getAccount()),
@@ -64,15 +60,11 @@ class JdbcTemplateTest {
     void 데이터_생성_예외_발생() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account, password) values (?, ?)";
-        PreparedStatementSetter setter = ps -> {
-            ps.setObject(1, user.getAccount());
-            ps.setObject(2, user.getPassword());
-        };
 
         when(pstmt.executeUpdate()).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, setter))
+                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, user.getAccount(), user.getPassword()))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt).setObject(2, user.getPassword()),
@@ -86,8 +78,6 @@ class JdbcTemplateTest {
     void 단일_데이터_조회_성공() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
-        PreparedStatementSetter setter = ps -> ps.setObject(1, user.getAccount());
-        RowMapper<TestUser> rowMapper = this::createTestUser;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true);
@@ -95,7 +85,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("jojo");
         when(rs.getString("password")).thenReturn("1234");
 
-        TestUser actual = jdbcTemplate.query(sql, setter, rowMapper);
+        TestUser actual = jdbcTemplate.query(sql, this::createTestUser, user.getAccount());
 
         assertAll(
                 () -> assertThat(actual).isNotNull().extracting(TestUser::getAccount).isEqualTo(user.getAccount()),
@@ -111,15 +101,13 @@ class JdbcTemplateTest {
     void 단일_데이터_조회_에러_발생() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
-        PreparedStatementSetter setter = ps -> ps.setObject(1, user.getAccount());
-        RowMapper<TestUser> rowMapper = this::createTestUser;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true);
         when(rs.getLong("id")).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, setter, rowMapper))
+                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, this::createTestUser, user.getAccount()))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt).setObject(1, user.getAccount()),
                 () -> verify(pstmt, times(1)).executeQuery(),
@@ -133,13 +121,11 @@ class JdbcTemplateTest {
     void 단일_데이터_조회_실패() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
-        PreparedStatementSetter setter = ps -> ps.setObject(1, user.getAccount());
-        RowMapper<TestUser> rowMapper = this::createTestUser;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        TestUser actual = jdbcTemplate.query(sql, setter, rowMapper);
+        TestUser actual = jdbcTemplate.query(sql, this::createTestUser, user.getAccount());
 
         assertAll(
                 () -> assertThat(actual).isNull(),
@@ -154,7 +140,6 @@ class JdbcTemplateTest {
     @Test
     void 복수_데이터_조회_성공() throws SQLException {
         String sql = "select id, account, password from users";
-        RowMapper<List<TestUser>> rowMapper = this::createTestUsers;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true, true, true, false);
@@ -162,7 +147,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("jojo", "cutehuman");
         when(rs.getString("password")).thenReturn("jojo1234", "cutehuman1234");
 
-        List<TestUser> actual = jdbcTemplate.query(sql, rowMapper);
+        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUsers);
 
         assertAll(
                 () -> assertThat(actual).hasSize(2),
@@ -178,13 +163,12 @@ class JdbcTemplateTest {
     @Test
     void 복수_데이터_조회_에러_발생() throws SQLException {
         String sql = "select id, account, password from users";
-        RowMapper<List<TestUser>> rowMapper = this::createTestUsers;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenThrow(SQLException.class);
 
         assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, rowMapper))
+                () -> assertThatThrownBy(() -> jdbcTemplate.query(sql, this::createTestUsers))
                         .isInstanceOf(DataAccessException.class),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
@@ -196,12 +180,11 @@ class JdbcTemplateTest {
     @Test
     void 복수_데이터_조회_실패() throws SQLException {
         String sql = "select id, account, password from users";
-        RowMapper<List<TestUser>> rowMapper = this::createTestUsers;
 
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
-        List<TestUser> actual = jdbcTemplate.query(sql, rowMapper);
+        List<TestUser> actual = jdbcTemplate.query(sql, this::createTestUsers);
 
         assertAll(
                 () -> assertThat(actual).isNull(),

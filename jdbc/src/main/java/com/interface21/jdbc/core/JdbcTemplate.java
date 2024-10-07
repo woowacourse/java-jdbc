@@ -19,12 +19,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public final void update(String sql, PreparedStatementSetter setter) {
+    public final void update(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setter.setValues(pstmt);
+            setParams(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -49,12 +49,13 @@ public class JdbcTemplate {
         }
     }
 
-    public final <T> T query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+    public final <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            try (ResultSet rs = executeQuery(setter, pstmt)) {
+            setParams(pstmt, params);
+            try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
@@ -66,8 +67,9 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
-        setter.setValues(pstmt);
-        return pstmt.executeQuery();
+    private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
     }
 }
