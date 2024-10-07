@@ -35,7 +35,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
         } finally {
             try {
                 if (pstmt != null) {
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
         } finally {
             try {
                 if (rs != null) {
@@ -93,6 +93,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query (String sql, Parameters parameters, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, Parameters parameters, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -113,7 +114,7 @@ public class JdbcTemplate {
             return objects;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
         } finally {
             try {
                 if (rs != null) {
