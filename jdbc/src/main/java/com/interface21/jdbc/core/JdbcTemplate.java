@@ -22,12 +22,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, ParameterSetter parameterSetter, ResultSetExtractor<T> resultExtractor, Object... args) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                return extractResults(rs, rowMapper);
+                return resultExtractor.extractResults(rs);
             }
-        }, args);
+        }, parameterSetter, args);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, defaultParameterSetter, defaultResultSetExtractor(rowMapper), args);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter, Object... args) {
+        return query(sql, parameterSetter, defaultResultSetExtractor(rowMapper), args);
+    }
+
+    public <T> List<T> query(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
+        return query(sql, defaultParameterSetter, resultExtractor, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -35,15 +47,34 @@ public class JdbcTemplate {
         return DataAccessUtils.nullableSingleResult(results);
     }
 
-    public int update(String sql, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+    public <T> T queryForObject(String sql, ParameterSetter parameterSetter, ResultSetExtractor<T> resultExtractor, Object... args) {
+        List<T> results = query(sql, parameterSetter, resultExtractor, args);
+        return DataAccessUtils.nullableSingleResult(results);
     }
 
-    private <T> T execute(String sql, StatementCallback<T> action, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter, Object... args) {
+        List<T> results = query(sql, rowMapper, parameterSetter, args);
+        return DataAccessUtils.nullableSingleResult(results);
+    }
+
+    public <T> T queryForObject(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
+        List<T> results = query(sql, defaultParameterSetter, resultExtractor, args);
+        return DataAccessUtils.nullableSingleResult(results);
+    }
+
+    public int update(String sql, ParameterSetter parameterSetter, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, parameterSetter, args);
+    }
+
+    public int update(String sql, Object... args) {
+        return update(sql, defaultParameterSetter, args);
+    }
+
+    private <T> T execute(String sql, StatementCallback<T> action, ParameterSetter parameterSetter, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setParameters(pstmt, args);
+            parameterSetter.setParameters(pstmt, args);
             return action.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
@@ -51,17 +82,19 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
-        }
-        return results;
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
+    private ParameterSetter defaultParameterSetter = (pstmt, args) -> {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    };
+
+    private <T> ResultSetExtractor<T> defaultResultSetExtractor(RowMapper<T> rowMapper) {
+        return rs -> {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        };
     }
 }
