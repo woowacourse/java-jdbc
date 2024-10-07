@@ -21,10 +21,11 @@ class RowMapperFactoryTest {
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getObject(any())).thenReturn("망쵸", 2L);
+        when(resultSet.getRow()).thenReturn(1);
 
         // when
         RowMapper<TestDomain> rowMapper = RowMapperFactory.getRowMapper(TestDomain.class);
-        TestDomain mappedDomain = rowMapper.mapRow(resultSet, 0);
+        TestDomain mappedDomain = rowMapper.mapRow(resultSet, resultSet.getRow());
 
         // then
         assertAll(

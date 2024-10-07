@@ -44,7 +44,7 @@ public class JdbcTemplate implements JdbcOperations {
         List<T> result = new ArrayList<>();
         try (ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+                result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
         }
         return result;

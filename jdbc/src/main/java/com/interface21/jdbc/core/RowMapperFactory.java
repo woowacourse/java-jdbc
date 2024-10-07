@@ -16,7 +16,7 @@ public class RowMapperFactory {
     @SuppressWarnings("unchecked")
     public static <T> RowMapper<T> getRowMapper(Class<T> clazz) {
         return (RowMapper<T>) RowMapperHolder.INSTANCE.computeIfAbsent(clazz, (ignored) ->
-                (rs) -> {
+                (rs, rowNum) -> {
                     try {
                         Constructor<?> constructor = findAllargsConstructor(clazz);
                         constructor.setAccessible(true);

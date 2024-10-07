@@ -95,7 +95,7 @@ class JdbcTemplateTest {
     }
 
     private RowMapper<TestDomain> getRowMapper() {
-        return (rs) -> new TestDomain(
+        return (rs, rowNum) -> new TestDomain(
                 rs.getString("name"),
                 rs.getLong("age"));
     }
