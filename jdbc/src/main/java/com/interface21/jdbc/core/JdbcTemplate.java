@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    
+
     private static final int PREPARED_STATEMENT_INDEX_OFFSET = 1;
     private static final int SINGLE_OBJECT_COUNT = 1;
     private static final int EMPTY_SIZE = 0;
@@ -31,9 +31,7 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setArguments(pstmt, args);
+             PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -55,7 +53,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = preparedStatement(conn, sql, args);
+             PreparedStatement pstmt = createPreparedStatement(conn, sql, args);
              ResultSet rs = pstmt.executeQuery()) {
 
             return extractResults(rowMapper, rs);
@@ -65,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement preparedStatement(Connection conn, String sql, Object... args) throws SQLException {
+    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... args) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
         setArguments(pstmt, args);
         return pstmt;
