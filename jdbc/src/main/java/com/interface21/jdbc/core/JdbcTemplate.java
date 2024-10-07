@@ -49,19 +49,9 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = prepareStatement(conn, sql, args);
-             ResultSet rs = statement.executeQuery()) {
-            log.debug("query : {}", sql);
-
-            List<T> results = getResults(rs, rowMapper);
-            validateSingleResult(results);
-            return results.getFirst();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-
-            throw new DataAccessException(e);
-        }
+        List<T> results = query(sql, rowMapper, args);
+        validateSingleResult(results);
+        return results.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -94,13 +84,13 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> void validateSingleResult(List<T> results) throws SQLException {
+    private <T> void validateSingleResult(List<T> results) {
         if (results.isEmpty()) {
-            throw new SQLException("쿼리 실행 결과가 1개이기를 기대했지만, 0개입니다.");
+            throw new DataAccessException("쿼리 실행 결과가 1개이기를 기대했지만, 0개입니다.");
         }
 
         if (results.size() > 1) {
-            throw new SQLException("쿼리 실행 결과가 1개이기를 기대했지만, 2개 이상입니다.");
+            throw new DataAccessException("쿼리 실행 결과가 1개이기를 기대했지만, 2개 이상입니다.");
         }
     }
 }

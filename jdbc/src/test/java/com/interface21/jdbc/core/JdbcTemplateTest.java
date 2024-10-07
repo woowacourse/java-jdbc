@@ -51,7 +51,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "naknak"))
                 .isInstanceOf(DataAccessException.class)
-                .hasRootCauseMessage("쿼리 실행 결과가 1개이기를 기대했지만, 0개입니다.");
+                .hasMessage("쿼리 실행 결과가 1개이기를 기대했지만, 0개입니다.");
     }
 
     @Test
@@ -68,7 +68,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "naknak"))
                 .isInstanceOf(DataAccessException.class)
-                .hasRootCauseMessage("쿼리 실행 결과가 1개이기를 기대했지만, 2개 이상입니다.");
+                .hasMessage("쿼리 실행 결과가 1개이기를 기대했지만, 2개 이상입니다.");
     }
 
     @Test
