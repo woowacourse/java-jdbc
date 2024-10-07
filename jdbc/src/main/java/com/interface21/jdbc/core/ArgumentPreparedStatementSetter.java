@@ -18,10 +18,10 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
     public void setValues(final PreparedStatement preparedStatement) {
         AtomicInteger index = new AtomicInteger(1);
         Arrays.stream(args)
-                .forEach(arg -> bindParameter(preparedStatement, index.getAndIncrement(), arg));
+                .forEach(arg -> setValue(preparedStatement, index.getAndIncrement(), arg));
     }
 
-    private void bindParameter(final PreparedStatement preparedStatement, int index, Object arg) {
+    private void setValue(final PreparedStatement preparedStatement, int index, Object arg) {
         try {
             preparedStatement.setObject(index, arg);
         } catch (SQLException e) {
