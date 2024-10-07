@@ -26,21 +26,28 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            List<T> result = new ArrayList<>();
-            for (int i = 1; i <= args.length; i++) {
-                psmt.setObject(i, args[i - 1]);
-            }
+            setPreparedStatementParameters(args, psmt);
             ResultSet rs = psmt.executeQuery();
-            int rowNum = 0;
 
-            while (rs.next()) {
-                T element = rowMapper.mapRow(rs, rowNum);
-                result.add(element);
-            }
-
-            return result;
+            return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            T element = rowMapper.mapRow(rs, rowNum);
+            result.add(element);
+        }
+        return result;
+    }
+
+    private void setPreparedStatementParameters(Object[] args, PreparedStatement psmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            psmt.setObject(i + 1, args[i]);
         }
     }
 
@@ -56,9 +63,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= args.length; i++) {
-                psmt.setObject(i, args[i - 1]);
-            }
+            setPreparedStatementParameters(args, psmt);
 
             return psmt.executeUpdate();
         } catch (SQLException e) {
