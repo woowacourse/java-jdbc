@@ -46,21 +46,13 @@ public class UserDao {
         return jdbcTemplate.query(sql, mapper);
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(final Long id) throws IncorrectResultSizeDataAccessException {
         final var sql = "SELECT * FROM users WHERE id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, mapper, id);
-        } catch (IncorrectResultSizeDataAccessException e) {
-            return Optional.empty();
-        }
+        return jdbcTemplate.queryForObject(sql, mapper, id);
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) throws IncorrectResultSizeDataAccessException {
         final var sql = "SELECT * FROM users WHERE account = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, mapper, account);
-        } catch (IncorrectResultSizeDataAccessException e) {
-            return Optional.empty();
-        }
+        return jdbcTemplate.queryForObject(sql, mapper, account);
     }
 }
