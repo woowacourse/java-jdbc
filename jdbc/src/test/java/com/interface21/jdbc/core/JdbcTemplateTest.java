@@ -49,9 +49,10 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("queryForObject 호출 시 자원 반환 여부 확인")
-    void queryForObject() {
+    void queryForObject() throws SQLException {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
+        when(resultSet.isLast()).thenReturn(true);
         jdbcTemplate.queryForObject("query", testRowMapper);
 
         assertAll(
