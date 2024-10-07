@@ -58,9 +58,6 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            if (args == null) {
-                return executor.execute(statement);
-            }
             for (int i = 0; i < args.length; i++) {
                 statement.setObject(i + 1, args[i]);
             }
