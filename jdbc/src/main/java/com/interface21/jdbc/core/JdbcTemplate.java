@@ -64,7 +64,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             List<T> objects = new ArrayList<>();
-            if (resultSet.next()) {
+            while (resultSet.next()) {
                 T object = maker.make(resultSet);
                 objects.add(object);
             }
