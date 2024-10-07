@@ -19,11 +19,7 @@ public class Parameters {
 
     public void setPreparedStatement(PreparedStatement pstmt) throws SQLException {
         for (Map.Entry<Integer, Object> entry : parameters.entrySet()) {
-            if (entry.getValue() instanceof String) {
-                pstmt.setString(entry.getKey(), (String) entry.getValue());
-            } else if (entry.getValue() instanceof Long) {
-                pstmt.setLong(entry.getKey(), (Long) entry.getValue());
-            }
+            pstmt.setObject(entry.getKey(), entry.getValue());
         }
     }
 }
