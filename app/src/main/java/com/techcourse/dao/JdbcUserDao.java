@@ -29,53 +29,11 @@ public class JdbcUserDao {
     }
 
     public void insert(final User user) {
-        String sql = createQueryForInsert();
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-    }
-
-    private String createQueryForInsert() {
-        return "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        new InsertJdbcTemplate().insert(user, this);
     }
 
     public void update(final User user) {
-        String sql = createQueryForUpdate();
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
-    }
-
-    private String createQueryForUpdate() {
-        return "UPDATE users SET account=?, password=?, email=? WHERE id=?";
+        new UpdateJdbcTemplate().update(user, this);
     }
 
     public List<User> findAll() {
@@ -121,7 +79,6 @@ public class JdbcUserDao {
                     resultSet.getString(4)
             );
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -144,8 +101,11 @@ public class JdbcUserDao {
                     resultSet.getString(4)
             );
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
