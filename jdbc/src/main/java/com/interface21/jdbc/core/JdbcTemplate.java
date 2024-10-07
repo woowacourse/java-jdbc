@@ -30,6 +30,7 @@ public class JdbcTemplate {
             statement.execute(sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+
             throw new DataAccessException(e);
         }
     }
@@ -42,6 +43,7 @@ public class JdbcTemplate {
             return statement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+
             throw new DataAccessException(e);
         }
     }
@@ -54,10 +56,10 @@ public class JdbcTemplate {
 
             List<T> results = getResults(rs, rowMapper);
             validateSingleResult(results);
-
             return results.getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+
             throw new DataAccessException(e);
         }
     }
@@ -71,27 +73,24 @@ public class JdbcTemplate {
             return getResults(rs, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+
             throw new DataAccessException(e);
         }
     }
 
     private PreparedStatement prepareStatement(Connection connection, String sql, Object... args) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(sql);
-
         for (int parameterIndex = 0; parameterIndex < args.length; ++parameterIndex) {
             statement.setObject(parameterIndex + 1, args[parameterIndex]);
         }
-
         return statement;
     }
 
     private <T> List<T> getResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
-
         while (rs.next()) {
             results.add(rowMapper.mapRow(rs));
         }
-
         return results;
     }
 
