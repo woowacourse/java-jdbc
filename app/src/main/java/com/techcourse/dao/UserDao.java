@@ -24,7 +24,7 @@ public class UserDao {
     public void insert(final User user) {
         final var query = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.executeUpdate(query, pstmt -> {
+        jdbcTemplate.update(query, pstmt -> {
             pstmt.setObject(1, user.getAccount());
             pstmt.setObject(2, user.getPassword());
             pstmt.setObject(3, user.getEmail());
@@ -34,7 +34,7 @@ public class UserDao {
     public void update(final User user) {
         final var query = "update users set account = ?, password = ?, email = ?";
 
-        jdbcTemplate.executeUpdate(query, pstmt -> {
+        jdbcTemplate.update(query, pstmt -> {
             pstmt.setObject(1, user.getAccount());
             pstmt.setObject(2, user.getPassword());
             pstmt.setObject(3, user.getEmail());
@@ -44,21 +44,21 @@ public class UserDao {
     public List<User> findAll() {
         final var query = "select id, account, password, email from users";
 
-        return jdbcTemplate.executeQuery(query, this::mapUserFromResultSet, pstmt -> {
+        return jdbcTemplate.query(query, this::mapUserFromResultSet, pstmt -> {
         });
     }
 
     public User findById(final Long id) {
         final var query = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, id))
+        return jdbcTemplate.queryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, id))
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID를 갖는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var query = "select * from users where account = ?";
 
-        return jdbcTemplate.executeQueryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, account))
+        return jdbcTemplate.queryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, account))
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 account를 갖는 유저가 없습니다."));
     }
 

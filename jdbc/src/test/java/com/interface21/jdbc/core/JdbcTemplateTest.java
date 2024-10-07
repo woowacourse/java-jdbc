@@ -41,12 +41,12 @@ class JdbcTemplateTest {
 
     @DisplayName("JdbcTemplate이 query와 parameters로 executeUpdate를 실행할 수 있다.")
     @Test
-    void testExecuteUpdate() throws SQLException {
+    void testUpdate() throws SQLException {
         // given
         final var query = "update test_table set test_attribute1 = ?, test_attribute2 = ?, test_attribute3 = ?";
 
         // when
-        jdbcTemplate.executeUpdate(query, pstmt -> {
+        jdbcTemplate.update(query, pstmt -> {
             pstmt.setObject(1, "test_value1");
             pstmt.setObject(2, "test_value2");
             pstmt.setObject(3, "test_value3");
@@ -61,7 +61,7 @@ class JdbcTemplateTest {
 
     @DisplayName("JdbcTemplate이 query와 rowMapper, parameters로 executeQueryForObject를 실행할 수 있다.")
     @Test
-    void testExecuteQueryForObject() throws SQLException {
+    void testQueryForObject() throws SQLException {
         // given
         final ResultSet resultSet = mock(ResultSet.class);
         when(pstmt.executeQuery()).thenReturn(resultSet);
@@ -74,7 +74,7 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
-        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
+        Optional<TestEntity> optionalResult = jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
         assert(optionalResult.isPresent());
         TestEntity result = optionalResult.get();
 
@@ -88,7 +88,7 @@ class JdbcTemplateTest {
 
     @DisplayName("executeQueryForObject의 결과가 없다면, Optional.empty()를 반환한다.")
     @Test
-    void testExecuteQueryForObject_ReturnOptionalEmpty_WhenResultSizeZero() throws SQLException {
+    void testQueryForObject_ReturnOptionalEmpty_WhenResultSizeZero() throws SQLException {
         // given
         final ResultSet resultSet = mock(ResultSet.class);
         when(pstmt.executeQuery()).thenReturn(resultSet);
@@ -97,7 +97,7 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
-        Optional<TestEntity> optionalResult = jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
+        Optional<TestEntity> optionalResult = jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID));
 
         // then
         assertThat(optionalResult).isEqualTo(Optional.empty());
@@ -105,7 +105,7 @@ class JdbcTemplateTest {
 
     @DisplayName("executeQueryForObject의 결과가 두 개 이상이면, 에러가 발생한다.")
     @Test
-    void testExecuteQueryForObject_ThrowError_WhenResultSizeOverTwo() throws SQLException {
+    void testQueryForObject_ThrowError_WhenResultSizeOverTwo() throws SQLException {
         // given
         final ResultSet resultSet = mock(ResultSet.class);
         when(pstmt.executeQuery()).thenReturn(resultSet);
@@ -114,14 +114,14 @@ class JdbcTemplateTest {
         final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID)))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Multiple results returned for query, but only one result expected.");
     }
 
     @DisplayName("JdbcTemplate이 query와 rowMapper, parameters로 executeQuery를 실행할 수 있다.")
     @Test
-    void testExecuteQuery() throws SQLException {
+    void testQuery() throws SQLException {
         // given
         final ResultSet resultSet = mock(ResultSet.class);
         when(pstmt.executeQuery()).thenReturn(resultSet);
@@ -129,7 +129,7 @@ class JdbcTemplateTest {
 
         // when
         final String query = "select * from test_table";
-        List<TestEntity> results = jdbcTemplate.executeQuery(query, this::mapTestEntityFromResultSet, pstmt -> {});
+        List<TestEntity> results = jdbcTemplate.query(query, this::mapTestEntityFromResultSet, pstmt -> {});
 
         // then
         verify(pstmt).executeQuery();

@@ -23,7 +23,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(final String sql, final PreparedStatementSetter pstmtSetter) {
+    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -35,8 +35,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
-        List<T> resultSet = executeQuery(sql, rowMapper, pstmtSetter);
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
+        List<T> resultSet = query(sql, rowMapper, pstmtSetter);
         if (resultSet.size() > 1) {
             throw new IllegalArgumentException("Multiple results returned for query, but only one result expected.");
         }
@@ -44,25 +44,24 @@ public class JdbcTemplate {
         return resultSet.stream().findFirst();
     }
 
-    public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            return getResultSet(sql, pstmt, pstmtSetter, rowMapper);
+            log.debug("query : {}", sql);
+            pstmtSetter.setValues(pstmt);
+            final ResultSet resultSet = pstmt.executeQuery();
+            return getResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> getResultSet(final String sql, final PreparedStatement pstmt, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) throws SQLException {
-        pstmtSetter.setValues(pstmt);
-        try (ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
+    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
         }
+        return results;
     }
 }
