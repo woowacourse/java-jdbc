@@ -55,10 +55,9 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
+             PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+             ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            ResultSet resultSet = preparedStatement.executeQuery();
-
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
@@ -76,12 +75,13 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
         ) {
             setPreparedStatementParameter(args, preparedStatement);
-            ResultSet resultSet = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
-                return Optional.of(rowMapper.mapRow(resultSet, resultSet.getRow()));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                }
+                return Optional.empty();
             }
-            return Optional.empty();
         } catch (SQLException e) {
             log.info("EXECUTE_QUERY_FOR_OBJECT_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
@@ -90,7 +90,8 @@ public class JdbcTemplate {
 
     public int update(String sql, Object ...args) {
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)){
+             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
+        ){
             setPreparedStatementParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
