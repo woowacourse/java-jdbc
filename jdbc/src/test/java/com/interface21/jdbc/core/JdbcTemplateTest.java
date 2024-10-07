@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.interface21.jdbc.exception.UnexpectedResultSizeException;
+
 class JdbcTemplateTest {
     private static final Long TEST_ID = 1L;
 
@@ -115,7 +117,7 @@ class JdbcTemplateTest {
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, pstmt -> pstmt.setObject(1, TEST_ID)))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(UnexpectedResultSizeException.class)
                 .hasMessage("Multiple results returned for query, but only one result expected.");
     }
 

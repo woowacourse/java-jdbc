@@ -13,6 +13,9 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.jdbc.exception.DatabaseException;
+import com.interface21.jdbc.exception.UnexpectedResultSizeException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -31,14 +34,14 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DatabaseException("Database error occurred while executing query.", e);
         }
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
         List<T> resultSet = query(sql, rowMapper, pstmtSetter);
         if (resultSet.size() > 1) {
-            throw new IllegalArgumentException("Multiple results returned for query, but only one result expected.");
+            throw new UnexpectedResultSizeException("Multiple results returned for query, but only one result expected.");
         }
 
         return resultSet.stream().findFirst();
@@ -53,7 +56,7 @@ public class JdbcTemplate {
             return getResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DatabaseException("Database error occurred while executing query.", e);
         }
     }
 
