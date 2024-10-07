@@ -34,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper rowMapper, final Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -46,17 +46,17 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getResults(RowMapper rowMapper, PreparedStatement pstmt, Object... params) throws SQLException {
+    private <T> List<T> getResults(RowMapper<T> rowMapper, PreparedStatement pstmt, Object... params) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             List<T> objects = new ArrayList<>();
             while (rs.next()) {
-                objects.add((T) rowMapper.mapRow(rs, params.length));
+                objects.add(rowMapper.mapRow(rs, params.length));
             }
             return objects;
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper rowMapper, final Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -68,10 +68,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T getResult(RowMapper rowMapper, PreparedStatement pstmt, Object... params) throws SQLException {
+    private <T> T getResult(RowMapper<T> rowMapper, PreparedStatement pstmt, Object... params) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
-                return (T) rowMapper.mapRow(rs, params.length);
+                return rowMapper.mapRow(rs, params.length);
             }
             return null;
         }
