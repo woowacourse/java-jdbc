@@ -50,7 +50,7 @@ public class JdbcTemplate {
         try (ResultSet rs = pstmt.executeQuery()) {
             List<T> objects = new ArrayList<>();
             while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs, params.length));
+                objects.add(rowMapper.mapRow(rs));
             }
             return objects;
         }
@@ -71,7 +71,7 @@ public class JdbcTemplate {
     private <T> T getResult(RowMapper<T> rowMapper, PreparedStatement pstmt, Object... params) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
-                return rowMapper.mapRow(rs, params.length);
+                return rowMapper.mapRow(rs);
             }
             return null;
         }

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getInt(1),
             rs.getString(2),
             rs.getString(3),
