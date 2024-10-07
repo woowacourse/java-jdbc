@@ -24,7 +24,7 @@ class TypedPreparedStatementSetterTest {
     @DisplayName("여러 값을 올바르게 설정한다.")
     public void setMultipleValues() throws SQLException {
         typedPreparedStatementSetter = new TypedPreparedStatementSetter(1, "test", true, 3.14, 100L);
-        typedPreparedStatementSetter.setValues(preparedStatement);
+        typedPreparedStatementSetter.setParameters(preparedStatement);
 
         verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).setString(2, "test");
@@ -38,7 +38,7 @@ class TypedPreparedStatementSetterTest {
     public void setNotSupportedValue() throws SQLException {
         LocalDate localDate = LocalDate.now();
         typedPreparedStatementSetter = new TypedPreparedStatementSetter(localDate);
-        typedPreparedStatementSetter.setValues(preparedStatement);
+        typedPreparedStatementSetter.setParameters(preparedStatement);
 
         verify(preparedStatement).setObject(1, localDate);
     }

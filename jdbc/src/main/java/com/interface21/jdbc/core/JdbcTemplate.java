@@ -27,7 +27,7 @@ public class JdbcTemplate {
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatementSetter.setParameters(preparedStatement);
             return preparedStatement.executeUpdate();
         });
     }
@@ -38,7 +38,7 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatementSetter.setParameters(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement)
                     .getResults();
         });
@@ -50,7 +50,7 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatementSetter.setParameters(preparedStatement);
             return MappedResultSet.create(rowMapper, preparedStatement, 1)
                     .getFirst();
         });
