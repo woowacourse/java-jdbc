@@ -26,37 +26,37 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        ResultSetClosePreparedStatementCallBack<T, List<T>> callBack = new ResultSetClosePreparedStatementCallBack<>() {
-            @Override
-            List<T> createResult(ResultSet rs, RowMapper<T> rm) throws SQLException {
-                List<T> entityList = new ArrayList<>();
-                while (rs.next()) {
-                    T entity = rm.mapRow(rs, rs.getRow());
-                    entityList.add(entity);
-                }
-                return entityList;
-            }
-        };
-
+        var callBack = new ResultSetClosePreparedStatementCallBack<T, List<T>>(getEntityList());
         return execute(sql, rowMapper, args, callBack);
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        ResultSetClosePreparedStatementCallBack<T, Optional<T>> callBack = new ResultSetClosePreparedStatementCallBack<>() {
-            @Override
-            Optional<T> createResult(ResultSet rs, RowMapper<T> rm) throws SQLException {
-                if (rs.next()) {
-                    T entity = rm.mapRow(rs, rs.getRow());
-                    if (rs.next()) {
-                        throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
-                    }
-                    return Optional.ofNullable(entity);
-                }
-                return Optional.empty();
+    private <T> ThrowingBiFunction<ResultSet, RowMapper<T>, List<T>, SQLException> getEntityList() {
+        return (rs, rm) -> {
+            List<T> entityList = new ArrayList<>();
+            while (rs.next()) {
+                T entity = rm.mapRow(rs, rs.getRow());
+                entityList.add(entity);
             }
+            return entityList;
         };
+    }
 
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        var callBack = new ResultSetClosePreparedStatementCallBack<T, Optional<T>>(getEntity());
         return execute(sql, rowMapper, args, callBack);
+    }
+
+    private <T> ThrowingBiFunction<ResultSet, RowMapper<T>, Optional<T>, SQLException> getEntity() {
+        return (rs, rm) -> {
+            if (rs.next()) {
+                T entity = rm.mapRow(rs, rs.getRow());
+                if (rs.next()) {
+                    throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+                }
+                return Optional.ofNullable(entity);
+            }
+            return Optional.empty();
+        };
     }
 
     public DataSource getDataSource() {
@@ -80,14 +80,23 @@ public class JdbcTemplate {
         }
     }
 
-    private abstract static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
+    private static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
+
+        private final ThrowingBiFunction<ResultSet, RowMapper<T>, R, SQLException> createEntity;
+
+        private ResultSetClosePreparedStatementCallBack(
+                ThrowingBiFunction<ResultSet, RowMapper<T>, R, SQLException> createEntity
+        ) {
+            this.createEntity = createEntity;
+        }
+
         @Override
         public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
             try (ResultSet rs = ps.executeQuery()) {
-                return createResult(rs, rowMapper);
+                return createEntity.apply(rs, rowMapper);
             }
         }
-
-        abstract R createResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException;
     }
+
+
 }
