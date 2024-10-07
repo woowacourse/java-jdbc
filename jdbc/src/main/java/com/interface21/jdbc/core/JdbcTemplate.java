@@ -37,9 +37,8 @@ public class JdbcTemplate {
 
     private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         List<T> result = new ArrayList<>();
-        int rowNum = 0;
         while (rs.next()) {
-            T element = rowMapper.mapRow(rs, rowNum);
+            T element = rowMapper.mapRow(rs, rs.getRow());
             result.add(element);
         }
         return result;
