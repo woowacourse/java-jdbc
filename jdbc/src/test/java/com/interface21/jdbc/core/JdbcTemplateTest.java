@@ -57,7 +57,7 @@ public class JdbcTemplateTest {
         assertThat(rowsAffected).isEqualTo(1);
 
         verify(preparedStatement).setString(1, "John");
-        verify(preparedStatement).setString(2, "1");
+        verify(preparedStatement).setInt(2, 1);
         verify(preparedStatement).executeUpdate();
     }
 
@@ -79,7 +79,7 @@ public class JdbcTemplateTest {
         assertThat(users).isNotNull().hasSize(1);
         assertThat(users.getFirst().getName()).isEqualTo("John");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
@@ -102,7 +102,7 @@ public class JdbcTemplateTest {
         assertThat(user).isNotNull();
         assertThat(user.getName()).isEqualTo("John");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
@@ -126,7 +126,7 @@ public class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("여러개의 행이 조회되었습니다.");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
@@ -145,7 +145,7 @@ public class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("행이 하나도 조회되지 않았습니다.");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 }
