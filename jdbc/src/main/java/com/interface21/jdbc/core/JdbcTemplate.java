@@ -35,13 +35,11 @@ public class JdbcTemplate {
     }
 
     public Object executeQueryForObject(String sql, List<Object> paramList, Maker maker) {
-        ResultSet resultSet = null;
-
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             setParams(paramList, preparedStatement);
-            resultSet = preparedStatement.executeQuery();
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
@@ -52,24 +50,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public List<Object> executeQueryForObjects(String sql, List<Object> paramList, Maker maker) {
-        ResultSet resultSet = null;
-
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             setParams(paramList, preparedStatement);
-            resultSet = preparedStatement.executeQuery();
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
@@ -82,13 +71,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
