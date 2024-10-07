@@ -20,12 +20,12 @@ public class UserHistoryDao {
     public void log(UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.update(sql, preparedStatement -> {
-            preparedStatement.setLong(1, userHistory.getUserId());
-            preparedStatement.setString(2, userHistory.getAccount());
-            preparedStatement.setString(3, userHistory.getPassword());
-            preparedStatement.setString(4, userHistory.getEmail());
-            preparedStatement.setObject(5, userHistory.getCreatedAt());
-        });
+        jdbcTemplate.update(sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt()
+        );
     }
 }
