@@ -1,13 +1,14 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
 
-    private static final UserRowMapper ROW_MAPPER = new UserRowMapper();
+    private static final RowMapper ROW_MAPPER = new UserRowMapper();
 
     private final JdbcTemplate jdbcTemplate;
 
