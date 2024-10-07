@@ -23,45 +23,41 @@ public class JdbcTemplate {
     }
 
     public final void update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParams(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapResults(rowMapper, rs);
+            }
+        }, params);
+    }
+
+    public final <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapObjectResult(rowMapper, rs);
+            }
+        }, params);
+    }
+
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapResults(rowMapper, rs);
-            }
+            return executor.apply(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public final <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParams(pstmt, params);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapObjectResult(rowMapper, rs);
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
         }
     }
 
@@ -78,11 +74,5 @@ public class JdbcTemplate {
             return Optional.of(rowMapper.mapRow(rs));
         }
         return Optional.empty();
-    }
-
-    private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
     }
 }
