@@ -35,23 +35,27 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        List<T> result = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
-            try(ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    T object = rowMapper.mapRow(rs, rs.getRow());
-                    result.add(object);
-                }
+            return getQueryResult(rowMapper, pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+        }
+    }
+
+    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                T object = rowMapper.mapRow(rs, rs.getRow());
+                result.add(object);
             }
 
             return result;
-        } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
@@ -62,14 +66,20 @@ public class JdbcTemplate {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
-            try(ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
-                }
-                return null;
-            }
+            return getQueryForObjectResult(rowMapper, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+        }
+    }
+
+    private <T> T getQueryForObjectResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            T result = null;
+            if (rs.next()) {
+                result = rowMapper.mapRow(rs, rs.getRow());
+            }
+
+            return result;
         }
     }
 
