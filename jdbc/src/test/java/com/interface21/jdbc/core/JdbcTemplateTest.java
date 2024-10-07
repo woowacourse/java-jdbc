@@ -75,7 +75,7 @@ class JdbcTemplateTest {
         @DisplayName("UPDATE 문, 데이터 수정 성공")
         void update() throws SQLException {
             // given
-            var sql = "update users  set account = ?, password = ?, email = ?";
+            var sql = "update users set account = ?, password = ?, email = ?";
             when(connection.prepareStatement(sql)).thenReturn(statement);
 
             // when
@@ -102,7 +102,7 @@ class JdbcTemplateTest {
 
         private void setResultSet() throws SQLException {
             ResultSet resultSet = mock(ResultSet.class);
-            when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+            when(resultSet.next()).thenReturn(true,true, false);
 
             when(resultSet.getLong("id")).thenReturn(FIRST_USER.id(), SECOND_USER.id());
             when(resultSet.getString("account")).thenReturn(FIRST_USER.account(), SECOND_USER.account());
