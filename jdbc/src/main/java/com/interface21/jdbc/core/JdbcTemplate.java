@@ -21,13 +21,13 @@ public class JdbcTemplate {
     }
 
     public void executeQuery(String sql, List<Object> paramList) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParams(paramList, pstmt);
-            pstmt.executeUpdate();
+            setParams(paramList, preparedStatement);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -35,18 +35,18 @@ public class JdbcTemplate {
     }
 
     public Object executeQueryForObject(String sql, List<Object> paramList, Maker maker) {
-        ResultSet rs = null;
+        ResultSet resultSet = null;
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setParams(paramList, pstmt);
-            rs = pstmt.executeQuery();
+            setParams(paramList, preparedStatement);
+            resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return maker.make(rs);
+            if (resultSet.next()) {
+                return maker.make(resultSet);
             }
             return null;
         } catch (SQLException e) {
@@ -54,8 +54,8 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (resultSet != null) {
+                    resultSet.close();
                 }
             } catch (SQLException ignored) {
             }
@@ -63,19 +63,19 @@ public class JdbcTemplate {
     }
 
     public List<Object> executeQueryForObjects(String sql, List<Object> paramList, Maker maker) {
-        ResultSet rs = null;
+        ResultSet resultSet = null;
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setParams(paramList, pstmt);
-            rs = pstmt.executeQuery();
+            setParams(paramList, preparedStatement);
+            resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
             List<Object> objects = new ArrayList<>();
-            if (rs.next()) {
-                Object object = maker.make(rs);
+            if (resultSet.next()) {
+                Object object = maker.make(resultSet);
                 objects.add(object);
             }
             return objects;
@@ -84,17 +84,17 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (resultSet != null) {
+                    resultSet.close();
                 }
             } catch (SQLException ignored) {
             }
         }
     }
 
-    private void setParams(List<Object> paramList, PreparedStatement pstmt) throws SQLException {
+    private void setParams(List<Object> paramList, PreparedStatement preparedStatement) throws SQLException {
         for (int index = 1; index <= paramList.size(); index++) {
-            pstmt.setObject(index, paramList.get(index - 1));
+            preparedStatement.setObject(index, paramList.get(index - 1));
         }
     }
 }
