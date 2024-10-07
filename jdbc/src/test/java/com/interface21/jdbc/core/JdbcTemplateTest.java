@@ -99,6 +99,6 @@ class JdbcTemplateTest {
     private record User(Long id, String account) {}
 
     private final RowMapper<User> userRowMapper = resultSet -> new User(
-            resultSet.getLong(1),
-            resultSet.getString(2));
+            resultSet.getLong("id"),
+            resultSet.getString("account"));
 }
