@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
@@ -32,6 +33,7 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(mockedDataSource);
     }
 
+    @DisplayName("query 메서드 실행 시 조회한 객체들을 rowMapper로 매핑해서 반환한다.")
     @Test
     void queryTest() throws SQLException {
         // given
@@ -51,6 +53,7 @@ class JdbcTemplateTest {
                 .containsExactly(tuple("망쵸", 2L), tuple("제우스", 1L));
     }
 
+    @DisplayName("query 메서드 실행 시 전달된 인자로 조회한 객체들을 rowMapper로 매핑해서 반환한다.")
     @Test
     void queryTest1() throws SQLException {
         // given
@@ -70,6 +73,7 @@ class JdbcTemplateTest {
                 .containsExactly(tuple("망쵸", 2L));
     }
 
+    @DisplayName("queryForObject 메서드 실행 시 조회한 객체를 Object에 매핑해서 반환한다.")
     @Test
     void queryForObjectTest() throws SQLException {
         // given
