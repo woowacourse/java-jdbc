@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int PARAMETER_START_INDEX = 1;
 
     private final DataSource dataSource;
 
@@ -41,17 +40,6 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatementParameter(Object[] args, PreparedStatement preparedStatement) {
-        try {
-            for (int parameterIndex = PARAMETER_START_INDEX; parameterIndex <= args.length; parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, args[parameterIndex - PARAMETER_START_INDEX]);
-            }
-        } catch (SQLException e) {
-            log.info("SET_PREPARED_STATEMENT_PARAMETER_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException("PreparedStatement에 파라미터를 설정하던 중 오류가 발생했습니다.");
-        }
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
@@ -72,7 +60,7 @@ public class JdbcTemplate {
 
     private ResultSet execute(PreparedStatement preparedStatement, Object... args) {
         try {
-            setPreparedStatementParameter(args, preparedStatement);
+            PreparedStatementSetter.setValue(preparedStatement, args);
             return preparedStatement.executeQuery();
         } catch (SQLException e) {
             log.info("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
@@ -95,7 +83,7 @@ public class JdbcTemplate {
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
         try (connection; preparedStatement) {
-            setPreparedStatementParameter(args, preparedStatement);
+            PreparedStatementSetter.setValue(preparedStatement, args);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
