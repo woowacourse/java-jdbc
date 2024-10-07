@@ -10,6 +10,9 @@ public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T
     private final RowMapper<T> rowMapper;
 
     public RowMapperResultSetExtractor(RowMapper<T> rowMapper) {
+        if (rowMapper == null) {
+            throw new IllegalArgumentException("RowMapper is required");
+        }
         this.rowMapper = rowMapper;
     }
 
