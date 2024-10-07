@@ -14,12 +14,12 @@ import com.interface21.dao.DataAccessException;
 public class JdbcTemplate {
 
     private final DataSource dataSource;
-    private final PreparedStatementBinder preparedStatementBinder;
+    private final PreparedStatementSetter preparedStatementSetter;
     private final ResultMapper resultMapper;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.preparedStatementBinder = new PreparedStatementBinder();
+        this.preparedStatementSetter = new PreparedStatementSetter();
         this.resultMapper = new ResultMapper();
     }
 
@@ -47,7 +47,7 @@ public class JdbcTemplate {
     private <T> T executeQuery(final String sql, final QueryFunction<PreparedStatement, T> action, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementBinder.bindParameters(preparedStatement, args);
+            preparedStatementSetter.bindParameters(preparedStatement, args);
             return action.apply(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);

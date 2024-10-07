@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.interface21.dao.DataAccessException;
 
-public class PreparedStatementBinder {
+public class PreparedStatementSetter {
 
     public void bindParameters(final PreparedStatement preparedStatement, final Object... args) {
         AtomicInteger index = new AtomicInteger(1);
