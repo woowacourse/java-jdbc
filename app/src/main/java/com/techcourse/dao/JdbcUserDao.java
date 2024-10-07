@@ -29,11 +29,48 @@ public class JdbcUserDao {
     }
 
     public void insert(final User user) {
-        new InsertJdbcTemplate().insert(user, this);
+        AbstractJdbcTemplate jdbcTemplate = new AbstractJdbcTemplate(dataSource) {
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+
+            @Override
+            protected String createQuery() {
+                return "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public void update(final User user) {
-        new UpdateJdbcTemplate().update(user, this);
+        AbstractJdbcTemplate jdbcTemplate = new AbstractJdbcTemplate(dataSource) {
+            @Override
+            protected void setValues(User user, PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+
+            @Override
+            protected String createQuery() {
+                return "UPDATE users SET account=?, password=?, email=? WHERE id=?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
