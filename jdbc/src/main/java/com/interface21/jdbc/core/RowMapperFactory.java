@@ -4,20 +4,28 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RowMapperFactory {
 
+    private static class RowMapperHolder {
+        private static final Map<Class<?>, RowMapper<?>> INSTANCE = new HashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> RowMapper<T> getRowMapper(Class<T> clazz) {
-        return (rs) -> {
-            try {
-                Constructor<?> constructor = findAllargsConstructor(clazz);
-                constructor.setAccessible(true);
-                Object[] constructorArguments = getConstructorArguments(constructor, clazz, rs);
-                return (T) constructor.newInstance(constructorArguments);
-            } catch (Exception e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        };
+        return (RowMapper<T>) RowMapperHolder.INSTANCE.computeIfAbsent(clazz, (ignored) ->
+                (rs) -> {
+                    try {
+                        Constructor<?> constructor = findAllargsConstructor(clazz);
+                        constructor.setAccessible(true);
+                        Object[] constructorArguments = getConstructorArguments(constructor, clazz, rs);
+                        return (T) constructor.newInstance(constructorArguments);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e.getMessage(), e);
+                    }
+                });
     }
 
     private static <T> Constructor<?> findAllargsConstructor(Class<T> clazz) throws NoSuchMethodException {
