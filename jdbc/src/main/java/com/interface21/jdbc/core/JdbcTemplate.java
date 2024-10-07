@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(String sql, Object... parameters) {
+    public int queryAndGetUpdateRowsCount(String sql, Object... parameters) {
         return executeQueryExecutor(PreparedStatement::executeUpdate, sql, parameters);
     }
 
@@ -38,7 +38,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
+    public <T> List<T> queryAndGetResults(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         return executeQueryExecutor((preparedStatement) -> {
             log.debug("query : {}", sql);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -54,7 +54,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
+    public <T> T queryAndGetResult(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         return executeQueryExecutor((preparedStatement) -> {
             log.debug("query : {}", sql);
             ResultSet resultSet = preparedStatement.executeQuery();
