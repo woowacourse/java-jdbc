@@ -2,12 +2,14 @@ package transaction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.function.Function;
 
 public class FunctionWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(FunctionWrapper.class);
+
+    private FunctionWrapper() {
+    }
 
     public static <T, R> Function<T, R> apply(ThrowingFunction<T, R, Exception> function) {
         return i -> {
@@ -19,6 +21,4 @@ public class FunctionWrapper {
             }
         };
     }
-
-    private FunctionWrapper() {}
 }

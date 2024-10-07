@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -22,13 +21,23 @@ class Stage2Test {
     private static final Logger log = LoggerFactory.getLogger(Stage2Test.class);
 
     /**
-     * spring boot에서 설정 파일인 application.yml를 사용하여 DataSource를 설정할 수 있다.
-     * 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는 방법을 사용한다.
-     * DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자.
-     * 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName() 메서드로 확인해보자.
+     * spring boot에서 설정 파일인 application.yml를 사용하여 DataSource를 설정할 수 있다. 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는
+     * 방법을 사용한다. DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자. 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName()
+     * 메서드로 확인해보자.
      */
     @Autowired
     private DataSource dataSource;
+
+    // 학습 테스트를 위해 HikariPool을 추출
+    public static HikariPool getPool(final HikariDataSource hikariDataSource) {
+        try {
+            Field field = hikariDataSource.getClass().getDeclaredField("pool");
+            field.setAccessible(true);
+            return (HikariPool) field.get(hikariDataSource);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     void test() throws InterruptedException {
@@ -68,17 +77,5 @@ class Stage2Test {
             } catch (Exception e) {
             }
         };
-    }
-
-    // 학습 테스트를 위해 HikariPool을 추출
-    public static HikariPool getPool(final HikariDataSource hikariDataSource)
-    {
-        try {
-            Field field = hikariDataSource.getClass().getDeclaredField("pool");
-            field.setAccessible(true);
-            return (HikariPool) field.get(hikariDataSource);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
