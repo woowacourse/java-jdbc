@@ -26,9 +26,8 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int argumentIndex = 0; argumentIndex < conditions.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, conditions[argumentIndex]);
-            }
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(conditions);
+            statementSetter.setValues(preparedStatement);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -66,9 +65,8 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int argumentIndex = 0; argumentIndex < arguments.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, arguments[argumentIndex]);
-            }
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(arguments);
+            statementSetter.setValues(preparedStatement);
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
