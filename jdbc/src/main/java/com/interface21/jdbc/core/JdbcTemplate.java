@@ -39,12 +39,14 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql,
-                preparedStatement -> {
-                    ResultSet resultSet = preparedStatement.executeQuery();
-                    return mapResultSet(rowMapper, resultSet);
-                },
+                preparedStatement -> executeQueryAndMap(rowMapper, preparedStatement),
                 args
         );
+    }
+
+    private <T> List<T> executeQueryAndMap(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        return mapResultSet(rowMapper, resultSet);
     }
 
     private <T> List<T> mapResultSet(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
