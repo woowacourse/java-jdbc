@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.calls;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,7 +14,6 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

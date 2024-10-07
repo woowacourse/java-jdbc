@@ -21,21 +21,25 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        executeUpdate(
-                sql,
-                preparedStatementSetter);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
+        }
     }
 
-    public <T> List<T> readAll(
+    public <T> List<T> query(
             final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
             final RowMapper<T> rowMapper
     ) {
-        return executeQuery(
-                sql,
-                preparedStatementSetter,
-                preparedStatement -> resultMapper.getResults(preparedStatement.executeQuery(), rowMapper)
-        );
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return resultMapper.getResults(preparedStatement.executeQuery(), rowMapper);
+        } catch (SQLException e) {
+            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
+        }
     }
 
     public <T> Optional<T> query(
@@ -43,35 +47,10 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final RowMapper<T> rowMapper
     ) {
-        return executeQuery(
-                sql,
-                preparedStatementSetter,
-                preparedStatement -> resultMapper.findResult(preparedStatement.executeQuery(), rowMapper)
-        );
-    }
-
-    private int executeUpdate(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter
-    ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
-        }
-    }
-
-    private <T> T executeQuery(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final QueryFunction<PreparedStatement, T> action
-    ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return action.apply(preparedStatement);
+            return resultMapper.findResult(preparedStatement.executeQuery(), rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
         }
