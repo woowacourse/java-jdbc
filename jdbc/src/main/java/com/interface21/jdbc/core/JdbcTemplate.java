@@ -25,7 +25,6 @@ public class JdbcTemplate {
     public void execute(String sql) {
         try (Connection conn = dataSource.getConnection();
              Statement statement = conn.createStatement()) {
-
             log.debug("query : {}", sql);
 
             statement.execute(sql);
@@ -37,13 +36,8 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-
+             PreparedStatement statement = prepareStatement(conn, sql, args)) {
             log.debug("query : {}", sql);
-
-            for (int parameterIndex = 0; parameterIndex < args.length; ++parameterIndex) {
-                statement.setObject(parameterIndex + 1, args[parameterIndex]);
-            }
 
             return statement.executeUpdate();
         } catch (SQLException e) {
@@ -54,8 +48,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(statement, args)) {
+             PreparedStatement statement = prepareStatement(conn, sql, args);
+             ResultSet rs = statement.executeQuery()) {
             log.debug("query : {}", sql);
 
             List<T> results = getResults(rs, rowMapper);
@@ -70,8 +64,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(statement, args)) {
+             PreparedStatement statement = prepareStatement(conn, sql, args);
+             ResultSet rs = statement.executeQuery()) {
             log.debug("query : {}", sql);
 
             return getResults(rs, rowMapper);
@@ -81,12 +75,14 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement statement, Object... args) throws SQLException {
+    private PreparedStatement prepareStatement(Connection connection, String sql, Object... args) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(sql);
+
         for (int parameterIndex = 0; parameterIndex < args.length; ++parameterIndex) {
             statement.setObject(parameterIndex + 1, args[parameterIndex]);
         }
 
-        return statement.executeQuery();
+        return statement;
     }
 
     private <T> List<T> getResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
