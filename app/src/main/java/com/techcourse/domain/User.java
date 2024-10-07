@@ -1,5 +1,7 @@
 package com.techcourse.domain;
 
+import java.util.Objects;
+
 public class User {
 
     private Long id;
@@ -7,24 +9,24 @@ public class User {
     private String password;
     private final String email;
 
-    public User(long id, String account, String password, String email) {
+    public User(final long id, final String account, final String password, final String email) {
         this.id = id;
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public User(String account, String password, String email) {
+    public User(final String account, final String password, final String email) {
         this.account = account;
         this.password = password;
         this.email = email;
     }
 
-    public boolean checkPassword(String password) {
+    public boolean checkPassword(final String password) {
         return this.password.equals(password);
     }
 
-    public void changePassword(String password) {
+    public void changePassword(final String password) {
         this.password = password;
     }
 
@@ -45,12 +47,28 @@ public class User {
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof final User user)) {
+            return false;
+        }
+        return Objects.equals(getId(), user.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getId());
+    }
+
+    @Override
     public String toString() {
         return "User{" +
-                "id=" + id +
-                ", account='" + account + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                '}';
+               "id=" + id +
+               ", account='" + account + '\'' +
+               ", email='" + email + '\'' +
+               ", password='" + password + '\'' +
+               '}';
     }
 }
