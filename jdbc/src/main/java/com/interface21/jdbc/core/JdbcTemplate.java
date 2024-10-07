@@ -31,7 +31,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection);
              ResultSet resultSet = getResultSet(params, preparedStatement)) {
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection);
              ResultSet resultSet = getResultSet(params, preparedStatement)) {

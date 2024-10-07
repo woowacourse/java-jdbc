@@ -48,11 +48,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("query 호출 시 자원 반환 여부 확인")
-    void query() {
+    @DisplayName("queryForObject 호출 시 자원 반환 여부 확인")
+    void queryForObject() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-        jdbcTemplate.query("query", testRowMapper);
+        jdbcTemplate.queryForObject("query", testRowMapper);
 
         assertAll(
                 () -> verify(connection).close(),
@@ -62,8 +62,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("queryForUpdate 호출 시 자원 반환 여부 확인")
-    void queryForUpdate() {
+    @DisplayName("query 호출 시 자원 반환 여부 확인")
+    void query() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         jdbcTemplate.query("query", testRowMapper);
