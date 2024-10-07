@@ -17,6 +17,7 @@ import com.interface21.jdbc.exception.DatabaseException;
 import com.interface21.jdbc.exception.UnexpectedResultSizeException;
 
 public class JdbcTemplate {
+    private static final int BASE_INDEX = 1;
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -61,7 +62,7 @@ public class JdbcTemplate {
 
     private void setValues(final PreparedStatement pstmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+            pstmt.setObject(i + BASE_INDEX, params[i]);
         }
     }
 
