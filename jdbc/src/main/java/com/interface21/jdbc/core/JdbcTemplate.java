@@ -91,9 +91,10 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
-        ) {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+
+        try (connection; preparedStatement) {
             setPreparedStatementParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
