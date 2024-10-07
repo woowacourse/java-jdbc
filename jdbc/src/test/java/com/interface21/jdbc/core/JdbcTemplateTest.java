@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private Connection connection;
     private PreparedStatement pstmt;
     private ResultSet rs;
     private JdbcTemplate jdbcTemplate;
@@ -29,7 +30,7 @@ class JdbcTemplateTest {
     @BeforeEach
     void setUp() throws SQLException {
         DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
+        connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
 
@@ -50,7 +51,12 @@ class JdbcTemplateTest {
         RowMapper<String> rowMapper = rs -> rs.getString("column");
         String result = jdbcTemplate.queryForObject(sql, rowMapper, 1);
 
-        assertEquals("expected", result);
+        assertAll(
+                () -> assertEquals("expected", result),
+                () -> verify(this.rs).close(),
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
+        );
     }
 
     @Test
@@ -58,11 +64,16 @@ class JdbcTemplateTest {
     void queryForObjectWhenResultIsEmpty() throws SQLException {
         when(rs.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select * from users where id=?",
-                rs -> rs.getString("column"),
-                1
-        )).isInstanceOf(DataAccessException.class);
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                        "select * from users where id=?",
+                        rs -> rs.getString("column"),
+                        1
+                )).isInstanceOf(DataAccessException.class),
+                () -> verify(this.rs).close(),
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
+        );
     }
 
     @Test
@@ -70,11 +81,16 @@ class JdbcTemplateTest {
     void queryForObjectWhenResultIsMoreThanTwo() throws SQLException {
         when(rs.next()).thenReturn(true, true, false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select * from users where id=?",
-                rs -> rs.getString("column"),
-                1
-        )).isInstanceOf(DataAccessException.class);
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                        "select * from users where id=?",
+                        rs -> rs.getString("column"),
+                        1
+                )).isInstanceOf(DataAccessException.class),
+                () -> verify(this.rs).close(),
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
+        );
     }
 
     @Test
@@ -90,7 +106,10 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertEquals(2, result.size()),
                 () -> assertEquals("value1", result.get(0)),
-                () -> assertEquals("value2", result.get(1))
+                () -> assertEquals("value2", result.get(1)),
+                () -> verify(this.rs).close(),
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 
@@ -107,7 +126,9 @@ class JdbcTemplateTest {
         assertAll(
                 () -> verify(pstmt, times(1)).executeUpdate(),
                 () -> verify(pstmt).setObject(1, "value"),
-                () -> verify(pstmt).setObject(2, 1)
+                () -> verify(pstmt).setObject(2, 1),
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 }
