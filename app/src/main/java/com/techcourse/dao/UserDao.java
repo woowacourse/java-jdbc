@@ -14,6 +14,15 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private static RowMapper<User> getUserRowMapper() {
+        return (rs) -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        );
+    }
+
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -45,14 +54,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
-    }
-
-    private RowMapper<User> getUserRowMapper() {
-        return (rs) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
     }
 }
