@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.DataAccessException;
@@ -17,27 +16,33 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 class JdbcTemplateTest {
-
+    @Mock
     private DataSource dataSource;
+
+    @Mock
     private Connection connection;
+
+    @Mock
     private PreparedStatement preparedStatement;
+
+    @Mock
     private ResultSet resultSet;
+
+    @InjectMocks
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
-        connection = mock(Connection.class);
-        preparedStatement = mock(PreparedStatement.class);
-        resultSet = mock(ResultSet.class);
+        MockitoAnnotations.openMocks(this);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-
-        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test
@@ -62,9 +67,7 @@ class JdbcTemplateTest {
         RowMapper<User> rowMapper = rs -> new User(id.getAndIncrement(), "naknak");
 
         when(resultSet.next())
-                .thenReturn(true)
-                .thenReturn(true)
-                .thenReturn(false);
+                .thenReturn(true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "naknak"))
                 .isInstanceOf(DataAccessException.class)
@@ -79,8 +82,7 @@ class JdbcTemplateTest {
         RowMapper<User> rowMapper = rs -> new User(id.getAndIncrement(), "naknak");
 
         when(resultSet.next())
-                .thenReturn(true)
-                .thenReturn(false);
+                .thenReturn(true, false);
 
         User user = jdbcTemplate.queryForObject(sql, rowMapper, "naknak");
 
