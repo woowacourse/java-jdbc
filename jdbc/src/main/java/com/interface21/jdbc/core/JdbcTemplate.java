@@ -29,7 +29,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            PreparedStatementResolver.setParameters(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(ps, args);
+            PreparedStatementResolver.setParameters(ps, args);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -66,18 +66,5 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException("Incorrect result size: expected 1, actual " + results.size());
         }
         return results.getFirst();
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... args) {
-        for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
-            Object argument = args[parameterIndex];
-            int position = parameterIndex + 1;
-            try {
-                pstmt.setObject(position, argument);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
-        }
     }
 }
