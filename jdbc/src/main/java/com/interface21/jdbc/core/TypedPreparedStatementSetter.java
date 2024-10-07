@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TypedPreparedStatementSetter implements PreparedStatementSetter {
 
@@ -37,10 +36,11 @@ public class TypedPreparedStatementSetter implements PreparedStatementSetter {
 
     @Override
     public void setValues(PreparedStatement preparedStatement) throws SQLException {
-        AtomicInteger preparedIndex = new AtomicInteger(START_INDEX);
+        int preparedIndex = START_INDEX;
         for (Object value : values) {
             ValueSetter valueSetter = findSqlTypeSetter(value);
-            valueSetter.set(preparedStatement, preparedIndex.getAndIncrement(), value);
+            valueSetter.set(preparedStatement, preparedIndex, value);
+            preparedIndex++;
         }
     }
 
