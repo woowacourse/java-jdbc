@@ -9,7 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 public class JdbcUserDao {
-    
+
     private final DataSource dataSource;
 
     public JdbcUserDao(final DataSource dataSource) {
@@ -27,6 +27,11 @@ public class JdbcUserDao {
                 preparedStatement.setString(1, user.getAccount());
                 preparedStatement.setString(2, user.getPassword());
                 preparedStatement.setString(3, user.getEmail());
+            }
+
+            @Override
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
             }
 
             @Override
@@ -53,6 +58,11 @@ public class JdbcUserDao {
             }
 
             @Override
+            protected Object mapRow(ResultSet resultSet) throws SQLException {
+                return null;
+            }
+
+            @Override
             protected String createQuery() {
                 return "UPDATE users SET account=?, password=?, email=? WHERE id=?";
             }
@@ -66,7 +76,7 @@ public class JdbcUserDao {
     }
 
     public List<User> findAll() {
-        SelectJdbcTemplate jbcTemplate = new SelectJdbcTemplate(dataSource) {
+        AbstractJdbcTemplate jbcTemplate = new AbstractJdbcTemplate(dataSource) {
             @Override
             protected void setValues(PreparedStatement preparedStatement) throws SQLException {
                 /*NOOP*/
@@ -98,7 +108,7 @@ public class JdbcUserDao {
     }
 
     public User findById(final Long id) {
-        SelectJdbcTemplate jbcTemplate = new SelectJdbcTemplate(dataSource) {
+        AbstractJdbcTemplate jbcTemplate = new AbstractJdbcTemplate(dataSource) {
             @Override
             protected void setValues(PreparedStatement preparedStatement) throws SQLException {
                 preparedStatement.setLong(1, id);
@@ -128,7 +138,7 @@ public class JdbcUserDao {
     }
 
     public User findByAccount(final String account) {
-        SelectJdbcTemplate jbcTemplate = new SelectJdbcTemplate(dataSource) {
+        AbstractJdbcTemplate jbcTemplate = new AbstractJdbcTemplate(dataSource) {
             @Override
             protected void setValues(PreparedStatement preparedStatement) throws SQLException {
                 preparedStatement.setString(1, account);
