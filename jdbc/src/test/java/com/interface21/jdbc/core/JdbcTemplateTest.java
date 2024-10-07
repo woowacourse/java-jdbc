@@ -45,9 +45,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
-
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
     }
 
     @Test
@@ -68,14 +66,30 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("sql 문과 rowMapper 그리고 필요한 값을 넣어 데이터베이스에서 필요한 값을 List로 가져올 수 있다.")
-    void query() {
+    void query() throws SQLException {
         String sql = """
                 SELECT id, account, password, email
                 FROM users
                 """;
 
+        when(resultSet.next()).thenReturn(false);
+
         List<String> expected = jdbcTemplate.query(sql, rowMapper);
 
         assertThat(expected).isInstanceOf(List.class);
+    }
+
+    @Test
+    @DisplayName("sql문과 rowMapper와 필요한 값을 넣어 필요한 값을 하나 받을 수 있다.,")
+    void queryForObject_Success() throws SQLException {
+        String sql = "SELECT name FROM users WHERE id = ?";
+
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
+        when(rowMapper.mapRow(any(ResultSet.class), anyInt())).thenReturn("Polla");
+
+        String result = jdbcTemplate.queryForObject(sql, rowMapper, 1);
+
+        assertThat(result).isEqualTo("Polla");
+        verify(resultSet, times(2)).next();
     }
 }
