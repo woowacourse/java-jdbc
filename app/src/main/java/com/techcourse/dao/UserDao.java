@@ -1,15 +1,19 @@
 package com.techcourse.dao;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 public class UserDao {
+    private static final RowMapper<User> ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -44,30 +48,21 @@ public class UserDao {
     public List<User> findAll() {
         final var query = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(query, this::mapUserFromResultSet, pstmt -> {
+        return jdbcTemplate.query(query, ROW_MAPPER, pstmt -> {
         });
     }
 
     public User findById(final Long id) {
         final var query = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, id))
+        return jdbcTemplate.queryForObject(query, ROW_MAPPER, pstmt -> pstmt.setObject(1, id))
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID를 갖는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var query = "select * from users where account = ?";
 
-        return jdbcTemplate.queryForObject(query, this::mapUserFromResultSet, pstmt -> pstmt.setObject(1, account))
+        return jdbcTemplate.queryForObject(query, ROW_MAPPER, pstmt -> pstmt.setObject(1, account))
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 account를 갖는 유저가 없습니다."));
-    }
-
-    private User mapUserFromResultSet(final ResultSet resultSet) throws SQLException {
-        return new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        );
     }
 }
