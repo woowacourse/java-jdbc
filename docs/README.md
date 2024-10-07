@@ -2,5 +2,5 @@
 
 ## Step1
 
-* [ ] InMemoryRepository 걷어내고 UserDao 추가하기
-* [ ] 테스트 추가하기
+* [x] InMemoryRepository 걷어내고 UserDao 추가하기
+* [x] 테스트 추가하기
