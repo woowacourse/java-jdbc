@@ -1,11 +1,9 @@
 package com.interface21.jdbc.core;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -96,29 +94,7 @@ public class JdbcTemplate {
 
     private void setParams(List<Object> paramList, PreparedStatement pstmt) throws SQLException {
         for (int index = 1; index <= paramList.size(); index++) {
-            setParam(pstmt, index, paramList.get(index - 1));
-        }
-    }
-
-    private void setParam(PreparedStatement pstmt, int index, Object param) throws SQLException {
-        if (param.getClass() == Long.class) {
-            pstmt.setLong(index, (Long) param);
-            return;
-        }
-        if (param.getClass() == String.class) {
-            pstmt.setString(index, (String) param);
-            return;
-        }
-        if (param.getClass() == Date.class) {
-            pstmt.setDate(index, (Date) param);
-            return;
-        }
-        if (param.getClass() == Time.class) {
-            pstmt.setTime(index, (Time) param);
-            return;
-        }
-        if (param.getClass() == Integer.class) {
-            pstmt.setInt(index, (Integer) param);
+            pstmt.setObject(index, paramList.get(index - 1));
         }
     }
 }
