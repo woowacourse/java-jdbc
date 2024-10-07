@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -19,19 +18,19 @@ public abstract class AbstractJdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(User user) {
+    public void update() {
         String query = createQuery();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             log.debug("query : {}", query);
-            setValues(user, pstmt);
+            setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    protected abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
     protected abstract String createQuery();
 
