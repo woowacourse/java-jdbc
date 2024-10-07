@@ -52,8 +52,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setValues(pstmt, params);
-            final ResultSet resultSet = pstmt.executeQuery();
-            return getResults(rowMapper, resultSet);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DatabaseException("Database error occurred while executing query.", e);
@@ -66,11 +65,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getResults(final RowMapper<T> rowMapper, final ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet));
+    private <T> List<T> executeQuery(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
         }
-        return results;
     }
 }
