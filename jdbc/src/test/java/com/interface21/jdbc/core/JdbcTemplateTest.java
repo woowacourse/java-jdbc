@@ -74,7 +74,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("queryForObject다 결과가 1개면 정상적으로 객체를 반환한.")
+    @DisplayName("queryForObject 결과가 1개면 정상적으로 객체를 반환한다.")
     void queryForObjectTest() throws SQLException {
         String sql = "SELECT * FROM user WHERE name = ?";
         RowMapper<User> rowMapper = rs -> new User(1L, "naknak");
