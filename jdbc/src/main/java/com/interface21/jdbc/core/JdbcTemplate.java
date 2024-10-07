@@ -47,11 +47,22 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, rowMapper, args);
         if (result.size() != 1) {
-            throw new DataAccessException();
+            throw new DataAccessException("조회하려는 데이터가 여러 개입니다.");
         }
         return result.get(0);
     }
 
-//    public int update(String sql, Object... args) {
-//    }
+    public int update(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement psmt = conn.prepareStatement(sql)
+        ) {
+            for (int i = 1; i <= args.length; i++) {
+                psmt.setObject(i, args[i - 1]);
+            }
+
+            return psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
