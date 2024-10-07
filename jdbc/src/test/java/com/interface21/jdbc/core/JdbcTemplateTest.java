@@ -102,7 +102,7 @@ class JdbcTemplateTest {
 
         private void setResultSet() throws SQLException {
             ResultSet resultSet = mock(ResultSet.class);
-            when(resultSet.next()).thenReturn(true,true, false);
+            when(resultSet.next()).thenReturn(true, true, false);
 
             when(resultSet.getLong("id")).thenReturn(FIRST_USER.id(), SECOND_USER.id());
             when(resultSet.getString("account")).thenReturn(FIRST_USER.account(), SECOND_USER.account());
