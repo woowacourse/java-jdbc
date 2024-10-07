@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -29,12 +30,23 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        PreparedStatementSetter pss = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        };
+        jdbcTemplate.update(sql, pss);
     }
 
     public void update(final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        PreparedStatementSetter pss = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        };
+        jdbcTemplate.update(sql, pss);
     }
 
     public List<User> findAll() {
@@ -44,11 +56,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        PreparedStatementSetter pss = pstmt -> pstmt.setLong(1, id);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss);
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        PreparedStatementSetter pss = pstmt -> pstmt.setString(1, account);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss);
     }
 }

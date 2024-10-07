@@ -23,26 +23,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(String sql, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setValues(pstmt, args);
+            pss.setValues(pstmt);
             return pstmt.executeUpdate();
         });
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setValues(pstmt, args);
+            pss.setValues(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapRows(rs, rowMapper);
             }
         });
     }
 
-    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
     private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
@@ -70,8 +72,8 @@ public class JdbcTemplate {
         log.debug("Executing prepared SQL statement : [ {} ]", sql);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
         }
@@ -79,5 +81,9 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.getFirst();
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 }
