@@ -26,11 +26,11 @@ public abstract class AbstractJdbcTemplate {
             setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement preparedStatement) throws SQLException;
 
     protected abstract String createQuery();
 
