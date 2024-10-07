@@ -34,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Object executeQueryForObject(String sql, List<Object> paramList, Maker maker) {
+    public <T> T executeQueryForObject(String sql, List<Object> paramList, ObjectMaker<T> maker) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -53,7 +53,7 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> executeQueryForObjects(String sql, List<Object> paramList, Maker maker) {
+    public <T> List<T> executeQueryForObjects(String sql, List<Object> paramList, ObjectMaker<T> maker) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -62,9 +62,9 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            List<Object> objects = new ArrayList<>();
+            List<T> objects = new ArrayList<>();
             if (resultSet.next()) {
-                Object object = maker.make(resultSet);
+                T object = maker.make(resultSet);
                 objects.add(object);
             }
             return objects;

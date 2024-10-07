@@ -43,15 +43,7 @@ public class UserDao {
 
         List<Object> paramList = new ArrayList<>();
 
-        List<Object> results = jdbcTemplate.executeQueryForObjects(sql, paramList, maker);
-
-        List<User> users = new ArrayList<>();
-        for (Object result : results) {
-            if (result instanceof User) {
-                users.add((User) result);
-            }
-        }
-        return users;
+        return jdbcTemplate.executeQueryForObjects(sql, paramList, maker);
     }
 
     public User findById(final Long id) {
@@ -60,7 +52,7 @@ public class UserDao {
         List<Object> paramList = new ArrayList<>();
         paramList.add(id);
 
-        return (User) jdbcTemplate.executeQueryForObject(sql, paramList, maker);
+        return jdbcTemplate.executeQueryForObject(sql, paramList, maker);
     }
 
     public User findByAccount(final String account) {
@@ -69,6 +61,6 @@ public class UserDao {
         List<Object> paramList = new ArrayList<>();
         paramList.add(account);
 
-        return (User) jdbcTemplate.executeQueryForObject(sql, paramList, maker);
+        return jdbcTemplate.executeQueryForObject(sql, paramList, maker);
     }
 }

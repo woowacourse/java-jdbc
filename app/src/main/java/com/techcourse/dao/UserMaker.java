@@ -1,11 +1,11 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.Maker;
+import com.interface21.jdbc.core.ObjectMaker;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UserMaker implements Maker {
+public class UserMaker implements ObjectMaker<User> {
 
     @Override
     public User make(ResultSet resultSet) throws SQLException {

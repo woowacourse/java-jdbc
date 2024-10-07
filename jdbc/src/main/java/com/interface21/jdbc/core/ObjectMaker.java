@@ -3,7 +3,7 @@ package com.interface21.jdbc.core;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface Maker {
+public interface ObjectMaker<T> {
 
-    public Object make(ResultSet resultSet) throws SQLException;
+    T make(ResultSet resultSet) throws SQLException;
 }
