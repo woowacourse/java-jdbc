@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcUserDaoTest {
 
-    private UserDao userDao;
+    private JdbcUserDao userDao;
 
     @BeforeEach
     void setup() {

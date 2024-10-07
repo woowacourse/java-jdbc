@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DataNotFoundException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +14,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcUserDao implements UserDao {
+public class JdbcUserDao {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcUserDao.class);
 
@@ -23,17 +24,17 @@ public class JdbcUserDao implements UserDao {
         this.dataSource = dataSource;
     }
 
-    @Override
+    public JdbcUserDao(final JdbcTemplate jdbcTemplate) {
+        this.dataSource = null;
+    }
+
     public void insert(final User user) {
-        String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        String sql = createQueryForInsert();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -41,18 +42,24 @@ public class JdbcUserDao implements UserDao {
         }
     }
 
-    @Override
+    private void setValuesForInsert(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
+    private String createQueryForInsert() {
+        return "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+    }
+
     public void update(final User user) {
-        String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=?";
+        String sql = createQueryForUpdate();
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -60,7 +67,17 @@ public class JdbcUserDao implements UserDao {
         }
     }
 
-    @Override
+    private void setValuesForUpdate(User user, PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
+    }
+
+    private String createQueryForUpdate() {
+        return "UPDATE users SET account=?, password=?, email=? WHERE id=?";
+    }
+
     public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
         try (Connection conn = dataSource.getConnection();
@@ -84,7 +101,6 @@ public class JdbcUserDao implements UserDao {
         }
     }
 
-    @Override
     public User findById(final Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
 
@@ -110,7 +126,6 @@ public class JdbcUserDao implements UserDao {
         }
     }
 
-    @Override
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account=?";
 
