@@ -27,7 +27,7 @@ class UserDaoTest {
     void tearDown() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         jdbcTemplate.execute("truncate table users");
-        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+        jdbcTemplate.execute("alter table users alter column id restart with 1");
     }
 
     @Test
