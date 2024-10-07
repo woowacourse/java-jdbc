@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcException;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
@@ -15,7 +16,7 @@ public class UserRowMapper implements RowMapper {
                     resultSet.getString("password"),
                     resultSet.getString("email"));
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during mapping row into object.", e);
         }
     }
 }

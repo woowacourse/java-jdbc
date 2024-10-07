@@ -38,7 +38,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the select query.", e);
         }
     }
 
@@ -56,7 +56,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the select query.", e);
         }
     }
 
@@ -73,7 +73,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the update query.", e);
         }
     }
 }
