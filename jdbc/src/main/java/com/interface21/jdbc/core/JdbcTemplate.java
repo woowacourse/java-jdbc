@@ -47,18 +47,6 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                T object = rowMapper.mapRow(rs, rs.getRow());
-                result.add(object);
-            }
-
-            return result;
-        }
-    }
-
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -66,17 +54,27 @@ public class JdbcTemplate {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
-            return getQueryForObjectResult(rowMapper, pstmt);
+            List<T> result = getQueryResult(rowMapper, pstmt);
+            validateSingleResult(result);
+
+            return result.get(0);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    private <T> T getQueryForObjectResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> void validateSingleResult(List<T> result) {
+        if(result.size() != 1) {
+            throw new DataAccessException("데이터 개수가 1개가 아닙니다. (size: %d)".formatted(result.size()));
+        }
+    }
+
+    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
-            T result = null;
-            if (rs.next()) {
-                result = rowMapper.mapRow(rs, rs.getRow());
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                T object = rowMapper.mapRow(rs, rs.getRow());
+                result.add(object);
             }
 
             return result;
