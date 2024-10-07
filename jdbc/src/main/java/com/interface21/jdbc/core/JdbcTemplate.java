@@ -1,13 +1,11 @@
 package com.interface21.jdbc.core;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +20,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql) {
+    public int update(String sql) {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
 
-            statement.executeUpdate(sql);
+            return statement.executeUpdate(sql);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
