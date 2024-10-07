@@ -85,7 +85,9 @@ class JdbcTemplateTest {
         final PreparedStatementStrategy preparedStatementStrategy = mock(PreparedStatementStrategy.class);
         when(preparedStatementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true).thenReturn(false);
+        when(resultSet.next()).thenReturn(true)
+                .thenReturn(true)
+                .thenReturn(false);
 
         final RowMapStrategy<String> rowMapStrategy = mock(RowMapStrategy.class);
         when(rowMapStrategy.mapRow(resultSet)).thenReturn("테스트결과");
@@ -94,7 +96,7 @@ class JdbcTemplateTest {
         final List<String> result = jdbcTemplate.query(preparedStatementStrategy, rowMapStrategy);
 
         // then
-        assertThat(result).hasSize(1);
+        assertThat(result).hasSize(2);
         assertThat(result.getFirst()).isEqualTo("테스트결과");
     }
 }
