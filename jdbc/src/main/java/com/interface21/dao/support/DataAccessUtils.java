@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 public class DataAccessUtils {
 
     @Nullable
-    public static <T> T nullableSingleResult(@Nullable Collection<T> results) throws DataAccessException {
+    public static <T> T getNullableSingleResult(@Nullable Collection<T> results) throws DataAccessException {
         if (results == null || results.isEmpty()) {
             throw new DataAccessException("Expected 1 result but found 0");
         }

@@ -58,7 +58,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> result = query(sql, rowMapper, params);
-        return DataAccessUtils.nullableSingleResult(result);
+        return DataAccessUtils.getNullableSingleResult(result);
     }
 
     private void setParameters(PreparedStatement statement, Object... params) throws SQLException {
