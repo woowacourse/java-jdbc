@@ -26,9 +26,8 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int argumentIndex = 0; argumentIndex < conditions.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, conditions[argumentIndex]);
-            }
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(conditions);
+            statementSetter.setValues(preparedStatement);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -38,7 +37,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the select query.", e);
         }
     }
 
@@ -56,7 +55,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the select query.", e);
         }
     }
 
@@ -66,14 +65,13 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
 
-            for (int argumentIndex = 0; argumentIndex < arguments.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, arguments[argumentIndex]);
-            }
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(arguments);
+            statementSetter.setValues(preparedStatement);
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the update query.", e);
         }
     }
 }
