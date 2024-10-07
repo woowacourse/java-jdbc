@@ -1,6 +1,5 @@
 package com.interface21.jdbc.util;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,13 +25,9 @@ class WrapperToPrimitiveConverterTest {
 
     @Test
     @DisplayName("래퍼 클래스가 아니면, 그대로 반환한다.")
-    void object_not_convert(){
+    void object_not_convert() {
         final TestObject object = new TestObject("Just Testing");
         final Class<?> clazz = WrapperToPrimitiveConverter.getPrimitiveClass(object.getClass());
         assertThat(clazz).isEqualTo(object.getClass());
     }
-
-
-
-
 }

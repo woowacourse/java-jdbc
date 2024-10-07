@@ -3,7 +3,7 @@ package com.interface21.jdbc.result;
 import java.util.Map;
 import java.util.Optional;
 
-public record SelectSingleResult(Map<String, ?> columnMap) {
+public record SingleSelectResult(Map<String, ?> columnMap) {
 
     @SuppressWarnings("unchecked")
     public <T> T getColumnValue(final String columnName) {

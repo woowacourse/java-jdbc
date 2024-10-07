@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.result.SelectMultiResult;
-import com.interface21.jdbc.result.SelectSingleResult;
+import com.interface21.jdbc.result.MultiSelectResult;
+import com.interface21.jdbc.result.SingleSelectResult;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void write(final String sql, final Object... params) {
+    public void command(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setStatementsWithPOJOType(pstmt, params);
@@ -30,30 +30,32 @@ public class JdbcTemplate {
         }
     }
 
-    public SelectSingleResult selectOne(final String sql, final Object... params) {
+    public SingleSelectResult querySingle(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setStatementsWithPOJOType(pstmt, params);
-            final ResultSet rs = pstmt.executeQuery();
-            return parseSelectSingle(rs);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return parseSingleSelect(rs);
+            }
         } catch (final SQLException exception) {
             throw new RuntimeException(exception);
         }
     }
 
-    public SelectMultiResult selectMulti(final String sql, final Object... params) {
+    public MultiSelectResult queryMulti(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setStatementsWithPOJOType(pstmt, params);
-            final ResultSet rs = pstmt.executeQuery();
-            return parseSelectMulti(rs);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return parseMultiSelect(rs);
+            }
         } catch (final SQLException exception) {
             throw new RuntimeException(exception);
         }
     }
 
 
-    private SelectSingleResult parseSelectSingle(final ResultSet resultSet) throws SQLException {
+    private SingleSelectResult parseSingleSelect(final ResultSet resultSet) throws SQLException {
         final ResultSetMetaData metaData = resultSet.getMetaData();
         final Map<String, Object> map = new HashMap<>();
         if (resultSet.next()) {
@@ -61,20 +63,20 @@ public class JdbcTemplate {
                 map.put(metaData.getColumnName(i), resultSet.getObject(i));
             }
         }
-        return new SelectSingleResult(map);
+        return new SingleSelectResult(map);
     }
 
-    private SelectMultiResult parseSelectMulti(final ResultSet resultSet) throws SQLException {
+    private MultiSelectResult parseMultiSelect(final ResultSet resultSet) throws SQLException {
         final ResultSetMetaData metaData = resultSet.getMetaData();
 
-        final List<SelectSingleResult> results = new ArrayList<>();
+        final List<SingleSelectResult> results = new ArrayList<>();
         while (resultSet.next()) {
             final Map<String, Object> map = new HashMap<>();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 map.put(metaData.getColumnName(i), resultSet.getObject(i));
             }
-            results.add(new SelectSingleResult(map));
+            results.add(new SingleSelectResult(map));
         }
-        return new SelectMultiResult(results);
+        return new MultiSelectResult(results);
     }
 }

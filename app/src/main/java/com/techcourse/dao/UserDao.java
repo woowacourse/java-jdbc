@@ -1,8 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.result.SelectMultiResult;
-import com.interface21.jdbc.result.SelectSingleResult;
+import com.interface21.jdbc.result.MultiSelectResult;
+import com.interface21.jdbc.result.SingleSelectResult;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -22,7 +22,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.write(sql,
+        jdbcTemplate.command(sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail());
@@ -30,7 +30,7 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.write(sql,
+        jdbcTemplate.command(sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
@@ -39,7 +39,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final SelectMultiResult queryResult = jdbcTemplate.selectMulti(sql);
+        final MultiSelectResult queryResult = jdbcTemplate.queryMulti(sql);
         return queryResult.stream()
                 .map(this::mapperToUser)
                 .toList();
@@ -47,7 +47,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final SelectSingleResult queryResult = jdbcTemplate.selectOne(sql, id);
+        final SingleSelectResult queryResult = jdbcTemplate.querySingle(sql, id);
         return new User(
                 queryResult.getColumnValue("id"),
                 queryResult.getColumnValue("account"),
@@ -58,11 +58,11 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final SelectSingleResult queryResult = jdbcTemplate.selectOne(sql, account);
+        final SingleSelectResult queryResult = jdbcTemplate.querySingle(sql, account);
         return mapperToUser(queryResult);
     }
 
-    private User mapperToUser(final SelectSingleResult queryResult) {
+    private User mapperToUser(final SingleSelectResult queryResult) {
         return new User(
                 queryResult.getColumnValue("id"),
                 queryResult.getColumnValue("account"),
