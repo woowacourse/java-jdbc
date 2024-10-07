@@ -1,11 +1,11 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.StatementSetException;
 import com.interface21.jdbc.util.WrapperToPrimitiveConverter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 public class StatementSetter {
 
@@ -21,7 +21,7 @@ public class StatementSetter {
         }
     }
 
-    public static void setStatementsWithPOJOType(final PreparedStatement pstmt, final Object... params) throws SQLException {
+    public static void setStatementsWithPOJOType(final PreparedStatement pstmt, final Object... params) {
         for (int i = 0; i < params.length; i++) {
             setStatementWithPOJOType(pstmt, i, params[i]);
         }
@@ -32,7 +32,7 @@ public class StatementSetter {
             final Method method = findMethodWithPOJO(param);
             method.invoke(pstmt, index + START_INDEX, param);
         } catch (final InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new StatementSetException(String.format("%d 번째 %s 에 대한 파라미터 설정을 실패했습니다.", index, param), e);
         }
     }
 

@@ -1,5 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.ConnectionFailException;
+import com.interface21.jdbc.exception.QueryExecutionException;
+import com.interface21.jdbc.exception.QueryParseException;
 import com.interface21.jdbc.result.MultiSelectResult;
 import com.interface21.jdbc.result.SingleSelectResult;
 
@@ -24,9 +27,13 @@ public class JdbcTemplate {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setStatementsWithPOJOType(pstmt, params);
-            pstmt.executeUpdate();
+            try {
+                pstmt.executeUpdate();
+            } catch (final SQLException exception) {
+                throw new QueryExecutionException("쿼리 실행중 예외가 발생했습니다", exception);
+            }
         } catch (final SQLException exception) {
-            throw new RuntimeException(exception);
+            throw new ConnectionFailException("연결을 실패했습니다", exception);
         }
     }
 
@@ -36,9 +43,11 @@ public class JdbcTemplate {
             setStatementsWithPOJOType(pstmt, params);
             try (final ResultSet rs = pstmt.executeQuery()) {
                 return parseSingleSelect(rs);
+            } catch (final SQLException exception) {
+                throw new QueryExecutionException("쿼리 실행중 예외가 발생했습니다", exception);
             }
         } catch (final SQLException exception) {
-            throw new RuntimeException(exception);
+            throw new ConnectionFailException("연결을 실패했습니다", exception);
         }
     }
 
@@ -48,35 +57,46 @@ public class JdbcTemplate {
             setStatementsWithPOJOType(pstmt, params);
             try (final ResultSet rs = pstmt.executeQuery()) {
                 return parseMultiSelect(rs);
+            } catch (final SQLException exception) {
+                throw new QueryExecutionException("쿼리 실행중 예외가 발생했습니다", exception);
             }
         } catch (final SQLException exception) {
-            throw new RuntimeException(exception);
+            throw new ConnectionFailException("연결을 실패했습니다", exception);
         }
     }
 
 
-    private SingleSelectResult parseSingleSelect(final ResultSet resultSet) throws SQLException {
-        final ResultSetMetaData metaData = resultSet.getMetaData();
-        final Map<String, Object> map = new HashMap<>();
-        if (resultSet.next()) {
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                map.put(metaData.getColumnName(i), resultSet.getObject(i));
-            }
-        }
-        return new SingleSelectResult(map);
-    }
-
-    private MultiSelectResult parseMultiSelect(final ResultSet resultSet) throws SQLException {
-        final ResultSetMetaData metaData = resultSet.getMetaData();
-
-        final List<SingleSelectResult> results = new ArrayList<>();
-        while (resultSet.next()) {
+    private SingleSelectResult parseSingleSelect(final ResultSet resultSet) {
+        try {
+            final ResultSetMetaData metaData = resultSet.getMetaData();
             final Map<String, Object> map = new HashMap<>();
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                map.put(metaData.getColumnName(i), resultSet.getObject(i));
+            if (resultSet.next()) {
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    map.put(metaData.getColumnName(i), resultSet.getObject(i));
+                }
             }
-            results.add(new SingleSelectResult(map));
+            return new SingleSelectResult(map);
+        } catch (final SQLException e) {
+            throw new QueryParseException("단일 데이터 변환 중 에러가 발생했습니다.", e);
         }
-        return new MultiSelectResult(results);
+
+    }
+
+    private MultiSelectResult parseMultiSelect(final ResultSet resultSet) {
+        try {
+            final ResultSetMetaData metaData = resultSet.getMetaData();
+
+            final List<SingleSelectResult> results = new ArrayList<>();
+            while (resultSet.next()) {
+                final Map<String, Object> map = new HashMap<>();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    map.put(metaData.getColumnName(i), resultSet.getObject(i));
+                }
+                results.add(new SingleSelectResult(map));
+            }
+            return new MultiSelectResult(results);
+        } catch (final SQLException e) {
+            throw new QueryParseException("멀티 데이터 변환 중 에러가 발생했습니다.", e);
+        }
     }
 }
