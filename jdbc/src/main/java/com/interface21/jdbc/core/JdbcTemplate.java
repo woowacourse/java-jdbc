@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -22,27 +21,53 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        executeQuery(sql, preparedStatement -> {
-            preparedStatement.executeUpdate();
-            return null;
-        }, preparedStatementSetter);
+        executeUpdate(
+                sql,
+                preparedStatementSetter);
     }
 
-    public <T> Optional<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        return executeQuery(sql, preparedStatement -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return resultMapper.findResult(resultSet, rowMapper);
-        }, preparedStatementSetter);
+    public <T> List<T> readAll(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper
+    ) {
+        return executeQuery(
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> resultMapper.getResults(preparedStatement.executeQuery(), rowMapper)
+        );
     }
 
-    public <T> List<T> readAll(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        return executeQuery(sql, preparedStatement -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return resultMapper.getResults(resultSet, rowMapper);
-        }, preparedStatementSetter);
+    public <T> Optional<T> query(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper
+    ) {
+        return executeQuery(
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> resultMapper.findResult(preparedStatement.executeQuery(), rowMapper)
+        );
     }
 
-    private <T> T executeQuery(final String sql, final QueryFunction<PreparedStatement, T> action, final PreparedStatementSetter preparedStatementSetter) {
+    private int executeUpdate(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
+        }
+    }
+
+    private <T> T executeQuery(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final QueryFunction<PreparedStatement, T> action
+    ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
