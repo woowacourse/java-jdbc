@@ -28,41 +28,32 @@ public class UserDao {
     public void insert(final User user) {
         final var query = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(query, pstmt -> {
-            pstmt.setObject(1, user.getAccount());
-            pstmt.setObject(2, user.getPassword());
-            pstmt.setObject(3, user.getEmail());
-        });
+        jdbcTemplate.update(query, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var query = "update users set account = ?, password = ?, email = ?";
 
-        jdbcTemplate.update(query, pstmt -> {
-            pstmt.setObject(1, user.getAccount());
-            pstmt.setObject(2, user.getPassword());
-            pstmt.setObject(3, user.getEmail());
-        });
+        jdbcTemplate.update(query, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
         final var query = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(query, ROW_MAPPER, pstmt -> {
-        });
+        return jdbcTemplate.query(query, ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var query = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(query, ROW_MAPPER, pstmt -> pstmt.setObject(1, id))
+        return jdbcTemplate.queryForObject(query, ROW_MAPPER, id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID를 갖는 유저가 없습니다."));
     }
 
     public User findByAccount(final String account) {
         final var query = "select * from users where account = ?";
 
-        return jdbcTemplate.queryForObject(query, ROW_MAPPER, pstmt -> pstmt.setObject(1, account))
+        return jdbcTemplate.queryForObject(query, ROW_MAPPER, account)
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 account를 갖는 유저가 없습니다."));
     }
 }

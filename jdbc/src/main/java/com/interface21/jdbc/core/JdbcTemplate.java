@@ -26,11 +26,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
+    public void update(final String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            pstmtSetter.setValues(pstmt);
+            setValues(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -38,8 +38,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
-        List<T> resultSet = query(sql, rowMapper, pstmtSetter);
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... params) {
+        List<T> resultSet = query(sql, rowMapper, params);
         if (resultSet.size() > 1) {
             throw new UnexpectedResultSizeException("Multiple results returned for query, but only one result expected.");
         }
@@ -47,16 +47,22 @@ public class JdbcTemplate {
         return resultSet.stream().findFirst();
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            pstmtSetter.setValues(pstmt);
+            setValues(pstmt, params);
             final ResultSet resultSet = pstmt.executeQuery();
             return getResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DatabaseException("Database error occurred while executing query.", e);
+        }
+    }
+
+    private void setValues(final PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
         }
     }
 
