@@ -34,7 +34,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForObject(String sql, Class<T> clazz, Object... parameters) {
+    public <T> List<T> queryForList(String sql, Class<T> clazz, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
 

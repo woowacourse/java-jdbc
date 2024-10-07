@@ -26,19 +26,19 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select * from users";
-        return jdbcTemplate.queryForObject(sql, User.class);
+        return jdbcTemplate.queryForList(sql, User.class);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ? limit 1";
-        List<User> users = jdbcTemplate.queryForObject(sql, User.class, id);
+        List<User> users = jdbcTemplate.queryForList(sql, User.class, id);
 
         return getOptionalResult(users);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        List<User> users = jdbcTemplate.queryForObject(sql, User.class, account);
+        List<User> users = jdbcTemplate.queryForList(sql, User.class, account);
 
         return getOptionalResult(users);
     }

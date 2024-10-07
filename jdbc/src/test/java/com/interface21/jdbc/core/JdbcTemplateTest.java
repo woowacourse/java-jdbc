@@ -93,7 +93,7 @@ class JdbcTemplateTest {
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('John', 20)");
 
         // when
-        List<TestUser> users = jdbcTemplate.queryForObject(
+        List<TestUser> users = jdbcTemplate.queryForList(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
 
         // then
@@ -108,7 +108,7 @@ class JdbcTemplateTest {
         jdbcTemplate.executeUpdate("INSERT INTO test_user(name, age) values ('Jake', 20)");
 
         // when
-        List<TestUser> users = jdbcTemplate.queryForObject(
+        List<TestUser> users = jdbcTemplate.queryForList(
                 "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
 
         // then
