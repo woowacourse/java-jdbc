@@ -22,45 +22,28 @@ public class JdbcTemplate {
     }
 
     public int execute(String sql, Object... parameters) {
+        return executeQueryExecutor(PreparedStatement::executeUpdate, sql, parameters);
+    }
+
+    private <T> T executeQueryExecutor(QueryExecutor<T> queryExecutor, String sql, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            setParameters(parameters, pstmt);
-            return pstmt.executeUpdate();
+            queryExecutor.setParameters(preparedStatement, parameters);
+            return queryExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            pstmt.setString(i + 1, String.valueOf(parameters[i]));
         }
     }
 
     public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        ResultSet resultSet = query(sql, parameters);
-        try {
-            return parseResults(resultSetParser, resultSet);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private ResultSet query(String sql, Object... parameters) {
-        try {
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+        return executeQueryExecutor((preparedStatement) -> {
             log.debug("query : {}", sql);
-            setParameters(parameters, pstmt);
-            return pstmt.executeQuery();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return parseResults(resultSetParser, resultSet);
+        }, sql, parameters);
     }
 
     private <T> List<T> parseResults(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
@@ -72,13 +55,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        ResultSet resultSet = query(sql, parameters);
-        try {
+        return executeQueryExecutor((preparedStatement) -> {
+            log.debug("query : {}", sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
             return parseResult(resultSetParser, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, sql, parameters);
     }
 
     private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
