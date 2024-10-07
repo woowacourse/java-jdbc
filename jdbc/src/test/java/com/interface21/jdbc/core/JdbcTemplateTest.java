@@ -49,8 +49,7 @@ class JdbcTemplateTest {
     @DisplayName("queryForObject의 결과가 존재하지 않으면 예외가 발생한다.")
     void queryForObjectTestWithNoResult() throws SQLException {
         String sql = "SELECT * FROM user WHERE name = ?";
-        AtomicLong id = new AtomicLong(1L);
-        RowMapper<User> rowMapper = rs -> new User(id.getAndIncrement(), "naknak");
+        RowMapper<User> rowMapper = rs -> null;
 
         when(resultSet.next()).thenReturn(false);
 
@@ -78,8 +77,7 @@ class JdbcTemplateTest {
     @DisplayName("queryForObject다 결과가 1개면 정상적으로 객체를 반환한.")
     void queryForObjectTest() throws SQLException {
         String sql = "SELECT * FROM user WHERE name = ?";
-        AtomicLong id = new AtomicLong(1L);
-        RowMapper<User> rowMapper = rs -> new User(id.getAndIncrement(), "naknak");
+        RowMapper<User> rowMapper = rs -> new User(1L, "naknak");
 
         when(resultSet.next())
                 .thenReturn(true, false);
