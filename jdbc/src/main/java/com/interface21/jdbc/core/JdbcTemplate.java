@@ -37,6 +37,9 @@ public class JdbcTemplate {
              ResultSet resultSet = getResultSet(params, preparedStatement)) {
             log.debug("query : {}", sql);
             resultSet.next();
+            if(!resultSet.isLast()){
+                throw new IllegalStateException("query result set has more than one row");
+            }
             return rowMapper.mapRow(resultSet, resultSet.getRow());
         } catch (SQLException e) {
             throw new RuntimeException(e);
