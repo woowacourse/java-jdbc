@@ -52,11 +52,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-             ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+        ResultSet resultSet = execute(preparedStatement, args);
+
+        try (connection; preparedStatement; resultSet) {
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
@@ -69,28 +70,30 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object ...args) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
-        ) {
+    private ResultSet execute(PreparedStatement preparedStatement, Object... args) {
+        try {
             setPreparedStatementParameter(args, preparedStatement);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(rowMapper.mapRow(resultSet, resultSet.getRow()));
-                }
-                return Optional.empty();
-            }
+            return preparedStatement.executeQuery();
         } catch (SQLException e) {
-            log.info("EXECUTE_QUERY_FOR_OBJECT_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+            log.info("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(preparedStatement + "을 실행하던 중 오류가 발생했습니다.");
         }
     }
 
-    public int update(String sql, Object ...args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+
+        if (results.size() != 1) {
+            return Optional.empty();
+        }
+
+        return Optional.of(results.getFirst());
+    }
+
+    public int update(String sql, Object... args) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(connection, sql)
-        ){
+        ) {
             setPreparedStatementParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
