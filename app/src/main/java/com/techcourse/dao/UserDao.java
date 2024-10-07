@@ -12,7 +12,7 @@ import java.util.List;
 
 public class UserDao {
 
-    public static final RowMapper<User> USER_ROW_MAPPER = (resultSet, rowNum) -> {
+    public static final RowMapper<User> USER_ROW_MAPPER = (resultSet) -> {
         if (resultSet.next()) {
             return new User(
                     resultSet.getLong(1),
