@@ -22,8 +22,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... params) {
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
-            setPreparedStatement(params, preparedStatement);
+             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
             preparedStatement.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
@@ -33,11 +32,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection);
-             ResultSet resultSet = getResultSet(params, preparedStatement)) {
+             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params);
+             ResultSet resultSet = getResultSet(preparedStatement)) {
             log.debug("query : {}", sql);
             resultSet.next();
-            if(!resultSet.isLast()){
+            if (!resultSet.isLast()) {
                 throw new IllegalStateException("query result set has more than one row");
             }
             return rowMapper.mapRow(resultSet, resultSet.getRow());
@@ -48,8 +47,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection);
-             ResultSet resultSet = getResultSet(params, preparedStatement)) {
+             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params);
+             ResultSet resultSet = getResultSet(preparedStatement)) {
             List<T> result = new ArrayList<>();
             log.debug("query : {}", sql);
             while (resultSet.next()) {
@@ -65,18 +64,20 @@ public class JdbcTemplate {
         return dataSource.getConnection();
     }
 
+    private PreparedStatement getPreparedStatement(String sql, Connection connection, Object[] params)
+            throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        setPreparedStatement(params, preparedStatement);
+        return preparedStatement;
+    }
+
     private void setPreparedStatement(Object[] params, PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             preparedStatement.setObject(i + 1, params[i]);
         }
     }
 
-    private PreparedStatement getPreparedStatement(String sql, Connection connection) throws SQLException {
-        return connection.prepareStatement(sql);
-    }
-
-    private ResultSet getResultSet(Object[] params, PreparedStatement preparedStatement) throws SQLException {
-        setPreparedStatement(params, preparedStatement);
+    private ResultSet getResultSet(PreparedStatement preparedStatement) throws SQLException {
         return preparedStatement.executeQuery();
     }
 }
