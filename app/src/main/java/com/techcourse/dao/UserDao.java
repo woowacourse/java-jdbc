@@ -15,7 +15,7 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final RowMapper<User> mapper = (rs, rowNum) -> new User(
-            rs.getInt("id"),
+            rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email")
