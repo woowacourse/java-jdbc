@@ -12,14 +12,14 @@ import java.sql.SQLException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class PreparedStatementSetterTest {
+class ArgumentPreparedStatementSetterTest {
 
     @Test
     @DisplayName("PreparedStatement에 인자 바인딩: 인자 순서대로 바인딩")
-    void bindParameters() throws SQLException {
+    void setValues() throws SQLException {
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter();
-        preparedStatementSetter.bindParameters(preparedStatement, "value1", "value2");
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter( "value1", "value2");
+        argumentPreparedStatementSetter.setValues(preparedStatement);
 
         verify(preparedStatement).setObject(1, "value1");
         verify(preparedStatement).setObject(2, "value2");
@@ -29,8 +29,8 @@ class PreparedStatementSetterTest {
     @DisplayName("PreparedStatement에 인자 바인딩: 인자가 없는 경우 바인딩되지 않음")
     void bindParameters_withNullArgument_shouldBindNullSuccessfully() throws SQLException {
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
-        PreparedStatementSetter preparedStatementSetter = new PreparedStatementSetter();
-        preparedStatementSetter.bindParameters(preparedStatement);
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter();
+        argumentPreparedStatementSetter.setValues(preparedStatement);
 
         verify(preparedStatement, never()).setObject(anyInt(), any());
     }

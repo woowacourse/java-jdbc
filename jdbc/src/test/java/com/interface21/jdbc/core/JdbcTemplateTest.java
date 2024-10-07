@@ -18,8 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.interface21.jdbc.datasource.DataSourceUtils;
-
 
 class JdbcTemplateTest {
 
@@ -47,7 +45,7 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("read 메소드로 쿼리 실행")
-    void read() throws SQLException {
+    void query() throws SQLException {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("column1")).thenReturn("value1");
@@ -56,17 +54,17 @@ class JdbcTemplateTest {
         TestClass expectedResult = new TestClass("value1", "value2");
 
         Optional<TestClass> result =
-                jdbcTemplate.read("select * from test where id = ?", TEST_CLASS_ROW_MAPPER, "value1", "value2");
+                jdbcTemplate.query("select * from test where id = ?", TEST_CLASS_ROW_MAPPER, new ArgumentPreparedStatementSetter("value1", "value2"));
 
         assertThat(result).contains(expectedResult);
     }
 
     @Test
     @DisplayName("write 메소드로 쿼리 실행")
-    void write() throws SQLException {
+    void update() throws SQLException {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        jdbcTemplate.write("insert into test (column1, column2) values (?, ?)", "value1", "value2");
+        jdbcTemplate.update("insert into test (column1, column2) values (?, ?)", new ArgumentPreparedStatementSetter("value1", "value2"));
 
         verify(preparedStatement).setObject(1, "value1");
         verify(preparedStatement).setObject(2, "value2");

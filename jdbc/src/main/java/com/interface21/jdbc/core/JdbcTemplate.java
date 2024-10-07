@@ -14,40 +14,38 @@ import com.interface21.dao.DataAccessException;
 public class JdbcTemplate {
 
     private final DataSource dataSource;
-    private final PreparedStatementSetter preparedStatementSetter;
     private final ResultMapper resultMapper;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.preparedStatementSetter = new PreparedStatementSetter();
         this.resultMapper = new ResultMapper();
     }
 
-    public void write(final String sql, final Object... args) {
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         executeQuery(sql, preparedStatement -> {
             preparedStatement.executeUpdate();
             return null;
-        }, args);
+        }, preparedStatementSetter);
     }
 
-    public <T> Optional<T> read(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         return executeQuery(sql, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultMapper.findResult(resultSet, rowMapper);
-        }, args);
+        }, preparedStatementSetter);
     }
 
-    public <T> List<T> readAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> readAll(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         return executeQuery(sql, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultMapper.getResults(resultSet, rowMapper);
-        }, args);
+        }, preparedStatementSetter);
     }
 
-    private <T> T executeQuery(final String sql, final QueryFunction<PreparedStatement, T> action, final Object... args) {
+    private <T> T executeQuery(final String sql, final QueryFunction<PreparedStatement, T> action, final PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.bindParameters(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             return action.apply(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
