@@ -12,16 +12,11 @@ import java.util.List;
 
 public class UserDao {
 
-    public static final RowMapper<User> USER_ROW_MAPPER = (resultSet) -> {
-        if (resultSet.next()) {
-            return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
-        }
-        return null;
-    };
+    public static final RowMapper<User> USER_ROW_MAPPER = (resultSet) -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4));
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
