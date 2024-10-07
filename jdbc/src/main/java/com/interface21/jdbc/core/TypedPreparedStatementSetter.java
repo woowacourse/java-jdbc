@@ -11,18 +11,16 @@ public class TypedPreparedStatementSetter implements PreparedStatementSetter {
 
     private static final int START_INDEX = 1;
     private static final ParameterSetter DEFAULT_PARAMETER_SETTER = PreparedStatement::setObject;
-    private static final Map<Class<?>, ParameterSetter> PARAMETER_SETTERS = new HashMap<>();
-
-    static {
-        PARAMETER_SETTERS.put(Integer.class, (preparedStatement, index, parameter) -> preparedStatement.setInt(index, (Integer) parameter));
-        PARAMETER_SETTERS.put(String.class, (preparedStatement, index, parameter) -> preparedStatement.setString(index, (String) parameter));
-        PARAMETER_SETTERS.put(Boolean.class, (preparedStatement, index, parameter) -> preparedStatement.setBoolean(index, (Boolean) parameter));
-        PARAMETER_SETTERS.put(Double.class, (preparedStatement, index, parameter) -> preparedStatement.setDouble(index, (Double) parameter));
-        PARAMETER_SETTERS.put(Float.class, (preparedStatement, index, parameter) -> preparedStatement.setFloat(index, (Float) parameter));
-        PARAMETER_SETTERS.put(Long.class, (preparedStatement, index, parameter) -> preparedStatement.setLong(index, (Long) parameter));
-        PARAMETER_SETTERS.put(Short.class, (preparedStatement, index, parameter) -> preparedStatement.setShort(index, (Short) parameter));
-        PARAMETER_SETTERS.put(Object.class, DEFAULT_PARAMETER_SETTER);
-    }
+    private static final Map<Class<?>, ParameterSetter> PARAMETER_SETTERS = Map.ofEntries(
+            Map.entry(Integer.class, (preparedStatement, index, parameter) -> preparedStatement.setInt(index, (Integer) parameter)),
+            Map.entry(String.class, (preparedStatement, index, parameter) -> preparedStatement.setString(index, (String) parameter)),
+            Map.entry(Boolean.class, (preparedStatement, index, parameter) -> preparedStatement.setBoolean(index, (Boolean) parameter)),
+            Map.entry(Double.class, (preparedStatement, index, parameter) -> preparedStatement.setDouble(index, (Double) parameter)),
+            Map.entry(Float.class, (preparedStatement, index, parameter) -> preparedStatement.setFloat(index, (Float) parameter)),
+            Map.entry(Long.class, (preparedStatement, index, parameter) -> preparedStatement.setLong(index, (Long) parameter)),
+            Map.entry(Short.class, (preparedStatement, index, parameter) -> preparedStatement.setShort(index, (Short) parameter)),
+            Map.entry(Object.class, DEFAULT_PARAMETER_SETTER)
+    );
 
     private final List<Object> parameters;
 
