@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -47,11 +48,19 @@ public class UserDao {
 
     public Optional<User> findById(final Long id) {
         final var sql = "SELECT * FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, mapper, id);
+        try {
+            return jdbcTemplate.queryForObject(sql, mapper, id);
+        } catch (IncorrectResultSizeDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "SELECT * FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, mapper, account);
+        try {
+            return jdbcTemplate.queryForObject(sql, mapper, account);
+        } catch (IncorrectResultSizeDataAccessException e) {
+            return Optional.empty();
+        }
     }
 }

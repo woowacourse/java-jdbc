@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,15 +42,17 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, statement -> {
-            ResultSet resultSet = statement.executeQuery();
-            if (!resultSet.next()) {
-                return Optional.empty();
-            }
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args)
+            throws IncorrectResultSizeDataAccessException {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
 
-            return Optional.of(rowMapper.mapRow(resultSet, 0));
-        }, args);
+        return Optional.of(results.getFirst());
     }
 
     private <T> T execute(String sql, SqlExecutor<T> executor, Object... args) {
