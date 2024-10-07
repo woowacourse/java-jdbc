@@ -37,13 +37,13 @@ public class UserDao {
     }
 
     public Optional<User> findById(final Long id) {
-        final String sql = "select id, account, password, email from users where id = ?";
+        final String sql = "select * from users where id = ?";
         List<User> users = jdbcTemplate.query(sql, userRowMapper, id);
         return DataAccessUtils.optionalResult(users);
     }
 
     public Optional<User> findByAccount(final String account) {
-        final String sql = "select id, account, password, email from users where account = ?";
+        final String sql = "select * from users where account = ?";
         List<User> users = jdbcTemplate.query(sql, userRowMapper, account);
         return DataAccessUtils.optionalResult(users);
     }
