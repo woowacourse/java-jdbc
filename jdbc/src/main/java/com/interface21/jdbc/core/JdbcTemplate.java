@@ -17,7 +17,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final StatementStrategy strategy) {
+    public void update(final PreparedStatementStrategy strategy) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = strategy.makePreparedStatement(connection)) {
             statement.executeUpdate();
@@ -26,9 +26,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final StatementStrategy statementStrategy, final RowMapStrategy<T> rowMapStrategy) {
+    public <T> T queryForObject(final PreparedStatementStrategy preparedStatementStrategy,
+                                final RowMapStrategy<T> rowMapStrategy) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = statementStrategy.makePreparedStatement(connection);
+             final PreparedStatement statement = preparedStatementStrategy.makePreparedStatement(connection);
              final ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
                 return rowMapStrategy.mapRow(resultSet);
@@ -39,9 +40,10 @@ public class JdbcTemplate {
         return null;
     }
 
-    public <T> List<T> query(final StatementStrategy statementStrategy, final RowMapStrategy<T> rowMapStrategy) {
+    public <T> List<T> query(final PreparedStatementStrategy preparedStatementStrategy,
+                             final RowMapStrategy<T> rowMapStrategy) {
         try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = statementStrategy.makePreparedStatement(connection);
+             final PreparedStatement statement = preparedStatementStrategy.makePreparedStatement(connection);
              final ResultSet resultSet = statement.executeQuery()) {
             final List<T> result = new ArrayList<>();
             while (resultSet.next()) {

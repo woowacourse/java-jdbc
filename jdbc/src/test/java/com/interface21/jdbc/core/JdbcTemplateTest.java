@@ -49,11 +49,11 @@ class JdbcTemplateTest {
     @DisplayName("DB에 쿼리하여 데이터를 업데이트한다.")
     void update_database_via_query() throws SQLException {
         // given
-        StatementStrategy statementStrategy = mock(StatementStrategy.class);
-        when(statementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
+        PreparedStatementStrategy preparedStatementStrategy = mock(PreparedStatementStrategy.class);
+        when(preparedStatementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
 
         // when
-        jdbcTemplate.update(statementStrategy);
+        jdbcTemplate.update(preparedStatementStrategy);
 
         // then
         verify(preparedStatement).executeUpdate();
@@ -63,8 +63,8 @@ class JdbcTemplateTest {
     @DisplayName("DB 조회 결과를 자바 객체로 불러온다.")
     void get_persistence_by_java_object() throws SQLException {
         // given
-        final StatementStrategy statementStrategy = mock(StatementStrategy.class);
-        when(statementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
+        final PreparedStatementStrategy preparedStatementStrategy = mock(PreparedStatementStrategy.class);
+        when(preparedStatementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
 
@@ -72,7 +72,7 @@ class JdbcTemplateTest {
         when(rowMapStrategy.mapRow(resultSet)).thenReturn("테스트결과");
 
         // when
-        final String result = jdbcTemplate.queryForObject(statementStrategy, rowMapStrategy);
+        final String result = jdbcTemplate.queryForObject(preparedStatementStrategy, rowMapStrategy);
 
         // then
         assertThat(result).isEqualTo("테스트결과");
@@ -82,8 +82,8 @@ class JdbcTemplateTest {
     @DisplayName("여러건의 데이터 조회 시 List 형태로 불러온다.")
     void get_persistence_by_List_collection() throws SQLException {
         // given
-        final StatementStrategy statementStrategy = mock(StatementStrategy.class);
-        when(statementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
+        final PreparedStatementStrategy preparedStatementStrategy = mock(PreparedStatementStrategy.class);
+        when(preparedStatementStrategy.makePreparedStatement(connection)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(false);
 
@@ -91,7 +91,7 @@ class JdbcTemplateTest {
         when(rowMapStrategy.mapRow(resultSet)).thenReturn("테스트결과");
 
         // when
-        final List<String> result = jdbcTemplate.query(statementStrategy, rowMapStrategy);
+        final List<String> result = jdbcTemplate.query(preparedStatementStrategy, rowMapStrategy);
 
         // then
         assertThat(result).hasSize(1);
