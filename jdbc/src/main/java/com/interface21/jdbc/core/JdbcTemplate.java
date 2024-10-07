@@ -31,7 +31,7 @@ public class JdbcTemplate {
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
