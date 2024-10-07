@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -23,6 +22,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
     public int update(String sql, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
             pss.setValues(pstmt);
@@ -30,29 +33,21 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(String sql, Object... args) {
-        return update(sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        return execute(sql, pstmt -> {
-            pss.setValues(pstmt);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapRows(rs, rowMapper);
-            }
-        });
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
-    private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
-        }
-        return results;
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), pss);
+    }
+
+    public <T> T query(String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rse.extractData(rs);
+            }
+        });
     }
 
     private <T> T execute(String sql, PreparedStatementCallBack<T> callBack) {
@@ -72,6 +67,10 @@ public class JdbcTemplate {
         log.debug("Executing prepared SQL statement : [ {} ]", sql);
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         List<T> results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
@@ -81,9 +80,5 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.getFirst();
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 }
