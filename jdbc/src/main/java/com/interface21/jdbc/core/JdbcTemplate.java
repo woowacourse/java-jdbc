@@ -85,7 +85,7 @@ public class JdbcTemplate {
             throw new EmptyResultDataAccessException();
         }
         if (result.size() != QUERY_FOR_OBJECT_EXPECTED_SIZE) {
-            throw new IncorrectResultSizeDataAccessException(result.size());
+            throw new IncorrectResultSizeDataAccessException(QUERY_FOR_OBJECT_EXPECTED_SIZE, result.size());
         }
     }
 }

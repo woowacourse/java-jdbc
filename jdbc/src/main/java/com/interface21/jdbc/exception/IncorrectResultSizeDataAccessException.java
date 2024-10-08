@@ -4,7 +4,7 @@ import com.interface21.dao.DataAccessException;
 
 public class IncorrectResultSizeDataAccessException extends DataAccessException {
 
-    public IncorrectResultSizeDataAccessException(int size) {
-        super(String.format("Expected size 1 but %d", size));
+    public IncorrectResultSizeDataAccessException(int expectedSize, int actualSize) {
+        super(String.format("Expected size %d but %d", expectedSize, actualSize));
     }
 }
