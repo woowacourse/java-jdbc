@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.ResultNotSingleException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,36 +37,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T read(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(params, pstmt);
-
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.rowMap(resultSet);
-            } else {
-                return null;
-            }
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
     public <T> List<T> readAll(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet resultSet = pstmt.executeQuery()) {
 
             log.debug("query : {}", sql);
 
             setParameters(params, pstmt);
 
-            ResultSet resultSet = pstmt.executeQuery();
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.rowMap(resultSet));
@@ -77,6 +57,15 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> T read(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> result = readAll(sql, rowMapper, params);
+        if (result.size() > 1) {
+            throw new ResultNotSingleException(result.size());
+        }
+
+        return  result.iterator().next();
     }
 
     private void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
