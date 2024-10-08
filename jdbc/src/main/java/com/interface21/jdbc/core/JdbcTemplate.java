@@ -40,9 +40,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryAndGetResults(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
+        return executeQueryExecutor(sql, resultSetParser, this::parseResults, parameters);
+    }
+
+    private <T, R> R executeQueryExecutor(
+            String sql,
+            ResultSetParser<T> resultSetParser,
+            ResultGenerator<T, R> rResultGenerator,
+            Object... parameters
+    ) {
         return executeQueryExecutor((preparedStatement) -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-            return parseResults(resultSetParser, resultSet);
+            return rResultGenerator.generate(resultSetParser, resultSet);
         }, sql, parameters);
     }
 
@@ -55,10 +64,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryAndGetResult(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        return executeQueryExecutor((preparedStatement) -> {
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return parseResult(resultSetParser, resultSet);
-        }, sql, parameters);
+        return executeQueryExecutor(sql, resultSetParser, this::parseResult, parameters);
     }
 
     private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
