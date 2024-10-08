@@ -58,12 +58,11 @@ public class JdbcTemplate {
         if (Objects.isNull(args) || args.length == 0) {
             throw new DataAccessException("PreparedStatement에 바인딩할 파라미터가 없습니다.");
         }
-        int index = 1;
-        for (Object arg : args) {
+        for (int index = 1; index <= args.length; index++) {
             try {
-                preparedStatement.setObject(index++, arg);
+                preparedStatement.setObject(index, args[index - 1]);
             } catch (SQLException e) {
-                log.error("파라미터 바인딩에 실패하였습니다. index: {}, arg: {}, 예외 메세지: {}", index - 1, arg, e.getMessage(), e);
+                log.error("파라미터 바인딩에 실패하였습니다. index: {}, arg: {}, 예외 메세지: {}", index, args[index - 1], e.getMessage(), e);
                 throw new DataAccessException(e);
             }
         }
