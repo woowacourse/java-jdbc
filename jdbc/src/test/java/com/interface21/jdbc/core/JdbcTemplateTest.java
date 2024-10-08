@@ -88,7 +88,7 @@ class JdbcTemplateTest {
 
         when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
         when(rs.getLong("id")).thenReturn(1L);
         when(rs.getString("account")).thenReturn("jojo");
         when(rs.getString("password")).thenReturn("1234");
@@ -113,7 +113,7 @@ class JdbcTemplateTest {
 
         when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
         when(rs.getLong("id")).thenThrow(SQLException.class);
 
         assertAll(

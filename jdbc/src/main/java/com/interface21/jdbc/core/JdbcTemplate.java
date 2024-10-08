@@ -35,11 +35,11 @@ public class JdbcTemplate {
     }
 
     public final <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapObjectResult(rowMapper, rs);
-            }
-        }, params);
+        List<T> results = query(sql, rowMapper, params);
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(results.getFirst());
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
@@ -75,12 +75,5 @@ public class JdbcTemplate {
             values.add(rowMapper.mapRow(rs));
         }
         return values;
-    }
-
-    private <T> Optional<T> mapObjectResult(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            return Optional.of(rowMapper.mapRow(rs));
-        }
-        return Optional.empty();
     }
 }
