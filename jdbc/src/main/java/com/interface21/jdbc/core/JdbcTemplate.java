@@ -17,6 +17,7 @@ import com.interface21.dao.DataAccessException;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int PARAMETER_INDEX_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -36,7 +37,7 @@ public class JdbcTemplate {
 
     private void setParameters(final Object[] args, final PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+            pstmt.setObject(i + PARAMETER_INDEX_OFFSET, args[i]);
         }
     }
 
