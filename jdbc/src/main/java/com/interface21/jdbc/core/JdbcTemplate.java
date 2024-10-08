@@ -74,11 +74,15 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
 
-        if (results.size() != 1) {
+        if (isSingleResult(results)) {
             return Optional.empty();
         }
 
         return Optional.of(results.getFirst());
+    }
+
+    private <T> boolean isSingleResult(List<T> results) {
+        return results.size() != 1;
     }
 
     public int update(String sql, Object... args) {
