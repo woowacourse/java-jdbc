@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.DataQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
@@ -51,7 +52,7 @@ public class JdbcTemplate {
             return resultSetExtractor.extractData(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataQueryException(e.getMessage(), e);
         }
     }
 
@@ -65,7 +66,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataQueryException(e.getMessage(), e);
         }
     }
 
