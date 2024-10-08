@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.Optional;
 
 public class UserService {
 
@@ -15,8 +16,12 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
+    public Optional<User> findById(final long id) {
         return userDao.findById(id);
+    }
+
+    public Optional<User> findByAccount(String account) {
+        return userDao.findByAccount(account);
     }
 
     public void insert(final User user) {
@@ -24,7 +29,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final var user = findById(id).orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
