@@ -118,11 +118,18 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |         +
+     * Read Committed   |         +
+     * Repeatable Read  |         -
+     * Serializable     |         -
      */
+
+    // TRANSACTION_NONE 예외 발생 org.h2.jdbc.JdbcSQLDataException: Invalid value "0" for parameter "isolation level"
+    // TRANSACTION_READ_UNCOMMITTED 테스트 실패. Non-repeatable reads 발생
+    // TRANSACTION_READ_COMMITTED 테스트 실패. Non-repeatable reads 발생. 다른 스레드에서 커밋된 것을 읽어옴
+    // TRANSACTION_REPEATABLE_READ 테스트 성공. Non-repeatable reads 발생하지 않음
+    // TRANSACTION_SERIALIZABLE 테스트 성공. Non-repeatable reads 발생하지 않음
+
     @Test
     void noneRepeatable() throws SQLException {
         setUp(createH2DataSource());
@@ -137,7 +144,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
