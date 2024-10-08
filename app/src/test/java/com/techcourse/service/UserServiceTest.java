@@ -7,8 +7,8 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserDaoJdbcImpl;
-import com.techcourse.dao.UserHistoryDaoJdbcImpl;
+import com.techcourse.dao.UserDaoImpl;
+import com.techcourse.dao.UserHistoryDaoImpl;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDaoJdbcImpl(jdbcTemplate);
+        this.userDao = new UserDaoImpl(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -32,7 +32,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDaoJdbcImpl(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDaoImpl(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";

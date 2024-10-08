@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -17,9 +16,11 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDaoJdbcImpl(new JdbcTemplate(DataSourceConfig.getInstance()));
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao = new UserDaoImpl(DataSourceConfig.getInstance());
+        final var gugu = new User("gugu", "password", "hkkang@woowahan.com");
+        final var jojo = new User("jojo", "1234", "jojo@woowahan.com");
+        userDao.insert(gugu);
+        userDao.insert(jojo);
     }
 
     @Test
@@ -50,7 +51,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L).get();
+        final var actual = userDao.findById(3L).get();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }

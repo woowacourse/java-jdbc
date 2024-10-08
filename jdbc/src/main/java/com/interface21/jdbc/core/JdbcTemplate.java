@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,58 +18,37 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParams(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public final void update(String sql, Object... params) {
+        execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public <T> Optional<T> executeQueryWithSingleData(
-            String sql,
-            Function<ResultSet, T> extractData,
-            Object... params
-    ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParams(pstmt, params);
+    public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                return extractSingle(rs, extractData);
+                return mapResults(rowMapper, rs);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, params);
     }
 
-    public <T> List<T> executeQueryWithMultiData(
-            String sql,
-            Function<ResultSet, T> extractData,
-            Object... params
-    ) {
+    public final <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = query(sql, rowMapper, params);
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(results.getFirst());
+    }
+
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return extractMultitude(rs, extractData);
-            }
+            return executor.apply(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -78,23 +56,24 @@ public class JdbcTemplate {
     }
 
     private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
+        validateParamsCount(pstmt, params);
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
     }
 
-    private <T> Optional<T> extractSingle(ResultSet rs, Function<ResultSet, T> extractData) throws SQLException {
-        if (rs.next()) {
-            return Optional.of(extractData.apply(rs));
+    private void validateParamsCount(PreparedStatement pstmt, Object... params) throws SQLException {
+        int paramsCount = pstmt.getParameterMetaData().getParameterCount();
+        if (paramsCount != params.length) {
+            throw new SQLException("파라미터 개수가 일치하지 않습니다.");
         }
-        return Optional.empty();
     }
 
-    private <T> List<T> extractMultitude(ResultSet rs, Function<ResultSet, T> extractData) throws SQLException {
-        List<T> data = new ArrayList<>();
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> values = new ArrayList<>();
         while (rs.next()) {
-            data.add(extractData.apply(rs));
+            values.add(rowMapper.mapRow(rs));
         }
-        return data;
+        return values;
     }
 }
