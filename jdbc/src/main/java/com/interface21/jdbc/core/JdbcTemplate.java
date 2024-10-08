@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import javax.sql.DataSource;
 
@@ -14,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.NoResultFoundException;
+import com.interface21.dao.NotSingleResultException;
 
 public class JdbcTemplate {
 
@@ -48,19 +49,26 @@ public class JdbcTemplate {
             log.debug("query : {}", query);
 
             ResultSet resultSet = pstmt.executeQuery();
+
+            validateSingleResult(resultSet);
             if (resultSet.next()) {
-                return objectMapper.map(resultSet, resultSet.getRow());
+                T result = objectMapper.map(resultSet, resultSet.getRow());
+                return result;
             }
 
-            DataAccessException dataAccessException = new DataAccessException(
-                    new NoSuchElementException("\"%s\" 에 해당하는 결과가 존재하지 않습니다.".formatted(query))
-            );
-            log.error(dataAccessException.getMessage(), dataAccessException);
-            throw dataAccessException;
+            throw new NoResultFoundException();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private void validateSingleResult(ResultSet resultSet) throws SQLException {
+        resultSet.last();
+        if (resultSet.getRow() > 1) {
+            throw new NotSingleResultException();
+        }
+        resultSet.beforeFirst();
     }
 
     public <T> List<T> getResults(String query, ObjectMapper<T> objectMapper, Object... parameters) {
