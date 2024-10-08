@@ -51,9 +51,12 @@ public class JdbcTemplate {
             if (resultSet.next()) {
                 return objectMapper.map(resultSet, resultSet.getRow());
             }
-            throw new DataAccessException(
+
+            DataAccessException dataAccessException = new DataAccessException(
                     new NoSuchElementException("\"%s\" 에 해당하는 결과가 존재하지 않습니다.".formatted(query))
             );
+            log.error(dataAccessException.getMessage(), dataAccessException);
+            throw dataAccessException;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
