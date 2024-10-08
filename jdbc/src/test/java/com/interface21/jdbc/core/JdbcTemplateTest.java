@@ -54,8 +54,8 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, id, name);
 
         // then
-        verify(preparedStatement).setLong(1, id);
-        verify(preparedStatement).setString(2, name);
+        verify(preparedStatement).setObject(1, id);
+        verify(preparedStatement).setObject(2, name);
         verify(preparedStatement).executeUpdate();
     }
 
@@ -73,7 +73,7 @@ class JdbcTemplateTest {
         List<TestUser> testUsers = jdbcTemplate.query(sql, getRowMapper(), targetName);
 
         // then
-        verify(preparedStatement).setString(1, targetName);
+        verify(preparedStatement).setObject(1, targetName);
         assertAll(
                 () -> assertThat(testUsers.size()).isEqualTo(2),
                 () -> assertThat(testUsers).containsExactlyInAnyOrder(new TestUser(1L, "pola"), new TestUser(2L, "pola"))
@@ -94,7 +94,7 @@ class JdbcTemplateTest {
         TestUser found = jdbcTemplate.queryForObject(sql, getRowMapper(), targetId);
 
         // then
-        verify(preparedStatement).setLong(1, targetId);
+        verify(preparedStatement).setObject(1, targetId);
         assertThat(found).isEqualTo(new TestUser(1L, "pola"));
     }
 
