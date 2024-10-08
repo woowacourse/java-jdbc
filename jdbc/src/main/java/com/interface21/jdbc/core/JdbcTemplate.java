@@ -20,9 +20,10 @@ public class JdbcTemplate {
         this.resultMapper = new ResultMapper();
     }
 
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    public void update(final String sql, final Object... values) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -30,10 +31,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(
-            final String sql,
-            final RowMapper<T> rowMapper
-    ) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return resultMapper.getResults(preparedStatement.executeQuery(), rowMapper);
@@ -44,11 +42,12 @@ public class JdbcTemplate {
 
     public <T> Optional<T> query(
             final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper
+            final RowMapper<T> rowMapper,
+            final Object... values
     ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
             preparedStatementSetter.setValues(preparedStatement);
             return resultMapper.findResult(preparedStatement.executeQuery(), rowMapper);
         } catch (SQLException e) {
