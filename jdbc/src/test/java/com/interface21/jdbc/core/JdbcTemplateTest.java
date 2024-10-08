@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 
 class JdbcTemplateTest {
 
-    private static RowMapper<User> rowMapper = (rs, rowNum) ->
+    private static RowMapper<User> rowMapper = rs ->
             new User(
                     rs.getLong("id"),
                     rs.getString("account")

@@ -44,7 +44,7 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rowMapper.mapRow(rs, rs.getRow());
+                    return rowMapper.mapRow(rs);
                 }
                 return null;
             }
@@ -63,7 +63,7 @@ public class JdbcTemplate {
             List<T> result = new ArrayList<>();
 
             while (rs.next()) {
-                result.add(rowMapper.mapRow(rs, rs.getRow()));
+                result.add(rowMapper.mapRow(rs));
             }
             return result;
         } catch (SQLException e) {

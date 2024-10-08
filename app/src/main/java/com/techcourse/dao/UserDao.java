@@ -12,7 +12,7 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final RowMapper<User> rowMapper = (resultSet, rowNum) ->
+    private static final RowMapper<User> rowMapper = resultSet ->
             new User(
                     resultSet.getLong("id"),
                     resultSet.getString("account"),
