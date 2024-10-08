@@ -20,7 +20,8 @@ class JdbcTemplateTest {
 
     private DataSource source;
     private ResultSet resultSet;
-
+    private Connection connection;
+    private PreparedStatement preparedStatement;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeAll
@@ -32,8 +33,8 @@ class JdbcTemplateTest {
     void setUp() throws SQLException {
         source = mock(DataSource.class);
         resultSet = mock(ResultSet.class);
-        Connection connection = mock(Connection.class);
-        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        connection = mock(Connection.class);
+        preparedStatement = mock(PreparedStatement.class);
 
         when(source.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
@@ -90,4 +91,22 @@ class JdbcTemplateTest {
 
         Assertions.assertThat(jdbcTemplate.queryForAll(String.class, sql)).isEmpty();
     }
+
+    @DisplayName("업데이트가 메서드가 실행되는지 확인한다.")
+    @Test
+    void queryForAllEmptyList2() throws SQLException {
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        PreparedStatement mockStatement = mock(PreparedStatement.class);
+
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(mockStatement);
+        when(mockStatement.executeUpdate()).thenReturn(1);
+
+        jdbcTemplate.update(sql);
+
+        verify(mockStatement).executeUpdate();
+
+    }
+
 }
