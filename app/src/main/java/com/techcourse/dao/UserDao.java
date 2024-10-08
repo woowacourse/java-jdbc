@@ -38,14 +38,6 @@ public class UserDao {
         return jdbcTemplate.query(sql, getUserRowMapper());
     }
 
-    private RowMapper<User> getUserRowMapper() {
-        return (rs, rowNum) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
-    }
-
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         log.info("find user by id: {}", id);
@@ -58,5 +50,13 @@ public class UserDao {
         log.info("find user by account: {}", account);
 
         return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+    }
+
+    private RowMapper<User> getUserRowMapper() {
+        return (rs, rowNum) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
     }
 }
