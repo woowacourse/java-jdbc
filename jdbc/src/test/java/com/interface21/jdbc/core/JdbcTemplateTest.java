@@ -64,7 +64,7 @@ class JdbcTemplateTest {
             // then
             assertThat(rowsAffected).isEqualTo(1);
             assertThat(findAllUser()).hasSize(1);
-            assertThat(findAllUser().get(0).getAccount()).isEqualTo(user.getAccount());
+            assertThat(findAllUser().getFirst().getAccount()).isEqualTo(user.getAccount());
         }
 
         @Test
@@ -78,7 +78,7 @@ class JdbcTemplateTest {
             // then
             assertThat(rowsAffected).isEqualTo(1);
             assertThat(findAllUser()).hasSize(1);
-            assertThat(findAllUser().get(0).getAccount()).isEqualTo("newGugu");
+            assertThat(findAllUser().getFirst().getAccount()).isEqualTo("newGugu");
         }
     }
 
