@@ -43,6 +43,17 @@ class JdbcTemplateTest {
     }
 
 
+    @DisplayName("단건 조회를 할 수 있다.")
+    @Test
+    void query() throws SQLException {
+        when(resultSet.isAfterLast()).thenReturn(false);
+        when(resultSet.next()).thenReturn(true, false);
+
+        Assertions.assertThatCode(() -> jdbcTemplate.query(String.class, "select * from user"))
+                .doesNotThrowAnyException();
+    }
+
+
     @DisplayName("단건 조회시 데이터가 없다면 null을 반환한다.")
     @Test
     void queryNull() {
@@ -57,7 +68,17 @@ class JdbcTemplateTest {
 
         Assertions.assertThatThrownBy(() -> jdbcTemplate.query(String.class, sql))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessage("한 건 이상의 데이터가 조회되었습니다.");
+                .hasMessage("두 개 이상의 데이터가 조회되었습니다.");
+    }
+
+    @DisplayName("리스트 조회를 할 수 있다.")
+    @Test
+    void queryList() throws SQLException {
+        when(resultSet.isAfterLast()).thenReturn(false);
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        Assertions.assertThatCode(() -> jdbcTemplate.queryForAll(String.class, "select * from user"))
+                .doesNotThrowAnyException();
     }
 
     @DisplayName("리스트로 조회시 데이터가 없다면 빈리스트가 반환된다.")
@@ -69,6 +90,4 @@ class JdbcTemplateTest {
 
         Assertions.assertThat(jdbcTemplate.queryForAll(String.class, sql)).isEmpty();
     }
-
-
 }
