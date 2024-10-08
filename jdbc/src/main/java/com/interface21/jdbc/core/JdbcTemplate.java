@@ -50,13 +50,17 @@ public class JdbcTemplate {
         return (rs, rm) -> {
             if (rs.next()) {
                 T entity = rm.mapRow(rs, rs.getRow());
-                if (rs.next()) {
-                    throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
-                }
+                validateResultSetCount(rs);
                 return Optional.ofNullable(entity);
             }
             return Optional.empty();
         };
+    }
+
+    private void validateResultSetCount(ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+        }
     }
 
     public DataSource getDataSource() {
