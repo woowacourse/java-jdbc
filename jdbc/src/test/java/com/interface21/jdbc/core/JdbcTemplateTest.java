@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -19,6 +20,8 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import com.interface21.dao.DataAccessException;
 
 class JdbcTemplateTest {
 
@@ -84,7 +87,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObject() throws SQLException {
         //given
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong(1)).thenReturn(1L);
         when(resultSet.getString(2)).thenReturn("pola");
         String sql = "select id, name from test_users where id = ?";
@@ -96,6 +99,36 @@ class JdbcTemplateTest {
         // then
         verify(preparedStatement).setObject(1, targetId);
         assertThat(found).isEqualTo(new TestUser(1L, "pola"));
+    }
+
+    @DisplayName("전달받은 sql과 파라미터의 조건에 맞는 객체가 없으면 예외를 발생시킨다.")
+    @Test
+    void queryForObjectEmpty() throws SQLException {
+        //given
+        when(resultSet.next()).thenReturn(false);
+        String sql = "select id, name from test_users where id = ?";
+        Long targetId = 1L;
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getRowMapper(), targetId))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("일치하는 데이터가 없습니다.");
+    }
+
+    @DisplayName("전달받은 sql과 파라미터의 조건에 맞는 객체가 2개 이상이면 예외를 발생시킨다.")
+    @Test
+    void queryForObjectTooManyResults() throws SQLException {
+        //given
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getLong(1)).thenReturn(1L, 2L);
+        when(resultSet.getString(2)).thenReturn("pola", "pola");
+        String sql = "select id, name from test_users where name = ?";
+        String targetName = "pola";
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, getRowMapper(), targetName))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("일치하는 데이터가 2개 이상입니다.");
     }
 
     private RowMapper<TestUser> getRowMapper() {
