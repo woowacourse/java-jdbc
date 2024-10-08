@@ -27,15 +27,24 @@ class JdbcTemplateTest {
                     rs.getString("account")
             );
 
-    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
+    private void verifyQueryResourcesClosed() throws SQLException {
+        verify(resultSet).close();
+        verifyConnectionClosed();
+    }
+
+    private void verifyConnectionClosed() throws SQLException {
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
+        DataSource dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -48,7 +57,7 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("업데이트 쿼리 실행이 성공한다.")
-    void update() throws SQLException {
+    void update() {
         //given
         String sql = "update users set account = ? where id = ?";
 
@@ -56,11 +65,12 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "test-ash", 1L);
 
         //then
-        verify(preparedStatement).setObject(1, "test-ash");
-        verify(preparedStatement).setObject(2, 1L);
-        verify(preparedStatement).executeUpdate();
-        verify(preparedStatement).close();
-        verify(connection).close();
+        assertAll(
+                () -> verify(preparedStatement).setObject(1, "test-ash"),
+                () -> verify(preparedStatement).setObject(2, 1L),
+                () -> verify(preparedStatement).executeUpdate(),
+                this::verifyConnectionClosed
+        );
     }
 
     @Test
@@ -71,9 +81,12 @@ class JdbcTemplateTest {
         doThrow(new SQLException("에러 테스트")).when(preparedStatement).executeUpdate();
 
         //when, then
-        assertThatThrownBy(() -> jdbcTemplate.update(sql, "test-ash", 1L))
-                .isExactlyInstanceOf(DataAccessException.class)
-                .hasMessageContaining("에러 테스트");
+        assertAll(
+                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, "test-ash", 1L))
+                        .isExactlyInstanceOf(DataAccessException.class)
+                        .hasMessageContaining("에러 테스트"),
+                this::verifyConnectionClosed
+        );
     }
 
     @Test
@@ -93,12 +106,9 @@ class JdbcTemplateTest {
         //then
         assertAll(
                 () -> assertThat(user.id).isEqualTo(1L),
-                () -> assertThat(user.account).isEqualTo("test-ash")
+                () -> assertThat(user.account).isEqualTo("test-ash"),
+                this::verifyQueryResourcesClosed
         );
-
-        verify(resultSet).close();
-        verify(preparedStatement).close();
-        verify(connection).close();
     }
 
     @Test
@@ -114,9 +124,10 @@ class JdbcTemplateTest {
         User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         //then
-        assertNull(user);
-
-        verify(resultSet).close();
+        assertAll(
+                () -> assertNull(user),
+                this::verifyQueryResourcesClosed
+        );
     }
 
     @Test
@@ -136,12 +147,11 @@ class JdbcTemplateTest {
         //then
         assertAll(
                 () -> assertThat(users.getFirst().account).isEqualTo("test"),
-                () -> assertThat(users.getLast().account).isEqualTo("ash")
+                () -> assertThat(users.getLast().account).isEqualTo("ash"),
+                () -> verify(resultSet, times(3)).next(),
+                () -> verify(resultSet, times(2)).getLong("id"),
+                this::verifyQueryResourcesClosed
         );
-
-        verify(resultSet, times(3)).next();
-        verify(resultSet, times(2)).getLong("id");
-        verify(resultSet).close();
     }
 
     static class User {
