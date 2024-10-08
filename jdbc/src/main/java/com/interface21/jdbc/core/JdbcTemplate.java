@@ -29,7 +29,7 @@ public class JdbcTemplate {
             return Optional.empty();
         }
         if (results.size() == 1) {
-            return Optional.of(results.get(0));
+            return Optional.of(results.getFirst());
         }
         throw new NotSingleResultDataAccessException();
     }
@@ -41,7 +41,7 @@ public class JdbcTemplate {
             log.debug("query = {}, {}", sql, Arrays.toString(parameters));
 
             List<T> result = new ArrayList<>();
-            if (resultSet.next()) {
+            while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
