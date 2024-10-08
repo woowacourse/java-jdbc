@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
@@ -33,18 +32,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select * from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.queryForList(sql, userRowMapper);
     }
 
     public Optional<User> findById(final Long id) {
         final String sql = "select * from users where id = ?";
-        List<User> users = jdbcTemplate.query(sql, userRowMapper, id);
-        return DataAccessUtils.optionalResult(users);
+        return jdbcTemplate.queryForOptional(sql, userRowMapper, id);
     }
 
     public Optional<User> findByAccount(final String account) {
         final String sql = "select * from users where account = ?";
-        List<User> users = jdbcTemplate.query(sql, userRowMapper, account);
-        return DataAccessUtils.optionalResult(users);
+        return jdbcTemplate.queryForOptional(sql, userRowMapper, account);
     }
 }

@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int FIRST_PARAMETER_INDEX = 1;
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -22,7 +25,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args)
+    public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = queryForList(sql, rowMapper, args);
+        return Optional.ofNullable(singleResult(results));
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... args)
             throws DataAccessException {
         return execute(sql, statement -> query(rowMapper, statement), args);
     }
@@ -42,12 +50,18 @@ public class JdbcTemplate {
         return results;
     }
 
-    public int update(final String sql, final Object... args) throws DataAccessException {
-        return execute(sql, this::update, args);
+    private <T> T singleResult(List<T> results) throws IncorrectResultSizeDataAccessException {
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > SINGLE_RESULT_SIZE) {
+            throw new IncorrectResultSizeDataAccessException(SINGLE_RESULT_SIZE, results.size());
+        }
+        return results.getFirst();
     }
 
-    private int update(final PreparedStatement statement) throws SQLException {
-        return statement.executeUpdate();
+    public int update(final String sql, final Object... args) throws DataAccessException {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
