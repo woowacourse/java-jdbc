@@ -36,11 +36,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id).orElseThrow();
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id).orElseThrow(IdNotExistException::new);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow();
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow(AccountNotExistException::new);
     }
 }
