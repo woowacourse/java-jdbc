@@ -1,16 +1,16 @@
 package support;
 
-public class User {
+public class TestUser {
 
     private Long id;
     private final String name;
 
-    public User(long id, String name) {
+    public TestUser(long id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public User(String name) {
+    public TestUser(String name) {
         this.name = name;
     }
 
