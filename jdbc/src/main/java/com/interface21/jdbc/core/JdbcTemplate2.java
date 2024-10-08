@@ -23,24 +23,26 @@ public class JdbcTemplate2 {
     }
 
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
+        execute(sql, preparedStatementSetter, (preparedStatement -> {
             preparedStatement.executeUpdate();
+            return null;
+        }));
+    }
+
+    <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
+                  PreparedStatementStrategy<T> strategy) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return strategy.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return getResults(rowMapper, preparedStatement);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, preparedStatementSetter, preparedStatement -> getResults(rowMapper, preparedStatement));
     }
 
     private <T> List<T> getResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
@@ -58,14 +60,8 @@ public class JdbcTemplate2 {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        ) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return getSingleObject(getResults(rowMapper, preparedStatement));
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, preparedStatementSetter,
+                preparedStatement -> getSingleObject(getResults(rowMapper, preparedStatement)));
     }
 
     private <T> T getSingleObject(List<T> results) {
