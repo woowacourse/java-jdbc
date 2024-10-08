@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import com.interface21.jdbc.exception.JdbcAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,9 +48,9 @@ class JdbcTemplateTest {
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
         int result = jdbcTemplate.update("UPDATE users SET name = ? WHERE id = ?", preparedStatement -> {
-                    preparedStatement.setString(1, "TRE");
-                    preparedStatement.setLong(2, 1L);
-                });
+            preparedStatement.setString(1, "TRE");
+            preparedStatement.setLong(2, 1L);
+        });
 
         assertThat(result).isEqualTo(1);
         verify(preparedStatement).setString(1, "TRE");
@@ -121,7 +122,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt("count")).thenReturn(1);
 
         int result = jdbcTemplate.queryForObject("SELECT COUNT(id) AS count FROM users",
-                rs -> rs.getInt("count"))
+                        rs -> rs.getInt("count"))
                 .orElseThrow();
 
         assertThat(result).isEqualTo(1);
@@ -147,7 +148,7 @@ class JdbcTemplateTest {
         };
 
         assertThatThrownBy(() -> jdbcTemplate.execute("INSERT into", action))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("잘못된 요청입니다.");
+                .isInstanceOf(JdbcAccessException.class)
+                .hasMessageContaining("INSERT into");
     }
 }
