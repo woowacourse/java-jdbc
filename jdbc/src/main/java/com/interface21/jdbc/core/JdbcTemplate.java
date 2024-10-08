@@ -30,6 +30,7 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             queryExecutor.setParameters(preparedStatement, parameters);
             return queryExecutor.execute(preparedStatement);
         } catch (SQLException e) {
@@ -40,7 +41,6 @@ public class JdbcTemplate {
 
     public <T> List<T> queryAndGetResults(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         return executeQueryExecutor((preparedStatement) -> {
-            log.debug("query : {}", sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             return parseResults(resultSetParser, resultSet);
         }, sql, parameters);
@@ -56,7 +56,6 @@ public class JdbcTemplate {
 
     public <T> T queryAndGetResult(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
         return executeQueryExecutor((preparedStatement) -> {
-            log.debug("query : {}", sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             return parseResult(resultSetParser, resultSet);
         }, sql, parameters);
