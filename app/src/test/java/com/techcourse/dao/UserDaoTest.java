@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -30,6 +31,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("Find all users from the datasource.")
     void findAll() {
         final var users = userDao.findAll();
 
@@ -39,6 +41,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("Find a user by id from the datasource.")
     void findById() {
         final var user = userDao.findById(1L);
 
@@ -46,6 +49,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("Find a user by account from the datasource.")
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
@@ -54,6 +58,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("Insert a user into the datasource.")
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
@@ -65,6 +70,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("Update password of a user from the datasource.")
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);

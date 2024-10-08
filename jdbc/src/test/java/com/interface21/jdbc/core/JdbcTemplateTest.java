@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
@@ -36,6 +37,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("Query an object from the datasource.")
     void queryForObject() throws SQLException {
         // given
         final var sql = "select * from users where id = ?";
@@ -57,6 +59,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("Query an object from the datasource.")
     void queryForList() throws SQLException {
         // given
         final var sql = "select * from users";
@@ -81,6 +84,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("Update a row from the datasource.")
     void update() throws SQLException {
         // given
         final var sql = "update users account = ? where id = ?";
