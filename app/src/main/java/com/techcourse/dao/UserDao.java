@@ -23,19 +23,12 @@ public class UserDao {
     }
 
     public void insert(User user) {
-        Query query = new QueryBuilder()
-                .insert("account", "password", "email")
-                .into("users")
-                .build();
+        Query query = createQueryForInsert();
         jdbcTemplate.queryForUpdate(query.getSql(), user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        Query query = new QueryBuilder()
-                .update("users")
-                .set("account", "password", "email")
-                .where(ConditionExpression.eq("id"))
-                .build();
+        Query query = createQueryForUpdate();
 
         jdbcTemplate.queryForUpdate(
                 query.getSql(),
@@ -63,7 +56,22 @@ public class UserDao {
         return jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
     }
 
-    public Query resolveEqualSql(String fieldName) {
+    private Query createQueryForInsert() {
+        return new QueryBuilder()
+                .insert("account", "password", "email")
+                .into("users")
+                .build();
+    }
+
+    private Query createQueryForUpdate() {
+        return new QueryBuilder()
+                .update("users")
+                .set("account", "password", "email")
+                .where(ConditionExpression.eq("id"))
+                .build();
+    }
+
+    private Query resolveEqualSql(String fieldName) {
         return new QueryBuilder()
                 .selectFrom("users")
                 .where(ConditionExpression.eq(fieldName))
