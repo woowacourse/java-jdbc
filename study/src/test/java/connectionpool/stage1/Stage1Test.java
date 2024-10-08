@@ -1,13 +1,12 @@
 package connectionpool.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage1Test {
 
@@ -28,6 +27,8 @@ class Stage1Test {
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
+        // default connection time : 30 초
+        // default max connections : 10 개
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
@@ -65,8 +66,17 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+
+        // preparedstatement를 재사용하기 위한 설정.
+        // 해당 설정은 hikaripool이 아닌 각 jdbc 구현제에서 활용된다 (MySQL : https://dev.mysql.com/doc/connector-j/en/connector-j-connp-props-performance-extensions.html")
+        // mysql에서는 preparedstatement를 캐싱하여 성능을 개선한다고 한다. :https://dev.mysql.com/doc/refman/8.0/en/statement-caching.html
+        // This cache helps reduce the overhead associated with repeatedly parsing and checking queries.
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+
+        // https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration 에서 권장하는 최적 값들
+        // cachesize는 preparedStatement의 개수를 얼마나 캐싱할 것임을 뜻
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        // sqlLimit은 sql 문자열 길이 제한. 캐시 길이보다 넘는 sql을 실행하면 캐시되지 않는다고 한다.
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         final var dataSource = new HikariDataSource(hikariConfig);
