@@ -104,7 +104,6 @@ class JdbcTemplateTest {
     private Food mapToObject(ResultSet rs) {
         try {
             return new Food(
-                    rs.getLong("id"),
                     rs.getString("name"),
                     rs.getInt("cost")
             );
@@ -113,5 +112,5 @@ class JdbcTemplateTest {
         }
     }
 
-    record Food (long id, String name, int cost) {}
+    record Food(String name, int cost) {}
 }
