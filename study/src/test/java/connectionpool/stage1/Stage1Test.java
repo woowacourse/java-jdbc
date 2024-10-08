@@ -1,13 +1,13 @@
 package connectionpool.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
+import java.util.Properties;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage1Test {
 
@@ -28,13 +28,18 @@ class Stage1Test {
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
+        // 커넥션 풀 생성
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
+        // 시작 시점에는 커넥션이 없다.
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
+
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
+            // 커넥션을 받아온 상태에서는 커넥션 풀에 하나의 커넥션이 활성화된다.
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
+        // 커넥션을 반납하면, 커넥션 풀에 활성화된 커넥션이 없어진다.
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
         jdbcConnectionPool.dispose();
@@ -60,18 +65,23 @@ class Stage1Test {
      */
     @Test
     void testHikariCP() {
-        final var hikariConfig = new HikariConfig();
+        HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl(H2_URL);
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+
+        // PreparedStatement 캐싱 활성화
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        // PreparedStatement 캐싱 사이즈 - 최대 250개의 쿼리를 캐싱하도록
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        // 캐싱된 쿼리의 최대 길이 - 2048 바이트, 이보다 더 킨 쿼리는 캐싱하지 않음
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-        final var dataSource = new HikariDataSource(hikariConfig);
-        final var properties = dataSource.getDataSourceProperties();
+        HikariDataSource dataSource = new HikariDataSource(hikariConfig);
+        Properties properties = dataSource.getDataSourceProperties();
 
+        // config 로 설정한 값이 잘 반영되었는지 확인
         assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);
         assertThat(properties.getProperty("cachePrepStmts")).isEqualTo("true");
         assertThat(properties.getProperty("prepStmtCacheSize")).isEqualTo("250");
