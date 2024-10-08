@@ -61,12 +61,14 @@ public class JdbcTemplate {
     }
 
     private <T> T fetchSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try(ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, rs.getRow());
-            }
-            return null;
+        List<T> results = fetchResults(rowMapper, pstmt);
+        if (results.isEmpty()) {
+            throw new RuntimeException("No result found");
         }
+        if (results.size() > 1) {
+            throw new RuntimeException("Too many results found");
+        }
+        return results.getFirst();
     }
 
     private <T> List<T> fetchResults(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
