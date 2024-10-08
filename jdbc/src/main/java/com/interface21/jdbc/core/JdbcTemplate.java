@@ -24,18 +24,14 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(connection, sql, parameters);
-             ResultSet resultSet = pstmt.executeQuery()) {
-            log.debug("query = {}, {}", sql, Arrays.toString(parameters));
-
-            if (resultSet.next()) {
-                return Optional.ofNullable(rowMapper.mapRow(resultSet));
-            }
+        List<T> results = query(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
             return Optional.empty();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
+        if (results.size() == 1) {
+            return Optional.of(results.get(0));
+        }
+        throw new NotSingleResultDataAccessException();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
