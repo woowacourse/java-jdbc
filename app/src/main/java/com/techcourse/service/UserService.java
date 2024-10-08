@@ -26,13 +26,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try {
-            User user = findById(id).orElseThrow(NoSuchElementException::new);
-            user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        User user = findById(id).orElseThrow(NoSuchElementException::new);
+        user.changePassword(newPassword);
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }
