@@ -64,7 +64,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
         List<T> resultSets = query(sql, rowMapper, values);
         try {
-            return Optional.of(resultSets.getFirst());
+            return Optional.ofNullable(resultSets.getFirst());
         } catch (NoSuchElementException e) {
             return Optional.empty();
         }
