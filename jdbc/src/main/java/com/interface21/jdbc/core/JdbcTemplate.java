@@ -17,9 +17,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementSetter preparedStatementSetter;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
@@ -45,7 +47,7 @@ public class JdbcTemplate {
     private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
-            assignSqlValues(values, preparedStatement);
+            preparedStatementSetter.setValues(values, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
@@ -60,9 +62,7 @@ public class JdbcTemplate {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
             log.debug("query : {}", sql);
-
-            assignSqlValues(values, preparedStatement);
-
+            preparedStatementSetter.setValues(values, preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -76,11 +76,5 @@ public class JdbcTemplate {
 
     private PreparedStatement getPreparedStatement(String sql, Connection connection) throws SQLException {
         return connection.prepareStatement(sql);
-    }
-
-    private void assignSqlValues(Object[] values, PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 1; i <= values.length; i++) {
-            preparedStatement.setObject(i, values[i - 1]);
-        }
     }
 }
