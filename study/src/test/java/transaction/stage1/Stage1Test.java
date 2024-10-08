@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |     +       |          +           | +
+ * Read Committed   |     -       |          +           | +
+ * Repeatable Read  |     -       |          -           | +
+ * Serializable     |     -       |          -           | -
  */
 class Stage1Test {
 
@@ -72,6 +72,7 @@ class Stage1Test {
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
+        connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
         // db에 데이터를 추가하고 커밋하기 전에
         userDao.insert(connection, new User("gugu", "password", "hkkang@woowahan.com"));
@@ -125,12 +126,13 @@ class Stage1Test {
 
         // db에 새로운 연결(사용자A)을 받아와서
         final var connection = dataSource.getConnection();
+//        connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -197,7 +199,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
