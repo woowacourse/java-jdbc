@@ -68,7 +68,7 @@ class PoolingVsNoPoolingTest {
         connect(dataSource);
         long end = ClockSource.currentTime();
 
-        // 테스트 결과를 확인한다.
+        // 테스트 결과를 확인한다. - 4s236ms
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
@@ -89,7 +89,7 @@ class PoolingVsNoPoolingTest {
         connect(hikariDataSource);
         long end = ClockSource.currentTime();
 
-        // 테스트 결과를 확인한다.
+        // 테스트 결과를 확인한다. - 590ms
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
