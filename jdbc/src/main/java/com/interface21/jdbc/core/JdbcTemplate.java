@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.exception.EmptyResultDataAccessException;
 import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -45,7 +46,7 @@ public class JdbcTemplate {
             return retrieveData(rowMapper, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -60,7 +61,7 @@ public class JdbcTemplate {
             return records.getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 

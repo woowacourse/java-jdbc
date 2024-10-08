@@ -21,7 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import support.User;
+import support.TestUser;
 
 class JdbcTemplateTest {
 
@@ -104,7 +104,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("wiib", "atom");
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        List<User> actual = jdbcTemplate.query(sql, rs -> new User(
+        List<TestUser> actual = jdbcTemplate.query(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
         ));
@@ -126,7 +126,7 @@ class JdbcTemplateTest {
         when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("name")).thenReturn("wiib");
 
-        User actual = jdbcTemplate.queryForObject(sql, rs -> new User(
+        TestUser actual = jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
         ), 1L);
@@ -148,7 +148,7 @@ class JdbcTemplateTest {
         when(resultSet.getLong("id")).thenReturn(1L, 2L);
         when(resultSet.getString("name")).thenReturn("wiib", "atom");
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new User(
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
         ), 1L))
@@ -164,7 +164,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new User(
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
         ), 1L))
