@@ -27,10 +27,8 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, Object... parameters) {
-        execute(sql, preparedStatement -> {
-            setParameters(preparedStatement, parameters);
-            return preparedStatement.executeUpdate();
-        }, parameters);
+        PreparedStatementExecutor<Integer> statementExecutor = PreparedStatement::executeUpdate;
+        execute(sql, statementExecutor, parameters);
     }
 
     public <T> T fetchResult(String sql, ResultMapper<T> resultMapper, Object... parameters) {
@@ -45,21 +43,23 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> fetchResults(String sql, ResultMapper<T> resultMapper, Object... parameters) {
-        return execute(sql, preparedStatement -> {
-            setParameters(preparedStatement, parameters);
+        PreparedStatementExecutor<List<T>> statementExecutor = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 return mapResults(resultSet, resultMapper);
             }
-        }, parameters);
+        };
+        return execute(sql, statementExecutor, parameters);
     }
 
-    private <T> T execute(String sql, PreparedStatementSetter<T> statementSetter, Object... parameters) {
+    private <T> T execute(String sql, PreparedStatementExecutor<T> statementExecutor, Object... parameters) {
         log.debug("실행 쿼리: {}", sql);
         log.debug("파라미터: {}", Arrays.toString(parameters));
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            return statementSetter.setValues(preparedStatement);
+            setParameters(preparedStatement, parameters);
+
+            return statementExecutor.execute(preparedStatement);
 
         } catch (SQLException e) {
             log.error("쿼리 실행에 실패했습니다: {}", sql, e);
