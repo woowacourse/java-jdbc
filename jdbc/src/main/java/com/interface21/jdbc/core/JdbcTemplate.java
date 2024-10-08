@@ -19,7 +19,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -36,12 +36,6 @@ public class JdbcTemplate {
         } catch (final Exception e) {
             log.error("query error", e);
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private void setArguments(PreparedStatement ps, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            ps.setObject(i + 1, args[i]);
         }
     }
 
@@ -88,6 +82,12 @@ public class JdbcTemplate {
         } catch (final Exception e) {
             log.error("update error", e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void setArguments(PreparedStatement ps, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            ps.setObject(i + 1, args[i]);
         }
     }
 }
