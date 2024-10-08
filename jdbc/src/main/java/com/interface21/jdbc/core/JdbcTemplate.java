@@ -27,15 +27,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object ... objects) {
+    public void update(String sql, Object ... args) {
         execute(sql, preparedStatement -> {
-            ParameterSetter.setParameter(objects, preparedStatement);
+            ParameterSetter.setParameter(args, preparedStatement);
             return preparedStatement.executeUpdate();
         });
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
-        List<T> query = query(sql, rowMapper, objects);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
+        List<T> query = query(sql, rowMapper, args);
         if (query.isEmpty()) {
             throw new DataAccessException("결과가 존재하지 않습니다");
         }
@@ -45,9 +45,9 @@ public class JdbcTemplate {
         return query.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ...objects) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
         return execute(sql, preparedStatement -> {
-            ParameterSetter.setParameter(objects, preparedStatement);
+            ParameterSetter.setParameter(args, preparedStatement);
             return getQueryResult(rowMapper, preparedStatement);
         });
     }
