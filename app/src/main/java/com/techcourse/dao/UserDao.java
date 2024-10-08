@@ -6,7 +6,6 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -31,44 +30,27 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        ResultSetMapper<List<User>> resultSetMapper = resultSet -> {
-            List<User> users = new ArrayList<>();
-            while (resultSet.next()) {
-                users.add(new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
-            }
-            return users;
-        };
+        ResultSetMapper<User> resultSetMapper = userResultSetMapper();
         return jdbcTemplate.query(sql, resultSetMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         ResultSetMapper<User> resultSetMapper = userResultSetMapper();
-        return jdbcTemplate.query(sql, resultSetMapper, id);
+        return jdbcTemplate.queryForObject(sql, resultSetMapper, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         ResultSetMapper<User> resultSetMapper = userResultSetMapper();
-        return jdbcTemplate.query(sql, resultSetMapper, account);
+        return jdbcTemplate.queryForObject(sql, resultSetMapper, account);
     }
 
     private ResultSetMapper<User> userResultSetMapper() {
-        return resultSet -> {
-            if (resultSet.next()) {
-                return new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                );
-            }
-            return null;
-        };
+        return resultSet -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email"));
     }
 }
