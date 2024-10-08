@@ -45,7 +45,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
-            log.info("query : {}", query);
+            log.debug("query : {}", query);
 
             ResultSet resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
@@ -65,7 +65,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
-            log.info("query : {}", query);
+            log.debug("query : {}", query);
 
             ResultSet resultSet = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
