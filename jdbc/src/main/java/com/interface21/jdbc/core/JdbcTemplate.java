@@ -1,11 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.parameter.IntParameterSetter;
-import com.interface21.jdbc.core.parameter.LongParameterSetter;
-import com.interface21.jdbc.core.parameter.ObjectParameterSetter;
-import com.interface21.jdbc.core.parameter.ParameterSetter;
-import com.interface21.jdbc.core.parameter.StringParameterSetter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,10 +17,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private static final List<ParameterSetter> PARAMETER_SETTERS = List.of(
-            new IntParameterSetter(), new LongParameterSetter(), new StringParameterSetter());
-    private static final ParameterSetter DEFAULT_PARAMETER_SETTER = new ObjectParameterSetter();
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -39,7 +30,7 @@ public class JdbcTemplate {
             log.debug("query = {}, {}", sql, Arrays.toString(parameters));
 
             if (resultSet.next()) {
-                return Optional.of(rowMapper.mapRow(resultSet, 1));
+                return Optional.ofNullable(rowMapper.mapRow(resultSet, resultSet.getRow()));
             }
             return Optional.empty();
         } catch (SQLException e) {
@@ -55,7 +46,7 @@ public class JdbcTemplate {
 
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, 1));
+                result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
             }
             return result;
         } catch (SQLException e) {
@@ -84,11 +75,7 @@ public class JdbcTemplate {
     private void setPreparedStatement(PreparedStatement pstmt, Object[] parameters) throws SQLException {
         for (int arrayIndex = 0; arrayIndex < parameters.length; arrayIndex++) {
             Object parameter = parameters[arrayIndex];
-            ParameterSetter parameterSetter = PARAMETER_SETTERS.stream()
-                    .filter(setter -> setter.isAvailableParameter(parameter))
-                    .findAny()
-                    .orElse(DEFAULT_PARAMETER_SETTER);
-            parameterSetter.setParameter(pstmt, toParameterIndex(arrayIndex), parameter);
+            pstmt.setObject(toParameterIndex(arrayIndex), parameter);
         }
     }
 
