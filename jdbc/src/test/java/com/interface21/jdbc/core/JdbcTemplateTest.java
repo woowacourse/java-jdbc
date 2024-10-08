@@ -58,7 +58,7 @@ class JdbcTemplateTest {
                 () -> verify(prepareStatement).setObject(3, email),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(prepareStatement).executeUpdate(),
-                () -> verify(connection).close()
+                () -> verify(connection, times(1)).close()
         );
     }
 
@@ -81,7 +81,7 @@ class JdbcTemplateTest {
                 () -> verify(prepareStatement).setObject(3, email),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(prepareStatement).executeUpdate(),
-                () -> verify(connection).close()
+                () -> verify(connection, times(1)).close()
         );
     }
 
@@ -112,7 +112,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(users).contains(gugu, kyum, rush),
                 () -> verify(prepareStatement, times(1)).executeQuery(),
-                () -> verify(resultSet, times(5)).next()
+                () -> verify(resultSet, times(5)).next(),
+                () -> verify(connection, times(1)).close()
         );
     }
 
@@ -141,7 +142,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(findUser).isEqualTo(gugu),
                 () -> verify(prepareStatement, times(1)).executeQuery(),
-                () -> verify(resultSet, times(2)).next()
+                () -> verify(resultSet, times(2)).next(),
+                () -> verify(connection, times(1)).close()
         );
     }
 
