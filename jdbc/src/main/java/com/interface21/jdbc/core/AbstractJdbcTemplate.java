@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DataNotFoundException;
@@ -22,45 +22,45 @@ public abstract class AbstractJdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update() {
+    public void update(PrepareStatementSetter statementSetter, Object... objects) {
         String query = createQuery();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             log.debug("query : {}", query);
-            setValues(pstmt);
+            statementSetter.setValues(pstmt, objects);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    public Object query() {
+    public <T> T query(RowMapper<T> mapper, PrepareStatementSetter statementSetter, Object... objects) {
         String query = createQuery();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
             log.debug("query : {}", query);
-            setValues(pstmt);
+            statementSetter.setValues(pstmt, objects);
             ResultSet resultSet = executeQuery(pstmt);
 
             if (!resultSet.next()) {
                 throw new DataNotFoundException("데이터가 존재하지 않습니다.");
             }
-            return mapRow(resultSet);
+            return mapper.map(resultSet);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    public List<Object> queryList() {
+    public <T> List<T> queryList(RowMapper<T> mapper, PrepareStatementSetter statementSetter, Object... objects) {
         String query = createQuery();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
             log.debug("query : {}", query);
-            setValues(pstmt);
+            statementSetter.setValues(pstmt, objects);
             ResultSet resultSet = executeQuery(pstmt);
-            List<Object> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             while (resultSet.next()) {
-                results.add(mapRow(resultSet));
+                results.add(mapper.map(resultSet));
             }
             return results;
         } catch (SQLException e) {
@@ -71,10 +71,6 @@ public abstract class AbstractJdbcTemplate {
     private ResultSet executeQuery(PreparedStatement preparedStatement) throws SQLException {
         return preparedStatement.executeQuery();
     }
-
-    protected abstract void setValues(PreparedStatement preparedStatement) throws SQLException;
-
-    protected abstract Object mapRow(ResultSet resultSet) throws SQLException;
 
     protected abstract String createQuery();
 
