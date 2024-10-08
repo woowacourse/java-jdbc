@@ -45,25 +45,28 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
+        return execute(sql, (preparedStatement -> {
             preparedStatementSetter.setValues(values, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
             return resultSetExtractor.extractData(resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataQueryException(e.getMessage(), e);
-        }
+        }));
     }
 
+
     public void update(String sql, Object... values) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
+        execute(sql, (preparedStatement -> {
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(values, preparedStatement);
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
+        }));
+    }
+
+    private <T> T execute(String sql, JdbcTemplateExecutor<T> jdbcTemplateExecutor) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
+            return jdbcTemplateExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataQueryException(e.getMessage(), e);
