@@ -29,7 +29,7 @@ public class BeanContainer {
         registerBeans();
     }
 
-    public void registerBeans() {
+    private void registerBeans() {
         Set<Class<?>> configurationClasses = BeanScanner.scanTypesAnnotatedWith(Configuration.class);
         Set<Object> configuration = BeanCreator.makeConfiguration(configurationClasses);
         beanRegistry.registerBeans(configuration);
