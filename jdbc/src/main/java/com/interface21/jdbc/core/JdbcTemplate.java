@@ -18,15 +18,9 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final PrepareStatementResolver prepareStatementResolver;
 
     public JdbcTemplate(DataSource dataSource) {
-        this(dataSource, new PrepareStatementResolver());
-    }
-
-    public JdbcTemplate(DataSource dataSource, PrepareStatementResolver prepareStatementResolver) {
         this.dataSource = dataSource;
-        this.prepareStatementResolver = prepareStatementResolver;
     }
 
     public DataSource getDataSource() {
@@ -36,7 +30,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            prepareStatementResolver.setArguments(ps, args);
+            setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getResults(resultSet, rowMapper);
         } catch (final Exception e) {
@@ -56,7 +50,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> RowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            prepareStatementResolver.setArguments(ps, args);
+            setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getSingleResult(resultSet, RowMapper);
         } catch (final Exception e) {
@@ -83,11 +77,17 @@ public class JdbcTemplate {
     public int update(String sql, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            prepareStatementResolver.setArguments(ps, args);
+            setArguments(ps, args);
             return ps.executeUpdate();
         } catch (final Exception e) {
             log.error("update error", e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void setArguments(PreparedStatement ps, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            ps.setObject(i + 1, args[i]);
         }
     }
 }
