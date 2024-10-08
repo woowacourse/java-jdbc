@@ -33,7 +33,9 @@ class Stage2Test {
     @Test
     void test() throws InterruptedException {
         final var hikariDataSource = (HikariDataSource) dataSource;
+        hikariDataSource.setMaximumPoolSize(10);
         final var hikariPool = getPool((HikariDataSource) dataSource);
+
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
         final var threads = new Thread[20];
