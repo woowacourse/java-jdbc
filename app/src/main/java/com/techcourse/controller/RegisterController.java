@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicLong;
 @Controller
 public class RegisterController {
 
-    private final AtomicLong atomicLong = new AtomicLong(2);
+    private final AtomicLong atomicLong = new AtomicLong(1);
 
     @Inject
     private UserService userService;
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView save(HttpServletRequest req, HttpServletResponse res) {
-        final var user = new User(
+        User user = new User(
                 atomicLong.getAndIncrement(),
                 req.getParameter("account"),
                 req.getParameter("password"),
