@@ -83,7 +83,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where id = ?";
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("account")).thenReturn("test-ash");
 

@@ -36,36 +36,30 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> result = query(sql, rowMapper, parameters);
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             setParameters(parameters, pstmt);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            return handleSQLException(e);
-        }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
             List<T> result = new ArrayList<>();
 
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
+                return result;
             }
-            return result;
         } catch (SQLException e) {
             return handleSQLException(e);
         }
