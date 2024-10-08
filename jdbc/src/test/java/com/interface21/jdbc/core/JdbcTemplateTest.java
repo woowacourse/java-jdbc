@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 
 class JdbcTemplateTest {
 
-    private static RowMapper<User> rowMapper = rs ->
+    private static RowMapper<User> ROW_MAPPER = rs ->
             new User(
                     rs.getLong("id"),
                     rs.getString("account")
@@ -88,7 +88,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("test-ash");
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, rowMapper, 1L);
+        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         //then
         assertAll(
@@ -111,7 +111,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, rowMapper, 1L);
+        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         //then
         assertNull(user);
@@ -131,7 +131,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("test", "ash");
 
         //when
-        List<User> users = jdbcTemplate.query(sql, rowMapper);
+        List<User> users = jdbcTemplate.query(sql, ROW_MAPPER);
 
         //then
         assertAll(
