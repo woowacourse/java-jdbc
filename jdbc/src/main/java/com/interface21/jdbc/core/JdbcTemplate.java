@@ -46,16 +46,19 @@ public class JdbcTemplate {
         ResultSet resultSet = execute(preparedStatement, args);
 
         try (connection; preparedStatement; resultSet) {
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
-            }
-
-            return results;
+            return extractResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
         }
+    }
+
+    private <T> List<T> extractResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+        }
+        return results;
     }
 
     private ResultSet execute(PreparedStatement preparedStatement, Object... args) {
