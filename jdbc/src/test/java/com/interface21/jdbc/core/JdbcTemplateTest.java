@@ -21,6 +21,7 @@ class JdbcTemplateTest {
     private Connection connection = mock(Connection.class);
     private PreparedStatement pstmt = mock(PreparedStatement.class);
     private ResultSet resultSet = mock(ResultSet.class);
+    private PreparedStatementSetter setter = mock(PreparedStatementSetter.class);
 
     private static RowMapper<String> mapper = rs -> "test";
     private JdbcTemplate jdbcTemplate;
@@ -38,9 +39,10 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(resultSet);
+        when(dataSource.getConnection()).thenReturn(connection);
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, setter, mapper))
                 .isExactlyInstanceOf(EmptyResultDataAccessException.class);
     }
 
@@ -53,7 +55,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
         when(pstmt.executeQuery()).thenReturn(resultSet);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, setter, mapper))
                 .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 }
