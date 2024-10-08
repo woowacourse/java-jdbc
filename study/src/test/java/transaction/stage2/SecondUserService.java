@@ -34,8 +34,11 @@ public class SecondUserService {
 
     @Transactional(propagation = Propagation.SUPPORTS)
     public String saveSecondTransactionWithSupports() {
+        logActualTransactionActive();
+        log.info("Transaction : {}", TransactionSynchronizationManager.getCurrentTransactionName());
         userRepository.save(User.createTest());
         logActualTransactionActive();
+        log.info("Transaction : {}", TransactionSynchronizationManager.getCurrentTransactionName());
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
