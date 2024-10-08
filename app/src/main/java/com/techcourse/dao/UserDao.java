@@ -26,17 +26,11 @@ public class UserDao {
             resultSet.getString("password"),
             resultSet.getString("email"));
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
