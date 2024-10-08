@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import java.sql.Connection;
+import com.interface21.jdbc.datasource.DataAccessWrapper;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,11 +15,11 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private final DataAccessWrapper dataAccessWrapper;
     private final PreparedStatementResolver preparedStatementResolver;
 
     public JdbcTemplate(final DataSource dataSource, PreparedStatementResolver preparedStatementResolver) {
-        this.dataSource = dataSource;
+        this.dataAccessWrapper = new DataAccessWrapper(dataSource);
         this.preparedStatementResolver = preparedStatementResolver;
     }
 
@@ -41,18 +41,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-        ) {
-            PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
-            ResultSet resultSet = resolvedStatement.executeQuery();
-            return makeQueryResult(resultSet, rowMapper);
-        } catch (Exception exception) {
-            throw new DataAccessException(exception);
-        }
+        return dataAccessWrapper.apply((connection, pstmt) -> makeQueryResultForList(rowMapper, parameters, pstmt), sql);
     }
 
-    private <T> List<T> makeQueryResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> makeQueryResultForList(RowMapper<T> rowMapper, Object[] parameters, PreparedStatement pstmt) throws SQLException {
+        PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
+        ResultSet resultSet = resolvedStatement.executeQuery();
+        return resolveQueryResult(resultSet, rowMapper);
+    }
+
+    private <T> List<T> resolveQueryResult(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
@@ -61,13 +59,11 @@ public class JdbcTemplate {
     }
 
     public int queryForUpdate(String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-        ) {
-            PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
-            return resolvedStatement.executeUpdate();
-        } catch (Exception exception) {
-            throw new DataAccessException(exception);
-        }
+        return dataAccessWrapper.apply((connection, pstmt) -> executeUpdateQuery(parameters, pstmt), sql);
+    }
+
+    private int executeUpdateQuery(Object[] parameters, PreparedStatement pstmt) throws SQLException {
+        PreparedStatement resolvedStatement = preparedStatementResolver.resolve(pstmt, parameters);
+        return resolvedStatement.executeUpdate();
     }
 }
