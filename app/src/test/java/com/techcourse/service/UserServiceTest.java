@@ -1,28 +1,28 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate2;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @Disabled
 class UserServiceTest {
 
-    private JdbcTemplate jdbcTemplate;
+    private JdbcTemplate2 jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate2(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
