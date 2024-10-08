@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int QUERY_FOR_OBJECT_EXPECTED_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -24,14 +25,11 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... columns) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            for (int i = 1; i <= columns.length; i++) {
-                preparedStatement.setObject(i, columns[i - 1]);
-            }
-
+            setColumn(columns, preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -40,18 +38,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            List<T> result = new ArrayList<>();
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                log.debug("query : {}", sql);
-
-                while (resultSet.next()) {
-                    result.add(rowMapper.map(resultSet));
-                }
-                return result;
-            }
+            return retrieveData(rowMapper, preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -59,29 +50,42 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... columns) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            for (int i = 1; i <= columns.length; i++) {
-                preparedStatement.setObject(i, columns[i - 1]);
-            }
-            List<T> result = new ArrayList<>();
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                log.debug("query : {}", sql);
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-                while (rs.next()) {
-                    result.add(rowMapper.map(rs));
-                }
-            }
-            if (result.isEmpty()) {
-                throw new EmptyResultDataAccessException();
-            }
-            if (result.size() != 1) {
-                throw new IncorrectResultSizeDataAccessException(result.size());
-            }
-            return result.getFirst();
+            setColumn(columns, preparedStatement);
+            List<T> records = retrieveData(rowMapper, preparedStatement);
+            validateDataSize(records);
+            return records.getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setColumn(Object[] columns, PreparedStatement preparedStatement) throws SQLException {
+        for (int i = 1; i <= columns.length; i++) {
+            preparedStatement.setObject(i, columns[i - 1]);
+        }
+    }
+
+    private <T> List<T> retrieveData(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
+        List<T> result = new ArrayList<>();
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            while (resultSet.next()) {
+                result.add(rowMapper.map(resultSet));
+            }
+        }
+        return result;
+    }
+
+    private <T> void validateDataSize(List<T> result) {
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException();
+        }
+        if (result.size() != QUERY_FOR_OBJECT_EXPECTED_SIZE) {
+            throw new IncorrectResultSizeDataAccessException(result.size());
         }
     }
 }
