@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryAndGetResults(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        return executeQueryExecutor(sql, resultSetParser, this::parseResults, parameters);
+        return executeQueryExecutor(sql, resultSetParser, new ListResultGenerator<>(), parameters);
     }
 
     private <T, R> R executeQueryExecutor(
@@ -55,25 +54,7 @@ public class JdbcTemplate {
         }, sql, parameters);
     }
 
-    private <T> List<T> parseResults(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(resultSetParser.parse(resultSet));
-        }
-        return results;
-    }
-
     public <T> T queryAndGetResult(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        return executeQueryExecutor(sql, resultSetParser, this::parseResult, parameters);
-    }
-
-    private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
-        if (!resultSet.next()) {
-            throw new DataAccessException("행이 하나도 조회되지 않았습니다.");
-        }
-        if (!resultSet.isLast()) {
-            throw new DataAccessException("여러개의 행이 조회되었습니다.");
-        }
-        return resultSetParser.parse(resultSet);
+        return executeQueryExecutor(sql, resultSetParser, new SingleResultGenerator<>(), parameters);
     }
 }

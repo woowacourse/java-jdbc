@@ -4,6 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface ResultGenerator<T, R> {
+interface ResultGenerator<T, R> {
     R generate(ResultSetParser<T> parser, ResultSet resultSet) throws SQLException;
 }
