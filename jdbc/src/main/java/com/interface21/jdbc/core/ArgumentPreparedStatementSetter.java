@@ -22,7 +22,7 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
         try {
             ps.setObject(index, value);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format("Parameter 설정에 실패했습니다. value = %s", value), e);
         }
     }
 }
