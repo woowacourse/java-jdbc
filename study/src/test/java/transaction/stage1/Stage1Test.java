@@ -58,11 +58,18 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |     +
+     * Read Committed   |     -
+     * Repeatable Read  |     -
+     * Serializable     |     -
      */
+
+    // TRANSACTION_NONE 예외 발생. ERROR transaction.RunnableWrapper -- Invalid value "0" for parameter "isolation level"
+    // TRANSACTION_READ_UNCOMMITTED 조회 가능 및 예외 발생. user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+    // TRANSACTION_READ_COMMITTED 조회 불가. 예외 발생하지 않음
+    // TRANSACTION_REPEATABLE_READ 조회 불가. 예외 발생하지 않음
+    // TRANSACTION_SERIALIZABLE 조회 불가. 예외 발생하지 않음
+
     @Test
     void dirtyReading() throws SQLException {
         setUp(createH2DataSource());
@@ -81,7 +88,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
