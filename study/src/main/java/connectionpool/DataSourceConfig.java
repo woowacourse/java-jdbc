@@ -2,10 +2,9 @@ package connectionpool;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.sql.DataSource;
 
 @Configuration
 public class DataSourceConfig {
@@ -15,11 +14,10 @@ public class DataSourceConfig {
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
-
     @Bean
     public DataSource hikariDataSource() {
         final var hikariConfig = new HikariConfig();
-        hikariConfig.setPoolName("gugu");
+        hikariConfig.setPoolName("ever");
         hikariConfig.setJdbcUrl(H2_URL);
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
