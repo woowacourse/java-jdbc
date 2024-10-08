@@ -41,7 +41,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(connection, sql, createRowMapper(), account);
     }
 
-    public List<User> findGreaterThan(final Connection connection, final long id) {
+    public List<User> findGreaterThanOrEqualTo(final Connection connection, final long id) {
         final var sql = "select id, account, password, email from users where id >= ?";
         return jdbcTemplate.query(connection, sql, createRowMapper(), id);
     }
