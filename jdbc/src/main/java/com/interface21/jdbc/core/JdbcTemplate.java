@@ -74,8 +74,8 @@ public class JdbcTemplate {
     }
 
     private void assignToPreparedStatement(PreparedStatement preparedStatement, Object[] args) {
-        if (Objects.isNull(args) || args.length == 0) {
-            throw new DataAccessException("PreparedStatement에 바인딩할 파라미터가 없습니다.");
+        if (Objects.isNull(args)) {
+            return;
         }
         for (int index = 1; index <= args.length; index++) {
             try {
