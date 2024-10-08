@@ -31,7 +31,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, statement -> {
-            ArrayList<T> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             ResultSet resultSet = statement.executeQuery();
 
             for (int rowNum = 0; resultSet.next(); rowNum++) {
