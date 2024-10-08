@@ -30,7 +30,7 @@ public class JdbcTemplate {
             log.debug("query = {}, {}", sql, Arrays.toString(parameters));
 
             if (resultSet.next()) {
-                return Optional.ofNullable(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                return Optional.ofNullable(rowMapper.mapRow(resultSet));
             }
             return Optional.empty();
         } catch (SQLException e) {
@@ -46,7 +46,7 @@ public class JdbcTemplate {
 
             List<T> result = new ArrayList<>();
             if (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                result.add(rowMapper.mapRow(resultSet));
             }
             return result;
         } catch (SQLException e) {
