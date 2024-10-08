@@ -56,8 +56,16 @@ public class JdbcTemplate {
     }
 
     private void setParams(PreparedStatement pstmt, Object... params) throws SQLException {
+        validateParamsCount(pstmt, params);
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
+    private void validateParamsCount(PreparedStatement pstmt, Object... params) throws SQLException {
+        int paramsCount = pstmt.getParameterMetaData().getParameterCount();
+        if (paramsCount != params.length) {
+            throw new SQLException("파라미터 개수가 일치하지 않습니다.");
         }
     }
 

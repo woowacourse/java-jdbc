@@ -3,14 +3,17 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +29,7 @@ class JdbcTemplateTest {
     private PreparedStatement pstmt;
     private ResultSet rs;
     private JdbcTemplate jdbcTemplate;
+    private ParameterMetaData parameterMetaData;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -33,17 +37,21 @@ class JdbcTemplateTest {
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
+        parameterMetaData = mock(ParameterMetaData.class);
 
         when(dataSource.getConnection()).thenReturn(conn);
-        when(conn.prepareStatement(any())).thenReturn(pstmt);
+        when(conn.prepareStatement(anyString())).thenReturn(pstmt);
+        when(pstmt.getParameterMetaData()).thenReturn(parameterMetaData);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test
-    void 데이터_생성_성공() {
+    void 데이터_생성_성공() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account, password) values (?, ?)";
+
+        when(parameterMetaData.getParameterCount()).thenReturn(2);
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword());
 
@@ -57,18 +65,17 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 데이터_생성_예외_발생() throws SQLException {
+    void 데이터_생성시_파라미터_바인딩_예외_발생() throws SQLException {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "insert into test-user (account, password) values (?, ?)";
 
-        when(pstmt.executeUpdate()).thenThrow(SQLException.class);
+        when(parameterMetaData.getParameterCount()).thenReturn(3);
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, user.getAccount(), user.getPassword()))
                         .isInstanceOf(DataAccessException.class),
-                () -> verify(pstmt).setObject(1, user.getAccount()),
-                () -> verify(pstmt).setObject(2, user.getPassword()),
-                () -> verify(pstmt, times(1)).executeUpdate(),
+                () -> verify(pstmt, never()).setObject(anyInt(), anyString()),
+                () -> verify(pstmt, never()).executeUpdate(),
                 () -> verify(pstmt, times(1)).close(),
                 () -> verify(conn, times(1)).close()
         );
@@ -79,6 +86,7 @@ class JdbcTemplateTest {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true);
         when(rs.getLong("id")).thenReturn(1L);
@@ -103,6 +111,7 @@ class JdbcTemplateTest {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true);
         when(rs.getLong("id")).thenThrow(SQLException.class);
@@ -124,6 +133,7 @@ class JdbcTemplateTest {
         TestUser user = new TestUser("jojo", "1234");
         String sql = "select id, account, password from users where account = ?";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
@@ -143,6 +153,7 @@ class JdbcTemplateTest {
     void 복수_데이터_조회_성공() throws SQLException {
         String sql = "select id, account, password from users";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(0);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(true, true, false);
         when(rs.getLong("id")).thenReturn(1L, 2L);
@@ -153,8 +164,8 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThat(actual).hasSize(2),
-                () -> assertThat(actual.get(0).getAccount()).isEqualTo("jojo"),
-                () -> assertThat(actual.get(1).getAccount()).isEqualTo("cutehuman"),
+                () -> assertThat(actual.getFirst().getAccount()).isEqualTo("jojo"),
+                () -> assertThat(actual.getLast().getAccount()).isEqualTo("cutehuman"),
                 () -> verify(pstmt, times(1)).executeQuery(),
                 () -> verify(pstmt, times(1)).close(),
                 () -> verify(conn, times(1)).close(),
@@ -166,6 +177,7 @@ class JdbcTemplateTest {
     void 복수_데이터_조회_에러_발생() throws SQLException {
         String sql = "select id, account, password from users";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(0);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenThrow(SQLException.class);
 
@@ -183,6 +195,7 @@ class JdbcTemplateTest {
     void 복수_데이터_조회_실패() throws SQLException {
         String sql = "select id, account, password from users";
 
+        when(parameterMetaData.getParameterCount()).thenReturn(0);
         when(pstmt.executeQuery()).thenReturn(rs);
         when(rs.next()).thenReturn(false);
 
