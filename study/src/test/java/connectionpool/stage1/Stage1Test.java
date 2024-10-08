@@ -37,7 +37,7 @@ class Stage1Test {
         }
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
-        jdbcConnectionPool.dispose();
+        jdbcConnectionPool.dispose(); // connection pool에 존재하는 connection들을 모두 놔버렸기 때문에 추가적인 getConnection()시 예외 발생
     }
 
     /**
