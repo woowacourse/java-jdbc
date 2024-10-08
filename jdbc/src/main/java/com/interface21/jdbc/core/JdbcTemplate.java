@@ -34,6 +34,12 @@ public class JdbcTemplate {
         }
     }
 
+    private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
+        for (int i = 0; i < values.length; i++) {
+            statement.setObject(i + 1, values[i]);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -61,12 +67,6 @@ public class JdbcTemplate {
             return Optional.of(resultSets.getFirst());
         } catch (NoSuchElementException e) {
             return Optional.empty();
-        }
-    }
-
-    private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
-        for (int i = 0; i < values.length; i++) {
-            statement.setObject(i + 1, values[i]);
         }
     }
 }
