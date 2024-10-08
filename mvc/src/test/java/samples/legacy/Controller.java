@@ -1,4 +1,4 @@
-package com.interface21.webmvc.servlet.mvc.asis;
+package samples.legacy;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

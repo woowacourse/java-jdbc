@@ -1,5 +1,6 @@
 package com.interface21.webmvc.servlet.mvc;
 
+import com.interface21.webmvc.servlet.mvc.exception.NotSupportedHandlerAdapterException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,8 +14,8 @@ public class HandlerAdapterRegistry {
 
     public HandlerAdapter getHandlerAdapter(final Object handler) {
         return handlerAdapters.stream()
-                .filter(ha -> ha.supports(handler))
+                .filter(handlerAdapter -> handlerAdapter.supports(handler))
                 .findFirst()
-                .orElseThrow(IllegalArgumentException::new);
+                .orElseThrow(() -> new NotSupportedHandlerAdapterException(handler));
     }
 }
