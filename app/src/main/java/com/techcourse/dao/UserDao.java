@@ -71,7 +71,12 @@ public class UserDao {
                 .build();
     }
 
-    private Query resolveEqualSql(String fieldName) {
+    public User findByAccount(final String account) {
+        Query query = resolveEqualSql("account");
+        return jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
+    }
+
+    public Query resolveEqualSql(String fieldName) {
         return new QueryBuilder()
                 .selectFrom("users")
                 .where(ConditionExpression.eq(fieldName))
