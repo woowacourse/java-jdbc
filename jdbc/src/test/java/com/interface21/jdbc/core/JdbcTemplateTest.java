@@ -3,7 +3,7 @@ package com.interface21.jdbc.core;
 import static org.mockito.Mockito.*;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.mapper.Mapper;
+import com.interface21.jdbc.mapper.SqlResultSetMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +25,7 @@ class JdbcTemplateTest {
 
     @BeforeAll
     static void beforeAll() {
-        mockStatic(Mapper.class);
+        mockStatic(SqlResultSetMapper.class);
     }
 
     @BeforeEach
@@ -53,7 +53,7 @@ class JdbcTemplateTest {
     @Test
     void queryDuplicatedData() throws SQLException {
         String sql = "select id from users";
-        when(Mapper.doQueryMapping(String.class, sql, resultSet)).thenReturn(List.of("one", "two"));
+        when(SqlResultSetMapper.doQueryMapping(String.class, resultSet)).thenReturn(List.of("one", "two"));
 
         Assertions.assertThatThrownBy(() -> jdbcTemplate.query(String.class, sql))
                 .isInstanceOf(DataAccessException.class)
@@ -65,7 +65,7 @@ class JdbcTemplateTest {
     void queryForAllEmptyList() throws SQLException {
         String sql = "select id from users";
 
-        when(Mapper.doQueryMapping(String.class, sql, resultSet)).thenReturn(List.of());
+        when(SqlResultSetMapper.doQueryMapping(String.class, resultSet)).thenReturn(List.of());
 
         Assertions.assertThat(jdbcTemplate.queryForAll(String.class, sql)).isEmpty();
     }

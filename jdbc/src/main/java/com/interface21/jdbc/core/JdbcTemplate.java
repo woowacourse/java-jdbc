@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.mapper.Mapper;
+import com.interface21.jdbc.mapper.SqlResultSetMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +29,7 @@ public class JdbcTemplate {
             return null;
         }
         if (result.size() > 1) {
-            throw new DataAccessException("한 건 이상의 데이터가 조회되었습니다.");
+            throw new DataAccessException("두 개 이상의 데이터가 조회되었습니다.");
         }
 
         return result.getFirst();
@@ -42,7 +42,8 @@ public class JdbcTemplate {
                 ResultSet resultSet = preparedStatement.executeQuery();
         ) {
             log.debug("query : {}", sqlStatement);
-            return Mapper.doQueryMapping(clazz, sqlStatement, resultSet);
+
+            return SqlResultSetMapper.doQueryMapping(clazz, resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -67,7 +68,7 @@ public class JdbcTemplate {
         PreparedStatement preparedStatement = connection.prepareStatement(sqlStatement);
 
         for (int index = 0; index < params.length; index++) {
-            final int databaseIndex = index + 1;
+            int databaseIndex = index + 1;
             preparedStatement.setObject(databaseIndex, params[index]);
         }
 
