@@ -21,7 +21,6 @@ class UserDaoTest {
         final var jojo = new User("jojo", "1234", "jojo@woowahan.com");
         userDao.insert(gugu);
         userDao.insert(jojo);
-
     }
 
     @Test
