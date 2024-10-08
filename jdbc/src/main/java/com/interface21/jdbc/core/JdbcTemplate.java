@@ -3,16 +3,15 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -40,15 +39,20 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             bindStatementParameters(preparedStatement, params);
             ResultSet resultSet = preparedStatement.executeQuery();
-            List<T> queriedData = new ArrayList<>();
-            while (resultSet.next()) {
-                queriedData.add(resultSetMapper.map(resultSet));
-            }
-            return queriedData;
+            return getListFromResultSet(resultSet, resultSetMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> getListFromResultSet(ResultSet resultSet, ResultSetMapper<T> resultSetMapper)
+            throws SQLException {
+        List<T> queriedData = new ArrayList<>();
+        while (resultSet.next()) {
+            queriedData.add(resultSetMapper.map(resultSet));
+        }
+        return queriedData;
     }
 
     public <T> T queryForObject(String sql, ResultSetMapper<T> resultSetMapper, Object... params) {
