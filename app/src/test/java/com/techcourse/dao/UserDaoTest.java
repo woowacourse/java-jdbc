@@ -8,12 +8,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.SQLException;
+
 class UserDaoTest {
 
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
@@ -44,7 +46,7 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() {
+    void insert() throws SQLException {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);

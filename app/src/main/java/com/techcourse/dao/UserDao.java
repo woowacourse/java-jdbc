@@ -1,121 +1,87 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
-import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.sql.PreparedStatement;
+import java.util.List;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementStrategy;
+import com.interface21.jdbc.core.RowMapStrategy;
+import com.techcourse.domain.User;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapStrategy<User> USER_ROW_MAP_STRATEGY = resultSet -> {
+        final long id = resultSet.getLong(1);
+        final String findAccount = resultSet.getString(2);
+        final String password = resultSet.getString(3);
+        final String email = resultSet.getString(4);
+        return new User(id, findAccount, password, email);
+    };
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        final PreparedStatementStrategy strategy = connection -> {
+            final PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, user.getAccount());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getEmail());
+            return statement;
+        };
+        jdbcTemplate.update(strategy);
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        final PreparedStatementStrategy strategy = connection -> {
+            final PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, user.getAccount());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getEmail());
+            statement.setLong(4, user.getId());
+            return statement;
+        };
+        jdbcTemplate.update(strategy);
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "SELECT id, account, password, email FROM users";
+        final PreparedStatementStrategy preparedStatementStrategy = connection -> connection.prepareStatement(sql);
+        return jdbcTemplate.query(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
+        final PreparedStatementStrategy preparedStatementStrategy = connection -> {
+            final PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setLong(1, id);
+            return statement;
+        };
 
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return jdbcTemplate.queryForObject(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
+
+        final PreparedStatementStrategy preparedStatementStrategy = connection -> {
+            final PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, account);
+            return statement;
+        };
+
+        return jdbcTemplate.queryForObject(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
     }
 }

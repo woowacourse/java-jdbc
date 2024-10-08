@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.sql.SQLException;
+
 @Disabled
 class UserServiceTest {
 
@@ -21,7 +23,7 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
