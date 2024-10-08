@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.JdbcTemplate2;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -17,14 +17,14 @@ public class UserDao {
                     resultSet.getString("password"),
                     resultSet.getString("email"));
 
-    private final JdbcTemplate2 jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(JdbcTemplate2 jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public UserDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate2(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {

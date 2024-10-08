@@ -42,12 +42,16 @@ class JdbcTemplateTest {
     void updateWithException() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
         SQLException sqlException = new SQLException("업데이트 중 예외 발생");
         given(this.preparedStatement.executeUpdate()).willThrow(sqlException);
 
         // when
         assertThatExceptionOfType(DataAccessException.class)
-                .isThrownBy(() -> jdbcTemplate.update("update error", "pororo", "poke"))
+                .isThrownBy(() -> jdbcTemplate.update("update error", preparedStatementSetter))
                 .withCause(sqlException);
 
         // then
@@ -61,14 +65,16 @@ class JdbcTemplateTest {
     void updateWithMultipleParameter() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "account");
+            preparedStatement.setString(2, "password");
+            preparedStatement.setString(3, "email");
+        };
 
         // when
-        jdbcTemplate.update("insert into user (account, age, email) values (?, ?, ?)", "account", "password", "email");
+        jdbcTemplate.update("insert into user (account, age, email) values (?, ?, ?)", preparedStatementSetter);
 
         // then
-        verify(preparedStatement).setObject(1, "account");
-        verify(preparedStatement).setObject(2, "password");
-        verify(preparedStatement).setObject(3, "email");
         verify(preparedStatement).close();
         verify(connection).close();
         verifyNoInteractions(resultSet);
@@ -79,9 +85,12 @@ class JdbcTemplateTest {
     void updateWithNoParameter() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
 
         // when
-        jdbcTemplate.update("insert into user (account, age, email) values ('pororo', 20, 'proro@zzang.com')");
+        jdbcTemplate.update("insert into user (account, age, email) values ('pororo', 20, 'proro@zzang.com')",
+                preparedStatementSetter);
 
         // then
         verify(preparedStatement, times(0)).setObject(anyInt(), any());
@@ -96,13 +105,17 @@ class JdbcTemplateTest {
     void queryWithExecuteQueryException() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
         SQLException sqlException = new SQLException("조회 중 예외 발생");
         RowMapper<?> mapper = mock();
         given(this.preparedStatement.executeQuery()).willThrow(sqlException);
 
         // when
         assertThatExceptionOfType(DataAccessException.class)
-                .isThrownBy(() -> jdbcTemplate.query("select error", mapper, "pororo", "poke"))
+                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper))
                 .withCause(sqlException);
 
         // then
@@ -116,13 +129,17 @@ class JdbcTemplateTest {
     void queryWithRowMapException() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
         SQLException sqlException = new SQLException("map 중 예외 발생");
         RowMapper<?> mapper = mock();
         given(this.resultSet.next()).willThrow(sqlException);
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.query("select error", mapper, "pororo", "poke"))
+                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper))
                 .withCause(sqlException);
 
         // then
@@ -136,16 +153,18 @@ class JdbcTemplateTest {
     void queryWithMultipleParameter() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setInt(1, 1);
+            preparedStatement.setString(2, "pororo");
+            preparedStatement.setString(3, "pororo@zzang.com");
+        };
         RowMapper<?> mapper = mock();
 
         // when
-        jdbcTemplate.query("select * from user where id = ? and account = ? and email = ?", mapper, 1, "pororo",
-                "pororo@zzang.com");
+        jdbcTemplate.query("select * from user where id = ? and account = ? and email = ?", preparedStatementSetter,
+                mapper);
 
         // then
-        verify(preparedStatement).setObject(1, 1);
-        verify(preparedStatement).setObject(2, "pororo");
-        verify(preparedStatement).setObject(3, "pororo@zzang.com");
         verify(preparedStatement).close();
         verify(connection).close();
         verify(resultSet).close();
@@ -157,10 +176,12 @@ class JdbcTemplateTest {
     void queryWithNoParameter() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
         RowMapper<?> mapper = mock();
 
         // when
-        jdbcTemplate.query("select * from user", mapper);
+        jdbcTemplate.query("select * from user", preparedStatementSetter, mapper);
 
         // then
         verify(preparedStatement, times(0)).setObject(anyInt(), any());
@@ -174,10 +195,12 @@ class JdbcTemplateTest {
     void queryForObject() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
         RowMapper<?> mapper = mock();
 
         // when
-        jdbcTemplate.query("select * from user", mapper);
+        jdbcTemplate.query("select * from user", preparedStatementSetter, mapper);
 
         // then
         verify(preparedStatement, times(0)).setObject(anyInt(), any());
@@ -191,13 +214,17 @@ class JdbcTemplateTest {
     void queryForObjectWithExecuteQueryException() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
         SQLException sqlException = new SQLException("조회 중 예외 발생");
         RowMapper<?> mapper = mock();
         given(this.preparedStatement.executeQuery()).willThrow(sqlException);
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", mapper, "pororo", "poke"))
+                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper))
                 .withCause(sqlException);
 
         // then
@@ -211,13 +238,17 @@ class JdbcTemplateTest {
     void queryForObjectWithRowMapException() throws SQLException {
         // given
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
         SQLException sqlException = new SQLException("map 중 예외 발생");
         RowMapper<?> mapper = mock();
         given(this.resultSet.next()).willThrow(sqlException);
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", mapper, "pororo", "poke"))
+                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper))
                 .withCause(sqlException);
 
         // then
@@ -232,6 +263,8 @@ class JdbcTemplateTest {
         // given
         String sql = "select account, password from user where account like 'po%' or password like 'po%''";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
         given(resultSet.next()).willReturn(true, true, false);
         given(resultSet.getString("account")).willReturn("pororo");
         given(resultSet.getString("password")).willReturn("poke");
@@ -243,7 +276,7 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper));
+                .isThrownBy(() -> jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper));
 
         // then
         verify(this.resultSet).close();
@@ -257,6 +290,8 @@ class JdbcTemplateTest {
         // given
         String sql = "select account, password from user where account like 'po%' or password like 'po%''";
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
         given(resultSet.next()).willReturn(false);
 
         RowMapper<TestUser> rowMapper = (resultSet) -> new TestUser(
@@ -265,7 +300,7 @@ class JdbcTemplateTest {
         );
 
         assertThatExceptionOfType(NoSuchElementException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper));
+                .isThrownBy(() -> jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper));
 
         // then
         verify(this.resultSet).close();
