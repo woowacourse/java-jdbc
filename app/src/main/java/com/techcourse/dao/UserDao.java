@@ -10,7 +10,7 @@ import com.techcourse.domain.User;
 
 public class UserDao {
 
-    private final RowMapper<User> userRowMapper = resultSet -> new User(
+    private final RowMapper<User> userRowMapper = (resultSet, __) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
