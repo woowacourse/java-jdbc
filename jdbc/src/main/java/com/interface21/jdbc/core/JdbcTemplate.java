@@ -18,6 +18,7 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int PARAMETER_INDEX_OFFSET = 1;
+    private static final int QUERY_FOR_OBJECT_RESULT = 1;
 
     private final DataSource dataSource;
 
@@ -57,7 +58,14 @@ public class JdbcTemplate {
             while (rs.next()) {
                 queryResult.add(rowMapper.mapRow(rs));
             }
+            validateResultSize(queryResult);
             return queryResult;
+        }
+    }
+
+    private static <T> void validateResultSize(final List<T> queryResult) {
+        if (queryResult.size() != QUERY_FOR_OBJECT_RESULT) {
+            throw new DataAccessException();
         }
     }
 
