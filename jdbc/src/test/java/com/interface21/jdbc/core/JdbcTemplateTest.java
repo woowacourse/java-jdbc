@@ -64,6 +64,27 @@ class JdbcTemplateTest {
         assertThat(users).hasSize(2);
     }
 
+    @DisplayName("query(String, PreparedStatementSetter, RowMapper)로 List조회가 가능하다")
+    @Test
+    void queryForListWithRowMapperAndPreParedStatementSetter() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String sql = "select * from users where account = ?";
+
+        // when
+        List<User> users = jdbcTemplate.query(
+                sql,
+                (rs) -> {
+                    rs.setString(1, "gugu");
+                },
+                userMapper
+        );
+
+        // then
+        assertThat(users).hasSize(2);
+    }
+
     @DisplayName("update로 insert가능하다")
     @Test
     void updateForInsert() throws SQLException {
@@ -168,7 +189,7 @@ class JdbcTemplateTest {
         assertThat(user.email).isEqualTo("gugu@naver.com");
     }
 
-    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>를 통해 select가능하다.")
+    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>)의 조회수가 1이아니면 예외가 발생한다")
     @Test
     void throwException_when_queryForObjectWithPreparedStatementSetterResultSizeIsNotOne() {
         // given
