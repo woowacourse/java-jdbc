@@ -81,6 +81,29 @@ class JdbcTemplateTest {
         verify(rowMapper, times(2)).mapRow(resultSet);
     }
 
+    @DisplayName("데이터를 조회하는 query 메서드는 조건에 따라 여러 개의 행을 조회할 수 있다.")
+    @Test
+    void queryWithArgs() throws SQLException {
+        String sql = "select * from users where id = ?";
+        TestUser testUser1 = new TestUser(1, "account1", "password1", "email1");
+        RowMapper<TestUser> rowMapper = mock(RowMapper.class);
+
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn(testUser1);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+
+        List<TestUser> results = jdbcTemplate.query(sql, new Object[]{1}, rowMapper);
+        assertAll(
+                () -> assertThat(results.size()).isEqualTo(1),
+                () -> assertThat(testUser1).isEqualTo(results.get(0))
+        );
+
+        verify(preparedStatement).setObject(1, 1);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(2)).next();
+        verify(rowMapper, times(1)).mapRow(resultSet);
+    }
+
     @DisplayName("데이터를 조회하는 queryForObject 메서드는 단일 행을 조회할 수 있다.")
     @Test
     void queryForObject() throws SQLException {
