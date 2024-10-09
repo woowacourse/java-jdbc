@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SET_OBJECT_BASE = 1;
 
     private final DataSource dataSource;
 
@@ -44,7 +45,7 @@ public class JdbcTemplate {
     private PreparedStatementSetter getPreparedStatementSetter(Object... args) {
         return statement -> {
             for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
+                statement.setObject(i + SET_OBJECT_BASE, args[i]);
             }
         };
     }
