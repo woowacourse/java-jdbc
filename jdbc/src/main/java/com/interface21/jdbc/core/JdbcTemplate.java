@@ -30,7 +30,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setColumn(columns, preparedStatement);
+            setColumns(preparedStatement, columns);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -55,7 +55,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setColumn(columns, preparedStatement);
+            setColumns(preparedStatement, columns);
             List<T> records = retrieveData(rowMapper, preparedStatement);
             validateDataSize(records);
             return records.getFirst();
@@ -65,10 +65,17 @@ public class JdbcTemplate {
         }
     }
 
-    private void setColumn(Object[] columns, PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 1; i <= columns.length; i++) {
-            preparedStatement.setObject(i, columns[i - 1]);
-        }
+    private void setColumns(PreparedStatement preparedStatement, Object[] columns) throws SQLException {
+        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(columns);
+        preparedStatementSetter.setColumns(preparedStatement);
+    }
+
+    private PreparedStatementSetter getPreparedStatementSetter (Object... columns) {
+        return preparedStatement -> {
+            for(int i=1;i<=columns.length;i++){
+                preparedStatement.setObject(i,columns[i-1]);
+            }
+        };
     }
 
     private <T> List<T> retrieveData(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
