@@ -56,13 +56,12 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        PreparedStatementSetter pss = pstmt -> pstmt.setLong(1, id);
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         PreparedStatementSetter pss = pstmt -> pstmt.setString(1, account);
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
 }
