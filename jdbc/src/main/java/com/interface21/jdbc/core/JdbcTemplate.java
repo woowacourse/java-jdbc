@@ -26,7 +26,7 @@ public class JdbcTemplate {
     public void update(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            bindStatementParameters(preparedStatement, params);
+            PreparedStatementParameterBinder.bindStatementParameters(preparedStatement, params);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -37,7 +37,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            bindStatementParameters(preparedStatement, params);
+            PreparedStatementParameterBinder.bindStatementParameters(preparedStatement, params);
             ResultSet resultSet = preparedStatement.executeQuery();
             return getListFromResultSet(resultSet, rowMapper);
         } catch (SQLException e) {
@@ -64,11 +64,5 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, queriedData.size());
         }
         return queriedData.get(0);
-    }
-
-    private void bindStatementParameters(PreparedStatement preparedStatement, Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
-        }
     }
 }

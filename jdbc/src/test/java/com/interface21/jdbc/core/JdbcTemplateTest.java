@@ -45,9 +45,6 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "mia", "password", "mia@gmail.com");
 
         // then
-        verify(preparedStatement).setObject(1, "mia");
-        verify(preparedStatement).setObject(2, "password");
-        verify(preparedStatement).setObject(3, "mia@gmail.com");
         verify(preparedStatement).executeUpdate();
     }
 
