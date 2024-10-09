@@ -26,16 +26,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return query(sql, params, resultSet -> {
+        return execute(sql, params, resultSet -> {
             if (resultSet.next()) {
-                return rowMapper.mapRow(resultSet, 0);
+                return rowMapper.mapRow(resultSet, resultSet.getRow());
             }
             return null;
         });
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return query(sql, params, resultSet -> {
+        return execute(sql, params, resultSet -> {
             List<T> result = new ArrayList<>();
             int rowNum = 0;
             while (resultSet.next()) {
@@ -46,20 +46,16 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T query(
+    public void update(final String sql, final Object... params) {
+        execute(sql, defaultPreparedStatementSetter(params), null);
+    }
+
+    public <T> T execute(
             final String sql,
             final Object[] params,
             final ResultSetHandler<T> resultSetHandler
     ) {
         return execute(sql, defaultPreparedStatementSetter(params), resultSetHandler);
-    }
-
-    public void update(final String sql, final Object... params) {
-        update(sql, defaultPreparedStatementSetter(params));
-    }
-
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        execute(sql, preparedStatementSetter, null);
     }
 
     public <T> T execute(
