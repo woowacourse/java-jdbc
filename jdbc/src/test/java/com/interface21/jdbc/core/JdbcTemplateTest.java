@@ -107,9 +107,9 @@ class JdbcTemplateTest {
                 new PreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps) throws SQLException {
-                               ps.setString(1,"gugu");
-                               ps.setString(2,"123");
-                               ps.setString(3,"gugu@naver.com");
+                        ps.setString(1, "gugu");
+                        ps.setString(2, "123");
+                        ps.setString(3, "gugu@naver.com");
                     }
                 });
 
@@ -134,8 +134,8 @@ class JdbcTemplateTest {
                 new PreparedStatementSetter() {
                     @Override
                     public void setValues(PreparedStatement ps) throws SQLException {
-                        ps.setString(1,"updateGugu");
-                        ps.setLong(2,1);
+                        ps.setString(1, "updateGugu");
+                        ps.setLong(2, 1);
                     }
                 });
 
@@ -145,6 +145,26 @@ class JdbcTemplateTest {
 
         // then
         assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>를 통해 select가능하다.")
+    @Test
+    void queryForObjectWithPreparedStatementSetter() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu2', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+
+        // when
+        User user = jdbcTemplate.queryForObejct(
+                selectQuery,
+                (rs) -> {
+                    rs.setString(1, "gugu");
+                },
+                userMapper);
+
+        // then
+        assertThat(user.email).isEqualTo("gugu@naver.com");
     }
 
     private static void truncateUser(DataSource dataSource) {

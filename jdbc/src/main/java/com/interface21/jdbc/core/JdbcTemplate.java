@@ -67,6 +67,30 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObejct(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(ps);
+            ResultSet resultSet = ps.executeQuery();
+
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapToObject(resultSet));
+            }
+
+            if (results.size() != 1) {
+                throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
+            }
+
+            return results.get(0);
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -79,4 +103,6 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+
 }
