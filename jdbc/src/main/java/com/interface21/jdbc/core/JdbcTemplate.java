@@ -29,14 +29,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        return query(sql, preparedStatementSetter, rowMapper).getFirst();
+        return executeQuery(sql, preparedStatementSetter, rowMapper).getFirst();
     }
 
     public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        return query(sql, preparedStatementSetter, rowMapper);
+        return executeQuery(sql, preparedStatementSetter, rowMapper);
     }
 
-    private <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    private <T> List<T> executeQuery(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
