@@ -24,11 +24,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            ResultSet rs = executeQuery(psmt, createArgumentPreparedStatementSetter(args));
+            pss.setValue(psmt);
+            ResultSet rs = psmt.executeQuery();
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
@@ -36,10 +37,8 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement psmt, PreparedStatementSetter statementSetter)
-            throws SQLException {
-        statementSetter.setValue(psmt);
-        return psmt.executeQuery();
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, createArgumentPreparedStatementSetter(args));
     }
 
     private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
@@ -69,18 +68,18 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    public int update(String sql, Object... args) {
+    public int update(String sql, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            return executeUpdate(psmt, createArgumentPreparedStatementSetter(args));
+            pss.setValue(psmt);
+            return psmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private int executeUpdate(PreparedStatement psmt, PreparedStatementSetter statementSetter) throws SQLException {
-        statementSetter.setValue(psmt);
-        return psmt.executeUpdate();
+    public int update(String sql, Object... args) {
+        return update(sql, createArgumentPreparedStatementSetter(args));
     }
 }
