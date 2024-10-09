@@ -79,13 +79,17 @@ public class JdbcTemplate {
             return;
         }
         for (int index = 1; index <= args.length; index++) {
-            try {
-                preparedStatement.setObject(index, args[index - 1]);
-            } catch (SQLException e) {
-                log.error("파라미터 바인딩에 실패하였습니다. index: {}, arg: {}, 예외 메세지: {}", index, args[index - 1], e.getMessage(), e);
-                throw new DataAccessException("PreparedStatement에 파라미터를 바인딩하는 데 실패했습니다. " +
-                        "인덱스: " + index + ", 값: " + args[index - 1] + ". 원인: " + e.getMessage(), e);
-            }
+            bindParameter(preparedStatement, args, index);
+        }
+    }
+
+    private void bindParameter(PreparedStatement preparedStatement, Object[] args, int index) {
+        try {
+            preparedStatement.setObject(index, args[index - 1]);
+        } catch (SQLException e) {
+            log.error("파라미터 바인딩에 실패하였습니다. index: {}, arg: {}, 예외 메세지: {}", index, args[index - 1], e.getMessage(), e);
+            throw new DataAccessException("PreparedStatement에 파라미터를 바인딩하는 데 실패했습니다. " +
+                    "인덱스: " + index + ", 값: " + args[index - 1] + ". 원인: " + e.getMessage(), e);
         }
     }
 
