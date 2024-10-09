@@ -9,13 +9,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -80,19 +75,11 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) throws DataAccessException {
-        Connection con = getConnection();
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement pstmt = con.prepareStatement(sql)) {
             return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("execute error", e);
-        } finally {
-            DataSourceUtils.releaseConnection(con, dataSource);
         }
-    }
-
-    private Connection getConnection() {
-        Connection con = DataSourceUtils.getConnection(dataSource);
-        log.debug("Connection : {}, Class : {}", con, con.getClass());
-        return con;
     }
 }
