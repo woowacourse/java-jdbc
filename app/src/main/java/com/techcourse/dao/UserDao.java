@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import javax.sql.DataSource;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -19,10 +18,6 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
