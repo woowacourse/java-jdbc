@@ -25,7 +25,7 @@ public class JdbcTemplate {
     public int update(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setSQLParams(statement, params);
+            setPreparedStatement(statement, params);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
@@ -46,7 +46,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setSQLParams(statement, params);
+            setPreparedStatement(statement, params);
             return queryForAll(statement, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
@@ -63,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setSQLParams(PreparedStatement statement, Object... params) throws SQLException {
+    private void setPreparedStatement(PreparedStatement statement, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             statement.setObject(i + 1, params[i]);
         }
