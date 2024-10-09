@@ -1,23 +1,20 @@
-package transaction.stage2;
+package com.interface21.jdbc.core;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+public class TestUser {
 
-@Entity(name = "users")
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String account;
+    private final String account;
     private String password;
-    private String email;
+    private final String email;
 
-    protected User() {}
+    public TestUser(long id, String account, String password, String email) {
+        this.id = id;
+        this.account = account;
+        this.password = password;
+        this.email = email;
+    }
 
-    public User(String account, String password, String email) {
+    public TestUser(String account, String password, String email) {
         this.account = account;
         this.password = password;
         this.email = email;
@@ -31,24 +28,20 @@ public class User {
         this.password = password;
     }
 
-    public static User createTest() {
-        return new User("gugu", "password", "hkkang@woowahan.com");
-    }
-
-    public Long getId() {
-        return id;
-    }
-
     public String getAccount() {
         return account;
     }
 
-    public String getPassword() {
-        return password;
+    public long getId() {
+        return id;
     }
 
     public String getEmail() {
         return email;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     @Override

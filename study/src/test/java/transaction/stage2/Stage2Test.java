@@ -13,12 +13,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
  * 트랜잭션의 경계에서 이미 진행 중인 트랜잭션이 있을 때 또는 없을 때 어떻게 동작할 것인가를 결정하는 방식을 말한다.
- *
+ * <p>
  * FirstUserService 클래스의 메서드를 실행할 때 첫 번째 트랜잭션이 생성된다.
  * SecondUserService 클래스의 메서드를 실행할 때 두 번째 트랜잭션이 어떻게 되는지 관찰해보자.
- *
+ * <p>
  * https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#tx-propagation
  */
+
+// 테스트 결과를 보는것이 아닌 로그로 논리적 트랜잭션이 실행되었는지 확인하자.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage2Test {
 
@@ -45,8 +47,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +61,9 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,12 +72,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -87,8 +90,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
@@ -102,16 +105,25 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
      * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
-     *
+     * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     */
+    /**
+    Hibernate: insert into users (account,email,password,id) values (?,?,?,default)
+    2024-10-08T13:09:58.635+09:00  INFO 43623 --- [    Test worker] transaction.stage2.FirstUserService      :
+    transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported is Actual Transaction Active : ✅ true
+    Hibernate: insert into users (account,email,password,id) values (?,?,?,default)
+    2024-10-08T13:09:58.645+09:00  INFO 43623 --- [    Test worker] transaction.stage2.SecondUserService     :
+    transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported is Actual Transaction Active : ❌ false
+    2024-10-08T13:09:58.646+09:00  INFO 43623 --- [    Test worker] transaction.stage2.Stage2Test            : transactions : [transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported, transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported]
      */
     @Test
     void testNotSupported() {
@@ -119,8 +131,9 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
@@ -133,12 +146,18 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     *
+     * 2024-10-08T13:19:09.684+09:00  INFO 43890 --- [    Test worker] transaction.stage2.FirstUserService      :
+     * null is Actual Transaction Active : ❌ false
+     * Hibernate: insert into users (account,email,password,id) values (?,?,?,default)
+     * 2024-10-08T13:19:09.687+09:00  INFO 43890 --- [    Test worker] transaction.stage2.SecondUserService     :
+     * transaction.stage2.SecondUserService.saveSecondTransactionWithNever is Actual Transaction Active : ❌ false
      */
     @Test
     void testNever() {
@@ -146,7 +165,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }

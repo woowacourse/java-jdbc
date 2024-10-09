@@ -36,7 +36,8 @@ class Stage2Test {
         final var hikariPool = getPool((HikariDataSource) dataSource);
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
-        final var threads = new Thread[20];
+        // 1000으로 설정해도 MAXIMUM_POOL_SIZE는 5로 유지
+        final var threads = new Thread[100];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
         }
