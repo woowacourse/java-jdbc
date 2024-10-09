@@ -38,6 +38,6 @@
 
 # 3. Transaction 적용
 
-- [ ] User 비밀번호 변경 기능에 트랜잭션 적용
+- [x] User 비밀번호 변경 기능에 트랜잭션 적용
     - UserServiceTest에서 @Disabled 삭제하고 미션 진행
     - 한 트랜잭션으로 묶기 위해 동일한 Connection 객체를 사용하도록 변경

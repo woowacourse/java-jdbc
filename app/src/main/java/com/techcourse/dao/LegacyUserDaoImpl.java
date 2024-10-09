@@ -3,10 +3,12 @@ package com.techcourse.dao;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.LegacyJdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,12 @@ public class LegacyUserDaoImpl implements UserDao {
     }
 
     @Override
+    public void update(final Connection conn,  final User user) {
+        final var sql = "update users set password = ? where id = ?";
+        legacyJdbcTemplate.executeUpdate(sql, user.getPassword(), user.getId());
+    }
+
+    @Override
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return legacyJdbcTemplate.executeQueryWithMultiData(sql, this::generateUser);
@@ -48,6 +56,11 @@ public class LegacyUserDaoImpl implements UserDao {
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return legacyJdbcTemplate.executeQueryWithSingleData(sql, this::generateUser, account);
+    }
+
+    @Override
+    public DataSource getDataSource() {
+        return null;
     }
 
     private User generateUser(ResultSet rs) {
