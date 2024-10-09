@@ -65,8 +65,11 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+        // PreparedStatement 캐시를 활성화
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        // 활성화할 PreparedStatement의 갯수
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        // PreparedStatement에 캐싱할 쿼리문의 최대 길이
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         final var dataSource = new HikariDataSource(hikariConfig);
