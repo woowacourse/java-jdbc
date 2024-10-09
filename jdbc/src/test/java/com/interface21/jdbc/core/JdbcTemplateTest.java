@@ -65,7 +65,7 @@ class JdbcTemplateTest {
         assertThat(updated).isEqualTo(0);
     }
 
-    @DisplayName("입력된 RowMapper에 따라 값을 가져온다.")
+    @DisplayName("입력된 쿼리와 RowMapper에 따라 값을 가져온다.")
     @Test
     void queryForObject() throws SQLException {
         // given
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
         assertThat(person).isEqualTo(new Person(1L, "myungoh", 25));
     }
 
-    @DisplayName("입력된 RowMapper에 따라 가져온 값이 0개인 경우 예외를 던진다.")
+    @DisplayName("쿼리로 가져온 값이 0개인 경우 예외를 던진다.")
     @Test
     void queryForObject_none() throws SQLException {
         // given
@@ -102,7 +102,7 @@ class JdbcTemplateTest {
         verify(resultSet).next();
     }
 
-    @DisplayName("입력된 RowMapper에 따라 가져온 값이 1개가 아닌 경우 예외가 발생한다.")
+    @DisplayName("쿼리로 가져온 값이 1개가 아닌 경우 예외가 발생한다.")
     @Test
     void queryForObject_notUnique() throws SQLException {
         // given
@@ -121,7 +121,7 @@ class JdbcTemplateTest {
         verify(resultSet, times(3)).next();
     }
 
-    @DisplayName("입력된 RowMapper에 따라 리스트를 가져온다.")
+    @DisplayName("입력된 쿼리와 RowMapper에 따라 리스트를 가져온다.")
     @Test
     void queryForList() throws SQLException {
         // given
