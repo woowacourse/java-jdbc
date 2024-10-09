@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,27 +18,23 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementSetter preparedStatementSetter;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            setPreparedStatementParameters(args, psmt);
+            preparedStatementSetter.setValue(psmt, args);
             ResultSet rs = psmt.executeQuery();
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setPreparedStatementParameters(Object[] args, PreparedStatement psmt) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            psmt.setObject(i + 1, args[i]);
         }
     }
 
@@ -62,7 +59,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            setPreparedStatementParameters(args, psmt);
+            preparedStatementSetter.setValue(psmt, args);
 
             return psmt.executeUpdate();
         } catch (SQLException e) {
