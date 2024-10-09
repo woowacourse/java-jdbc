@@ -25,7 +25,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(conn, sql);
 
