@@ -1,13 +1,13 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,18 +67,18 @@ public class JdbcTemplate {
         log.debug("Executing prepared SQL statement : [ {} ]", sql);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         List<T> results = query(sql, rowMapper, pss);
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
-        }
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
-        return results.getFirst();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(results.getFirst());
     }
 }

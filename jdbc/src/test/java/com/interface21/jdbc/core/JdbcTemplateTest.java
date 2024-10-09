@@ -8,13 +8,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,26 +82,32 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         // when
-        long result = jdbcTemplate.queryForObject("read query", ROW_MAPPER);
+        Optional<Long> result = jdbcTemplate.queryForObject("read query", ROW_MAPPER);
 
         // then
         assertAll(
                 () -> verify(preparedStatement).executeQuery(),
-                () -> assertThat(result).isEqualTo(1L),
+                () -> assertThat(result).isPresent(),
+                () -> assertThat(result.get()).isEqualTo(1L),
                 () -> verify(resultSet).close()
         );
     }
 
     @Test
-    void read_쿼리로_한_개의_데이터_조회_시_데이터가_없으면_예외가_발생한다() throws SQLException {
+    void read_쿼리로_한_개의_데이터_조회_시_데이터가_없으면_빈_값을_반환한다() throws SQLException {
         // give
         when(resultSet.next()).thenReturn(false);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject("read query", ROW_MAPPER, 1L))
-                .isExactlyInstanceOf(EmptyResultDataAccessException.class)
-                .hasMessage("Incorrect result size. expected size: 1, actual size: 0");
+        // when
+        Optional<Long> result = jdbcTemplate.queryForObject("read query", ROW_MAPPER);
+
+        // then
+        assertAll(
+                () -> verify(preparedStatement).executeQuery(),
+                () -> assertThat(result).isEmpty(),
+                () -> verify(resultSet).close()
+        );
     }
 
     @Test
