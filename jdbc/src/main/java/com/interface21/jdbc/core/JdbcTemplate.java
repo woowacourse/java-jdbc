@@ -27,7 +27,8 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
             return sqlExecutor.execute(preparedStatement, sql);
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            log.error("SQL 실행 중 오류가 발생했습니다. SQL: {}. 예외 메시지: {}", sql, e.getMessage(), e);
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다. SQL: " + sql + ". 원인: " + e.getMessage(), e);
         }
     }
 
@@ -36,7 +37,7 @@ public class JdbcTemplate {
             return dataSource.getConnection();
         } catch (SQLException e) {
             log.error("DataSource로부터 Connection을 얻지 못했습니다. 예외 메세지: {}", e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("데이터베이스 연결을 할 수 없습니다. 원인: " + e.getMessage(), e);
         }
     }
 
@@ -45,7 +46,7 @@ public class JdbcTemplate {
             return connection.prepareStatement(sql);
         } catch (SQLException e) {
             log.error("SQL 쿼리에 대한 Statement을 준비하지 못했습니다. sql: {}. 예외 메세지: {}", sql, e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("SQL 쿼리 준비 중 오류가 발생했습니다. SQL: " + sql + ". 원인: " + e.getMessage(), e);
         }
     }
 
@@ -82,7 +83,8 @@ public class JdbcTemplate {
                 preparedStatement.setObject(index, args[index - 1]);
             } catch (SQLException e) {
                 log.error("파라미터 바인딩에 실패하였습니다. index: {}, arg: {}, 예외 메세지: {}", index, args[index - 1], e.getMessage(), e);
-                throw new DataAccessException(e);
+                throw new DataAccessException("PreparedStatement에 파라미터를 바인딩하는 데 실패했습니다. " +
+                        "인덱스: " + index + ", 값: " + args[index - 1] + ". 원인: " + e.getMessage(), e);
             }
         }
     }
@@ -99,7 +101,8 @@ public class JdbcTemplate {
         try {
             return getSingResult(rowMapper, resultSet);
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            log.error("단일 결과 조회 중 SQL 예외가 발생했습니다. 예외 메시지: {}", e.getMessage(), e);
+            throw new DataAccessException("단일 결과 조회 중 오류가 발생했습니다. 원인: " + e.getMessage(), e);
         }
     }
 
@@ -109,11 +112,13 @@ public class JdbcTemplate {
             validateSingleResult(resultSet);
             return result;
         }
+        log.error("단일 행 조회를 기대했으나, 조회된 데이터가 없습니다.");
         throw new DataAccessException("단일 행 조회를 기대했지만, 조회된 행이 없습니다.");
     }
 
     private void validateSingleResult(ResultSet resultSet) throws SQLException {
         if (resultSet.next()) {
+            log.error("단일 행 조회를 기대했으나, 여러 행이 조회되었습니다.");
             throw new DataAccessException("단일 행 조회를 기대했지만, 여러 행이 조회되었습니다.");
         }
     }
