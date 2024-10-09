@@ -46,24 +46,24 @@ public class JdbcTemplateTest {
 
     @Test
     @DisplayName("execute 동작 확인")
-    public void testExecute() throws SQLException {
+    public void testQueryAndGetResultsAndGetUpdateRowsCount() throws SQLException {
         String sql = "UPDATE users SET name = ? WHERE id = ?";
         Object[] params = {"John", 1};
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        int rowsAffected = jdbcTemplate.execute(sql, params);
+        int rowsAffected = jdbcTemplate.queryAndGetUpdateRowsCount(sql, params);
 
         assertThat(rowsAffected).isEqualTo(1);
 
         verify(preparedStatement).setString(1, "John");
-        verify(preparedStatement).setString(2, "1");
+        verify(preparedStatement).setInt(2, 1);
         verify(preparedStatement).executeUpdate();
     }
 
     @Test
     @DisplayName("query 동작 확인")
-    public void testQuery() throws SQLException {
+    public void testQueryAndGetResults() throws SQLException {
         String sql = "SELECT id, name FROM users WHERE id = ?";
         Object[] params = {1};
 
@@ -74,18 +74,18 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        List<User> users = jdbcTemplate.query(sql, parser, params);
+        List<User> users = jdbcTemplate.queryAndGetResults(sql, parser, params);
 
         assertThat(users).isNotNull().hasSize(1);
         assertThat(users.getFirst().getName()).isEqualTo("John");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
     @Test
     @DisplayName("queryOne 동작 확인")
-    public void testQueryOne() throws SQLException {
+    public void testQueryAndGetResultsOne() throws SQLException {
         String sql = "SELECT id, name FROM users WHERE id = ?";
         Object[] params = {1};
 
@@ -93,49 +93,46 @@ public class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true).thenReturn(false);
         when(resultSet.getInt("id")).thenReturn(1);
         when(resultSet.getString("name")).thenReturn("John");
+        when(resultSet.isLast()).thenReturn(true);
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        User user = jdbcTemplate.queryOne(sql, parser, params);
+        User user = jdbcTemplate.queryAndGetResult(sql, parser, params);
 
         assertThat(user).isNotNull();
         assertThat(user.getName()).isEqualTo("John");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
-    private CastingResultSetParser<User> userResultSetParser() {
-        return new CastingResultSetParser<>(User.class) {
-            @Override
-            protected Object parseInternal(ResultSet resultSet) throws SQLException {
-                return new User(resultSet.getInt("id"), resultSet.getString("name"));
-            }
-        };
+    private ResultSetParser<User> userResultSetParser() {
+        return resultSet -> new User(resultSet.getInt("id"), resultSet.getString("name"));
     }
 
     @Test
     @DisplayName("queryOne 조회 데이터가 많을 때 예외 던지는지 확인")
-    public void testQueryOne_TooManyRows() throws SQLException {
+    public void testQueryAndGetResultsOne_TooManyRows() throws SQLException {
         String sql = "SELECT id, name FROM users WHERE id = ?";
         Object[] params = {1};
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);  // Multiple rows
+        when(resultSet.isLast()).thenReturn(false);
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        assertThatThrownBy(() -> jdbcTemplate.queryOne(sql, parser, params))
+        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(sql, parser, params))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("여러개의 행이 조회되었습니다.");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 
     @Test
     @DisplayName("queryOne 조회 데이터가 없을 때 예외 던지는지 확인")
-    public void testQueryOne_NoRows() throws SQLException {
+    public void testQueryAndGetResultsOne_NoRows() throws SQLException {
         String sql = "SELECT id, name FROM users WHERE id = ?";
         Object[] params = {1};
 
@@ -144,11 +141,11 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        assertThatThrownBy(() -> jdbcTemplate.queryOne(sql, parser, params))
+        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(sql, parser, params))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("행이 하나도 조회되지 않았습니다.");
 
-        verify(preparedStatement).setString(1, "1");
+        verify(preparedStatement).setInt(1, 1);
         verify(preparedStatement).executeQuery();
     }
 }

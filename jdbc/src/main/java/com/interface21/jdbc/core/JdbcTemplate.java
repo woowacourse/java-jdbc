@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,85 +20,41 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(String sql, Object... parameters) {
+    public int queryAndGetUpdateRowsCount(String sql, Object... parameters) {
+        return executeQueryExecutor(PreparedStatement::executeUpdate, sql, parameters);
+    }
+
+    private <T> T executeQueryExecutor(QueryExecutor<T> queryExecutor, String sql, Object... parameters) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            setParameters(parameters, pstmt);
-            return pstmt.executeUpdate();
+            queryExecutor.setParameters(preparedStatement, parameters);
+            return queryExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void setParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            pstmt.setString(i + 1, String.valueOf(parameters[i]));
-        }
+    public <T> List<T> queryAndGetResults(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
+        return executeQueryExecutor(sql, resultSetParser, new ListResultGenerator<>(), parameters);
     }
 
-    public <T> List<T> query(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        ResultSet resultSet = query(sql, parameters);
-        try {
-            return parseResults(resultSetParser, resultSet);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    private <T, R> R executeQueryExecutor(
+            String sql,
+            ResultSetParser<T> resultSetParser,
+            ResultGenerator<T, R> rResultGenerator,
+            Object... parameters
+    ) {
+        return executeQueryExecutor((preparedStatement) -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return rResultGenerator.generate(resultSetParser, resultSet);
+        }, sql, parameters);
     }
 
-    private ResultSet query(String sql, Object... parameters) {
-        try {
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            log.debug("query : {}", sql);
-            setParameters(parameters, pstmt);
-            return pstmt.executeQuery();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> parseResults(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(resultSetParser.parse(resultSet));
-        }
-        return results;
-    }
-
-    public <T> T queryOne(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
-        ResultSet resultSet = query(sql, parameters);
-        try {
-            return parseResult(resultSetParser, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T parseResult(ResultSetParser<T> resultSetParser, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(resultSetParser.parse(resultSet));
-            validateToManyData(results);
-        }
-        validateNoData(results);
-        return results.getFirst();
-    }
-
-    private <T> void validateNoData(List<T> results) {
-        if (results.isEmpty()) {
-            throw new DataAccessException("행이 하나도 조회되지 않았습니다.");
-        }
-    }
-
-    private <T> void validateToManyData(List<T> results) {
-        if (results.size() > 1) {
-            throw new DataAccessException("여러개의 행이 조회되었습니다.");
-        }
+    public <T> T queryAndGetResult(String sql, ResultSetParser<T> resultSetParser, Object... parameters) {
+        return executeQueryExecutor(sql, resultSetParser, new SingleResultGenerator<>(), parameters);
     }
 }
