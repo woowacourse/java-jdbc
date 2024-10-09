@@ -28,8 +28,10 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+            log.debug("query = {}", sql);
+            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
+            pss.setValues(pstmt);
+
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
@@ -40,8 +42,9 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+            log.debug("query = {}", sql);
+            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
+            pss.setValues(pstmt);
 
             return getQueryResult(rowMapper, pstmt);
         } catch (SQLException e) {
@@ -53,24 +56,15 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+            log.debug("query = {}", sql);
+            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
+            pss.setValues(pstmt);
 
             List<T> result = getQueryResult(rowMapper, pstmt);
             return requiredSingleResult(result);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
-    }
-
-    private <T> T requiredSingleResult(List<T> result) {
-        if (result.isEmpty()) {
-            throw new EmptyResultDataAccessException("데이터 개수가 0개입니다.");
-        }
-        if (result.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException("데이터 개수가 올바르지 않습니다. (size: %d)".formatted(result.size()));
-        }
-        return result.get(0);
     }
 
     private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
@@ -85,9 +79,17 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatementParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for (int idx = 1; idx <= args.length; idx++) {
-            pstmt.setObject(idx, args[idx - 1]);
+    private <T> T requiredSingleResult(List<T> result) {
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException("데이터 개수가 0개입니다.");
         }
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("데이터 개수가 올바르지 않습니다. (size: %d)".formatted(result.size()));
+        }
+        return result.get(0);
+    }
+
+    public PreparedStatementSetter createArgsPreparedStatementSetter(@Nullable Object[] args) {
+        return new ArgumentPreparedStatementSetter(args);
     }
 }
