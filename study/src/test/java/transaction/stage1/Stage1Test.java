@@ -208,9 +208,9 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |      x
-     * Read Committed   |      x
-     * Repeatable Read  |      x
+     * Read Uncommitted |      +
+     * Read Committed   |      +
+     * Repeatable Read  |      +
      * Serializable     |
      */
     @Test
