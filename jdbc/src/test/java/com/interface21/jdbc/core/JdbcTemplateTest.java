@@ -44,8 +44,8 @@ class JdbcTemplateTest {
         final var saved = new User(1L, "gugu");
 
         given(resultSet.next()).willReturn(true);
-        given(resultSet.getLong(1)).willReturn(saved.id);
-        given(resultSet.getString(2)).willReturn(saved.account);
+        given(resultSet.getLong("id")).willReturn(saved.id);
+        given(resultSet.getString("account")).willReturn(saved.account);
 
         // when
         final var actual = sut.queryForObject(sql, userRowMapper, 1L);
@@ -68,8 +68,8 @@ class JdbcTemplateTest {
         final var saved3 = new User(3L, "lisa");
 
         given(resultSet.next()).willReturn(true, true, true, false);
-        given(resultSet.getLong(1)).willReturn(saved1.id, saved2.id, saved3.id);
-        given(resultSet.getString(2)).willReturn(saved1.account, saved2.account, saved3.account);
+        given(resultSet.getLong("id")).willReturn(saved1.id, saved2.id, saved3.id);
+        given(resultSet.getString("account")).willReturn(saved1.account, saved2.account, saved3.account);
 
         // when
         final var actual = sut.queryForList(sql, userRowMapper);
