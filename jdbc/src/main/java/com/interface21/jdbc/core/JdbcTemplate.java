@@ -28,7 +28,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            ResultSet rs = executeQuery(psmt, getPreparedStatementSetter(args));
+            ResultSet rs = executeQuery(psmt, createArgumentPreparedStatementSetter(args));
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
@@ -42,7 +42,7 @@ public class JdbcTemplate {
         return psmt.executeQuery();
     }
 
-    private PreparedStatementSetter getPreparedStatementSetter(Object... args) {
+    private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
         return statement -> {
             for (int i = 0; i < args.length; i++) {
                 statement.setObject(i + SET_OBJECT_BASE, args[i]);
@@ -73,7 +73,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            return executeUpdate(psmt, getPreparedStatementSetter(args));
+            return executeUpdate(psmt, createArgumentPreparedStatementSetter(args));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
