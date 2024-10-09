@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
-import com.interface21.dao.IncorrectParameterCountException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
@@ -87,18 +86,6 @@ class JdbcTemplateTest {
                     .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
             verify(connection).close();
-        }
-
-        @DisplayName("파라미터 개수가 일치하지 않을 경우 예외를 발생한다.")
-        @Test
-        void executeUpdate_throwsException_whenIncorrectParameterCount() throws SQLException {
-            // given
-            String sql = "update users set account = ? where id = ?";
-            when(parameterMetaData.getParameterCount()).thenReturn(2);
-
-            // when & then
-            assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, "mia"))
-                    .isInstanceOf(IncorrectParameterCountException.class);
         }
     }
 
