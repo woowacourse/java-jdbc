@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -42,19 +43,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatement(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            throw new RuntimeException("no record found");
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        List<T> result = query(sql, rowMapper, params);
+        if (result.isEmpty() || result.size() != SINGLE_SIZE) {
+            throw new RuntimeException("Unexpected number of rows returned: " + result.size());
         }
+        return result.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -76,7 +69,7 @@ public class JdbcTemplate {
 
     private static void setStatement(PreparedStatement pstmt, Object[] params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+            pstmt.setObject(i + SINGLE_SIZE, params[i]);
         }
     }
 }

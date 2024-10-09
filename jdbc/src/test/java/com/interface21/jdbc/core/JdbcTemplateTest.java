@@ -105,6 +105,14 @@ class JdbcTemplateTest {
         public int hashCode() {
             return Objects.hash(id, name);
         }
+
+        @Override
+        public String toString() {
+            return "TestUser{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
     }
 
     private RowMapper<TestUser> testUserRowMapper() {
