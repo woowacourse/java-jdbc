@@ -29,17 +29,7 @@ public class JdbcTemplate {
     public int update(String sql, Object... arguments) {
         log.debug("update query : {}", sql);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(arguments, pstmt);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            String errorMessage = String.format("Error executing update: %s with arguments: %s", sql,
-                    Arrays.toString(arguments));
-            log.error(errorMessage);
-            throw new JdbcSQLException(errorMessage, e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, arguments);
     }
 
     public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
@@ -53,28 +43,39 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         log.debug("query : {}", sql);
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(arguments, pstmt);
+        return execute(sql, preparedStatement -> fetchResults(rowMapper, preparedStatement), arguments);
+    }
 
-            ResultSet rs = pstmt.executeQuery();
-            List<T> objects = new ArrayList<>();
-            while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs, rs.getFetchSize()));
-            }
-            return objects;
+    private <T> List<T> fetchResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement)
+            throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+        List<T> objects = new ArrayList<>();
+        while (resultSet.next()) {
+            objects.add(rowMapper.mapRow(resultSet, resultSet.getFetchSize()));
+        }
+        return objects;
+    }
+
+    public <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... arguments) {
+        log.debug("update query : {}", sql);
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setArguments(arguments, preparedStatement);
+
+            return preparedStatementExecutor.excute(preparedStatement);
         } catch (SQLException e) {
-            String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
+            String errorMessage = String.format("Error executing: %s with arguments: %s", sql,
                     Arrays.toString(arguments));
             log.error(errorMessage);
             throw new JdbcSQLException(errorMessage, e);
         }
     }
 
-    private void setArguments(Object[] arguments, PreparedStatement pstmt) throws SQLException {
+    private void setArguments(Object[] arguments, PreparedStatement preparedStatement) throws SQLException {
         int count = START_ARGUMENT_COUNT;
         for (Object argument : arguments) {
-            pstmt.setObject(count, argument);
+            preparedStatement.setObject(count, argument);
             count++;
         }
     }

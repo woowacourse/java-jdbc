@@ -37,14 +37,13 @@
 
 - JDBC라이브러리와 개발자의 역할 분리 및 리펙터링
 - JDBC 라이브러리
-  - [ ] connection 생성 리펙터링
+  - [x] connection 생성 리펙터링
   - [x] statement 준비 및 실행
     - 가변 인자
   - [x] resultSet 생성
     - RowMapper 구현 (함수형 인터페이스, 제네일)
   - [x] 예외 처리
     - checked exception 처리
-  - [ ] 트랙잭션 관리
-  - [ ] Connection, Statement, ResultSet 객체 사용 및 close 로직 리펙터링 (재사용되도록)
+  - [x] Connection, Statement, ResultSet 객체 사용 및 close 로직 리펙터링 (재사용되도록)
     - 익명 클래스 사용
     - try-with-resources
