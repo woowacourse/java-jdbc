@@ -36,11 +36,13 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setString(1, user.getPassword());
-            pstmt.setLong(2, user.getId());
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
         });
     }
 
