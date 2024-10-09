@@ -30,4 +30,4 @@
 - [x] 커스텀 Exception 추가해서 사용자는 Unchecked Exception 되도록 변경
 - [x] 제네릭 사용하도록 RowMapper 인터페이스 개선
 - [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 개선
-- [ ] 람다로 코드량 줄이기
+- [x] 람다로 코드량 줄이기
