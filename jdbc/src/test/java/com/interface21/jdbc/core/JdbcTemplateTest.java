@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.sql.Connection;
@@ -165,6 +166,26 @@ class JdbcTemplateTest {
 
         // then
         assertThat(user.email).isEqualTo("gugu@naver.com");
+    }
+
+    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>를 통해 select가능하다.")
+    @Test
+    void throwException_when_queryForObjectWithPreparedStatementSetterResultSizeIsNotOne() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+
+        // when - then
+        assertThatThrownBy(
+                () -> jdbcTemplate.queryForObejct(
+                        selectQuery,
+                        (rs) -> {
+                            rs.setString(1, "gugu");
+                        },
+                        userMapper))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("조회 결과가 하나가 아닙니다. size: 2");
     }
 
     private static void truncateUser(DataSource dataSource) {
