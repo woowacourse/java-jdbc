@@ -25,23 +25,31 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return Optional.ofNullable(executeQuery(sql, resultSet -> {
-                    if (resultSet.next()) {
-                        return rowMapper.mapRow(resultSet);
-                    }
-                    return null;
-                }, values)
+        return Optional.ofNullable(executeQuery(sql,
+                resultSet -> mapSingleRow(rowMapper, resultSet),
+                values)
         );
     }
 
+    private <T> T mapSingleRow(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            return rowMapper.mapRow(resultSet);
+        }
+        return null;
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeQuery(sql, resultSet -> {
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
-        }, values);
+        return executeQuery(sql,
+                resultSet -> mapRows(rowMapper, resultSet),
+                values);
+    }
+
+    private <T> List<T> mapRows(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 
     private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
@@ -53,7 +61,6 @@ public class JdbcTemplate {
             return resultSetExtractor.extractData(resultSet);
         }));
     }
-
 
     public void update(String sql, Object... values) {
         execute(sql, (preparedStatement -> {
