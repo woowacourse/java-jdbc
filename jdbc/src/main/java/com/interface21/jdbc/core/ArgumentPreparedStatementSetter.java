@@ -12,7 +12,7 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
     }
 
     @Override
-    public void setValues(final PreparedStatement ps) throws SQLException {
+    public void setValues(PreparedStatement ps) throws SQLException {
         if (args == null) {
             return;
         }
