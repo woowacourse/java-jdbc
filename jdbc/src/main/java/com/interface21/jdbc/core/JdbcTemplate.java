@@ -24,8 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = query(sql, rowMapper, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException();
         }
@@ -35,13 +35,13 @@ public class JdbcTemplate {
         throw new IncorrectResultSizeDataAccessException(results.size());
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParameters(pstmt, parameters);
+            ArgumentPreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
+            parameterSetter.setValues(pstmt);
             ResultSet resultSet = pstmt.executeQuery();
-            log.debug("실행된 쿼리입니다. : {}", sql);
 
             return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
@@ -63,27 +63,16 @@ public class JdbcTemplate {
         return results;
     }
 
-    public int update(String sql, Object... parameters) {
+    public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParameters(pstmt, parameters);
-            int changedCount = pstmt.executeUpdate();
-            log.debug("실행된 쿼리입니다. : {}", sql);
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+            statementSetter.setValues(pstmt);
 
-            return changedCount;
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... parameters) {
-        try {
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
-        } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }

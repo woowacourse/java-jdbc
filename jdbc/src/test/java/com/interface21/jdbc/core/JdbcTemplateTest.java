@@ -38,6 +38,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(resultSet);
+        when(dataSource.getConnection()).thenReturn(connection);
         when(resultSet.next()).thenReturn(false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper))
