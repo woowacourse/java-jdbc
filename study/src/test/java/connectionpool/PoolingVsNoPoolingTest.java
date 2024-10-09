@@ -37,7 +37,7 @@ class PoolingVsNoPoolingTest {
     @BeforeAll
     static void beforeAll() throws SQLException {
         // TestContainer로 임시 MySQL을 실행한다.
-        container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+        container = new MySQLContainer<>(DockerImageName.parse("mysql:8.4.2"))
                 .withDatabaseName("test");
         container.start();
 
