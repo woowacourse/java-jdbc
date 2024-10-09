@@ -18,13 +18,13 @@ class OrderBasedPreparedStatementSetterTest {
     void setValues() throws SQLException {
         // given
         Map<Integer, Object> parameters = new HashMap<>();
-        PreparedStatement ps = mock(PreparedStatement.class);
-        PreparedStatementSetter pss = new OrderBasedPreparedStatementSetter("myungoh", 25);
-        doAnswer((a) -> parameters.put(1, "myungoh")).when(ps).setObject(1, "myungoh");
-        doAnswer((a) -> parameters.put(2, 25)).when(ps).setObject(2, 25);
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        PreparedStatementSetter preparedStatementSetter = new OrderBasedPreparedStatementSetter("myungoh", 25);
+        doAnswer((a) -> parameters.put(1, "myungoh")).when(preparedStatement).setObject(1, "myungoh");
+        doAnswer((a) -> parameters.put(2, 25)).when(preparedStatement).setObject(2, 25);
 
         // when
-        pss.setValues(ps);
+        preparedStatementSetter.setValues(preparedStatement);
 
         // then
         assertThat(parameters.get(1)).isEqualTo("myungoh");

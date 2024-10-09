@@ -17,15 +17,15 @@ class ReflectionRowMapperTest {
     @Test
     void mapRow() throws SQLException {
         // given
-        ResultSet rs = mock(ResultSet.class);
+        ResultSet resultSet = mock(ResultSet.class);
         Person expected = new Person(1, "myungoh", 25);
-        when(rs.getObject("id")).thenReturn(expected.id());
-        when(rs.getObject("name")).thenReturn(expected.name());
-        when(rs.getObject("age")).thenReturn(expected.age());
+        when(resultSet.getObject("id")).thenReturn(expected.id());
+        when(resultSet.getObject("name")).thenReturn(expected.name());
+        when(resultSet.getObject("age")).thenReturn(expected.age());
         RowMapper<Person> personRowMapper = new ReflectionRowMapper<>(Person.class);
 
         // when
-        Person person = personRowMapper.mapRow(rs);
+        Person person = personRowMapper.mapRow(resultSet);
 
         // then
         assertThat(person).isEqualTo(expected);
@@ -35,14 +35,14 @@ class ReflectionRowMapperTest {
     @Test
     void mapRow_camelToSnake() throws SQLException {
         // given
-        ResultSet rs = mock(ResultSet.class);
+        ResultSet resultSet = mock(ResultSet.class);
         Snake expected = new Snake(1, "myungoh");
-        when(rs.getObject("id")).thenReturn(expected.id());
-        when(rs.getObject("owner_name")).thenReturn(expected.ownerName());
+        when(resultSet.getObject("id")).thenReturn(expected.id());
+        when(resultSet.getObject("owner_name")).thenReturn(expected.ownerName());
         RowMapper<Snake> snakeRowMapper = new ReflectionRowMapper<>(Snake.class);
 
         // when
-        Snake snake = snakeRowMapper.mapRow(rs);
+        Snake snake = snakeRowMapper.mapRow(resultSet);
 
         // then
         assertThat(snake).isEqualTo(expected);

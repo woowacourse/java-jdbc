@@ -15,9 +15,9 @@ public class ReflectionRowMapper<T> implements RowMapper<T> {
     }
 
     @Override
-    public T mapRow(ResultSet rs) {
+    public T mapRow(ResultSet resultSet) {
         Field[] fields = clazz.getDeclaredFields();
-        Object[] arguments = getArgumentsFromResultSet(rs, fields);
+        Object[] arguments = getArgumentsFromResultSet(resultSet, fields);
         Class<?>[] fieldTypes = getFieldTypes(fields);
         try {
             return clazz.getConstructor(fieldTypes).newInstance(arguments);
@@ -26,11 +26,11 @@ public class ReflectionRowMapper<T> implements RowMapper<T> {
         }
     }
 
-    private Object[] getArgumentsFromResultSet(ResultSet rs, Field[] fields) {
+    private Object[] getArgumentsFromResultSet(ResultSet resultSet, Field[] fields) {
         return Arrays.stream(fields)
                 .map(Field::getName)
                 .map(this::camelToSnake)
-                .map(name -> getObject(rs, name))
+                .map(name -> getObject(resultSet, name))
                 .toArray();
     }
 
@@ -38,9 +38,9 @@ public class ReflectionRowMapper<T> implements RowMapper<T> {
         return camel.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
     }
 
-    private Object getObject(ResultSet rs, String name) {
+    private Object getObject(ResultSet resultSet, String name) {
         try {
-            return rs.getObject(name);
+            return resultSet.getObject(name);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }

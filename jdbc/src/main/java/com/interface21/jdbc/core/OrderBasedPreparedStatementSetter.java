@@ -12,9 +12,9 @@ public class OrderBasedPreparedStatementSetter implements PreparedStatementSette
     }
 
     @Override
-    public void setValues(PreparedStatement ps) throws SQLException {
+    public void setValues(PreparedStatement preparedStatement) throws SQLException {
         for (int i = 0; i < values.length; i++) {
-            ps.setObject(i + PARAMETER_START_INDEX, values[i]);
+            preparedStatement.setObject(i + PARAMETER_START_INDEX, values[i]);
         }
     }
 }

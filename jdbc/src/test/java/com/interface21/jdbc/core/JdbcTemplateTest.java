@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<Person> ROW_MAPPER = rs -> new Person(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getInt(3)
+    private static final RowMapper<Person> ROW_MAPPER = resultSet -> new Person(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getInt(3)
     );
 
     private ResultSet resultSet;

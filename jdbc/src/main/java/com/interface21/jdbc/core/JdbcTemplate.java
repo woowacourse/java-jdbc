@@ -24,46 +24,53 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... params) {
-        return update(sql, getDefaultPreparedStatementSetter(params));
+    public int update(String sql, Object... parameters) {
+        return update(sql, getDefaultPreparedStatementSetter(parameters));
     }
 
-    public int update(String sql, PreparedStatementSetter pss) {
-        return execute(sql, ps -> executeUpdate(ps, pss));
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, preparedStatement -> executeUpdate(preparedStatement, preparedStatementSetter));
     }
 
-    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] params) {
-        return new OrderBasedPreparedStatementSetter(params);
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] parameters) {
+        return new OrderBasedPreparedStatementSetter(parameters);
     }
 
     private <T> T execute(String sql, SQLFunction<PreparedStatement, T> function) {
         log.debug("query : {}", sql);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            return function.apply(ps);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return function.apply(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private int executeUpdate(PreparedStatement ps, PreparedStatementSetter pss) throws SQLException {
-        pss.setValues(ps);
-        return ps.executeUpdate();
+    private int executeUpdate(
+            PreparedStatement preparedStatement,
+            PreparedStatementSetter preparedStatementSetter
+    ) throws SQLException {
+        preparedStatementSetter.setValues(preparedStatement);
+        return preparedStatement.executeUpdate();
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(params));
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        List<T> results = queryForList(sql, rowMapper, pss);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
         validateResultUniqueness(results);
         return results.getFirst();
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        return execute(sql, ps -> executeQuery(ps, rowMapper, pss));
+    public <T> List<T> queryForList(
+            String sql,
+            RowMapper<T> rowMapper,
+            PreparedStatementSetter preparedStatementSetter
+    ) {
+        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper, preparedStatementSetter));
     }
 
     private <T> void validateResultUniqueness(List<T> results) {
@@ -75,31 +82,34 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> executeQuery(PreparedStatement ps, RowMapper<T> rowMapper, PreparedStatementSetter pss)
-            throws SQLException {
-        pss.setValues(ps);
-        return executeQuery(ps, rowMapper);
+    private <T> List<T> executeQuery(
+            PreparedStatement preparedStatement,
+            RowMapper<T> rowMapper,
+            PreparedStatementSetter preparedStatementSetter
+    ) throws SQLException {
+        preparedStatementSetter.setValues(preparedStatement);
+        return executeQuery(preparedStatement, rowMapper);
     }
 
-    private <T> List<T> executeQuery(PreparedStatement ps, RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            return getResults(rs, rowMapper);
+    private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getResults(resultSet, rowMapper);
         }
     }
 
-    private <T> List<T> getResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
         }
         return results;
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(params));
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        return execute(sql, ps -> executeQuery(ps, rowMapper));
+        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper));
     }
 }

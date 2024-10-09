@@ -19,16 +19,16 @@ class TypeBasedPreparedStatementSetterTest {
     void setValues() throws SQLException {
         // given
         Map<Integer, Object> parameters = new HashMap<>();
-        PreparedStatement ps = mock(PreparedStatement.class);
-        PreparedStatementSetter pss = new TypeBasedPreparedStatementSetter(
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        PreparedStatementSetter preparedStatementSetter = new TypeBasedPreparedStatementSetter(
                 new SQLParameter(1, "myungoh", JDBCType.VARCHAR),
                 new SQLParameter(2, 25, JDBCType.INTEGER)
         );
-        doAnswer((a) -> parameters.put(1, "myungoh")).when(ps).setObject(1, "myungoh", JDBCType.VARCHAR);
-        doAnswer((a) -> parameters.put(2, 25)).when(ps).setObject(2, 25, JDBCType.INTEGER);
+        doAnswer((a) -> parameters.put(1, "myungoh")).when(preparedStatement).setObject(1, "myungoh", JDBCType.VARCHAR);
+        doAnswer((a) -> parameters.put(2, 25)).when(preparedStatement).setObject(2, 25, JDBCType.INTEGER);
 
         // when
-        pss.setValues(ps);
+        preparedStatementSetter.setValues(preparedStatement);
 
         // then
         assertThat(parameters.get(1)).isEqualTo("myungoh");

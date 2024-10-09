@@ -13,9 +13,9 @@ public class TypeBasedPreparedStatementSetter implements PreparedStatementSetter
     }
 
     @Override
-    public void setValues(PreparedStatement ps) throws SQLException {
+    public void setValues(PreparedStatement preparedStatement) throws SQLException {
         for (SQLParameter sqlParameter : sqlParameters) {
-            ps.setObject(sqlParameter.parameterIndex(), sqlParameter.value(), sqlParameter.type());
+            preparedStatement.setObject(sqlParameter.parameterIndex(), sqlParameter.value(), sqlParameter.type());
         }
     }
 }
