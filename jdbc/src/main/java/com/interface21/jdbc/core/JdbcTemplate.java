@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -31,15 +30,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, defaultParameterSetter, defaultResultSetExtractor(rowMapper), args);
+        return query(sql, new DefaultParameterSetter(), new DefaultResultSetExtractor<>(rowMapper), args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter, Object... args) {
-        return query(sql, parameterSetter, defaultResultSetExtractor(rowMapper), args);
+        return query(sql, parameterSetter, new DefaultResultSetExtractor<>(rowMapper), args);
     }
 
     public <T> List<T> query(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        return query(sql, defaultParameterSetter, resultExtractor, args);
+        return query(sql, new DefaultParameterSetter(), resultExtractor, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -58,7 +57,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        List<T> results = query(sql, defaultParameterSetter, resultExtractor, args);
+        List<T> results = query(sql, new DefaultParameterSetter(), resultExtractor, args);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
@@ -67,7 +66,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return update(sql, defaultParameterSetter, args);
+        return update(sql, new DefaultParameterSetter(), args);
     }
 
     private <T> T execute(String sql, StatementCallback<T> action, ParameterSetter parameterSetter, Object... args) {
@@ -80,21 +79,5 @@ public class JdbcTemplate {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
         }
-    }
-
-    private ParameterSetter defaultParameterSetter = (pstmt, args) -> {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    };
-
-    private <T> ResultSetExtractor<T> defaultResultSetExtractor(RowMapper<T> rowMapper) {
-        return rs -> {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        };
     }
 }
