@@ -29,10 +29,7 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
-            log.debug("query = {}", sql);
-            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
-            pss.setValues(pstmt);
-
+            setPreparedStatementArgs(sql, args, pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -44,10 +41,7 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
-            log.debug("query = {}", sql);
-            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
-            pss.setValues(pstmt);
-
+            setPreparedStatementArgs(sql, args, pstmt);
             return executeQuery(rowMapper, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -60,15 +54,18 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
-            log.debug("query = {}", sql);
-            PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
-            pss.setValues(pstmt);
-
+            setPreparedStatementArgs(sql, args, pstmt);
             List<T> result = executeQuery(rowMapper, pstmt);
             return requiredSingleResult(result);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private void setPreparedStatementArgs(String sql, Object[] args, PreparedStatement pstmt) throws SQLException {
+        log.debug("query = {}", sql);
+        PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
+        pss.setValues(pstmt);
     }
 
     private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
