@@ -41,9 +41,7 @@ public class JdbcTemplate {
 
             ArgumentPreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
             parameterSetter.setValues(pstmt);
-
             ResultSet resultSet = pstmt.executeQuery();
-            log.debug("실행된 쿼리입니다. : {}", sql);
 
             return mapResults(rowMapper, resultSet);
         } catch (SQLException e) {
@@ -72,10 +70,7 @@ public class JdbcTemplate {
             ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
             statementSetter.setValues(pstmt);
 
-            int changedCount = pstmt.executeUpdate();
-            log.debug("실행된 쿼리입니다. : {}", sql);
-
-            return changedCount;
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
