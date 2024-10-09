@@ -27,7 +27,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setParameters(params, pstmt);
+            setParameters(pstmt, params);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -42,7 +42,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setParameters(params, pstmt);
+            setParameters(pstmt, params);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
@@ -68,7 +68,7 @@ public class JdbcTemplate {
         return result.getFirst();
     }
 
-    private void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
+    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
         for (int index = 0; index < params.length; index++) {
             int sqlParamIndex = index + 1;
             pstmt.setObject(sqlParamIndex, params[index]);
