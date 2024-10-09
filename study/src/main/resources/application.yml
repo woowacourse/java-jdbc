@@ -10,6 +10,8 @@ spring:
       jdbc-url: jdbc:h2:./test;DB_CLOSE_DELAY=-1;MODE=MYSQL; # TRACE_LEVEL_SYSTEM_OUT=3; # h2에서 출력하는 트랜잭션 로그 확인할 때 사용
       username: sa
       password:
+      maximum-pool-size: 5
+      pool-name: "gugu"
 
 # 스프링에서 출력하는 트랜잭션 로그를 직접 보고 싶으면 아래 주석 해제
 #logging:
