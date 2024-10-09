@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -65,8 +67,11 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     private <T> void validateSingleResult(List<T> result) {
-        if (result.size() != 1) {
-            throw new IllegalStateException("결과가 1개만 조회되어야 하지만, " + result.size() + "개의 결과가 조회되었습니다: " + result);
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, result.size());
+        }
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
         }
     }
 
