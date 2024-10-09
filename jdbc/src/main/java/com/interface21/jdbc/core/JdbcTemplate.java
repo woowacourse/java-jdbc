@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.DataAccessException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -23,22 +24,11 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            setParameters(statement, parameters);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> List<T> queryForList(String sql, Class<T> clazz, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            setParameters(statement, parameters);
+        return execute(sql, statement -> {
             ResultSet resultSet = statement.executeQuery();
             List<T> result = new ArrayList<>();
 
@@ -49,9 +39,18 @@ public class JdbcTemplate {
             }
 
             return result;
+        }, parameters);
+    }
+
+    private <R> R execute(String sql, StatementExecutor<R> executor, Object... parameters) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            setParameters(statement, parameters);
+            return executor.apply(statement);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
