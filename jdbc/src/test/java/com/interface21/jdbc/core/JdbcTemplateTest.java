@@ -24,10 +24,8 @@ class JdbcTemplateTest {
             """;
     private static final String INSERT_USERS_SQL =
             "insert into users (password) values ('1111'), ('2222');";
-    private static final String TRUNCATE_SQL = """
-            truncate table users;
-            alter table users alter column id restart with 1;
-            """;
+    private static final String TRUNCATE_SQL =
+            "TRUNCATE TABLE users RESTART IDENTITY;";
     private static final RowMapper<User> ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("password"));
