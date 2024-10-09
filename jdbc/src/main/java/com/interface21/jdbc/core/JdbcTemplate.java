@@ -29,86 +29,31 @@ public class JdbcTemplate {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+            log.error("Failed to get connection", e);
+            throw new CannotGetJdbcConnectionException("Unable to get a connection", e);
         }
     }
 
     public void update(String sql, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatement(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        executeUpdate(sql, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, params);
-             ResultSet rs = executeQuery(pstmt)) {
-
-            List<T> results = mapResults(rs, rowMapper);
-            validateSingleResult(results);
-
-            return results.get(0);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private PreparedStatement createPreparedStatement(Connection conn, String sql, Object... params)
-            throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        setStatement(pstmt, params);
-        return pstmt;
-    }
-
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
-    }
-
-    private <T> void validateSingleResult(List<T> result) throws SQLException {
-        if (result.size() != 1) {
-            System.out.println(result);
-            throw new IncorrectResultSizeDataAccessException("Incorrect result size");
-        }
+        List<T> results = query(sql, rowMapper, params);
+        validateSingleResult(results);
+        return results.get(0);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, params);
-             ResultSet rs = executeQuery(pstmt)) {
+             PreparedStatement pstmt = prepareStatement(conn, sql, params);
+             ResultSet rs = pstmt.executeQuery()) {
 
             return mapResults(rs, rowMapper);
 
         } catch (SQLException e) {
             log.error("Error during query execution.", e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
-        }
-
-        if (results.isEmpty()) {
-            throw new NoSuchElementException();
-        }
-
-        return results;
-    }
-
-
-    private void setStatement(PreparedStatement pstmt, Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+            throw new DataAccessException("Failed to execute query", e);
         }
     }
 
@@ -117,8 +62,47 @@ public class JdbcTemplate {
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            log.error("Execution failed", e);
+            throw new DataAccessException("Failed to execute statement", e);
+        }
+    }
+
+    private void executeUpdate(String sql, Object... params) {
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = prepareStatement(conn, sql, params)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Update failed", e);
+            throw new DataAccessException("Failed to execute update", e);
+        }
+    }
+
+    private PreparedStatement prepareStatement(Connection conn, String sql, Object... params) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        setParameters(pstmt, params);
+        return pstmt;
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object[] params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
+    private <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        if (results.isEmpty()) {
+            throw new NoSuchElementException("No results found");
+        }
+        return results;
+    }
+
+    private <T> void validateSingleResult(List<T> result) {
+        if (result.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException("Expected one result, but got " + result.size());
         }
     }
 }
