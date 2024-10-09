@@ -52,19 +52,12 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-
-            ResultSet resultSet = statement.executeQuery(sql);
-            if (resultSet.next()) {
-                return rowMapper.mapToObject(resultSet);
-            }
-            return null;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        List<T> results = query(sql, rowMapper);
+        if (results.size() == 1) {
+            return results.get(0);
         }
+
+        throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
     public <T> T queryForObejct(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
