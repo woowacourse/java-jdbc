@@ -101,7 +101,7 @@ class JdbcTemplateTest {
 
     @DisplayName("사용한 자원은 모두 close한다.")
     @Test
-    public void tesa() throws SQLException {
+    public void closeAllResources() throws SQLException {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, true, false);
         when(resultSet.getString("name")).thenReturn("이은정", "클로버", "지니아");
