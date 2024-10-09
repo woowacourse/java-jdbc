@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.ResultSet;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -11,7 +12,7 @@ import com.techcourse.domain.User;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> rowMapper = (rs, rowNum) ->
+    private final RowMapper<User> rowMapper = (final ResultSet rs) ->
             new User(
                     rs.getLong("id"),
                     rs.getString("account"),

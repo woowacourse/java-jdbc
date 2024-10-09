@@ -68,7 +68,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("Redddy");
         final User expected = new User(1, "Redddy");
 
-        final RowMapper<User> rowMapper = (rs, rowNum) -> new User(rs.getInt("id"), rs.getString("name"));
+        final RowMapper<User> rowMapper = (final ResultSet rs) -> new User(rs.getInt("id"), rs.getString("name"));
 
         // When
         final User user = jdbcTemplate.queryForObject(sql, rowMapper, 1);
@@ -93,7 +93,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("Redddy", "ChocoChip");
         final List<User> expected = List.of(new User(1, "Redddy"), new User(2, "ChocoChip"));
 
-        final RowMapper<User> rowMapper = (rs, rowNum) -> new User(rs.getInt("id"), rs.getString("name"));
+        final RowMapper<User> rowMapper = (final ResultSet rs) -> new User(rs.getInt("id"), rs.getString("name"));
 
         // When
         final List<User> users = jdbcTemplate.queryForList(sql, rowMapper);

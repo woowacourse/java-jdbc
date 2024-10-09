@@ -9,5 +9,5 @@ import javax.annotation.Nullable;
 public interface RowMapper<T> {
 
     @Nullable
-    T mapRow(ResultSet rs, int rowNum) throws SQLException;
+    T mapRow(ResultSet rs) throws SQLException;
 }

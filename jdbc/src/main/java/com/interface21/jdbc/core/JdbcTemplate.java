@@ -43,7 +43,7 @@ public class JdbcTemplate {
             final ResultSet rs = preparedStatement.executeQuery();
 
             if (rs.next()) {
-                return rowMapper.mapRow(rs, 1);
+                return rowMapper.mapRow(rs);
             }
             return null;
         } catch (final SQLException e) {
@@ -61,7 +61,7 @@ public class JdbcTemplate {
             final ResultSet rs = preparedStatement.executeQuery();
             final List<T> values = new ArrayList<>();
             while (rs.next()) {
-                values.add(rowMapper.mapRow(rs, rs.getFetchSize()));
+                values.add(rowMapper.mapRow(rs));
             }
             return values;
         } catch (final SQLException e) {
