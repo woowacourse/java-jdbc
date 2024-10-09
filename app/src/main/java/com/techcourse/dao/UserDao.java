@@ -1,12 +1,20 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
+
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong(1),
+            resultSet.getString(2),
+            resultSet.getString(3),
+            resultSet.getString(4)
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,19 +34,19 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, User.class);
+        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ? limit 1";
-        List<User> users = jdbcTemplate.queryForList(sql, User.class, id);
+        List<User> users = jdbcTemplate.queryForList(sql, USER_ROW_MAPPER, id);
 
         return getOptionalResult(users);
     }
 
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        List<User> users = jdbcTemplate.queryForList(sql, User.class, account);
+        List<User> users = jdbcTemplate.queryForList(sql, USER_ROW_MAPPER, account);
 
         return getOptionalResult(users);
     }

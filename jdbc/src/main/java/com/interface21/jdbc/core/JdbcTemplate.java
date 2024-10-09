@@ -1,8 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.exception.DataAccessException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,15 +25,13 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> List<T> queryForList(String sql, Class<T> clazz, Object... parameters) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return execute(sql, statement -> {
             ResultSet resultSet = statement.executeQuery();
             List<T> result = new ArrayList<>();
 
             while (resultSet.next()) {
-                T instance = createNewInstance(clazz);
-                setFields(instance, resultSet);
-                result.add(instance);
+                result.add(rowMapper.mapRow(resultSet));
             }
 
             return result;
@@ -57,23 +53,6 @@ public class JdbcTemplate {
     private void setParameters(PreparedStatement statement, Object... parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             statement.setObject(i + 1, parameters[i]);
-        }
-    }
-
-    private <T> T createNewInstance(Class<T> clazz) throws Exception {
-        Constructor<T> constructor = clazz.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        return constructor.newInstance();
-    }
-
-    private <T> void setFields(T instance, ResultSet resultSet) throws Exception {
-        Field[] fields = instance.getClass().getDeclaredFields();
-
-        for (int i = 0; i < fields.length; i++) {
-            Field field = fields[i];
-            Object object = resultSet.getObject(i + 1, TypeConverterUtils.convertToWrapperIfPrimitive(field.getType()));
-            field.setAccessible(true);
-            field.set(instance, object);
         }
     }
 }

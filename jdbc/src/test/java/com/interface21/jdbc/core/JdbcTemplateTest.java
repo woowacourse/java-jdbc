@@ -94,7 +94,12 @@ class JdbcTemplateTest {
 
         // when
         List<TestUser> users = jdbcTemplate.queryForList(
-                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
+                "SELECT id, name, age FROM test_user WHERE age=?",
+                resultSet -> new TestUser(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getInt(3)
+                ), 19);
 
         // then
         assertThat(users).isEmpty();
@@ -109,7 +114,12 @@ class JdbcTemplateTest {
 
         // when
         List<TestUser> users = jdbcTemplate.queryForList(
-                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
+                "SELECT id, name, age FROM test_user WHERE age=?",
+                resultSet -> new TestUser(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getInt(3)
+                ), 20);
 
         // then
         assertThat(users).containsExactly(
