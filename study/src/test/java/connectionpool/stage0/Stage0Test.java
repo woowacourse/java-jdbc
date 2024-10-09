@@ -27,8 +27,8 @@ class Stage0Test {
      * https://docs.oracle.com/javadb/10.8.3.0/ref/rrefjdbc4_0summary.html
      */
     @Test
-    void driverManager() throws SQLException {
-        // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
+    void driverManager() throws SQLException, ClassNotFoundException {
+        Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
             assertThat(connection.isValid(1)).isTrue();
