@@ -1,11 +1,13 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -73,5 +75,33 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void insertWithPss() {
+        String account = "jazz";
+        User user = new User(account, "password", "jazz@woowahan.com");
+        userDao.insertWithPss(user);
+
+        User actual = userDao.findById(2L);
+
+        assertThat(actual.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findAllByEmailWithPss() {
+        String email = "jazz@woowahan.com";
+        User userJazz = new User("jazz", "password", email);
+        User userDodo = new User("dodo", "password", email);
+        userDao.insertWithPss(userJazz);
+        userDao.insertWithPss(userDodo);
+
+        List<User> users = userDao.findAllByEmailWithPss(email);
+
+        assertAll(
+                () -> assertThat(users.size()).isEqualTo(2),
+                () -> assertThat(users.getFirst().getEmail()).isEqualTo(email),
+                () -> assertThat(users.getLast().getEmail()).isEqualTo(email)
+        );
     }
 }

@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -36,6 +37,18 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void insertWithPss(User user) {
+        String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+
+        PreparedStatementSetter pss = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        };
+
+        jdbcTemplate.update(sql, pss);
+    }
+
     public void update(User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
@@ -44,6 +57,16 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
         return jdbcTemplate.query(sql, getUserRowMapper());
+    }
+
+    public List<User> findAllByEmailWithPss(String email) {
+        String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
+
+        PreparedStatementSetter pss = pstmt -> {
+            pstmt.setString(1, email);
+        };
+
+        return jdbcTemplate.query(sql, pss, getUserRowMapper());
     }
 
     public User findById(Long id) {

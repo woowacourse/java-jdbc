@@ -33,6 +33,14 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(String sql, PreparedStatementSetter pss) {
+        return execute(sql, PreparedStatement::executeUpdate, pss);
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), pss);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), args);
     }
@@ -46,6 +54,18 @@ public class JdbcTemplate {
             throw new DataAccessException("조회 결과 개수가 2 이상입니다. actual " + results.size());
         }
         return results.getFirst();
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter setter) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            setter.setValues(pstmt);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
