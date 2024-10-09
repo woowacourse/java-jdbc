@@ -27,11 +27,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            ResultSet rs = executeQuery(psmt, statement -> {
-                for (int i = 0; i < args.length; i++) {
-                    statement.setObject(i + 1, args[i]);
-                }
-            });
+            ResultSet rs = executeQuery(psmt, getPreparedStatementSetter(args));
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
@@ -43,6 +39,14 @@ public class JdbcTemplate {
             throws SQLException {
         statementSetter.setValue(psmt);
         return psmt.executeQuery();
+    }
+
+    private PreparedStatementSetter getPreparedStatementSetter(Object... args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
@@ -68,11 +72,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            return executeUpdate(psmt, statement -> {
-                for (int i = 0; i < args.length; i++) {
-                    statement.setObject(i + 1, args[i]);
-                }
-            });
+            return executeUpdate(psmt, getPreparedStatementSetter(args));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
