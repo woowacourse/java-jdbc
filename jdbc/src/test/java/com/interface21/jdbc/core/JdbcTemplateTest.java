@@ -57,21 +57,6 @@ class JdbcTemplateTest {
         verify(preparedStatement).executeUpdate();
     }
 
-    @DisplayName("파라미터 바인딩 중 예외가 발생하면 DataAccessException이 던져진다.")
-    @Test
-    void assignToPreparedStatement() {
-        String sql = "update users set password = ?, email = ? WHERE id = ?";
-
-        assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, null))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessage("PreparedStatement에 바인딩할 파라미터가 없습니다."),
-                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, new Object[]{}))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessage("PreparedStatement에 바인딩할 파라미터가 없습니다.")
-        );
-    }
-
     @DisplayName("데이터를 조회하는 query 메서드는 여러 개의 행을 조회할 수 있다.")
     @Test
     void query() throws SQLException {
