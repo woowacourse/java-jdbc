@@ -39,7 +39,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DatabaseException("Database error occurred while executing query.", e);
+            throw new DatabaseException(e);
         }
     }
 
@@ -68,7 +68,7 @@ public class JdbcTemplate {
             return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DatabaseException("Database error occurred while executing query.", e);
+            throw new DatabaseException(e);
         }
     }
 
