@@ -1,9 +1,10 @@
 package transaction.stage2;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity(name = "users")
 public class User {
@@ -15,7 +16,8 @@ public class User {
     private String password;
     private String email;
 
-    protected User() {}
+    protected User() {
+    }
 
     public User(String account, String password, String email) {
         this.account = account;

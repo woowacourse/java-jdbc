@@ -1,9 +1,16 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -12,13 +19,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
@@ -58,13 +58,19 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
-    @Test
-    void dirtyReading() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(ints = {
+            Connection.TRANSACTION_READ_UNCOMMITTED,
+            Connection.TRANSACTION_READ_COMMITTED,
+            Connection.TRANSACTION_REPEATABLE_READ,
+            Connection.TRANSACTION_SERIALIZABLE
+    })
+    void dirtyReading(int isolationLevel) throws SQLException {
         setUp(createH2DataSource());
 
         // db에 새로운 연결(사용자A)을 받아와서
@@ -79,9 +85,6 @@ class Stage1Test {
         new Thread(RunnableWrapper.accept(() -> {
             // db에 connection(사용자A)이 아닌 새로운 연결인 subConnection(사용자B)을 받아온다.
             final var subConnection = dataSource.getConnection();
-
-            // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,14 +114,23 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
-    @Test
-    void noneRepeatable() throws SQLException {
-        setUp(createH2DataSource());
+    @ParameterizedTest
+    @ValueSource(ints = {
+            Connection.TRANSACTION_READ_UNCOMMITTED,
+            Connection.TRANSACTION_READ_COMMITTED,
+            Connection.TRANSACTION_REPEATABLE_READ,
+            Connection.TRANSACTION_SERIALIZABLE
+    })
+    void noneRepeatable(int isolationLevel) throws SQLException {
+        final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+                .withLogConsumer(new Slf4jLogConsumer(log));
+        mysql.start();
+        setUp(createMySQLDataSource(mysql));
 
         // 테스트 전에 필요한 데이터를 추가한다.
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
@@ -128,9 +140,6 @@ class Stage1Test {
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
-
-        // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,13 +182,19 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
-    @Test
-    void phantomReading() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(ints = {
+            Connection.TRANSACTION_READ_UNCOMMITTED,
+            Connection.TRANSACTION_READ_COMMITTED,
+            Connection.TRANSACTION_REPEATABLE_READ,
+            Connection.TRANSACTION_SERIALIZABLE
+    })
+    void phantomReading(int isolationLevel) throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
@@ -195,9 +210,6 @@ class Stage1Test {
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
-
-        // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -239,10 +251,12 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
+        System.out.println(container.getJdbcUrl());
         config.setJdbcUrl(container.getJdbcUrl());
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
+        config.addDataSourceProperty("allowMultiQueries", true);
         return new HikariDataSource(config);
     }
 
