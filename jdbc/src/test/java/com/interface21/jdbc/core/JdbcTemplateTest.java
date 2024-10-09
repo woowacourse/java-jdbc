@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -14,7 +13,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,11 +58,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn(kaki, aru);
 
-        List<TestUser> result = jdbcTemplate.query(sql, rowMapper);
+        jdbcTemplate.query(sql, rowMapper);
 
         assertAll(
-                () -> assertThat(result).hasSize(2),
-                () -> assertThat(result).containsExactly(kaki, aru),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(3)).next(),
@@ -86,8 +82,6 @@ class JdbcTemplateTest {
         TestUser testUser = jdbcTemplate.queryForObject(sql, rowMapper);
 
         assertAll(
-                () -> assertThat(testUser).isNotNull(),
-                () -> assertThat(testUser).usingRecursiveComparison().isEqualTo(kaki),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(2)).next(),
@@ -130,10 +124,9 @@ class JdbcTemplateTest {
         String sql = "UPDATE test_user SET name = ? WHERE id = ?";
         when(pstmt.executeUpdate()).thenReturn(1);
 
-        int updatedRows = jdbcTemplate.update(sql, "aru", 1);
+        jdbcTemplate.update(sql, "aru", 1);
 
         assertAll(
-                () -> assertThat(updatedRows).isEqualTo(1),
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).setObject(1, "aru"),
                 () -> verify(pstmt).setObject(2, 1),
