@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 
 public class UserHistoryDaoImpl implements UserHistoryDao {
 
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDaoImpl(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
