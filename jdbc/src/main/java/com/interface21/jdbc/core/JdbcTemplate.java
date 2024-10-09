@@ -23,22 +23,26 @@ public class JdbcTemplate {
         debugQuery(sql);
 
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            return executeQueryOne(callBack, pstmt, args);
+            return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> T executeQueryOne(ResultSetCallBack<T> callBack, PreparedStatement pstmt, Object... args) throws SQLException {
-        setArg(args, pstmt);
-        ResultSet rs = pstmt.executeQuery();
+    private <T> T executeQueryOne(PreparedStatement pstmt, ResultSetCallBack<T> callBack, Object... args) throws SQLException {
+        setArg(pstmt, args);
 
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return createResult(rs, callBack);
+        }
+    }
+
+    private <T> T createResult(ResultSet rs, ResultSetCallBack<T> callBack) throws SQLException {
         T result = null;
         if (rs.next()) {
             result = callBack.callback(rs);
         }
 
-        rs.close();
         return result;
     }
 
@@ -46,26 +50,30 @@ public class JdbcTemplate {
         debugQuery(sql);
 
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            return executeQuery(callBack, pstmt, args);
+            return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private <T> List<T> executeQuery(ResultSetCallBack<T> callBack, PreparedStatement pstmt, Object... args) throws SQLException {
-        setArg(args, pstmt);
-        ResultSet rs = pstmt.executeQuery();
+    private <T> List<T> executeQuery(PreparedStatement pstmt, ResultSetCallBack<T> callBack, Object... args) throws SQLException {
+        setArg(pstmt, args);
 
+        try (ResultSet rs = pstmt.executeQuery();) {
+            return createResults(rs, callBack);
+        }
+    }
+
+    private <T> List<T> createResults(ResultSet rs, ResultSetCallBack<T> callBack) throws SQLException {
         List<T> results = new ArrayList<>();
         while (rs.next()) {
             results.add(callBack.callback(rs));
         }
 
-        rs.close();
         return results;
     }
 
-    private void setArg(Object[] args, PreparedStatement pstmt) throws SQLException {
+    private void setArg(PreparedStatement pstmt, Object... args) throws SQLException {
         int index = 1;
         for (Object arg : args) {
             pstmt.setObject(index++, arg);
