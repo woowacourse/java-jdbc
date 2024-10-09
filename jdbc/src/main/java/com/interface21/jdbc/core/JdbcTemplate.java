@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.DataQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
@@ -16,70 +17,66 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementSetter preparedStatementSetter;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+        this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return Optional.ofNullable(executeQuery(sql, resultSet -> {
-                    if (resultSet.next()) {
-                        return rowMapper.mapRow(resultSet);
-                    }
-                    return null;
-                }, values)
+        return Optional.ofNullable(executeQuery(sql,
+                resultSet -> mapSingleRow(rowMapper, resultSet),
+                values)
         );
     }
 
+    private <T> T mapSingleRow(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            return rowMapper.mapRow(resultSet);
+        }
+        return null;
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeQuery(sql, resultSet -> {
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
-        }, values);
+        return executeQuery(sql,
+                resultSet -> mapRows(rowMapper, resultSet),
+                values);
+    }
+
+    private <T> List<T> mapRows(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
+        }
+        return result;
     }
 
     private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
-            assignSqlValues(values, preparedStatement);
+        return execute(sql, (preparedStatement -> {
+            preparedStatementSetter.setValues(values, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
             return resultSetExtractor.extractData(resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }));
     }
 
     public void update(String sql, Object... values) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection)) {
+        execute(sql, (preparedStatement -> {
             log.debug("query : {}", sql);
+            preparedStatementSetter.setValues(values, preparedStatement);
+            return preparedStatement.executeUpdate();
+        }));
+    }
 
-            assignSqlValues(values, preparedStatement);
-
-            preparedStatement.executeUpdate();
+    private <T> T execute(String sql, JdbcTemplateExecutor<T> jdbcTemplateExecutor) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return jdbcTemplateExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
-
-    private PreparedStatement getPreparedStatement(String sql, Connection connection) throws SQLException {
-        return connection.prepareStatement(sql);
-    }
-
-    private void assignSqlValues(Object[] values, PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 1; i <= values.length; i++) {
-            preparedStatement.setObject(i, values[i - 1]);
+            throw new DataQueryException(e.getMessage(), e);
         }
     }
 }
