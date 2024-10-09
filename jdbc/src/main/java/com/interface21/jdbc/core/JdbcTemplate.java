@@ -68,15 +68,14 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                T object = rowMapper.mapRow(rs, rs.getRow());
-                result.add(object);
-            }
-
-            return result;
+        ResultSet rs = pstmt.executeQuery();
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            T object = rowMapper.mapRow(rs, rs.getRow());
+            result.add(object);
         }
+
+        return result;
     }
 
     private <T> T requiredSingleResult(List<T> result) {
