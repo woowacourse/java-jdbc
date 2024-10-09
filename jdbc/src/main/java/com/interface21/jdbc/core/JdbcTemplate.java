@@ -46,21 +46,18 @@ public class JdbcTemplate {
         return Optional.of(results.getFirst());
     }
 
-    private <T> T executeWithConn(Connection conn, String sql, PreparedStatementExecutor<T> executor, Object... params) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParams(pstmt, params);
-            return executor.apply(pstmt);
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
+        try (Connection conn = dataSource.getConnection()) {
+            return executeWithConn(conn, sql, executor, params);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> T executeWithConn(Connection conn, String sql, PreparedStatementExecutor<T> executor,
+                                  Object... params) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
