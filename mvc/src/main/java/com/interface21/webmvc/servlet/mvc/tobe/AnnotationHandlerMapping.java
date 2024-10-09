@@ -21,6 +21,7 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 
     @Override
     public void initialize() {
+        handlerExecutions.initialize();
         BeanContainer beanContainer = BeanContainer.getInstance();
         beanContainer.getBeansWithAnnotation(Controller.class).stream()
                 .map(object -> object.getClass().getDeclaredMethods())
