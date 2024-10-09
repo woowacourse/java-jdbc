@@ -7,10 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -39,19 +38,20 @@ public class JdbcTemplate {
 
     public <T> List<T> readAll(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet resultSet = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
             setParameters(params, pstmt);
 
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.rowMap(resultSet));
-            }
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(rowMapper.rowMap(resultSet));
+                }
 
-            return result;
+                return result;
+            }
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -65,7 +65,7 @@ public class JdbcTemplate {
             throw new ResultNotSingleException(result.size());
         }
 
-        return  result.iterator().next();
+        return result.getFirst();
     }
 
     private void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
