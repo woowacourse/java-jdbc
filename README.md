@@ -36,7 +36,7 @@
 
 자바가 제공하는 기능을 극한으로 활용해 클린 코드를 작성하는 연습을 한다.
 
-- [ ] 함수형 인터페이스를 활용하여 중복 try-catch를 제거한다.
-    - [ ] PreparedStatementCallback 함수형 인터페이스를 활용한다.
+- [x] 함수형 인터페이스를 활용하여 중복 try-catch를 제거한다.
+    - [x] PreparedStatementCallback 함수형 인터페이스를 활용한다.
 - [ ] 함수형 인터페이스를 활용하여 사용자가 직접 파라미터 설정을 할 수 있도록 메서드를 제공한다.
     - [ ] PreparedStatementSetter 함수형 인터페이스를 활용한다. 
