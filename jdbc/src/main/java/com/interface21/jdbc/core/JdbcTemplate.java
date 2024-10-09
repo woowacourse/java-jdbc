@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,18 +17,16 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final PreparedStatementSetter preparedStatementSetter;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            preparedStatementSetter.setValue(psmt, args);
+            setValue(psmt, args);
             ResultSet rs = psmt.executeQuery();
 
             return mapResultSetToList(rowMapper, rs);
@@ -38,13 +35,21 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        List<T> result = new ArrayList<>();
-        while (rs.next()) {
-            T element = rowMapper.mapRow(rs, rs.getRow());
-            result.add(element);
+    public void setValue(PreparedStatement psmt, Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            psmt.setObject(i + 1, args[i]);
         }
-        return result;
+    }
+
+    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        try (rs) {
+            List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                T element = rowMapper.mapRow(rs, rs.getRow());
+                result.add(element);
+            }
+            return result;
+        }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -59,7 +64,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            preparedStatementSetter.setValue(psmt, args);
+            setValue(psmt, args);
 
             return psmt.executeUpdate();
         } catch (SQLException e) {
