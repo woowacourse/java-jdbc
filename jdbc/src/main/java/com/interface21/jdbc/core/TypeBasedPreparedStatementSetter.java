@@ -6,16 +6,16 @@ import java.util.List;
 
 public class TypeBasedPreparedStatementSetter implements PreparedStatementSetter {
 
-    private final List<SQLObject> sqlObjects;
+    private final List<SQLParameter> sqlParameters;
 
-    public TypeBasedPreparedStatementSetter(SQLObject... sqlObjects) {
-        this.sqlObjects = List.of(sqlObjects);
+    public TypeBasedPreparedStatementSetter(SQLParameter... sqlParameters) {
+        this.sqlParameters = List.of(sqlParameters);
     }
 
     @Override
     public void setValues(PreparedStatement ps) throws SQLException {
-        for (SQLObject sqlObject : sqlObjects) {
-            ps.setObject(sqlObject.parameterIndex(), sqlObject.value(), sqlObject.type());
+        for (SQLParameter sqlParameter : sqlParameters) {
+            ps.setObject(sqlParameter.parameterIndex(), sqlParameter.value(), sqlParameter.type());
         }
     }
 }

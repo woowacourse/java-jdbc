@@ -21,8 +21,8 @@ class TypeBasedPreparedStatementSetterTest {
         Map<Integer, Object> parameters = new HashMap<>();
         PreparedStatement ps = mock(PreparedStatement.class);
         PreparedStatementSetter pss = new TypeBasedPreparedStatementSetter(
-                new SQLObject(1, "myungoh", JDBCType.VARCHAR),
-                new SQLObject(2, 25, JDBCType.INTEGER)
+                new SQLParameter(1, "myungoh", JDBCType.VARCHAR),
+                new SQLParameter(2, 25, JDBCType.INTEGER)
         );
         doAnswer((a) -> parameters.put(1, "myungoh")).when(ps).setObject(1, "myungoh", JDBCType.VARCHAR);
         doAnswer((a) -> parameters.put(2, 25)).when(ps).setObject(2, 25, JDBCType.INTEGER);
