@@ -114,12 +114,13 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
         given(resultSet.next()).willReturn(true, true, false);
 
-        List<User> users = jdbcTemplate.query(sql, (resultSet, rowNum) -> new User(
+        RowMapper<User> rowMapper = (resultSet, rowNum) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
-                resultSet.getString("email"))
-        );
+                resultSet.getString("email"));
+
+        List<User> users = jdbcTemplate.query(sql, rowMapper, pstmt -> {});
 
         assertAll(
                 () -> then(connection).should().prepareStatement(sql),

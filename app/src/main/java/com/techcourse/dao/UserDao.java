@@ -52,7 +52,7 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, ROW_MAPPER);
+        return jdbcTemplate.query(sql, ROW_MAPPER, pstmt -> {});
     }
 
     public User findById(final Long id) {
