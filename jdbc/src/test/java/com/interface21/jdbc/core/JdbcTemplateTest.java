@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
@@ -36,6 +37,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("데이터를 변경하는 SQL를 실행한다.")
     void update() throws Exception {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -49,6 +51,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("다건 데이터를 조회하는 SQL를 실행한다.")
     void query() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -73,6 +76,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회하는 SQL를 실행한다.")
     void queryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -94,6 +98,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회할 때 데이터가 없다면 예외가 발생한다.")
     void throwEmptyResultDataAccessExceptionWhenQueryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -107,6 +112,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회할 때 데이터가 2개 이상이면 예외가 발생한다.")
     void throwIncorrectResultSizeDataAccessExceptionWhenQueryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
