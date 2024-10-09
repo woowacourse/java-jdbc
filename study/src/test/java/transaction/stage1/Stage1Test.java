@@ -1,7 +1,13 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -12,13 +18,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
@@ -34,16 +33,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
+ * Read Uncommitted |      +      |          +           |      +
+ * Read Committed   |             |          +           |      +
+ * Repeatable Read  |             |                      |      +
  * Serializable     |             |                      |
+ *
+ * default 격리 수준은 - 2(read committed) (h2 라서 그런가?)
  */
 class Stage1Test {
 
     private static final Logger log = LoggerFactory.getLogger(Stage1Test.class);
     private DataSource dataSource;
     private UserDao userDao;
+
+    private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
+        final var config = new HikariConfig();
+        config.setJdbcUrl(container.getJdbcUrl());
+        config.setUsername(container.getUsername());
+        config.setPassword(container.getPassword());
+        config.setDriverClassName(container.getDriverClassName());
+        return new HikariDataSource(config);
+    }
+
+    private static DataSource createMySQLDataSource() {
+        final var config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/test");
+        config.setUsername("root");
+        config.setPassword("root");
+        return new HikariDataSource(config);
+    }
+
+    private static DataSource createH2DataSource() {
+        final var jdbcDataSource = new JdbcDataSource();
+        // h2 로그를 확인하고 싶을 때 사용
+//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
+        jdbcDataSource.setUser("sa");
+        jdbcDataSource.setPassword("");
+        return jdbcDataSource;
+    }
 
     private void setUp(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -58,7 +86,7 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
+     * Read Uncommitted |    +
      * Read Committed   |
      * Repeatable Read  |
      * Serializable     |
@@ -81,7 +109,11 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            //19:00:36.710 [Thread-3] INFO transaction.stage1.Stage1Test -- isolation level : 1, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+            //19:01:07.329 [Thread-3] INFO transaction.stage1.Stage1Test -- isolation level : 2, user : null
+            //19:01:37.329 [Thread-3] INFO transaction.stage1.Stage1Test -- isolation level : 4, user : null
+            //19:02:11.190 [Thread-3] INFO transaction.stage1.Stage1Test -- isolation level : 8, user : null
+            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -128,9 +160,12 @@ class Stage1Test {
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
-
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // 19:07:04.614 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 1, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}
+        // 19:07:34.105 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 2, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}
+        // 19:07:50.883 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 4, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+        // 19:08:44.988 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 8, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,9 +208,9 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
+     * Read Uncommitted |      x
+     * Read Committed   |      x
+     * Repeatable Read  |      x
      * Serializable     |
      */
     @Test
@@ -197,7 +232,11 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // 14:23:13.550 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 1, user : [User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}, User{id=2, account='bird', email='bird@woowahan.com', password='qqqq'}]
+        // 14:26:23.803 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 2, user : [User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}, User{id=2, account='bird', email='bird@woowahan.com', password='qqqq'}]
+        // 14:27:48.992 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 4, user : [User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}, User{id=2, account='bird', email='bird@woowahan.com', password='qqqq'}]
+        // 14:28:30.996 [Test worker] INFO transaction.stage1.Stage1Test -- isolation level : 8, user : [User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}]
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -234,26 +273,6 @@ class Stage1Test {
         assertThat(actual).hasSize(1);
 
         connection.rollback();
-        mysql.close();
-    }
-
-    private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
-        final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
-        config.setUsername(container.getUsername());
-        config.setPassword(container.getPassword());
-        config.setDriverClassName(container.getDriverClassName());
-        return new HikariDataSource(config);
-    }
-
-    private static DataSource createH2DataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
-        jdbcDataSource.setUser("sa");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
     }
 
     private void sleep(double seconds) {
