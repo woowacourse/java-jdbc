@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,10 +52,12 @@ class JdbcTemplateTest {
         jdbcTemplate.update(query, "test_value1", "test_value2", "test_value3");
 
         // then
-        verify(pstmt).setObject(1, "test_value1");
-        verify(pstmt).setObject(2, "test_value2");
-        verify(pstmt).setObject(3, "test_value3");
-        verify(pstmt).executeUpdate();
+        assertAll(
+                () -> verify(pstmt).setObject(1, "test_value1"),
+                () -> verify(pstmt).setObject(2, "test_value2"),
+                () -> verify(pstmt).setObject(3, "test_value3"),
+                () -> verify(pstmt).executeUpdate()
+        );
     }
 
     @DisplayName("JdbcTemplate이 query와 rowMapper, parameters로 executeQueryForObject를 실행할 수 있다.")
@@ -77,11 +80,13 @@ class JdbcTemplateTest {
         TestEntity result = optionalResult.get();
 
         // then
-        verify(pstmt).setObject(1, TEST_ID);
-        verify(pstmt).executeQuery();
-        assertThat(result.attribute1()).isEqualTo("test_value1");
-        assertThat(result.attribute2()).isEqualTo("test_value2");
-        assertThat(result.attribute3()).isEqualTo("test_value3");
+        assertAll(
+                () -> verify(pstmt).setObject(1, TEST_ID),
+                () -> verify(pstmt).executeQuery(),
+                () -> assertThat(result.attribute1()).isEqualTo("test_value1"),
+                () -> assertThat(result.attribute2()).isEqualTo("test_value2"),
+                () -> assertThat(result.attribute3()).isEqualTo("test_value3")
+        );
     }
 
     @DisplayName("executeQueryForObject의 결과가 없다면, Optional.empty()를 반환한다.")
@@ -130,8 +135,10 @@ class JdbcTemplateTest {
         List<TestEntity> results = jdbcTemplate.query(query, this::mapTestEntityFromResultSet);
 
         // then
-        verify(pstmt).executeQuery();
-        assertThat(results.size()).isEqualTo(2);
+        assertAll(
+                () -> verify(pstmt).executeQuery(),
+                () -> assertThat(results.size()).isEqualTo(2)
+        );
     }
 
     private TestEntity mapTestEntityFromResultSet(final ResultSet resultSet) throws SQLException {
