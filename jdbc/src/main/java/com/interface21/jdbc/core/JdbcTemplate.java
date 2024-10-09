@@ -12,6 +12,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.dao.DataAccessException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -68,7 +70,7 @@ public class JdbcTemplate {
             return resultSetHandler.handle(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             JdbcResourceCloser.close(connection, preparedStatement, resultSet);
         }
