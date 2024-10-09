@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,12 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("DELETE FROM users;");
+        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1;");
+    }
+
     @DisplayName("모든 유저 정보를 조회한다.")
     @Test
     void findAll() {
@@ -35,7 +42,8 @@ class UserDaoTest {
     @DisplayName("아이디로 유저 정보를 조회한다.")
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L)
+                .orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -44,7 +52,8 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(account)
+                .orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -56,7 +65,8 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L)
+                .orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -65,11 +75,13 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L)
+                .orElseThrow();
         user.changePassword(newPassword);
 
         userDao.update(user);
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(1L)
+                .orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

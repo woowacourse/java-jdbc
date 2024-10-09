@@ -1,9 +1,11 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataNotFoundException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -36,13 +38,21 @@ public class UserDao {
         return jdbcTemplate.queryForList(sql, ROW_MAPPER);
     }
 
-    public User findById(Long id) {
-        String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+    public Optional<User> findById(Long id) {
+        try {
+            String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
+            return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, id));
+        } catch (DataNotFoundException e) {
+            return Optional.empty();
+        }
     }
 
-    public User findByAccount(String account) {
-        String sql = "SELECT id, account, password, email FROM users WHERE account=?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+    public Optional<User> findByAccount(String account) {
+        try {
+            String sql = "SELECT id, account, password, email FROM users WHERE account=?";
+            return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, account));
+        } catch (DataNotFoundException e) {
+            return Optional.empty();
+        }
     }
 }
