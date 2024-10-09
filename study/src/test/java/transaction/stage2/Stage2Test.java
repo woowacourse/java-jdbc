@@ -44,9 +44,14 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithRequired();
 
         log.info("transactions : {}", actual);
+
+        /**
+         * Propagation.REQUIRED은 트랜잭션이 존재하지 않으면 생성한다.
+         * firstUserService에서 첫번째 트랜잭션을 생성했고 secondUserService에서는 fistUserService의 트랜잭션을 이용한다.
+         * */
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -58,9 +63,14 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
 
         log.info("transactions : {}", actual);
+
+        /**
+         * REQUIRES_NEW는 새로운 트랜잭션을 만들고 기존에 존재하던 트랜잭션은 중지시킨다.
+         */
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,12 +79,15 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        /**
+         * 첫 번째 트랜잭션은 롤백되었지만 두 번째 트랜잭션은 예외가 발생하지 않고 종료됐다.
+         */
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -86,9 +99,12 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
+        /**
+         * Propagation.SUPPORTS은 현재 트랜잭션이 있으면 그 트랜잭션을 지원하고 없으면 트랜잭션 없이 실행된다.
+         */
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
@@ -98,12 +114,21 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
+        /**
+         * Propagation.MANDATORY은 현재 트랜잭션이 없으면 예외를 발생시킨다.
+         * SUPPORTS와는 트랜잭션이 없어도 그냥 메서드를 실행한다는 점에서 차이가 있다.
+         * @Transactional이 주석이면 아래의 테스트를 통과한다.
+         *
+         * assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+         *                 .isInstanceOf(IllegalTransactionStateException.class);
+         */
+
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -119,8 +144,9 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
@@ -129,12 +155,16 @@ class Stage2Test {
      */
     @Test
     void testNested() {
+        /**
+         * NESTED는 이미 트랜잭션이 시작되어있는 상태에서 내부에 새로운 트랜잭션 경계를 설정하고자 할 때 사용하는 속성이다.
+         * JPA를 사용하는 경우 중첩된 트랜잭션 경계를 설정할 수 없어 지원하지 않는다.
+         */
         final var actual = firstUserService.saveFirstTransactionWithNested();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -142,11 +172,14 @@ class Stage2Test {
      */
     @Test
     void testNever() {
+        /**
+         * NEVER는 트랜잭션이 존재하는 경우 예외를 발생시켜 트랜잭션을 사용하지 않는 것을 강제하는 속성이다.
+         */
         final var actual = firstUserService.saveFirstTransactionWithNever();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
