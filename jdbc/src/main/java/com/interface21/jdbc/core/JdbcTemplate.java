@@ -22,23 +22,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection(){
+    public void update(String sql, Object... params){
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)){
+            PreparedStatementSetter pss = createPreparedStatementSetter(params);
+            pss.setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Connection getConnection(){
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException(e.getMessage(), e);
-        }
-    }
-
-    public void update(String sql, Object... params){
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-            setStatement(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
         }
     }
 
@@ -53,23 +54,30 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatement(pstmt, params);
+            PreparedStatementSetter pss = createPreparedStatementSetter(params);
+            pss.setValues(pstmt);
             ResultSet rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
+            return createListResultFromResultSet(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private static void setStatement(PreparedStatement pstmt, Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + SINGLE_SIZE, params[i]);
+    private PreparedStatementSetter createPreparedStatementSetter(Object... params) {
+        return (pstmt) -> {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + SINGLE_SIZE, params[i]);
+            }
+        };
+    }
+
+    private <T> List<T> createListResultFromResultSet(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(rowMapper.mapRow(rs));
         }
+        return result;
     }
 }
