@@ -17,8 +17,6 @@ import com.interface21.jdbc.exception.DatabaseException;
 import com.interface21.jdbc.exception.UnexpectedResultSizeException;
 
 public class JdbcTemplate {
-    private static final int BASE_INDEX = 1;
-
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
