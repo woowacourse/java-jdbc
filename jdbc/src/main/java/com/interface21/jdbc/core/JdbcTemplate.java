@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -23,29 +22,11 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql) {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            log.debug("query : {}", sql);
-
-            statement.execute(sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-
-            throw new DataAccessException(e);
-        }
+        executeStatement(sql, PreparedStatement::execute);
     }
 
     public int update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
-            log.debug("query : {}", sql);
-
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-
-            throw new DataAccessException(e);
-        }
+        return executeStatement(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -55,12 +36,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        return executeStatement(sql, preparedStatement -> getResults(preparedStatement, rowMapper), args);
+    }
+
+    private <T> T executeStatement(String sql, StatementExecutor<T> statementExecutor, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
             log.debug("query : {}", sql);
 
-            return getResults(resultSet, rowMapper);
+            return statementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
 
@@ -76,7 +60,9 @@ public class JdbcTemplate {
         return preparedStatement;
     }
 
-    private <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> getResults(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        ResultSet resultSet = preparedStatement.executeQuery();
+
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
