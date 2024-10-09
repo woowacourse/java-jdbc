@@ -1,14 +1,14 @@
 package transaction.stage2;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
@@ -42,11 +42,12 @@ class Stage2Test {
     @Test
     void testRequired() {
         final var actual = firstUserService.saveFirstTransactionWithRequired();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 
     /**
@@ -56,11 +57,12 @@ class Stage2Test {
     @Test
     void testRequiredNew() {
         final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(transactions[0], transactions[1]);
     }
 
     /**
@@ -69,12 +71,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -84,11 +86,12 @@ class Stage2Test {
     @Test
     void testSupports() {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 
     /**
@@ -99,11 +102,12 @@ class Stage2Test {
     @Test
     void testMandatory() {
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 
     /**
@@ -116,11 +120,12 @@ class Stage2Test {
     @Test
     void testNotSupported() {
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 
     /**
@@ -130,11 +135,12 @@ class Stage2Test {
     @Test
     void testNested() {
         final var actual = firstUserService.saveFirstTransactionWithNested();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 
     /**
@@ -143,10 +149,11 @@ class Stage2Test {
     @Test
     void testNever() {
         final var actual = firstUserService.saveFirstTransactionWithNever();
+        String[] transactions = actual.toArray(new String[0]);
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(transactions[0]);
     }
 }
