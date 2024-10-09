@@ -36,6 +36,7 @@ class Stage2Test {
         final var hikariPool = getPool((HikariDataSource) dataSource);
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
+        // 먼저 connection을 할당받은 스레드가 작업을 끝낼 때까지 다른 스레드들은 대기한다.
         final var threads = new Thread[20];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
@@ -61,9 +62,11 @@ class Stage2Test {
         return () -> {
             try {
                 log.info("Before acquire ");
-                try (Connection ignored = dataSource.getConnection()) {
-                    log.info("After acquire ");
+                try (Connection connection = dataSource.getConnection()) {
+                    String connectionId = extractConnectionId(connection);
+                    log.info("After acquire {}", connectionId);
                     quietlySleep(500); // Thread.sleep(500)과 동일한 기능
+                    log.info("Return {}", connectionId);
                 }
             } catch (Exception e) {
             }
@@ -80,5 +83,16 @@ class Stage2Test {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String extractConnectionId(Connection connection) {
+        String regex = "conn(\\d+)";
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
+        java.util.regex.Matcher matcher = pattern.matcher(connection.toString());
+
+        if (matcher.find()) {
+            return matcher.group(0);
+        }
+        return null;
     }
 }

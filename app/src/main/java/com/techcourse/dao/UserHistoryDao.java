@@ -25,7 +25,8 @@ public class UserHistoryDao {
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
-                userHistory.getCreatedAt()
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
         );
     }
 }

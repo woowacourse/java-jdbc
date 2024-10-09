@@ -25,10 +25,18 @@ class Stage0Test {
      *
      * Autoloading of JDBC drivers
      * https://docs.oracle.com/javadb/10.8.3.0/ref/rrefjdbc4_0summary.html
+     *
+     * Autoloading of JDBC drivers.
+     * In earlier versions of JDBC, applications had to manually register drivers before requesting Connections.
+     * With JDBC 4.0, applications no longer need to issue a Class.forName() on the driver name;
+     * instead, the DriverManager will find an appropriate JDBC driver when the application requests a Connection.
      */
     @Test
     void driverManager() throws SQLException {
-        // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
+        // JDBC 드라이버를 로드하는 데 사용되는 메서드로,
+        // 4.0 부터 DriverManager가 자동으로 드라이버를 로드하도록 지원하기 때문에 생략 가능
+        // Class.forName("org.h2.Driver");
+
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
             assertThat(connection.isValid(1)).isTrue();
@@ -47,6 +55,9 @@ class Stage0Test {
      *
      * Using a DataSource Object to Make a Connection
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
+     *
+     * yml spring.datasource 하위에 url, username, password 정보를 입력하면 Datasource에 자동으로 설정되어,
+     * 디비 정보 변경에도 애플리케이션 코드를 수정하지 않아도 된다.
      */
     @Test
     void dataSource() throws SQLException {
