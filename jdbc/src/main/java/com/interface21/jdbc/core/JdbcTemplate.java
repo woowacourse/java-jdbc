@@ -98,6 +98,7 @@ public class JdbcTemplate {
 
     private PreparedStatement getPreparedStatement(final Connection conn, final String sql) {
         try {
+            log.info("query = {}", sql);
             return conn.prepareStatement(sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
