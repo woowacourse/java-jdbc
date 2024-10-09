@@ -188,20 +188,6 @@ class Stage1Test {
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
-        // MySQL에 테이블이 없기 때문에 테이블 생성 쿼리 실행
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-
-            // users 테이블 생성 DDL
-            String createTableQuery = "CREATE TABLE IF NOT EXISTS users (" +
-                    "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
-                    "account VARCHAR(100) NOT NULL," +
-                    "password VARCHAR(100) NOT NULL," +
-                    "email VARCHAR(100) NOT NULL" +
-                    ")";
-            statement.execute(createTableQuery);
-        }
-
         // 테스트 전에 필요한 데이터를 추가한다.
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
 
@@ -254,7 +240,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
