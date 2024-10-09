@@ -54,13 +54,12 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> queryForAll(PreparedStatement statement, RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet resultSet = statement.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
-            }
-            return result;
+        ResultSet resultSet = statement.executeQuery();
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(rowMapper.mapRow(resultSet));
         }
+        return result;
     }
 
     private void setPreparedStatement(PreparedStatement statement, Object... params) throws SQLException {
