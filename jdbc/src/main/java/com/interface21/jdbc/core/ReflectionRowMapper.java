@@ -29,10 +29,13 @@ public class ReflectionRowMapper<T> implements RowMapper<T> {
     private Object[] getArgumentsFromResultSet(ResultSet rs, Field[] fields) {
         return Arrays.stream(fields)
                 .map(Field::getName)
-                .map(name -> name.replaceAll("([a-z])([A-Z])", "$1_$2"))
-                .map(String::toLowerCase)
+                .map(this::camelToSnake)
                 .map(name -> getObject(rs, name))
                 .toArray();
+    }
+
+    private String camelToSnake(String camel) {
+        return camel.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
     }
 
     private Object getObject(ResultSet rs, String name) {
