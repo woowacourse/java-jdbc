@@ -53,15 +53,15 @@ public class JdbcTemplate {
     public <T> T execute(
             final String sql,
             final Object[] params,
-            final ResultSetHandler<T> resultSetHandler
+            final ResultSetExtractor<T> resultSetExtractor
     ) {
-        return execute(sql, defaultPreparedStatementSetter(params), resultSetHandler);
+        return execute(sql, defaultPreparedStatementSetter(params), resultSetExtractor);
     }
 
     public <T> T execute(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
-            final ResultSetHandler<T> resultSetHandler
+            final ResultSetExtractor<T> resultSetExtractor
     ) {
         log.debug("query : {}", sql);
         Connection connection = null;
@@ -71,12 +71,12 @@ public class JdbcTemplate {
             connection = dataSource.getConnection();
             preparedStatement = connection.prepareStatement(sql);
             preparedStatementSetter.setValues(preparedStatement);
-            if (resultSetHandler == null) {
+            if (resultSetExtractor == null) {
                 preparedStatement.executeUpdate();
                 return null;
             }
             resultSet = preparedStatement.executeQuery();
-            return resultSetHandler.handle(resultSet);
+            return resultSetExtractor.extract(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
