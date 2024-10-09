@@ -23,11 +23,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object ... args) {
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
         execute(sql, preparedStatement -> {
-            ParameterSetter.setParameter(args, preparedStatement);
+            preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         });
+    }
+
+    public void update(String sql, Object ... args) {
+        update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return getQueryResult(rowMapper, preparedStatement);
+        });
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
@@ -39,13 +54,6 @@ public class JdbcTemplate {
             throw new DataAccessException("2개 이상의 결과가 조회되었습니다");
         }
         return query.getFirst();
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
-        return execute(sql, preparedStatement -> {
-            ParameterSetter.setParameter(args, preparedStatement);
-            return getQueryResult(rowMapper, preparedStatement);
-        });
     }
 
     private <T> T execute(String sql, Executor<T> executor) {
