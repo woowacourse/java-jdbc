@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -28,7 +29,11 @@ public class UserDao {
     public void insert(final User user) {
         final var query = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(query, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(query, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
