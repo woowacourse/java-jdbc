@@ -47,7 +47,7 @@ class Stage2Test {
 
         /**
          * Propagation.REQUIRED은 트랜잭션이 존재하지 않으면 생성한다.
-         * firstUserService에서 첫번째 트랜잭션을 생성했고 secondUserService에서는 fistUserService의 트랜잭션을 이용한다.
+         * firstUserService에서 첫번째 트랜잭션을 생성했고 secondUserService은 fistUserService의 트랜잭션에 참여한다.
          * */
         assertThat(actual)
                 .hasSize(1)
@@ -100,7 +100,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         /**
-         * Propagation.SUPPORTS은 현재 트랜잭션이 있으면 그 트랜잭션을 지원하고 없으면 트랜잭션 없이 실행된다.
+         * 주석 상태 : 외부 트랜잭션이 없으면 트랜잭션 없이 실행된다. 물리적 트랜잭션이 실행되지 않는다.
+         * 주석 해제 : 외부 트랜잭션이 있으면 참여한다. 물리적 트랜잭션이 실행된다.
          */
         assertThat(actual)
                 .hasSize(1)
@@ -117,8 +118,7 @@ class Stage2Test {
         /**
          * Propagation.MANDATORY은 현재 트랜잭션이 없으면 예외를 발생시킨다.
          * SUPPORTS와는 트랜잭션이 없어도 그냥 메서드를 실행한다는 점에서 차이가 있다.
-         * @Transactional이 주석이면 아래의 테스트를 통과한다.
-         *
+         * 주석 상태 : 아래의 테스트를 통과한다.
          * assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
          *                 .isInstanceOf(IllegalTransactionStateException.class);
          */
@@ -140,6 +140,13 @@ class Stage2Test {
      */
     @Test
     void testNotSupported() {
+        /**
+         * 주석 해제 : 1개의 물리적 트랜잭션(FirstUserService.saveFirstTransactionWithNotSupported)이 동작한다.
+         * 주석 상태 : NOT_SUPPORTED는 트랜잭션없이 동작하므로 물리적 트랜잭션이 동작하지 않는다.
+         * 물리적 트랜잭션 : 데이터베이스 커넥션을 통해 우리의 쿼리가 실제 커넥션을 통해 커밋/롤백 하는 역할
+         * 논리적 트랜잭션 : A라는 트랜잭션에 B 라는 트랜잭션이 참가하는 경우. 즉, 하나의 트랜잭션 내부에 다른 트랜잭션이 추가로 사용하는 경우 이 트랜잭션들을 논리 트랜잭션이라고 한다.
+         * 논리적 트랜잭션은 스프링의 트랜잭션 관리 메커니즘인 PlatformTransactionManager에 의해 관리된다.
+         */
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
