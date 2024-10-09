@@ -46,7 +46,14 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(sql, "changeAccount", "changePassword", "changeEmail", 1L);
+        final Object[] objects = new Object[]{"changeAccount", "changePassword", "changeEmail", 1L};
+
+        PreparedStatementSetter setter = pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+        };
+        jdbcTemplate.update(sql, setter);
 
         assertAll(
                 () -> then(connection).should().prepareStatement(sql),
@@ -74,12 +81,15 @@ class JdbcTemplateTest {
 
         String sql = "select * from users where id = ?";
 
-        User user = jdbcTemplate.queryForObject(sql, (resultSet, num) -> new User(
+        RowMapper<User> rowMapper = (resultSet, num) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
-                resultSet.getString("email"))
-        );
+                resultSet.getString("email"));
+
+        PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setObject(1, 1);
+
+        User user = jdbcTemplate.queryForObject(sql, rowMapper, preparedStatementSetter);
 
         assertAll(
                 () -> then(connection).should().prepareStatement(sql),

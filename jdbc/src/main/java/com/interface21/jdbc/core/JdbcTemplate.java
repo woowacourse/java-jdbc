@@ -20,10 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object ... objects) {
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameterIntoStatement(preparedStatement, objects);
+            preparedStatementSetter.setValues(preparedStatement);
             int rowCount = preparedStatement.executeUpdate();
             log.debug("query : {}, rowCount : {}", sql, rowCount);
             return rowCount;
@@ -33,12 +33,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... objects) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            if (objects != null) {
-                setParameterIntoStatement(preparedStatement, objects);
-            }
+            preparedStatementSetter.setValues(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
             return getObject(rowMapper, resultSet);
         } catch (SQLException e) {
@@ -63,12 +61,6 @@ public class JdbcTemplate {
         }
 
         return result;
-    }
-
-    private void setParameterIntoStatement(PreparedStatement preparedStatement, Object ... objects) throws SQLException {
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
-        }
     }
 
     private <T> T getObject(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {

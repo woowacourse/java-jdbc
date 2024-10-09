@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -25,12 +26,28 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        final Object[] objects = new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
+
+        PreparedStatementSetter setter = pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+        };
+
+        jdbcTemplate.update(sql, setter);
     }
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final Object[] objects = new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
+
+        PreparedStatementSetter setter = pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+        };
+
+        jdbcTemplate.update(sql, setter);
     }
 
     public List<User> findAll() {
@@ -40,11 +57,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pstmt -> pstmt.setObject(1, id));
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pstmt -> pstmt.setObject(1, account));
     }
 }
