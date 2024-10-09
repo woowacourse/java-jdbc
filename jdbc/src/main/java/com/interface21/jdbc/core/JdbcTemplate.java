@@ -35,6 +35,12 @@ public class JdbcTemplate {
         }
     }
 
+    private void setPreparedStatementParameters(Object[] args, PreparedStatement psmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            psmt.setObject(i + 1, args[i]);
+        }
+    }
+
     private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         List<T> result = new ArrayList<>();
         while (rs.next()) {
@@ -42,12 +48,6 @@ public class JdbcTemplate {
             result.add(element);
         }
         return result;
-    }
-
-    private void setPreparedStatementParameters(Object[] args, PreparedStatement psmt) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            psmt.setObject(i + 1, args[i]);
-        }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
