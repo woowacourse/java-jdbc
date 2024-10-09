@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final ResultSetMapper<TestUser> resultSetMapper = rs ->
+    private static final RowMapper<TestUser> ROW_MAPPER = rs ->
             new TestUser(rs.getLong("id"), rs.getString("account"));
 
     private DataSource dataSource = mock(DataSource.class);
@@ -63,7 +63,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when
-        List<TestUser> queriedTestUsers = jdbcTemplate.query(sql, resultSetMapper, 1l);
+        List<TestUser> queriedTestUsers = jdbcTemplate.query(sql, ROW_MAPPER, 1l);
 
         // then
         assertAll(() -> {
@@ -87,7 +87,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when
-        TestUser queriedTestUser = jdbcTemplate.queryForObject(sql, resultSetMapper, 1l);
+        TestUser queriedTestUser = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l);
 
         // then
         assertAll(() -> {
@@ -105,7 +105,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetMapper, 1l))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
@@ -121,7 +121,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetMapper, 1l))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 

@@ -34,32 +34,33 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, ResultSetMapper<T> resultSetMapper, Object... params) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             bindStatementParameters(preparedStatement, params);
             ResultSet resultSet = preparedStatement.executeQuery();
-            return getListFromResultSet(resultSet, resultSetMapper);
+            return getListFromResultSet(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> getListFromResultSet(ResultSet resultSet, ResultSetMapper<T> resultSetMapper)
+    private <T> List<T> getListFromResultSet(ResultSet resultSet, RowMapper<T> rowMapper)
             throws SQLException {
         List<T> queriedData = new ArrayList<>();
         while (resultSet.next()) {
-            queriedData.add(resultSetMapper.map(resultSet));
+            queriedData.add(rowMapper.map(resultSet));
         }
         return queriedData;
     }
 
-    public <T> T queryForObject(String sql, ResultSetMapper<T> resultSetMapper, Object... params) {
-        List<T> queriedData = query(sql, resultSetMapper, params);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> queriedData = query(sql, rowMapper, params);
         if (queriedData.size() < 1) {
             throw new EmptyResultDataAccessException();
-        } else if (queriedData.size() > 1) {
+        }
+        if (queriedData.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, queriedData.size());
         }
         return queriedData.get(0);

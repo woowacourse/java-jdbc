@@ -1,7 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.ResultSetMapper;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,23 +30,23 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
-        ResultSetMapper<User> resultSetMapper = userResultSetMapper();
-        return jdbcTemplate.query(sql, resultSetMapper);
+        RowMapper<User> rowMapper = userResultSetMapper();
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        ResultSetMapper<User> resultSetMapper = userResultSetMapper();
-        return jdbcTemplate.queryForObject(sql, resultSetMapper, id);
+        RowMapper<User> rowMapper = userResultSetMapper();
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        ResultSetMapper<User> resultSetMapper = userResultSetMapper();
-        return jdbcTemplate.queryForObject(sql, resultSetMapper, account);
+        RowMapper<User> rowMapper = userResultSetMapper();
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 
-    private ResultSetMapper<User> userResultSetMapper() {
+    private RowMapper<User> userResultSetMapper() {
         return resultSet -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
