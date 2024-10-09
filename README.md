@@ -25,5 +25,5 @@
 
 ## 2단계 - 리팩터링
 
-- [ ] PreparedStatementSetter 분리
-- [ ] 메서드 예외 처리 중복 제거
+- [x] PreparedStatementSetter 분리
+- [x] 메서드 예외 처리 중복 제거
