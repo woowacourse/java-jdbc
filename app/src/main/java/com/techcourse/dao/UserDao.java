@@ -13,16 +13,14 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final JdbcTemplate jdbcTemplate;
+    private static final RowMapper<User> userRowMapper = (rs) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
-    private static RowMapper<User> getUserRowMapper() {
-        return (rs) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -56,7 +54,7 @@ public class UserDao {
 
     public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(sql, getUserRowMapper());
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public List<User> findAllByEmailWithPss(String email) {
@@ -66,16 +64,16 @@ public class UserDao {
             pstmt.setString(1, email);
         };
 
-        return jdbcTemplate.query(sql, pss, getUserRowMapper());
+        return jdbcTemplate.query(sql, pss, userRowMapper);
     }
 
     public User findById(Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
