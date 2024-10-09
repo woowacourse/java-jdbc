@@ -24,38 +24,42 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    public int update(String sql, @Nullable Object... args) throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
+
+        try (conn; pstmt) {
             log.debug("query = {}", sql);
             PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
             pss.setValues(pstmt);
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
+
+        try (conn; pstmt) {
             log.debug("query = {}", sql);
             PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
             pss.setValues(pstmt);
 
             return executeQuery(rowMapper, pstmt);
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args)
+            throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
+
+        try (conn; pstmt) {
             log.debug("query = {}", sql);
             PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
             pss.setValues(pstmt);
@@ -63,7 +67,7 @@ public class JdbcTemplate {
             List<T> result = executeQuery(rowMapper, pstmt);
             return requiredSingleResult(result);
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -94,5 +98,21 @@ public class JdbcTemplate {
                 pstmt.setObject(idx, args[idx - 1]);
             }
         };
+    }
+
+    private PreparedStatement getPreparedStatement(String sql, Connection conn) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
