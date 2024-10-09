@@ -77,16 +77,11 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement prepareStatement(Connection conn, String sql, Object... params) throws SQLException {
+    private PreparedStatement prepareStatement(Connection conn, String sql, Object... args) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        setParameters(pstmt, params);
+        ArgumentPreparedStatementSetter argSetter = new ArgumentPreparedStatementSetter(args);
+        argSetter.setValues(pstmt);
         return pstmt;
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object[] params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
     }
 
     private <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
