@@ -46,7 +46,7 @@ public class JdbcTemplate {
             PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
             pss.setValues(pstmt);
 
-            return getQueryResult(rowMapper, pstmt);
+            return executeQuery(rowMapper, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
@@ -60,14 +60,14 @@ public class JdbcTemplate {
             PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
             pss.setValues(pstmt);
 
-            List<T> result = getQueryResult(rowMapper, pstmt);
+            List<T> result = executeQuery(rowMapper, pstmt);
             return requiredSingleResult(result);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (rs.next()) {
