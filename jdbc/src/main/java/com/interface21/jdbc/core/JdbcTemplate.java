@@ -65,6 +65,15 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> List<T> query(String sql, Object[] args, RowMapper<T> rowMapper) {
+        return queryExecute(sql, (preparedStatement, query) -> {
+            assignToPreparedStatement(preparedStatement, args);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultMapping(rowMapper, resultSet);
+            }
+        });
+    }
+
     public <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) -> {
             assignToPreparedStatement(preparedStatement, args);
