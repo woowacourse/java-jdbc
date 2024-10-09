@@ -7,6 +7,8 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Function;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +39,36 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection conn = userDao.getDataSource().getConnection()) {
-            conn.setAutoCommit(false);
-
+        DataSource dataSource = userDao.getDataSource();
+        executeInTransaction(dataSource, conn -> {
             User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
+            return null;
+        });
+    }
 
-            conn.commit();
+    private <T> T executeInTransaction(DataSource dataSource, Function<Connection, T> callback) {
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            return execute(callback, conn);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Function<Connection, T> callback, Connection conn) throws SQLException {
+        try {
+            T result = callback.apply(conn);
+            conn.commit();
+            return result;
+        } catch (SQLException | DataAccessException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ignored) {
+            }
             throw new DataAccessException(e);
         }
     }
