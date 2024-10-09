@@ -42,7 +42,7 @@
     - 가변 인자
   - [x] resultSet 생성
     - RowMapper 구현 (함수형 인터페이스, 제네일)
-  - [ ] 예외 처리
+  - [x] 예외 처리
     - checked exception 처리
   - [ ] 트랙잭션 관리
   - [ ] Connection, Statement, ResultSet 객체 사용 및 close 로직 리펙터링 (재사용되도록)

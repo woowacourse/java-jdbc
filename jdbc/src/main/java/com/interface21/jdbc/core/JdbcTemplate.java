@@ -13,6 +13,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.jdbc.core.exception.JdbcSQLException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -36,7 +38,7 @@ public class JdbcTemplate {
             String errorMessage = String.format("Error executing update: %s with arguments: %s", sql,
                     Arrays.toString(arguments));
             log.error(errorMessage);
-            throw new IllegalStateException(errorMessage, e);
+            throw new JdbcSQLException(errorMessage, e);
         }
     }
 
@@ -65,7 +67,7 @@ public class JdbcTemplate {
             String errorMessage = String.format("Error executing query: %s with arguments: %s", sql,
                     Arrays.toString(arguments));
             log.error(errorMessage);
-            throw new IllegalStateException(errorMessage, e);
+            throw new JdbcSQLException(errorMessage, e);
         }
     }
 
