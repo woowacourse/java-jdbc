@@ -16,6 +16,7 @@ import transaction.RunnableWrapper;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -173,10 +174,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      +
+     * Read Committed   |      +
+     * Repeatable Read  |      +
+     * Serializable     |      -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -186,6 +187,20 @@ class Stage1Test {
                 .withLogConsumer(new Slf4jLogConsumer(log));
         mysql.start();
         setUp(createMySQLDataSource(mysql));
+
+        // MySQL에 테이블이 없기 때문에 테이블 생성 쿼리 실행
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+
+            // users 테이블 생성 DDL
+            String createTableQuery = "CREATE TABLE IF NOT EXISTS users (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                    "account VARCHAR(100) NOT NULL," +
+                    "password VARCHAR(100) NOT NULL," +
+                    "email VARCHAR(100) NOT NULL" +
+                    ")";
+            statement.execute(createTableQuery);
+        }
 
         // 테스트 전에 필요한 데이터를 추가한다.
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
@@ -197,7 +212,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
