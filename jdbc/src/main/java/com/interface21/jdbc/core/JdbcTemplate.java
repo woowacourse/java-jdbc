@@ -58,10 +58,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        if (results.size() > 1) {
+        if (results.size() != 1) {
             throw new DataSizeMismatchException(1, results.size());
         }
         return results.getFirst();
