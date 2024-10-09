@@ -2,13 +2,18 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.dao.mapper.UserMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> ROW_MAPPER = new UserMapper();
+    private static final RowMapper<User> ROW_MAPPER = resultSet -> {
+        long id = resultSet.getLong("id");
+        String account = resultSet.getString("account");
+        String password = resultSet.getString("password");
+        String email = resultSet.getString("email");
+        return new User(id, account, password, email);
+    };
 
     private final JdbcTemplate jdbcTemplate;
 
