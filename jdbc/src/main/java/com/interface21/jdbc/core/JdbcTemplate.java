@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,8 +27,11 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            setValue(psmt, args);
-            ResultSet rs = psmt.executeQuery();
+            ResultSet rs = executeQuery(psmt, statement -> {
+                for (int i = 0; i < args.length; i++) {
+                    statement.setObject(i + 1, args[i]);
+                }
+            });
 
             return mapResultSetToList(rowMapper, rs);
         } catch (SQLException e) {
@@ -35,10 +39,10 @@ public class JdbcTemplate {
         }
     }
 
-    public void setValue(PreparedStatement psmt, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            psmt.setObject(i + 1, args[i]);
-        }
+    private ResultSet executeQuery(PreparedStatement psmt, PreparedStatementSetter statementSetter)
+            throws SQLException {
+        statementSetter.setValue(psmt);
+        return psmt.executeQuery();
     }
 
     private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
@@ -64,11 +68,18 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
-            setValue(psmt, args);
-
-            return psmt.executeUpdate();
+            return executeUpdate(psmt, statement -> {
+                for (int i = 0; i < args.length; i++) {
+                    statement.setObject(i + 1, args[i]);
+                }
+            });
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private int executeUpdate(PreparedStatement psmt, PreparedStatementSetter statementSetter) throws SQLException {
+        statementSetter.setValue(psmt);
+        return psmt.executeUpdate();
     }
 }
