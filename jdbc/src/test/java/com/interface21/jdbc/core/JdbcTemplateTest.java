@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -64,13 +65,15 @@ class JdbcTemplateTest {
 
     @DisplayName("update로 insert가능하다")
     @Test
-    void updateForInsert() {
+    void updateForInsert() throws SQLException {
         // given
 
         // when
         jdbcTemplate.update("insert into users (account, password, email) values ('gugu', '123', 'gugu@naver.com')");
-        ResultSet resultSet = executeQuery("select * from users");
-        int rowCount = getRowCount(resultSet);
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
 
         // then
         assertThat(rowCount).isOne();
@@ -81,11 +84,60 @@ class JdbcTemplateTest {
     void updateForUpdateQuery() throws SQLException {
         // given
         executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = String.format(" update users set account = '%s' where id = %d ", "updateGugu", 1);
 
         // when
-        String updateSql = String.format(" update users set account = '%s' where id = %d ", "updateGugu", 1);
-        int update = jdbcTemplate.update(updateSql);
-        System.out.println(update);
+        jdbcTemplate.update(updateSql);
+
+        ResultSet resultSet = executeQuery("select account from users where id = 1");
+        resultSet.next();
+        String account = resultSet.getString(1);
+
+        // then
+        assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("update(Stirng, PreparedStatementSetter)으로 insert 가능하다.")
+    @Test
+    void updateWithPreparedStatementSetterForInsert() throws SQLException {
+        // given
+
+        // when
+        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
+                new PreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps) throws SQLException {
+                               ps.setString(1,"gugu");
+                               ps.setString(2,"123");
+                               ps.setString(3,"gugu@naver.com");
+                    }
+                });
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
+
+        // then
+        assertThat(rowCount).isOne();
+    }
+
+
+    @DisplayName("update(Stirng, PreparedStatementSetter)으로 update 가능하다.")
+    @Test
+    void updateWithPreparedStatementSetterForUpdate() throws SQLException {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = " update users set account = ? where id = ? ";
+
+        // when
+        jdbcTemplate.update(updateSql,
+                new PreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps) throws SQLException {
+                        ps.setString(1,"updateGugu");
+                        ps.setLong(2,1);
+                    }
+                });
 
         ResultSet resultSet = executeQuery("select account from users where id = 1");
         resultSet.next();
@@ -104,17 +156,6 @@ class JdbcTemplateTest {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private int getRowCount(ResultSet rs) {
-        int rowCount = 0;
-        try {
-            rs.last();
-            rowCount = rs.getRow();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return rowCount;
     }
 
     private ResultSet executeQuery(String sql) {
