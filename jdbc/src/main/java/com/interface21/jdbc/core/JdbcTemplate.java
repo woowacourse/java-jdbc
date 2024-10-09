@@ -32,8 +32,8 @@ public class JdbcTemplate {
 
     public <T> T query(PreparedStatement preparedStatement, ResultSetExtractor<T> resultSetExtractor) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = preparedStatement) {
-            ResultSet rs = ps.executeQuery();
+             PreparedStatement ps = preparedStatement;
+             ResultSet rs = ps.executeQuery()) {
             return resultSetExtractor.extractData(rs);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
