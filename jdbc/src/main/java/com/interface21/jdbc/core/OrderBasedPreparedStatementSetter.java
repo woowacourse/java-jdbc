@@ -5,7 +5,6 @@ import java.sql.SQLException;
 
 public class OrderBasedPreparedStatementSetter implements PreparedStatementSetter {
 
-    private static final int PARAMETER_START_INDEX = 1;
     private final Object[] values;
 
     public OrderBasedPreparedStatementSetter(Object... values) {
