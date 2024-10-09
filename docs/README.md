@@ -10,5 +10,6 @@
   - [X] RowMapper 제네릭 사용
   - [X] 가변 인자 사용
   - [X] 람다 사용
+  - [X] PreparedStatementSetter 인터페이스 구현 및 적용
 - [ ] Transaction 적용하기
 - [ ] Transaction synchronization 적용하기

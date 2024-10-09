@@ -28,10 +28,14 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, Object... params) {
+        update(sql, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setValues(pstmt, params);
+            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -40,7 +44,11 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... params) {
-        List<T> resultSet = query(sql, rowMapper, params);
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
+        List<T> resultSet = query(sql, rowMapper, pstmtSetter);
         if (resultSet.size() > 1) {
             throw new UnexpectedResultSizeException("Multiple results returned for query, but only one result expected.");
         }
@@ -49,20 +57,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... params) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setValues(pstmt, params);
+            pstmtSetter.setValues(pstmt);
             return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DatabaseException("Database error occurred while executing query.", e);
-        }
-    }
-
-    private void setValues(final PreparedStatement pstmt, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + BASE_INDEX, params[i]);
         }
     }
 
