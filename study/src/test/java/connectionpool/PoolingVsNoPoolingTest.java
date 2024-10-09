@@ -4,6 +4,11 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.util.ClockSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,12 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
@@ -28,11 +27,9 @@ import java.sql.Statement;
  */
 class PoolingVsNoPoolingTest {
 
-    private final Logger log = LoggerFactory.getLogger(PoolingVsNoPoolingTest.class);
-
     private static final int COUNT = 1000;
-
     private static MySQLContainer<?> container;
+    private final Logger log = LoggerFactory.getLogger(PoolingVsNoPoolingTest.class);
 
     @BeforeAll
     static void beforeAll() throws SQLException {
@@ -48,7 +45,8 @@ class PoolingVsNoPoolingTest {
             conn.setAutoCommit(true);
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("DROP TABLE IF EXISTS users;");
-                stmt.execute("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL) ENGINE=INNODB;");
+                stmt.execute(
+                        "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(100) NOT NULL) ENGINE=INNODB;");
                 stmt.executeUpdate("INSERT INTO users (email) VALUES ('hkkang@woowahan.com')");
                 conn.setAutoCommit(false);
             }
@@ -58,39 +56,6 @@ class PoolingVsNoPoolingTest {
     @AfterAll
     static void afterAll() {
         container.stop();
-    }
-
-    @Test
-    void noPoling() throws SQLException {
-        final var dataSource = createMysqlDataSource();
-
-        long start = ClockSource.currentTime();
-        connect(dataSource);
-        long end = ClockSource.currentTime();
-
-        // 테스트 결과를 확인한다.
-        log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
-    }
-
-    @Test
-    void pooling() throws SQLException {
-        final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
-        config.setUsername(container.getUsername());
-        config.setPassword(container.getPassword());
-        config.setMinimumIdle(1);
-        config.setMaximumPoolSize(1);
-        config.setConnectionTimeout(1000);
-        config.setAutoCommit(false);
-        config.setReadOnly(false);
-        final var hikariDataSource = new HikariDataSource(config);
-
-        long start = ClockSource.currentTime();
-        connect(hikariDataSource);
-        long end = ClockSource.currentTime();
-
-        // 테스트 결과를 확인한다.
-        log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
     private static void connect(DataSource dataSource) throws SQLException {
@@ -114,5 +79,38 @@ class PoolingVsNoPoolingTest {
         dataSource.setPassword(container.getPassword());
         dataSource.setConnectTimeout(1000);
         return dataSource;
+    }
+
+    @Test
+    void noPoling() throws SQLException {
+        final var dataSource = createMysqlDataSource();
+
+        long start = ClockSource.currentTime();
+        connect(dataSource);
+        long end = ClockSource.currentTime();
+
+        // 테스트 결과를 확인한다.
+        log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
+    }
+
+    @Test
+    void pooling() throws SQLException {
+        final var config = new HikariConfig();
+        config.setJdbcUrl(container.getJdbcUrl());
+        config.setUsername(container.getUsername());
+        config.setPassword(container.getPassword());
+        config.setMinimumIdle(10);
+        config.setMaximumPoolSize(10);
+        config.setConnectionTimeout(1000);
+        config.setAutoCommit(false);
+        config.setReadOnly(false);
+        final var hikariDataSource = new HikariDataSource(config);
+
+        long start = ClockSource.currentTime();
+        connect(hikariDataSource);
+        long end = ClockSource.currentTime();
+
+        // 테스트 결과를 확인한다.
+        log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 }

@@ -1,9 +1,10 @@
 package transaction.stage2;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity(name = "users")
 public class User {
@@ -15,12 +16,17 @@ public class User {
     private String password;
     private String email;
 
-    protected User() {}
+    protected User() {
+    }
 
     public User(String account, String password, String email) {
         this.account = account;
         this.password = password;
         this.email = email;
+    }
+
+    public static User createTest() {
+        return new User("gugu", "password", "hkkang@woowahan.com");
     }
 
     public boolean checkPassword(String password) {
@@ -29,10 +35,6 @@ public class User {
 
     public void changePassword(String password) {
         this.password = password;
-    }
-
-    public static User createTest() {
-        return new User("gugu", "password", "hkkang@woowahan.com");
     }
 
     public Long getId() {
