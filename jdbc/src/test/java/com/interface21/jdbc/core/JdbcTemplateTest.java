@@ -51,7 +51,7 @@ class JdbcTemplateTest {
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString(1)).thenReturn("gugu@gamil.com");
         when(resultSet.getString(2)).thenReturn("gugu");
         when(resultSet.getString(3)).thenReturn("password");
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
 
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString(1)).thenReturn("gugu@gamil.com");
         when(resultSet.getString(2)).thenReturn("gugu");
         when(resultSet.getString(3)).thenReturn("password");
