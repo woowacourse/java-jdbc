@@ -24,8 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter parameterSetter, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, parameterSetter, rowMapper);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException();
         }
@@ -35,10 +35,11 @@ public class JdbcTemplate {
         throw new IncorrectResultSizeDataAccessException(results.size());
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter parameterSetter, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+            ArgumentPreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
             parameterSetter.setValues(pstmt);
 
             ResultSet resultSet = pstmt.executeQuery();
@@ -64,11 +65,13 @@ public class JdbcTemplate {
         return results;
     }
 
-    public int update(String sql, PreparedStatementSetter statementSetter) {
+    public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
             statementSetter.setValues(pstmt);
+
             int changedCount = pstmt.executeUpdate();
             log.debug("실행된 쿼리입니다. : {}", sql);
 
