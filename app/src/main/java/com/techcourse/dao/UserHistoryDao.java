@@ -11,6 +11,15 @@ public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
+    private static final RowMapper<UserHistory> userHistoryRowMapper = (rs) -> new UserHistory(
+            rs.getLong("id"),
+            rs.getLong("user_id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"),
+            rs.getString("created_by")
+    );
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(JdbcTemplate jdbcTemplate) {
@@ -40,17 +49,6 @@ public class UserHistoryDao {
 
     public UserHistory findById(Long id) {
         String sql = "SELECT id, user_id, account, password, email, created_by FROM user_history WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserHistoryRowMapper(), id);
-    }
-
-    private RowMapper<UserHistory> getUserHistoryRowMapper() {
-        return (rs) -> new UserHistory(
-                rs.getLong("id"),
-                rs.getLong("user_id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"),
-                rs.getString("created_by")
-        );
+        return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, id);
     }
 }
