@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -34,15 +33,16 @@ public class JdbcTemplate {
         update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+    public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
             preparedStatementSetter.setValues(preparedStatement);
-            return getQueryResult(rowMapper, preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSetExtractor.extract(resultSet);
         });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
-        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
@@ -63,19 +63,5 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
-    }
-
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
-        try (ResultSet rs = preparedStatement.executeQuery()) {
-            return getQueryResult(rowMapper, rs);
-        }
-    }
-
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        List<T> result = new ArrayList<>();
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet));
-        }
-        return result;
     }
 }
