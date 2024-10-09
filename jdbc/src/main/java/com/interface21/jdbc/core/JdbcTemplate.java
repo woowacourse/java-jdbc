@@ -88,7 +88,11 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    public PreparedStatementSetter createArgsPreparedStatementSetter(@Nullable Object[] args) {
-        return new ArgumentPreparedStatementSetter(args);
+    public PreparedStatementSetter createArgsPreparedStatementSetter(Object[] args) {
+        return (pstmt) -> {
+            for (int idx = 1; idx <= args.length; idx++) {
+                pstmt.setObject(idx, args[idx - 1]);
+            }
+        };
     }
 }
