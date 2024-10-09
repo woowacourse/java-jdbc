@@ -59,10 +59,10 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T execute(final String sql, final Callback<T> callback) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            return callback.start(pstmt);
+            return preparedStatementCallback.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
