@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,32 +58,40 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return queryExecute(sql, (preparedStatement, query) -> {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                return resultMapping(rowMapper, resultSet);
-            }
-        });
+        return queryExecute(sql, (preparedStatement, query) ->
+                result(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet)));
     }
 
     public <T> List<T> query(String sql, Object[] args, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                return resultMapping(rowMapper, resultSet);
-            }
+            return result(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet));
         });
     }
 
     public <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                return singleResultMapping(rowMapper, resultSet);
-            }
+            return result(preparedStatement, resultSet -> singleResultMapping(rowMapper, resultSet));
         });
     }
 
-    private <T> List<T> resultMapping(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+    private <T> T result(PreparedStatement preparedStatement, Function<ResultSet, T> mapper) throws SQLException {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return mapper.apply(resultSet);
+        }
+    }
+
+    private <T> List<T> multipleResultMapping(RowMapper<T> rowMapper, ResultSet resultSet) {
+        try {
+            return getMultipleResult(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error("다중 결과 조회 중 SQL 예외가 발생했습니다. 예외 메시지: {}", e.getMessage(), e);
+            throw new DataAccessException("다중 결과 조회 중 오류가 발생했습니다. 원인: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> List<T> getMultipleResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
         List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));
