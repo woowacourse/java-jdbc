@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, params, resultSet -> {
+        return query(sql, params, resultSet -> {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet, 0);
             }
@@ -34,7 +35,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, params, resultSet -> {
+        return query(sql, params, resultSet -> {
             List<T> result = new ArrayList<>();
             int rowNum = 0;
             while (resultSet.next()) {
@@ -45,13 +46,25 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(final String sql, final Object... params) {
-        execute(sql, params, null);
-    }
-
-    private <T> T execute(
+    public <T> T query(
             final String sql,
             final Object[] params,
+            final ResultSetHandler<T> resultSetHandler
+    ) {
+        return execute(sql, defaultPreparedStatementSetter(params), resultSetHandler);
+    }
+
+    public void update(final String sql, final Object... params) {
+        update(sql, defaultPreparedStatementSetter(params));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        execute(sql, preparedStatementSetter, null);
+    }
+
+    public <T> T execute(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
             final ResultSetHandler<T> resultSetHandler
     ) {
         log.debug("query : {}", sql);
@@ -61,7 +74,7 @@ public class JdbcTemplate {
         try {
             connection = dataSource.getConnection();
             preparedStatement = connection.prepareStatement(sql);
-            setParameters(preparedStatement, params);
+            preparedStatementSetter.setValues(preparedStatement);
             if (resultSetHandler == null) {
                 preparedStatement.executeUpdate();
                 return null;
@@ -76,9 +89,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement preparedStatement, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
-        }
+    private PreparedStatementSetter defaultPreparedStatementSetter(final Object... params) {
+        return preparedStatement -> {
+            for (int i = 0; Objects.nonNull(params) && i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
+        };
     }
 }

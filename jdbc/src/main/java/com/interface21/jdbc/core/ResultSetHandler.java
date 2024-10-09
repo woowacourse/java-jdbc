@@ -4,6 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
-interface ResultSetHandler<T> {
+public interface ResultSetHandler<T> {
     T handle(ResultSet resultSet) throws SQLException;
 }
