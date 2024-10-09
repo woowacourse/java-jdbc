@@ -25,5 +25,9 @@
 - [x] JDBC 라이브러리 구현
   - 개발자는 SQL 쿼리 작성, 쿼리에 전달할 인자, SELECT 구문일 경우 조회 결과를 추출하는 것만 집중
 
+## 2단계 - 리팩터링
 
-
+- [x] 커스텀 Exception 추가해서 사용자는 Unchecked Exception 되도록 변경
+- [x] 제네릭 사용하도록 RowMapper 인터페이스 개선
+- [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 개선
+- [ ] 람다로 코드량 줄이기
