@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.CannotQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,7 @@ public class JdbcTemplate {
             return rowCount;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
     }
 
@@ -41,7 +42,7 @@ public class JdbcTemplate {
             return getObject(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error("SQL error during queryForObject: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
     }
 
@@ -57,7 +58,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
 
         return result;
