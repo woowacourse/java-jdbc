@@ -58,11 +58,18 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |     +
+     * Read Committed   |     -
+     * Repeatable Read  |     -
+     * Serializable     |     -
      */
+
+    // TRANSACTION_NONE 예외 발생. ERROR transaction.RunnableWrapper -- Invalid value "0" for parameter "isolation level"
+    // TRANSACTION_READ_UNCOMMITTED 조회 가능 및 예외 발생. user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+    // TRANSACTION_READ_COMMITTED 조회 불가. 예외 발생하지 않음
+    // TRANSACTION_REPEATABLE_READ 조회 불가. 예외 발생하지 않음
+    // TRANSACTION_SERIALIZABLE 조회 불가. 예외 발생하지 않음
+
     @Test
     void dirtyReading() throws SQLException {
         setUp(createH2DataSource());
@@ -81,7 +88,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,11 +118,18 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |         +
+     * Read Committed   |         +
+     * Repeatable Read  |         -
+     * Serializable     |         -
      */
+
+    // TRANSACTION_NONE 예외 발생 org.h2.jdbc.JdbcSQLDataException: Invalid value "0" for parameter "isolation level"
+    // TRANSACTION_READ_UNCOMMITTED 테스트 실패. Non-repeatable reads 발생
+    // TRANSACTION_READ_COMMITTED 테스트 실패. Non-repeatable reads 발생. 다른 스레드에서 커밋된 것을 읽어옴
+    // TRANSACTION_REPEATABLE_READ 테스트 성공. Non-repeatable reads 발생하지 않음
+    // TRANSACTION_SERIALIZABLE 테스트 성공. Non-repeatable reads 발생하지 않음
+
     @Test
     void noneRepeatable() throws SQLException {
         setUp(createH2DataSource());
@@ -130,7 +144,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,10 +187,12 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |      +
+     * Read Committed   |      +
+     * Repeatable Read  |      +
+     * Serializable     |      -
+     *
+     * InnoDB를 사용했음에도 팬텀리드가 발생하는 이유는 update 쿼리 쳤기 때문
      */
     @Test
     void phantomReading() throws SQLException {
@@ -197,7 +213,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -239,7 +255,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
