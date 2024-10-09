@@ -21,17 +21,17 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return executeStatement(sql, (pstmt) -> executeQueryAndGet(pstmt, rowMapper));
+        return executeQuery(sql, (pstmt) -> executeAndGet(pstmt, rowMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeStatement(sql, (pstmt) -> {
+        return executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
-            return executeQueryAndGet(pstmt, rowMapper);
+            return executeAndGet(pstmt, rowMapper);
         });
     }
 
-    private <T> T executeStatement(String sql, PreparedStatementCallBack<T> callBack) {
+    private <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.execute(pstmt);
         } catch (SQLException e) {
@@ -40,7 +40,7 @@ public class JdbcTemplate implements JdbcOperations {
         }
     }
 
-    private <T> List<T> executeQueryAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> executeAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         List<T> result = new ArrayList<>();
         try (ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -70,18 +70,13 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     public void update(String sql, Object... values) {
-        executeStatement(sql, (pstmt) -> {
+        executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
             return pstmt.executeUpdate();
         });
     }
 
     public void execute(String sql) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.execute();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeQuery(sql, PreparedStatement::execute);
     }
 }
