@@ -21,22 +21,17 @@ class DefaultPreparedStatementSetterTest {
     private PreparedStatement preparedStatement;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         parameters = new HashMap<>();
         preparedStatement = mock(PreparedStatement.class);
-        ParameterMetaData parameterMetaData = mock(ParameterMetaData.class);
-        when(preparedStatement.getParameterMetaData()).thenReturn(parameterMetaData);
-        when(parameterMetaData.getParameterCount()).thenReturn(2);
     }
 
     @DisplayName("순서에 따라 preparedStatement의 파라미터를 설정한다.")
     @Test
     void setValues_initByObject() throws SQLException {
         // given
-        doAnswer((a) -> parameters.put(1, "myungoh"))
-                .when(preparedStatement).setObject(1, "myungoh", JDBCType.JAVA_OBJECT);
-        doAnswer((a) -> parameters.put(2, 25))
-                .when(preparedStatement).setObject(2, 25, JDBCType.JAVA_OBJECT);
+        doAnswer((a) -> parameters.put(1, "myungoh")).when(preparedStatement).setObject(1, "myungoh");
+        doAnswer((a) -> parameters.put(2, 25)).when(preparedStatement).setObject(2, 25);
 
         PreparedStatementSetter preparedStatementSetter = new DefaultPreparedStatementSetter("myungoh", 25);
 

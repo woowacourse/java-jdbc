@@ -23,15 +23,8 @@ public class DefaultPreparedStatementSetter implements PreparedStatementSetter {
 
     @Override
     public void setValues(PreparedStatement preparedStatement) throws SQLException {
-        validateParameterCount(preparedStatement);
         for (SQLParameter sqlParameter : sqlParameters) {
             setValue(preparedStatement, sqlParameter);
-        }
-    }
-
-    private void validateParameterCount(PreparedStatement preparedStatement) throws SQLException {
-        if(sqlParameters.size() != preparedStatement.getParameterMetaData().getParameterCount()) {
-            throw new SQLException("Invalid number of parameters");
         }
     }
 
