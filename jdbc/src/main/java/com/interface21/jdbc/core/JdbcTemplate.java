@@ -36,11 +36,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return executeStatement(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapResults(rs, rowMapper);
-            }
-        }, params);
+        return executeStatement(sql, preparedStatement -> mapResults(preparedStatement.executeQuery(), rowMapper), params);
     }
 
     public void execute(String sql) {
