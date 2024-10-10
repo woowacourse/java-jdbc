@@ -9,13 +9,13 @@ import com.interface21.dao.DataAccessException;
 
 public class ParameterBinder {
 
-	public void bindParameters(final PreparedStatement preparedStatement, final Object... args) {
+	public void bindParameters(PreparedStatement preparedStatement, Object... args) {
 		AtomicInteger index = new AtomicInteger(1);
 		Arrays.stream(args)
 			.forEach(arg -> bindParameter(preparedStatement, index.getAndIncrement(), arg));
 	}
 
-	private void bindParameter(final PreparedStatement preparedStatement, int index, Object arg) {
+	private void bindParameter(PreparedStatement preparedStatement, int index, Object arg) {
 		try {
 			preparedStatement.setObject(index, arg);
 		} catch (SQLException e) {

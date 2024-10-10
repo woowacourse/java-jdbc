@@ -8,14 +8,14 @@ import java.util.Optional;
 
 public class ResultMapper {
 
-	public <T> Optional<T> findResult(final ResultSet resultSet, final RowMapper<T> rowMapper) {
+	public <T> Optional<T> findResult(ResultSet resultSet, RowMapper<T> rowMapper) {
 		if (existsNext(resultSet)) {
 			return Optional.ofNullable(getResult(resultSet, rowMapper, 1));
 		}
 		return Optional.empty();
 	}
 
-	public <T> List<T> getResults(final ResultSet resultSet, final RowMapper<T> rowMapper) {
+	public <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) {
 		int rowNum = 1;
 		List<T> results = new ArrayList<>();
 
@@ -26,7 +26,7 @@ public class ResultMapper {
 		return results;
 	}
 
-	private boolean existsNext(final ResultSet resultSet) {
+	private boolean existsNext(ResultSet resultSet) {
 		try {
 			return resultSet.next();
 		} catch (Exception e) {
@@ -34,7 +34,7 @@ public class ResultMapper {
 		}
 	}
 
-	public <T> T getResult(final ResultSet resultSet, final RowMapper<T> rowMapper, final int rowNum) {
+	public <T> T getResult(ResultSet resultSet, RowMapper<T> rowMapper, int rowNum) {
 		try {
 			return rowMapper.mapRow(resultSet, rowNum);
 		} catch (SQLException e) {
