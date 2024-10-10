@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -25,13 +26,7 @@ public class JdbcTemplate {
     public int update(final String sql, final Object... params) {
         log.debug("update Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-            return preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
-        }
+        return executeQuery(sql, setParameter(params), PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -69,10 +64,24 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameter(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
-        int index = 1;
-        for (final Object param : params) {
-            preparedStatement.setObject(index++, param);
+    //TODO 줄일건지 말건지 하나만 하기
+    private <T> T executeQuery(final String sql, final PreparedStatementSetter pss, final SqlExecutor<T> executor) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            pss.setValue(ps);
+            return executor.executor(ps);
+        } catch (final SQLException e) {
+            throw new IllegalArgumentException(e);
         }
+    }
+
+    private PreparedStatementSetter setParameter(final Object... params) {
+        final AtomicInteger index = new AtomicInteger(1);
+        //TODO 너무 후짐
+        return ps -> {
+            for (final Object param : params) {
+                ps.setObject(index.getAndIncrement(), param);
+            }
+        };
     }
 }
