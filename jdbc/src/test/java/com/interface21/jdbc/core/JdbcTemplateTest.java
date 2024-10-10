@@ -209,6 +209,34 @@ class JdbcTemplateTest {
                 .hasMessage("조회 결과가 하나가 아닙니다. size: 2");
     }
 
+    @DisplayName("query(String, RowMapper, Object..)로 조회가 가능하다")
+    @Test
+    void queryWithObjectArgsAndRowMapper() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+        // when
+        List<User> users = jdbcTemplate.query(selectQuery, userMapper, "gugu");
+
+        // then
+        assertThat(users).hasSize(2);
+    }
+
+    @DisplayName("queryForObject(String, RowMapper, Object..)로 조회가 가능하다")
+    @Test
+    void queryForObjectWithObjectArgsAndRowMapper() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu2', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+        // when
+        User user = jdbcTemplate.queryForObejct(selectQuery, userMapper, "gugu");
+
+        // then
+        assertThat(user.email).isEqualTo("gugu@naver.com");
+    }
+
     private static void truncateUser(DataSource dataSource) {
         try {
             Connection connection = dataSource.getConnection();

@@ -70,6 +70,28 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            Object[] objects = args.clone();
+
+            for (int i = 1; i <= objects.length; i++) {
+                ps.setObject(i, objects[i - 1]);
+            }
+            ResultSet resultSet = ps.executeQuery();
+            List<T> results = new ArrayList<>();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.mapToObject(resultSet));
+            }
+            return results;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
         List<T> results = query(sql, rowMapper);
         if (results.size() == 1) {
@@ -80,6 +102,14 @@ public class JdbcTemplate {
 
     public <T> T queryForObejct(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         List<T> results = query(sql, preparedStatementSetter, rowMapper);
+        if (results.size() == 1) {
+            return results.get(0);
+        }
+        throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
+    }
+
+    public <T> T queryForObejct(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
         if (results.size() == 1) {
             return results.get(0);
         }
