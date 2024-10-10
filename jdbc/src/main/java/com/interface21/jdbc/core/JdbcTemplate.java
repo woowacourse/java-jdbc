@@ -23,9 +23,8 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
-            setParameter(pstmt, parameters);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -35,8 +34,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = execute(pstmt, parameters)) {
+             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
+             ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             return getInstance(rowMapper, rs);
         } catch (SQLException e) {
@@ -54,8 +53,8 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = execute(pstmt, parameters)) {
+             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
+             ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             return getInstances(rowMapper, rs);
         } catch (SQLException e) {
@@ -72,12 +71,14 @@ public class JdbcTemplate {
         return instances;
     }
 
-    private ResultSet execute(PreparedStatement pstmt, Object[] parameters) throws SQLException {
-        setParameter(pstmt, parameters);
-        return pstmt.executeQuery();
+    private PreparedStatement getPreparedStatement(Connection conn, String sql, Object[] parameters)
+            throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        setParameters(pstmt, parameters);
+        return pstmt;
     }
 
-    private void setParameter(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }
