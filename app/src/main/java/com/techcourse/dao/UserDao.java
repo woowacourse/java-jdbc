@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -19,17 +18,14 @@ public class UserDao {
             resultSet.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.dataSource = dataSource;
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate(this.dataSource);
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -68,7 +64,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        var sql = "select id, account, password, email from users where account = '" + account+"'";
+        var sql = "select id, account, password, email from users where account = '" + account + "'";
 
         return jdbcTemplate.queryForObject(sql, rowMapper);
     }

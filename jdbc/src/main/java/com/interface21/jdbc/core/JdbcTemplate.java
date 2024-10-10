@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -97,7 +98,7 @@ public class JdbcTemplate {
         if (results.size() == 1) {
             return results.get(0);
         }
-        throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
     public <T> T queryForObejct(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
@@ -105,7 +106,7 @@ public class JdbcTemplate {
         if (results.size() == 1) {
             return results.get(0);
         }
-        throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
     public <T> T queryForObejct(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -113,7 +114,7 @@ public class JdbcTemplate {
         if (results.size() == 1) {
             return results.get(0);
         }
-        throw new IllegalStateException("조회 결과가 하나가 아닙니다. size: " + results.size());
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
