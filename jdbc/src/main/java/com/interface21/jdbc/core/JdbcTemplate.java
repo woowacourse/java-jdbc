@@ -24,43 +24,59 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+    public int update(String sql, @Nullable Object... args) throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
+
+        try (conn; pstmt) {
+            setPreparedStatementArgs(sql, args, pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
-            return getQueryResult(rowMapper, pstmt);
+        try (conn; pstmt) {
+            setPreparedStatementArgs(sql, args, pstmt);
+            return executeQuery(rowMapper, pstmt);
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameter(args, pstmt);
-            log.info("query = {}", sql);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args)
+            throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
-            List<T> result = getQueryResult(rowMapper, pstmt);
+        try (conn; pstmt) {
+            setPreparedStatementArgs(sql, args, pstmt);
+            List<T> result = executeQuery(rowMapper, pstmt);
             return requiredSingleResult(result);
         } catch (SQLException e) {
-            throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+            throw new DataAccessException(e);
         }
+    }
+
+    private void setPreparedStatementArgs(String sql, Object[] args, PreparedStatement pstmt) throws SQLException {
+        log.debug("query = {}", sql);
+        PreparedStatementSetter pss = createArgsPreparedStatementSetter(args);
+        pss.setValues(pstmt);
+    }
+
+    private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        ResultSet rs = pstmt.executeQuery();
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            T object = rowMapper.mapRow(rs, rs.getRow());
+            result.add(object);
+        }
+
+        return result;
     }
 
     private <T> T requiredSingleResult(List<T> result) {
@@ -73,21 +89,27 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                T object = rowMapper.mapRow(rs, rs.getRow());
-                result.add(object);
+    public PreparedStatementSetter createArgsPreparedStatementSetter(Object[] args) {
+        return (pstmt) -> {
+            for (int idx = 1; idx <= args.length; idx++) {
+                pstmt.setObject(idx, args[idx - 1]);
             }
+        };
+    }
 
-            return result;
+    private PreparedStatement getPreparedStatement(String sql, Connection conn) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
-    private void setPreparedStatementParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for (int idx = 1; idx <= args.length; idx++) {
-            pstmt.setObject(idx, args[idx - 1]);
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
