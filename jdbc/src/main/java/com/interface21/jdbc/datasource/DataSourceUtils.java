@@ -1,6 +1,6 @@
 package com.interface21.jdbc.datasource;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.exception.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;

@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.JdbcQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +31,7 @@ public class JdbcTemplate {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcQueryException("executeUpdate 메서드 실패 : " + e.getMessage(), e);
         }
     }
 
@@ -48,7 +49,7 @@ public class JdbcTemplate {
             return collectResultSet(rs, rowMapper, sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcQueryException("query 메서드 실패 : " + e.getMessage(), e);
         }
     }
 
