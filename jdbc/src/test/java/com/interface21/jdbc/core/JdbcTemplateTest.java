@@ -1,15 +1,18 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,13 +22,13 @@ class JdbcTemplateTest {
     private final JdbcTemplate jdbcTemplate;
 
     private static final RowMapper<User> userMapper = (resultSet) -> new User(
-            resultSet.getLong(1),
-            resultSet.getString(2),
-            resultSet.getString(3),
-            resultSet.getString(4)
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
     );
 
-    @BeforeEach
+    @AfterEach
     void tearDown() {
         truncateUser(dataSource);
     }
@@ -62,15 +65,38 @@ class JdbcTemplateTest {
         assertThat(users).hasSize(2);
     }
 
+    @DisplayName("query(String, PreparedStatementSetter, RowMapper)로 List조회가 가능하다")
+    @Test
+    void queryForListWithRowMapperAndPreParedStatementSetter() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String sql = "select * from users where account = ?";
+
+        // when
+        List<User> users = jdbcTemplate.query(
+                sql,
+                (rs) -> {
+                    rs.setString(1, "gugu");
+                },
+                userMapper
+        );
+
+        // then
+        assertThat(users).hasSize(2);
+    }
+
     @DisplayName("update로 insert가능하다")
     @Test
-    void updateForInsert() {
+    void updateForInsert() throws SQLException {
         // given
 
         // when
         jdbcTemplate.update("insert into users (account, password, email) values ('gugu', '123', 'gugu@naver.com')");
-        ResultSet resultSet = executeQuery("select * from users");
-        int rowCount = getRowCount(resultSet);
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
 
         // then
         assertThat(rowCount).isOne();
@@ -81,11 +107,10 @@ class JdbcTemplateTest {
     void updateForUpdateQuery() throws SQLException {
         // given
         executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = String.format(" update users set account = '%s' where id = %d ", "updateGugu", 1);
 
         // when
-        String updateSql = String.format(" update users set account = '%s' where id = %d ", "updateGugu", 1);
-        int update = jdbcTemplate.update(updateSql);
-        System.out.println(update);
+        jdbcTemplate.update(updateSql);
 
         ResultSet resultSet = executeQuery("select account from users where id = 1");
         resultSet.next();
@@ -93,6 +118,159 @@ class JdbcTemplateTest {
 
         // then
         assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("update(Stirng, PreparedStatementSetter)으로 insert 가능하다.")
+    @Test
+    void updateWithPreparedStatementSetterForInsert() throws SQLException {
+        // given
+
+        // when
+        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
+                new PreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps) throws SQLException {
+                        ps.setString(1, "gugu");
+                        ps.setString(2, "123");
+                        ps.setString(3, "gugu@naver.com");
+                    }
+                });
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
+
+        // then
+        assertThat(rowCount).isOne();
+    }
+
+    @DisplayName("update(Stirng, Object...)으로 insert 가능하다.")
+    @Test
+    void updateWithObjectArgsForInsert() throws SQLException {
+        // given
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        // when
+        jdbcTemplate.update(insertSql, "gugu", "1234", "gugu@naver.com");
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
+
+        // then
+        assertThat(rowCount).isOne();
+    }
+
+
+    @DisplayName("update(Stirng, PreparedStatementSetter)으로 update 가능하다.")
+    @Test
+    void updateWithPreparedStatementSetterForUpdate() throws SQLException {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = " update users set account = ? where id = ? ";
+
+        // when
+        jdbcTemplate.update(updateSql,
+                new PreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps) throws SQLException {
+                        ps.setString(1, "updateGugu");
+                        ps.setLong(2, 1);
+                    }
+                });
+
+        ResultSet resultSet = executeQuery("select account from users where id = 1");
+        resultSet.next();
+        String account = resultSet.getString(1);
+
+        // then
+        assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("update(Stirng, object...)으로 update 가능하다.")
+    @Test
+    void updateWithObjectForUpdate() throws SQLException {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = " update users set account = ? where id = ? ";
+
+        // when
+        jdbcTemplate.update(updateSql, "updateGugu", 1);
+
+        ResultSet resultSet = executeQuery("select account from users where id = 1");
+        resultSet.next();
+        String account = resultSet.getString(1);
+
+        // then
+        assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>를 통해 select가능하다.")
+    @Test
+    void queryForObjectWithPreparedStatementSetter() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu2', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+
+        // when
+        User user = jdbcTemplate.queryForObject(
+                selectQuery,
+                (rs) -> {
+                    rs.setString(1, "gugu");
+                },
+                userMapper);
+
+        // then
+        assertThat(user.email).isEqualTo("gugu@naver.com");
+    }
+
+    @DisplayName("queryForObject(String, PreparedStatementSetter, RowMapper<>)의 조회수가 1이아니면 예외가 발생한다")
+    @Test
+    void throwException_when_queryForObjectWithPreparedStatementSetterResultSizeIsNotOne() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+
+        // when - then
+        assertThatThrownBy(
+                () -> jdbcTemplate.queryForObject(
+                        selectQuery,
+                        (rs) -> {
+                            rs.setString(1, "gugu");
+                        },
+                        userMapper))
+                .isInstanceOf(NoSingleResultException.class)
+                .hasMessage("조회 결과가 하나가 아닙니다. size: 2");
+    }
+
+    @DisplayName("query(String, RowMapper, Object..)로 조회가 가능하다")
+    @Test
+    void queryWithObjectArgsAndRowMapper() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+        // when
+        List<User> users = jdbcTemplate.query(selectQuery, userMapper, "gugu");
+
+        // then
+        assertThat(users).hasSize(2);
+    }
+
+    @DisplayName("queryForObject(String, RowMapper, Object..)로 조회가 가능하다")
+    @Test
+    void queryForObjectWithObjectArgsAndRowMapper() {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        executeUpdateQuery("insert into users (account, password, email) values('gugu2', '123', 'gugu2@naver.com')");
+        String selectQuery = "select * from users where account = ?";
+
+        // when
+        User user = jdbcTemplate.queryForObject(selectQuery, userMapper, "gugu");
+
+        // then
+        assertThat(user.email).isEqualTo("gugu@naver.com");
     }
 
     private static void truncateUser(DataSource dataSource) {
@@ -104,17 +282,6 @@ class JdbcTemplateTest {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private int getRowCount(ResultSet rs) {
-        int rowCount = 0;
-        try {
-            rs.last();
-            rowCount = rs.getRow();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return rowCount;
     }
 
     private ResultSet executeQuery(String sql) {

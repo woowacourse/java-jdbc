@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -37,12 +39,51 @@ public class JdbcTemplate {
              Statement statement = connection.createStatement()) {
 
             ResultSet resultSet = statement.executeQuery(sql);
-            List<T> objects = new ArrayList<>();
+            List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                objects.add(rowMapper.mapToObject(resultSet));
+                results.add(rowMapper.mapToObject(resultSet));
             }
-            return objects;
+            return results;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(ps);
+            ResultSet resultSet = ps.executeQuery();
+            List<T> results = new ArrayList<>();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.mapToObject(resultSet));
+            }
+            return results;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            setValues(args.clone(), ps);
+
+            ResultSet resultSet = ps.executeQuery();
+            List<T> results = new ArrayList<>();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.mapToObject(resultSet));
+            }
+            return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -51,18 +92,58 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
+        List<T> results = query(sql, rowMapper);
+        if (results.size() == 1) {
+            return results.get(0);
+        }
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
+    }
 
-            ResultSet resultSet = statement.executeQuery(sql);
-            if(resultSet.next()){
-                return rowMapper.mapToObject(resultSet);
-            }
-            return null;
+    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        List<T> results = query(sql, preparedStatementSetter, rowMapper);
+        if (results.size() == 1) {
+            return results.get(0);
+        }
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.size() == 1) {
+            return results.get(0);
+        }
+        throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
+    }
+
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(ps);
+            return ps.executeUpdate();
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public int update(String sql, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            setValues(args.clone(), ps);
+
+            return ps.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setValues(Object[] objects, PreparedStatement ps) throws SQLException {
+        for (int i = 1; i <= objects.length; i++) {
+            ps.setObject(i, objects[i - 1]);
         }
     }
 }
