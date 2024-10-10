@@ -31,6 +31,21 @@ public class SqlExecutor {
         }
     }
 
+    public <T> T execute(
+            Connection connection, String sql, PreparedStatementExecutor<T> statementExecutor, Object... parameters) {
+        log.debug("실행 쿼리: {}", sql);
+        log.debug("파라미터: {}", Arrays.toString(parameters));
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            setParameters(preparedStatement, parameters);
+            return statementExecutor.execute(preparedStatement);
+
+        } catch (SQLException e) {
+            log.error("쿼리 실행에 실패했습니다: {}", sql, e);
+            throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
+        }
+    }
+
     private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
         validateParameterCount(preparedStatement, parameters);
         for (int i = 0; i < parameters.length; i++) {
