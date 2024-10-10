@@ -60,7 +60,7 @@ public class SecondUserService {
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
-    @Transactional(propagation = Propagation.NEVER)
+//    @Transactional(propagation = Propagation.NEVER)
     public String saveSecondTransactionWithNever() {
         userRepository.save(User.createTest());
         logActualTransactionActive();
