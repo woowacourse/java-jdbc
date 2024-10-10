@@ -9,9 +9,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ParametersAreNonnullByDefault
 public class SqlResultSetMapper {
 
     private static final Logger log = LoggerFactory.getLogger(SqlResultSetMapper.class);
@@ -19,10 +22,11 @@ public class SqlResultSetMapper {
     private SqlResultSetMapper() {
     }
 
+    @Nonnull
     public static <T> List<T> doQueryMapping(Class<T> clazz, ResultSet resultSet)
             throws SQLException {
         if (resultSet.isAfterLast()) {
-            return null;
+            return List.of();
         }
 
         List<T> queryResult = new ArrayList<>();
@@ -36,6 +40,7 @@ public class SqlResultSetMapper {
         return queryResult;
     }
 
+    @Nonnull
     private static <T> T createInstanceFromResultSet(Class<T> clazz, ResultSet resultSet)
             throws SQLException {
         try {

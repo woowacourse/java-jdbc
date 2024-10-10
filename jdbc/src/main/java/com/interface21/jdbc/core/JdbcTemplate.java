@@ -7,21 +7,27 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
+@ParametersAreNonnullByDefault
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
+
+    @Nullable
     public <T> T query(Class<T> clazz, String sqlStatement, Object... params) {
         List<T> result = queryForAll(clazz, sqlStatement, params);
 
@@ -35,10 +41,11 @@ public class JdbcTemplate {
         return result.getFirst();
     }
 
+    @Nonnull
     public <T> List<T> queryForAll(Class<T> clazz, String sqlStatement, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = getStatement(conn, sqlStatement, params);
+                PreparedStatement preparedStatement = setStatement(conn, sqlStatement, params);
                 ResultSet resultSet = preparedStatement.executeQuery();
         ) {
             log.debug("query : {}", sqlStatement);
@@ -53,7 +60,7 @@ public class JdbcTemplate {
     public void update(String sqlStatement, Object... params) {
         try (
                 Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = getStatement(connection, sqlStatement, params);
+                PreparedStatement preparedStatement = setStatement(connection, sqlStatement, params);
         ) {
             log.debug("query : {}", sqlStatement);
             preparedStatement.executeUpdate();
@@ -63,7 +70,8 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getStatement(Connection connection, String sqlStatement, Object[] params)
+    @Nonnull
+    private PreparedStatement setStatement(Connection connection, String sqlStatement, Object[] params)
             throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(sqlStatement);
 
