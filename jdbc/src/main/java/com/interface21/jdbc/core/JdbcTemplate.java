@@ -29,30 +29,27 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        return execute(sql, preparedStatement -> executeUpdate(preparedStatement, preparedStatementSetter));
+        return execute(sql, PreparedStatement::executeUpdate, preparedStatementSetter);
     }
 
     private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] parameters) {
         return new OrderBasedPreparedStatementSetter(parameters);
     }
 
-    private <T> T execute(String sql, SQLFunction<PreparedStatement, T> function) {
+    private <T> T execute(
+            String sql,
+            SQLFunction<PreparedStatement, T> function,
+            PreparedStatementSetter preparedStatementSetter
+    ) {
         log.debug("query : {}", sql);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
             return function.apply(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
-    }
-
-    private int executeUpdate(
-            PreparedStatement preparedStatement,
-            PreparedStatementSetter preparedStatementSetter
-    ) throws SQLException {
-        preparedStatementSetter.setValues(preparedStatement);
-        return preparedStatement.executeUpdate();
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -70,7 +67,7 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             PreparedStatementSetter preparedStatementSetter
     ) {
-        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper, preparedStatementSetter));
+        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper), preparedStatementSetter);
     }
 
     private <T> void validateResultUniqueness(List<T> results) {
@@ -80,15 +77,6 @@ public class JdbcTemplate {
         if (results.size() > UNIQUE_SIZE) {
             throw new IncorrectResultSizeDataAccessException(UNIQUE_SIZE, results.size());
         }
-    }
-
-    private <T> List<T> executeQuery(
-            PreparedStatement preparedStatement,
-            RowMapper<T> rowMapper,
-            PreparedStatementSetter preparedStatementSetter
-    ) throws SQLException {
-        preparedStatementSetter.setValues(preparedStatement);
-        return executeQuery(preparedStatement, rowMapper);
     }
 
     private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
@@ -107,9 +95,5 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
-    }
-
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
-        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper));
     }
 }
