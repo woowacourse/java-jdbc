@@ -13,7 +13,6 @@ import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -214,7 +213,7 @@ class JdbcTemplateTest {
         String selectQuery = "select * from users where account = ?";
 
         // when
-        User user = jdbcTemplate.queryForObejct(
+        User user = jdbcTemplate.queryForObject(
                 selectQuery,
                 (rs) -> {
                     rs.setString(1, "gugu");
@@ -235,7 +234,7 @@ class JdbcTemplateTest {
 
         // when - then
         assertThatThrownBy(
-                () -> jdbcTemplate.queryForObejct(
+                () -> jdbcTemplate.queryForObject(
                         selectQuery,
                         (rs) -> {
                             rs.setString(1, "gugu");
@@ -268,7 +267,7 @@ class JdbcTemplateTest {
         String selectQuery = "select * from users where account = ?";
 
         // when
-        User user = jdbcTemplate.queryForObejct(selectQuery, userMapper, "gugu");
+        User user = jdbcTemplate.queryForObject(selectQuery, userMapper, "gugu");
 
         // then
         assertThat(user.email).isEqualTo("gugu@naver.com");

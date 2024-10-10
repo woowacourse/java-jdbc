@@ -1,8 +1,11 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -37,7 +40,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        var sql = String.format("""
+        var sql = """
                 update 
                     users 
                 set
@@ -46,8 +49,17 @@ public class UserDao {
                     email = '%s'
                 where 
                     id = %d
-                """, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+                """;
 
+        jdbcTemplate.update(sql, new PreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps) throws SQLException {
+                ps.setString(1, user.getAccount());
+                ps.setString(2, user.getPassword());
+                ps.setString(3, user.getEmail());
+                ps.setLong(4, user.getId());
+            }
+        });
         jdbcTemplate.update(sql);
     }
 
@@ -58,14 +70,14 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = " + id;
+        final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, rowMapper);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
-        var sql = "select id, account, password, email from users where account = '" + account + "'";
+        var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, rowMapper);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }

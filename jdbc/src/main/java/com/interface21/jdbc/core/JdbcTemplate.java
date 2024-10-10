@@ -99,7 +99,7 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public <T> T queryForObejct(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         List<T> results = query(sql, preparedStatementSetter, rowMapper);
         if (results.size() == 1) {
             return results.get(0);
@@ -107,7 +107,7 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public <T> T queryForObejct(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
         if (results.size() == 1) {
             return results.get(0);
