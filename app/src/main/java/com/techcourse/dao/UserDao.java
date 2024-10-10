@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private static final RowMapper<User> ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
