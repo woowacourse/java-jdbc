@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
 
 public class ReflectionRowMapper<T> implements RowMapper<T> {
 
@@ -17,21 +18,31 @@ public class ReflectionRowMapper<T> implements RowMapper<T> {
     @Override
     public T mapRow(ResultSet resultSet) {
         Field[] fields = clazz.getDeclaredFields();
-        Object[] arguments = getArgumentsFromResultSet(resultSet, fields);
-        Class<?>[] fieldTypes = getFieldTypes(fields);
+        List<Object> arguments = getArgumentsFromResultSet(resultSet, fields);
         try {
-            return clazz.getConstructor(fieldTypes).newInstance(arguments);
+            T result = clazz.getConstructor().newInstance();
+            setFields(result, fields, arguments);
+            return result;
         } catch (ReflectiveOperationException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private Object[] getArgumentsFromResultSet(ResultSet resultSet, Field[] fields) {
+    private void setFields(T result, Field[] fields, List<Object> arguments) throws IllegalAccessException {
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            field.setAccessible(true);
+            field.set(result, arguments.get(i));
+            field.setAccessible(false);
+        }
+    }
+
+    private List<Object> getArgumentsFromResultSet(ResultSet resultSet, Field[] fields) {
         return Arrays.stream(fields)
                 .map(Field::getName)
                 .map(this::camelToSnake)
                 .map(name -> getObject(resultSet, name))
-                .toArray();
+                .toList();
     }
 
     private String camelToSnake(String camel) {

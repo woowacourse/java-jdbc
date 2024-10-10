@@ -18,10 +18,10 @@ class ReflectionRowMapperTest {
     void mapRow() throws SQLException {
         // given
         ResultSet resultSet = mock(ResultSet.class);
-        Person expected = new Person(1, "myungoh", 25);
-        when(resultSet.getObject("id")).thenReturn(expected.id());
-        when(resultSet.getObject("name")).thenReturn(expected.name());
-        when(resultSet.getObject("age")).thenReturn(expected.age());
+        Person expected = new Person(1L, "myungoh", 25);
+        when(resultSet.getObject("id")).thenReturn(expected.getId());
+        when(resultSet.getObject("name")).thenReturn(expected.getName());
+        when(resultSet.getObject("age")).thenReturn(expected.getAge());
         RowMapper<Person> personRowMapper = new ReflectionRowMapper<>(Person.class);
 
         // when
@@ -36,9 +36,9 @@ class ReflectionRowMapperTest {
     void mapRow_camelToSnake() throws SQLException {
         // given
         ResultSet resultSet = mock(ResultSet.class);
-        Snake expected = new Snake(1, "myungoh");
-        when(resultSet.getObject("id")).thenReturn(expected.id());
-        when(resultSet.getObject("owner_name")).thenReturn(expected.ownerName());
+        Snake expected = new Snake(1L, "myungoh");
+        when(resultSet.getObject("id")).thenReturn(expected.getId());
+        when(resultSet.getObject("owner_name")).thenReturn(expected.getOwnerName());
         RowMapper<Snake> snakeRowMapper = new ReflectionRowMapper<>(Snake.class);
 
         // when
