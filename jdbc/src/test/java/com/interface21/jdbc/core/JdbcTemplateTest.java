@@ -32,16 +32,6 @@ class JdbcTemplateTest {
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
-    private void verifyQueryResourcesClosed() throws SQLException {
-        verify(resultSet).close();
-        verifyConnectionClosed();
-    }
-
-    private void verifyConnectionClosed() throws SQLException {
-        verify(preparedStatement).close();
-        verify(connection).close();
-    }
-
     @BeforeEach
     void setUp() throws SQLException {
         DataSource dataSource = mock(DataSource.class);
@@ -152,6 +142,20 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(3)).next(),
                 () -> verify(resultSet, times(2)).getLong("id"),
                 this::verifyQueryResourcesClosed
+        );
+    }
+
+    private void verifyQueryResourcesClosed() {
+        assertAll(
+                () -> verify(resultSet).close(),
+                this::verifyConnectionClosed
+        );
+    }
+
+    private void verifyConnectionClosed() {
+        assertAll(
+                () -> verify(preparedStatement).close(),
+                () -> verify(connection).close()
         );
     }
 

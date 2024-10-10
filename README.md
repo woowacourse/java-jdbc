@@ -21,7 +21,7 @@
 - [ ] 1단계 피드백 반영
     - [x] `queryForObject`가 `Optional`을 반환하도록 변경
     - [x] `queryForObject` 반환 로직에 예외 추가
-    - [ ] `JdbcTemplateTest` 변경
+    - [x] `JdbcTemplateTest` 변경
 
 ### 학습목표
 
