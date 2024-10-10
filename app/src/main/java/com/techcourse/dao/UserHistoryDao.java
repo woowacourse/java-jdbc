@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserHistoryDao {
 
