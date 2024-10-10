@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -13,7 +14,7 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
+        this(new JdbcTemplate(dataSource, new PreparedStatementSetter()));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {

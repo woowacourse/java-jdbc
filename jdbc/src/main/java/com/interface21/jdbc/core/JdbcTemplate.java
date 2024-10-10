@@ -15,9 +15,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final PreparedStatementSetter statementSetter;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource, PreparedStatementSetter statementSetter) {
         this.dataSource = dataSource;
+        this.statementSetter = statementSetter;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper rowMapper, final Object... conditions) {
@@ -25,9 +27,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
-            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(conditions);
-            statementSetter.setValues(preparedStatement);
+            statementSetter.setValues(preparedStatement, conditions);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -64,9 +64,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
-            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(arguments);
-            statementSetter.setValues(preparedStatement);
+            statementSetter.setValues(preparedStatement, arguments);
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
