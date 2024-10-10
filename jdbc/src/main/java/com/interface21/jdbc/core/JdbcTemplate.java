@@ -35,7 +35,7 @@ public class JdbcTemplate {
             return rows;
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new IllegalStateException("데이터베이스 연결에 실패했습니다.");
+            throw new DataConnectionException(e);
         }
     }
 
@@ -48,7 +48,7 @@ public class JdbcTemplate {
             return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new IllegalStateException("데이터베이스 연결에 실패했습니다.");
+            throw new DataConnectionException(e);
         }
     }
 
