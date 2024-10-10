@@ -86,6 +86,9 @@ class PoolingVsNoPoolingTest {
         final var hikariDataSource = new HikariDataSource(config);
 
         long start = ClockSource.currentTime();
+
+        // MaximumPool 1 : 100 번 1000개 실행시 1분 30초
+        //
         connect(hikariDataSource);
         long end = ClockSource.currentTime();
 
