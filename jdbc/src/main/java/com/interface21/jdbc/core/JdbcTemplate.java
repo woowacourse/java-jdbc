@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.CannotGetPreparedStatementException;
+import com.interface21.jdbc.CannotProcessPreparedStatementException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,50 +24,52 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
-            preparedStatement.executeUpdate();
-            log.debug("query : {}", sql);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        process(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params);
-             ResultSet resultSet = getResultSet(preparedStatement)) {
-            log.debug("query : {}", sql);
-            resultSet.next();
-            if (!resultSet.isLast()) {
-                throw new IllegalStateException("query result set has more than one row");
-            }
-            return rowMapper.mapRow(resultSet, resultSet.getRow());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return process(sql,
+                preparedStatement -> {
+                    try (ResultSet resultSet = getResultSet(preparedStatement)) {
+                        resultSet.next();
+                        if (!resultSet.isLast()) {
+                            throw new IllegalStateException("query result set has more than one row");
+                        }
+                        return rowMapper.mapRow(resultSet, resultSet.getRow());
+                    }
+                },
+                params);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return process(sql,
+                preparedStatement -> {
+                    try (ResultSet resultSet = getResultSet(preparedStatement)) {
+                        List<T> result = new ArrayList<>();
+                        while (resultSet.next()) {
+                            result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                        }
+                        return result;
+                    }
+                },
+                params);
+    }
+
+    private <T> T process(String sql, PreparedStatementProcessor<T> processor, Object[] params) {
+        log.debug("query : {}", sql);
         try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params);
-             ResultSet resultSet = getResultSet(preparedStatement)) {
-            List<T> result = new ArrayList<>();
-            log.debug("query : {}", sql);
-            while (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
-            }
-            return result;
+             PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
+            return processor.process(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new CannotProcessPreparedStatementException("Failed to process preparedStatement", e);
         }
     }
 
-    private Connection getConnection()  {
+    private Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection",e);
+            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
         }
     }
 
@@ -75,7 +79,7 @@ public class JdbcTemplate {
             setPreparedStatement(params, preparedStatement);
             return preparedStatement;
         } catch (SQLException e) {
-            throw new CannotGetPreParedStatementException("Failed to get PreparedStatement", e);
+            throw new CannotGetPreparedStatementException("Failed to get PreparedStatement", e);
         }
     }
 
