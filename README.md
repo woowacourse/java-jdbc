@@ -19,8 +19,8 @@
     - [ ] 람다를 적극적으로 활용해서 코드량을 줄여보자.
 
 - [ ] 1단계 피드백 반영
-    - [ ] `queryForObject`가 `Optional`을 반환하도록 변경
-    - [ ] `queryForObject` 반환 로직에 예외 추가
+    - [x] `queryForObject`가 `Optional`을 반환하도록 변경
+    - [x] `queryForObject` 반환 로직에 예외 추가
     - [ ] `JdbcTemplateTest` 변경
 
 ### 학습목표

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -35,14 +37,18 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> result = query(sql, rowMapper, parameters);
 
-        if (result.isEmpty()) {
-            return null;
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException();
         }
 
-        return result.getFirst();
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(result.getFirst());
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {

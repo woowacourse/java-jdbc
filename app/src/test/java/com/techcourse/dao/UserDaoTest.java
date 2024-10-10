@@ -3,67 +3,101 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+    private static UserDao userDao;
 
-    @BeforeEach
-    void setup() {
+    @BeforeAll
+    static void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
+        //when
+        List<User> users = userDao.findAll();
 
+        //then
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        //when
+        Optional<User> user = userDao.findById(1L);
+        User result = user.get();
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        //then
+        assertAll(
+                () -> assertThat(user).isPresent(),
+                () -> assertThat(result.getAccount()).isEqualTo("gugu")
+        );
+
     }
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        //given
+        String account = "gugu";
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        //when
+        Optional<User> user = userDao.findByAccount(account);
+        User result = user.get();
+
+        assertAll(
+                () -> assertThat(user).isPresent(),
+                () -> assertThat(result.getAccount()).isEqualTo(account)
+        );
     }
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        //given
+        String account = "insert-gugu";
+        User user = new User(account, "password", "hkkang@woowahan.com");
+
+        //when
         userDao.insert(user);
+        Optional<User> actual = userDao.findById(2L);
+        User result = actual.get();
 
-        final var actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
+        //then
+        assertAll(
+                () -> assertThat(actual).isPresent(),
+                () -> assertThat(result.getAccount()).isEqualTo(account)
+        );
     }
 
     @Test
     void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        //given
+        String newPassword = "password99";
+        Optional<User> user = userDao.findById(1L);
+        User initialUser = user.get();
 
-        userDao.update(user);
+        //when
+        initialUser.changePassword(newPassword);
+        userDao.update(initialUser);
 
-        final var actual = userDao.findById(1L);
+        Optional<User> actual = userDao.findById(1L);
+        User changedUser = actual.get();
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertAll(
+                () -> assertThat(actual).isPresent(),
+                () -> assertThat(changedUser.getPassword()).isEqualTo(newPassword)
+        );
     }
 }
