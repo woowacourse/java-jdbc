@@ -21,13 +21,13 @@ public class UserService {
 
     public User findById(final long id) {
         return transactionManager.transaction((connection) -> {
-            return userDao.findById2(connection, id);
+            return userDao.findById(connection, id);
         });
     }
 
     public void insert(final User user) {
         transactionManager.transaction((connection) -> {
-            userDao.insert2(connection, user);
+            userDao.insert(connection, user);
         });
     }
 
@@ -35,8 +35,8 @@ public class UserService {
         transactionManager.transaction((connection) -> {
                     final var user = findById(id);
                     user.changePassword(newPassword);
-                    userDao.update2(connection, user);
-                    userHistoryDao.log2(connection, new UserHistory(user, createBy));
+                    userDao.update(connection, user);
+                    userHistoryDao.log(connection, new UserHistory(user, createBy));
                 }
         );
     }

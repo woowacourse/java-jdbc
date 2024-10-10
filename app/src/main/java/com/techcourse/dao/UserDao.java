@@ -23,33 +23,16 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(User user) {
+    public void insert(Connection connection, User user) {
         Query query = createQueryForInsert();
-        jdbcTemplate.queryForUpdate(query.getSql(), user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void insert2(Connection connection, User user) {
-        Query query = createQueryForInsert();
-        jdbcTemplate.queryForUpdate2(connection, query.getSql(), user.getAccount(), user.getPassword(),
+        jdbcTemplate.queryForUpdate(connection, query.getSql(), user.getAccount(), user.getPassword(),
                 user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, User user) {
         Query query = createQueryForUpdate();
 
         jdbcTemplate.queryForUpdate(
-                query.getSql(),
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
-    }
-
-    public void update2(Connection connection, User user) {
-        Query query = createQueryForUpdate();
-
-        jdbcTemplate.queryForUpdate2(
                 connection,
                 query.getSql(),
                 user.getAccount(),
@@ -59,38 +42,21 @@ public class UserDao {
         );
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         Query query = new QueryBuilder()
                 .selectFrom("users")
                 .build();
-        return jdbcTemplate.query(query.getSql(), rowMapper);
+        return jdbcTemplate.query(connection, query.getSql(), rowMapper);
     }
 
-    public List<User> findAll2() {
-        Query query = new QueryBuilder()
-                .selectFrom("users")
-                .build();
-        return jdbcTemplate.query(query.getSql(), rowMapper);
-    }
-
-    public User findById(final Long id) {
+    public User findById(Connection connection, Long id) {
         Query query = resolveEqualSql("id");
-        return jdbcTemplate.queryForObject(query.getSql(), rowMapper, id);
+        return jdbcTemplate.queryForObject(connection, query.getSql(), rowMapper, id);
     }
 
-    public User findById2(Connection connection, Long id) {
-        Query query = resolveEqualSql("id");
-        return jdbcTemplate.queryForObject2(connection, query.getSql(), rowMapper, id);
-    }
-
-    public User findByAccount(final String account) {
+    public User findByAccount(Connection connection, String account) {
         Query query = resolveEqualSql("account");
-        return jdbcTemplate.queryForObject(query.getSql(), rowMapper, account);
-    }
-
-    public User findByAccount2(Connection connection, String account) {
-        Query query = resolveEqualSql("account");
-        return jdbcTemplate.queryForObject2(connection, query.getSql(), rowMapper, account);
+        return jdbcTemplate.queryForObject(connection, query.getSql(), rowMapper, account);
     }
 
     private Query createQueryForInsert() {

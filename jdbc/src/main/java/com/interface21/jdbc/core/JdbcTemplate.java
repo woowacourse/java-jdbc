@@ -2,14 +2,12 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataAccessWrapper;
-import com.interface21.jdbc.datasource.DataAccessWrapper2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,22 +16,15 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataAccessWrapper dataAccessWrapper;
-    private final DataAccessWrapper2 dataAccessWrapper2 = new DataAccessWrapper2();
     private final PreparedStatementResolver preparedStatementResolver;
 
-    public JdbcTemplate(final DataSource dataSource, PreparedStatementResolver preparedStatementResolver) {
-        this.dataAccessWrapper = new DataAccessWrapper(dataSource);
+    public JdbcTemplate(DataAccessWrapper dataAccessWrapper, PreparedStatementResolver preparedStatementResolver) {
+        this.dataAccessWrapper = dataAccessWrapper;
         this.preparedStatementResolver = preparedStatementResolver;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = query(sql, rowMapper, parameters);
-        validateResultsLength(results);
-        return results.getFirst();
-    }
-
-    public <T> T queryForObject2(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = query2(connection, sql, rowMapper, parameters);
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = query(connection, sql, rowMapper, parameters);
         validateResultsLength(results);
         return results.getFirst();
     }
@@ -49,13 +40,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return dataAccessWrapper.apply((connection, pstmt) -> makeQueryResultForList(rowMapper, parameters, pstmt),
-                sql);
-    }
-
-    public <T> List<T> query2(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return dataAccessWrapper2.apply(
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return dataAccessWrapper.apply(
                 connection,
                 sql,
                 (pstmt) -> makeQueryResultForList(rowMapper, parameters, pstmt)
@@ -77,12 +63,8 @@ public class JdbcTemplate {
         return results;
     }
 
-    public int queryForUpdate(String sql, Object... parameters) {
-        return dataAccessWrapper.apply((connection, pstmt) -> executeUpdateQuery(parameters, pstmt), sql);
-    }
-
-    public int queryForUpdate2(Connection connection, String sql, Object... parameters) {
-        return dataAccessWrapper2.apply(connection, sql, (pstmt) -> executeUpdateQuery(parameters, pstmt));
+    public int queryForUpdate(Connection connection, String sql, Object... parameters) {
+        return dataAccessWrapper.apply(connection, sql, (pstmt) -> executeUpdateQuery(parameters, pstmt));
     }
 
     private int executeUpdateQuery(Object[] parameters, PreparedStatement pstmt) throws SQLException {

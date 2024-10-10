@@ -18,30 +18,13 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(UserHistory userHistory) {
+    public void log(Connection connection, UserHistory userHistory) {
         Query query = new QueryBuilder()
                 .insert("user_id", "account", "password", "email", "created_at", "created_by")
                 .into("user_history")
                 .build();
 
         jdbcTemplate.queryForUpdate(
-                query.getSql(),
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
-
-    public void log2(Connection connection, UserHistory userHistory) {
-        Query query = new QueryBuilder()
-                .insert("user_id", "account", "password", "email", "created_at", "created_by")
-                .into("user_history")
-                .build();
-
-        jdbcTemplate.queryForUpdate2(
                 connection,
                 query.getSql(),
                 userHistory.getUserId(),
