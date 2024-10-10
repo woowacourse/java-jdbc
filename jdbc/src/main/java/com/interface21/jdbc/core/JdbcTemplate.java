@@ -1,20 +1,15 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -23,57 +18,55 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    private int update(String sql, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            setParameters(ps, args);
+            pss.setValues(ps);
             return ps.executeUpdate();
         } catch (SQLException e) {
-            log.error("Update에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    private <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         List<T> results = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            setParameters(ps, args);
+            pss.setValues(ps);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    results.add(rowMapper.apply(rs));
+                    results.add(rowMapper.mapRow(rs));
                 }
             }
         } catch (SQLException e) {
-            log.error("Query에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
         return results;
     }
 
-    public <T> T queryForObject(String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    private <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            setParameters(ps, args);
+            pss.setValues(ps);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rowMapper.apply(rs);
+                    return rowMapper.mapRow(rs);
                 }
                 return null;
             }
         } catch (SQLException e) {
-            log.error("queryForObject에 실패했습니다.", e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
-    }
-
-    private void setParameters(PreparedStatement ps, Object... args) throws SQLException {
-        IntStream.range(0, args.length).forEach(parameterIndex -> {
-            try {
-                ps.setObject(parameterIndex + 1, args[parameterIndex]);
-            } catch (SQLException e) {
-                log.error("Parameter 설정에 실패했습니다.", e);
-                throw new RuntimeException(e);
-            }
-        });
     }
 }
