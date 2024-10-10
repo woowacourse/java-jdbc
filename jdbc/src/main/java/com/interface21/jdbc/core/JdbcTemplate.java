@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return update(sql, ps -> setParameters(ps, args));
+        return update(sql, new PreparedStatementArgumentsSetter(args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -52,7 +51,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, ps -> setParameters(ps, args), rowMapper);
+        return query(sql, new PreparedStatementArgumentsSetter(args), rowMapper);
     }
 
     private <T> List<T> retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
@@ -63,18 +62,5 @@ public class JdbcTemplate {
             }
         }
         return results;
-    }
-
-    private void setParameters(PreparedStatement ps, Object... args) {
-        IntStream.range(0, args.length).forEach(i -> setParameterOfIdx(ps, args, i));
-    }
-
-    private void setParameterOfIdx(PreparedStatement ps, Object[] args, int parameterIdx) {
-        try {
-            ps.setObject(parameterIdx + 1, args[parameterIdx]);
-            log.info("Parameter-{} : {}", parameterIdx + 1, args[parameterIdx]);
-        } catch (SQLException e) {
-            throw new DataAccessException("파라미터 설정 실패", e);
-        }
     }
 }
