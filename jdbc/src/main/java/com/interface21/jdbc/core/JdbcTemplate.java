@@ -31,7 +31,7 @@ public class JdbcTemplate {
             pss.setValue(psmt);
             ResultSet rs = psmt.executeQuery();
 
-            return mapResultSetToList(rowMapper, rs);
+            return getResultsFromResultSet(rowMapper, rs);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -49,15 +49,19 @@ public class JdbcTemplate {
         };
     }
 
-    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> getResultsFromResultSet(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         try (rs) {
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                T element = rowMapper.mapRow(rs, rs.getRow());
-                result.add(element);
-            }
-            return result;
+            return mapResultSetToList(rowMapper, rs);
         }
+    }
+
+    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (rs.next()) {
+            T element = rowMapper.mapRow(rs, rs.getRow());
+            result.add(element);
+        }
+        return result;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
