@@ -10,7 +10,7 @@ import com.techcourse.domain.User;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ResultSetCallBack<User> resultSetCallBack;
+    private final ResultSetCallBack<User> resultSetUserCallBack;
 
     public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
@@ -18,7 +18,7 @@ public class UserDao {
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.resultSetCallBack = getUserResultSetCallBack();
+        this.resultSetUserCallBack = getUserResultSetCallBack();
     }
 
     private ResultSetCallBack<User> getUserResultSetCallBack() {
@@ -58,18 +58,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users;";
 
-        return jdbcTemplate.query(sql, resultSetCallBack);
+        return jdbcTemplate.query(sql, resultSetUserCallBack);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryOne(sql, resultSetCallBack, id);
+        return jdbcTemplate.queryOne(sql, resultSetUserCallBack, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryOne(sql, resultSetCallBack, account);
+        return jdbcTemplate.queryOne(sql, resultSetUserCallBack, account);
     }
 }
