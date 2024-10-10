@@ -21,13 +21,11 @@ public class UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
-    private final TransactionManager transactionManager;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.dataSource = DataSourceConfig.getInstance();
-        this.transactionManager = new TransactionManager();
     }
 
     public User findById(final long id) {
@@ -48,7 +46,7 @@ public class UserService {
     }
 
     private void updatePassword(final Connection connection, final long id, final String newPassword, final String createBy) {
-        transactionManager.start(connection, () -> {
+        TransactionManager.start(connection, () -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);

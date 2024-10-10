@@ -7,7 +7,11 @@ import java.sql.SQLException;
 
 public class TransactionManager {
 
-    public void start(Connection connection, Runnable runnable) {
+    private TransactionManager() {
+
+    }
+
+    public static void start(Connection connection, Runnable runnable) {
         try {
             connection.setAutoCommit(false);
 
@@ -20,7 +24,7 @@ public class TransactionManager {
         }
     }
 
-    private void rollback(final Connection connection) {
+    private static void rollback(final Connection connection) {
         if (connection != null) {
             try {
                 connection.rollback();

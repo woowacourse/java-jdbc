@@ -30,6 +30,6 @@
 
 ## 3단계 - Transaction 적용하기
 
-- [ ] 트랜잭션 경계 설정하기
+- [x] 트랜잭션 경계 설정하기
   - [x] UserDao, UserHistoryDao 커넥션 객체 사용하도록 수정
   - [x] UserService 에서 한 커넥션으로 관리하도록 수정
