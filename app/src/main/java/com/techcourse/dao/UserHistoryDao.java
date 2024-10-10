@@ -10,19 +10,19 @@ public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
-    private final JdbcTemplate jdbcTemplate2;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        jdbcTemplate2 = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate2 = jdbcTemplate;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate2.update(sql, (preparedStatement) -> {
+        jdbcTemplate.update(sql, (preparedStatement) -> {
             preparedStatement.setObject(1, userHistory.getUserId());
             preparedStatement.setObject(2, userHistory.getAccount());
             preparedStatement.setObject(3, userHistory.getPassword());
