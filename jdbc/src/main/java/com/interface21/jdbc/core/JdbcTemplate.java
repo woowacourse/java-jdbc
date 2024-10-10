@@ -59,26 +59,26 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) ->
-                result(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet)));
+                queryResult(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet)));
     }
 
     public <T> List<T> query(String sql, Object[] args, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
-            return result(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet));
+            return queryResult(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet));
         });
     }
 
     public <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
         return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
-            return result(preparedStatement, resultSet -> singleResultMapping(rowMapper, resultSet));
+            return queryResult(preparedStatement, resultSet -> singleResultMapping(rowMapper, resultSet));
         });
     }
 
-    private <T> T result(PreparedStatement preparedStatement, Function<ResultSet, T> mapper) throws SQLException {
+    private <T> T queryResult(PreparedStatement preparedStatement, Function<ResultSet, T> resultMapper) throws SQLException {
         try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            return mapper.apply(resultSet);
+            return resultMapper.apply(resultSet);
         }
     }
 

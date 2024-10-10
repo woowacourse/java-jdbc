@@ -126,7 +126,7 @@ class JdbcTemplateTest {
 
     @DisplayName("데이터를 조회하는 queryForObject 메서드는 조회된 행이 없는 경우 예외가 발생한다.")
     @Test
-    void queryForObjectNoResult() throws SQLException {
+    void queryForObjectEmptyQueryResult() throws SQLException {
         String sql = "select id, account, password, email from users where id = ?";
         Object[] args = {1};
         RowMapper<TestUser> rowMapper = mock(RowMapper.class);
