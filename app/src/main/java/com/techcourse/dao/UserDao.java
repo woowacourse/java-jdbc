@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
@@ -15,13 +16,13 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private static final RowMapper<User> USER_ROW_MAPPER = (resultSet -> {
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> {
         long id = resultSet.getLong("id");
         String account = resultSet.getString("account");
         String password = resultSet.getString("password");
         String email = resultSet.getString("email");
         return new User(id, account, password, email);
-    });
+    };
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -35,12 +36,23 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        };
+        jdbcTemplate.update(sql, preparedStatementSetter);
     }
 
     public void update(final User user) {
         final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        };
+        jdbcTemplate.update(sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {
@@ -50,11 +62,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatementSetter);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setString(1, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, preparedStatementSetter);
     }
 }

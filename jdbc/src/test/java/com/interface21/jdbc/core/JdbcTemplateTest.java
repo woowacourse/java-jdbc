@@ -49,7 +49,8 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("abc");
         when(resultSet.getString("email")).thenReturn("abc@abc.com");
 
-        final TestUser testUser = jdbcTemplate.queryForObject(sql, new TestUserRowMapper(), 1L);
+        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, 1L);
+        final TestUser testUser = jdbcTemplate.queryForObject(sql, new TestUserRowMapper(), preparedStatementSetter);
 
         Assertions.assertAll(
                 () -> assertThat(testUser).isNotNull(),
@@ -90,10 +91,16 @@ class JdbcTemplateTest {
         final String sql = "UPDATE users SET account = ?, email = ? WHERE id = ?";
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        jdbcTemplate.update(sql, "abc", "abc@abc.com", 1L);
+        PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, "abc");
+            pstmt.setString(2, "abc@abc.com");
+            pstmt.setLong(3, 1L);
+        };
 
-        verify(preparedStatement).setObject(1, "abc");
-        verify(preparedStatement).setObject(2, "abc@abc.com");
+        jdbcTemplate.update(sql, preparedStatementSetter);
+
+        verify(preparedStatement).setString(1, "abc");
+        verify(preparedStatement).setString(2, "abc@abc.com");
         verify(preparedStatement).executeUpdate();
     }
 }
