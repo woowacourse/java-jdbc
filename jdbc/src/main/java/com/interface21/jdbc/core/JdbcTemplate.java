@@ -65,6 +65,10 @@ public class JdbcTemplate {
             throw new ResultNotSingleException(result.size());
         }
 
+        if (result.isEmpty()) {
+            return null;
+        }
+
         return result.getFirst();
     }
 
