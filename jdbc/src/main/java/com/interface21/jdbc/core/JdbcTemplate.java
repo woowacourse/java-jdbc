@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class JdbcTemplate {
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -52,7 +53,7 @@ public class JdbcTemplate {
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -85,7 +86,8 @@ public class JdbcTemplate {
 
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
-        } catch (SQLException ignored) {
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
