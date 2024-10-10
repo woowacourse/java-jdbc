@@ -8,6 +8,9 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,10 +19,13 @@ class UserHistoryDaoTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserHistoryDao userHistoryDao;
+    private Connection connection;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        connection = dataSource.getConnection();
+        DatabasePopulatorUtils.execute(dataSource);
 
         userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
@@ -34,7 +40,7 @@ class UserHistoryDaoTest {
         UserHistory userHistory = new UserHistory(user, "2024-01-01");
 
         // when
-        userHistoryDao.log(userHistory);
+        userHistoryDao.log(connection, userHistory);
 
         // then
         String sql = """

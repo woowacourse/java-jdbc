@@ -29,6 +29,15 @@ public class JdbcTemplate {
         );
     }
 
+    public void update(final Connection connection, String sql, final Object... args) {
+        execute(
+                connection,
+                sql,
+                PreparedStatement::executeUpdate,
+                args
+        );
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> result = query(sql, rowMapper, args);
         if (result.isEmpty()) {
@@ -44,7 +53,8 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> List<T> executeQueryAndMap(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
+    private <T> List<T> executeQueryAndMap(RowMapper<T> rowMapper, PreparedStatement preparedStatement)
+            throws SQLException {
         ResultSet resultSet = preparedStatement.executeQuery();
         return mapResultSet(rowMapper, resultSet);
     }
@@ -61,6 +71,21 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
+            setStatement(args, statement);
+            log.info("query : {}", sql);
+            return executor.execute(statement);
+        } catch (Exception e) {
+            throw new DataAccessException("SQL execution failed. : " + sql + " \nCause: " + e.getMessage());
+        }
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementExecutor<T> executor,
+            final Object... args
+    ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setStatement(args, statement);
             log.info("query : {}", sql);
             return executor.execute(statement);
