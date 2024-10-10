@@ -27,9 +27,12 @@ class Stage0Test {
      * https://docs.oracle.com/javadb/10.8.3.0/ref/rrefjdbc4_0summary.html
      */
     @Test
-    void driverManager() throws SQLException {
+    void driverManager() throws SQLException, ClassNotFoundException {
+        // 동적으로 클래스를 받아온다.
         // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
+
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
+        // return (getConnection(url, info, Reflection.getCallerClass())); - 동적으로 불러온 부분 활용
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
             assertThat(connection.isValid(1)).isTrue();
         }
@@ -54,6 +57,13 @@ class Stage0Test {
         dataSource.setURL(H2_URL);
         dataSource.setUser(USER);
         dataSource.setPassword(PASSWORD);
+
+//        DriverManager.getConnection(H2_URL, USER, PASSWORD))
+
+//        The DataSource interface as an alternative to the DriverManager for establishing a connection with a data source
+//        Connection pooling and Statement pooling
+//        Distributed transactions
+//        Return Rowsets
 
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
