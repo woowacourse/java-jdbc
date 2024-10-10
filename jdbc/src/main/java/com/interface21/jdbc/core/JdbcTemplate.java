@@ -26,7 +26,7 @@ public class JdbcTemplate {
         update(sql, new SimplePreparedStatementSetter(params));
     }
 
-    public void update(final String sql, final PreparedStatementSetter setter) {
+    private void update(final String sql, final PreparedStatementSetter setter) {
         execute(sql, pstmt -> {
             setValues(setter, pstmt);
             return pstmt.executeUpdate();
@@ -37,7 +37,7 @@ public class JdbcTemplate {
         return query(sql, rowMapper, new SimplePreparedStatementSetter(params));
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+    private  <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             setValues(setter, pstmt);
             return getResult(rowMapper, pstmt);
@@ -48,7 +48,7 @@ public class JdbcTemplate {
         return queryForObject(sql, rowMapper, new SimplePreparedStatementSetter(params));
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+    private  <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             setValues(setter, pstmt);
             List<T> result = getResult(rowMapper, pstmt);
