@@ -5,8 +5,6 @@ import com.interface21.jdbc.querybuilder.QueryBuilder;
 import com.interface21.jdbc.querybuilder.query.Query;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
@@ -17,11 +15,7 @@ public class UserHistoryDao {
     }
 
     public void log(Connection connection, UserHistory userHistory) {
-        Query query = new QueryBuilder()
-                .insert("user_id", "account", "password", "email", "created_at", "created_by")
-                .into("user_history")
-                .build();
-
+        Query query = createQueryForInsert();
         jdbcTemplate.queryForUpdate(
                 connection,
                 query.getSql(),
@@ -32,5 +26,12 @@ public class UserHistoryDao {
                 userHistory.getCreatedAt(),
                 userHistory.getCreateBy()
         );
+    }
+
+    private Query createQueryForInsert() {
+        return new QueryBuilder()
+                .insert("user_id", "account", "password", "email", "created_at", "created_by")
+                .into("user_history")
+                .build();
     }
 }
