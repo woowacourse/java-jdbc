@@ -38,12 +38,12 @@ public class JdbcTemplate {
              Statement statement = connection.createStatement()) {
 
             ResultSet resultSet = statement.executeQuery(sql);
-            List<T> objects = new ArrayList<>();
+            List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                objects.add(rowMapper.mapToObject(resultSet));
+                results.add(rowMapper.mapToObject(resultSet));
             }
-            return objects;
+            return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -57,12 +57,12 @@ public class JdbcTemplate {
 
             preparedStatementSetter.setValues(ps);
             ResultSet resultSet = ps.executeQuery();
-            List<T> objects = new ArrayList<>();
+            List<T> results = new ArrayList<>();
 
             while (resultSet.next()) {
-                objects.add(rowMapper.mapToObject(resultSet));
+                results.add(rowMapper.mapToObject(resultSet));
             }
-            return objects;
+            return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
