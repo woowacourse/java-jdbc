@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Read Uncommitted | +           | +                    | +
  * Read Committed   | -           | +                    | +
  * Repeatable Read  | -           | -                    | +
- * Serializable     | -           | -                    | +
+ * Serializable     | -           | -                    | -
  */
 class Stage1Test {
 
