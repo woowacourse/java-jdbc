@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(JdbcTemplate jdbcTemplate) {
