@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +28,7 @@ public class JdbcTemplate {
             setParameters(ps, args);
             return ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Update 실패", e);
+            throw new DataAccessException("Update 실패", e);
         }
     }
 
@@ -43,7 +44,7 @@ public class JdbcTemplate {
             setParameters(ps, args);
             retrieveRow(rowMapper, ps, results);
         } catch (SQLException e) {
-            throw new RuntimeException("Query 실패", e);
+            throw new DataAccessException("Query 실패", e);
         }
         return results;
     }
@@ -65,7 +66,7 @@ public class JdbcTemplate {
             ps.setObject(parameterIdx + 1, args[parameterIdx]);
             log.info("Parameter-{} : {}", parameterIdx + 1, args[parameterIdx]);
         } catch (SQLException e) {
-            throw new RuntimeException("파라미터 설정 실패", e);
+            throw new DataAccessException("파라미터 설정 실패", e);
         }
     }
 }
