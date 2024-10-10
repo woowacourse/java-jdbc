@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.IncorrectBindingSizeDataAccessException;
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -54,8 +55,17 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     private void bindValues(PreparedStatement pstmt, Object... values) throws SQLException {
+        validateBindingValueCount(pstmt, values);
         for (int idx = 1; idx <= values.length; idx++) {
             pstmt.setObject(idx, values[idx - 1]);
+        }
+    }
+
+    private void validateBindingValueCount(PreparedStatement pstmt, Object... values) throws SQLException {
+        int expectedSize = pstmt.getParameterMetaData().getParameterCount();
+        int actualSize = values.length;
+        if (expectedSize != actualSize) {
+            throw new IncorrectBindingSizeDataAccessException(expectedSize, actualSize);
         }
     }
 
