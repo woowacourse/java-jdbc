@@ -4,6 +4,11 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.util.ClockSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,12 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
@@ -26,6 +25,17 @@ import java.sql.Statement;
  * $ sudo iftop -i lo0 -nf "host localhost"
  * windows 사용자라면 wsl2를 사용하거나 다른 모니터링 툴을 찾아보자.
  */
+
+
+/**
+ *
+ *      no pooling        | pooling
+ *     | -----------------|--------------
+ *     | 8.84mb           |  863kb
+ *     | 4sec 395ms       |  712ms
+ *
+ */
+
 class PoolingVsNoPoolingTest {
 
     private final Logger log = LoggerFactory.getLogger(PoolingVsNoPoolingTest.class);
