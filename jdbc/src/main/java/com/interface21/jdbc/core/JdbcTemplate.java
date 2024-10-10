@@ -23,27 +23,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        log.debug("Executing SQL update: {}", sql);
-
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            setParameters(statement, params);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        log.debug("Executing SQL query: {}", sql);
-
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            setParameters(statement, params);
+        return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -51,14 +35,26 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        }, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> result = query(sql, rowMapper, params);
         return DataAccessUtils.getNullableSingleResult(result);
+    }
+
+    private  <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
+        log.debug("Executing SQL execute: {}", sql);
+
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            setParameters(statement, params);
+            return action.doInPreparedStatement(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     private void setParameters(PreparedStatement statement, Object... params) throws SQLException {
