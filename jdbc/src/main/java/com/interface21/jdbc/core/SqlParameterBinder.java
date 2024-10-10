@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
 
-public class SqlParameterBinder {
+public final class SqlParameterBinder {
 
     private SqlParameterBinder() {
     }
