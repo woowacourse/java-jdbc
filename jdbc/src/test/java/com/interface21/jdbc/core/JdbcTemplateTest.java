@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -62,15 +63,32 @@ class JdbcTemplateTest {
         List<Object> paramList = List.of(1L);
         ObjectMaker<TestObject> maker = new TestMaker();
 
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString(1)).thenReturn("atto");
         when(resultSet.getString(2)).thenReturn("jeje");
         when(resultSet.getString(3)).thenReturn("daon");
 
-        TestObject actual = jdbcTemplate.executeQueryForObject(sql, paramList, maker);
+        TestObject actual = jdbcTemplate.executeQueryForObject(sql, paramList, maker).orElseThrow();
         TestObject expected = new TestObject("atto", "jeje", "daon");
 
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("하나의 객체를 만들 때 결과물이 두개 이상이면 예외가 발생한다.")
+    void executeQueryForObjectWithDuplicate() throws SQLException {
+        String sql = "select name, reviewer, reviewee from crew where id = ?";
+        List<Object> paramList = List.of(1L);
+        ObjectMaker<TestObject> maker = new TestMaker();
+
+        when(resultSet.next()).thenReturn(true, true);
+        when(resultSet.getString(1)).thenReturn("atto", "jeje");
+        when(resultSet.getString(2)).thenReturn("jeje", "rush");
+        when(resultSet.getString(3)).thenReturn("daon", "atto");
+
+        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(sql, paramList, maker))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("결과가 두개 이상 존재합니다.");
     }
 
     @Test

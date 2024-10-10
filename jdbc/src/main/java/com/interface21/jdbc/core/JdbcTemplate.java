@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQueryForObject(String sql, List<Object> paramList, ObjectMaker<T> maker) {
+    public <T> Optional<T> executeQueryForObject(String sql, List<Object> paramList, ObjectMaker<T> maker) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -44,10 +45,16 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            if (resultSet.next()) {
-                return maker.make(resultSet);
+            if (!resultSet.next()) {
+                return Optional.empty();
             }
-            return null;
+
+            T object = maker.make(resultSet);
+            if (resultSet.next()) {
+                throw new IllegalArgumentException("결과가 두개 이상 존재합니다.");
+            }
+
+            return Optional.of(object);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);

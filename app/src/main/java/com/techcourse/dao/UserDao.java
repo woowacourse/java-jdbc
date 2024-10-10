@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -46,7 +47,7 @@ public class UserDao {
         return jdbcTemplate.executeQueryForObjects(sql, paramList, maker);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
         List<Object> paramList = new ArrayList<>();
@@ -55,7 +56,7 @@ public class UserDao {
         return jdbcTemplate.executeQueryForObject(sql, paramList, maker);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
         List<Object> paramList = new ArrayList<>();
