@@ -1,8 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.result.MultiSelectResult;
-import com.interface21.jdbc.result.SingleSelectResult;
+import com.interface21.jdbc.result.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -11,6 +10,12 @@ import java.util.List;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> rowMapper = (resultSet ->
+            new User(resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"))
+    );
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -39,35 +44,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final MultiSelectResult queryResult = jdbcTemplate.queryMulti(sql);
-        return queryResult.stream()
-                .map(this::mapperToUser)
-                .toList();
+        return jdbcTemplate.queryForList(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final SingleSelectResult queryResult = jdbcTemplate.querySingle(sql, id);
-        return new User(
-                queryResult.getColumnValue("id"),
-                queryResult.getColumnValue("account"),
-                queryResult.getColumnValue("password"),
-                queryResult.getColumnValue("email")
-        );
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final SingleSelectResult queryResult = jdbcTemplate.querySingle(sql, account);
-        return mapperToUser(queryResult);
-    }
-
-    private User mapperToUser(final SingleSelectResult queryResult) {
-        return new User(
-                queryResult.getColumnValue("id"),
-                queryResult.getColumnValue("account"),
-                queryResult.getColumnValue("password"),
-                queryResult.getColumnValue("email")
-        );
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }
