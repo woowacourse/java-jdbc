@@ -56,7 +56,13 @@ class JdbcTemplateTest {
                 VALUES (?,?,?)
                 """;
 
-        int rowCount = jdbcTemplate.update(sql, "account", "password", "email");
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(
+                "account",
+                "password",
+                "email"
+        );
+
+        int rowCount = jdbcTemplate.update(sql, argumentPreparedStatementSetter);
 
         assertAll(
                 () -> assertThat(rowCount).isEqualTo(1),
@@ -74,7 +80,9 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(false);
 
-        List<String> expected = jdbcTemplate.query(sql, rowMapper);
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter();
+
+        List<String> expected = jdbcTemplate.query(sql, rowMapper, argumentPreparedStatementSetter);
 
         assertThat(expected).isInstanceOf(List.class);
     }
@@ -87,7 +95,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true).thenReturn(false);
         when(rowMapper.mapRow(any(ResultSet.class), anyInt())).thenReturn("Polla");
 
-        String result = jdbcTemplate.queryForObject(sql, rowMapper, 1);
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(1);
+
+        String result = jdbcTemplate.queryForObject(sql, rowMapper, argumentPreparedStatementSetter);
 
         assertThat(result).isEqualTo("Polla");
         verify(resultSet, times(2)).next();

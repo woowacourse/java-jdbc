@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -30,7 +31,13 @@ public class UserDao {
                 VALUES (?,?,?)
                 """;
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
+
+        jdbcTemplate.update(sql, argumentPreparedStatementSetter);
         log.info("user insert successful");
     }
 
@@ -41,7 +48,14 @@ public class UserDao {
                 WHERE id = ?
                 """;
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
+
+        jdbcTemplate.update(sql, argumentPreparedStatementSetter);
         log.info("user update successful");
     }
 
@@ -51,7 +65,9 @@ public class UserDao {
                 FROM users
                 """;
 
-        List<User> users = jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter();
+
+        List<User> users = jdbcTemplate.query(sql, USER_ROW_MAPPER, argumentPreparedStatementSetter);
         log.info("user findAll successful");
         return users;
     }
@@ -63,7 +79,9 @@ public class UserDao {
                 WHERE id =?
                 """;
 
-        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id));
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(id);
+
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, argumentPreparedStatementSetter));
         log.info("user findById successful");
         return user;
     }
@@ -75,7 +93,9 @@ public class UserDao {
                 WHERE account = ?
                 """;
 
-        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account));
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(account);
+
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, argumentPreparedStatementSetter));
         log.info("user findByAccount successful");
         return user;
     }
