@@ -3,9 +3,12 @@ package com.techcourse.domain;
 public class User {
 
     private Long id;
-    private final String account;
+    private String account;
     private String password;
-    private final String email;
+    private String email;
+
+    public User() {
+    }
 
     public User(long id, String account, String password, String email) {
         this.id = id;
