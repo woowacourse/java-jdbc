@@ -44,9 +44,9 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> executeQuery(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        final var rse = new RowMapperResultSetExtractor<>(rowMapper);
+        final var resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
         try (ResultSet rs = pstmt.executeQuery()) {
-            return rse.extractData(rs);
+            return resultSetExtractor.extractData(rs);
         }
     }
 

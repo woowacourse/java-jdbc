@@ -14,12 +14,12 @@ import org.junit.jupiter.api.Test;
 
 class RowMapperResultSetExtractorTest {
 
-    private RowMapperResultSetExtractor<User> rse;
+    private RowMapperResultSetExtractor<User> resultSetExtractor;
 
     @BeforeEach
     void setUp() {
         final var userRowMapper = new UserRowMapper();
-        rse = new RowMapperResultSetExtractor<>(userRowMapper);
+        resultSetExtractor = new RowMapperResultSetExtractor<>(userRowMapper);
     }
 
     @DisplayName("ResultSet에서 데이터를 추출할 수 있다.")
@@ -31,7 +31,7 @@ class RowMapperResultSetExtractorTest {
         when(rs.getLong("id")).thenReturn(1L);
         when(rs.getString("name")).thenReturn("jerry");
 
-        final var actual = rse.extractData(rs);
+        final var actual = resultSetExtractor.extractData(rs);
 
         assertThat(actual).containsExactly(new User(1L, "jerry"));
     }
