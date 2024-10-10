@@ -11,10 +11,12 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 class JdbcTemplateTest {
 
@@ -23,10 +25,17 @@ class JdbcTemplateTest {
     private Connection connection;
     private PreparedStatement preparedStatement;
     private JdbcTemplate jdbcTemplate;
+    private static MockedStatic<SqlResultSetMapper> sqlResultSetMapperMockedStatic;
 
     @BeforeAll
     static void beforeAll() {
-        mockStatic(SqlResultSetMapper.class);
+        sqlResultSetMapperMockedStatic = mockStatic(SqlResultSetMapper.class);
+
+    }
+
+    @AfterAll
+    static void afterAll() {
+        sqlResultSetMapperMockedStatic.close();
     }
 
     @BeforeEach

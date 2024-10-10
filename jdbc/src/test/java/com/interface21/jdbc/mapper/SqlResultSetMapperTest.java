@@ -3,6 +3,7 @@ package com.interface21.jdbc.mapper;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
@@ -17,11 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
 class SqlResultSetMapperTest {
-
-    @BeforeAll
-    static void setUpBeforeClass() throws Exception {
-        reset(mock(SqlResultSetMapper.class));
-    }
 
     @DisplayName("쿼리 결과가 없다면 빈리스트를 반환한다.")
     @Test
