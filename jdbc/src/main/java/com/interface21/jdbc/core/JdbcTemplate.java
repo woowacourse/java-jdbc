@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -32,12 +31,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> query = query(sql, rowMapper, args);
         return query.isEmpty() ? null : query.getLast();
     }
 
-    public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -49,11 +48,10 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> void retrieveRow(
-            Function<ResultSet, T> rowMapper, PreparedStatement ps, List<T> results) throws SQLException {
+    private <T> void retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps, List<T> results) throws SQLException {
         try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                results.add(rowMapper.apply(rs));
+                results.add(rowMapper.mapRow(rs));
             }
         }
     }
