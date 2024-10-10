@@ -20,6 +20,8 @@ import java.sql.Statement;
 
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
+ * no pooling = 9.339s
+ * pooling = 1.245s
  *
  * network bandwidth capture
  * 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자.
@@ -38,7 +40,8 @@ class PoolingVsNoPoolingTest {
     static void beforeAll() throws SQLException {
         // TestContainer로 임시 MySQL을 실행한다.
         container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withDatabaseName("test");
+                .withDatabaseName("test")
+                .withUrlParam("allowMultiQueries", "true");
         container.start();
 
         final var dataSource = createMysqlDataSource();
