@@ -23,9 +23,13 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
+        return update(sql, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setPreparedStatement(statement, params);
+            preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
@@ -33,7 +37,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> result = query(sql, rowMapper, params);
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> result = query(sql, rowMapper, preparedStatementSetter);
         if (result.isEmpty()) {
             throw new DataAccessException("Expected a single result, but not found for query: " + sql);
         }
@@ -44,9 +52,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setPreparedStatement(statement, params);
+            preparedStatementSetter.setValues(statement);
             return queryForAll(statement, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
@@ -60,11 +72,5 @@ public class JdbcTemplate {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
-    }
-
-    private void setPreparedStatement(PreparedStatement statement, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            statement.setObject(i + 1, params[i]);
-        }
     }
 }
