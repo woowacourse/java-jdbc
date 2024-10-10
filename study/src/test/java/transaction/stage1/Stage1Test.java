@@ -240,9 +240,6 @@ class Stage1Test {
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
         String jdbcUrlWithMultiQueries = container.getJdbcUrl() + "?allowMultiQueries=true";
-
-        System.out.println(jdbcUrlWithMultiQueries + "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
         config.setJdbcUrl(jdbcUrlWithMultiQueries);
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
