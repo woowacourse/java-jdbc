@@ -2,8 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.Parameters;
 import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.dao.util.InsertQueryExecutor;
-import com.techcourse.dao.util.UpdateQueryExecutor;
+import com.techcourse.dao.executor.QueryExecutor;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -23,21 +22,36 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
-    private final InsertQueryExecutor insertQueryExecutor;
-    private final UpdateQueryExecutor updateQueryExecutor;
+    private final QueryExecutor queryExecutor;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.insertQueryExecutor = new InsertQueryExecutor(jdbcTemplate);
-        this.updateQueryExecutor = new UpdateQueryExecutor(jdbcTemplate);
+        this.queryExecutor = new QueryExecutor(jdbcTemplate);
     }
 
     public void insert(final User user) {
-        insertQueryExecutor.insert(user);
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        queryExecutor.execute(sql, () -> {
+            final var parameters = new Parameters();
+            parameters.add(1, user.getAccount());
+            parameters.add(2, user.getPassword());
+            parameters.add(3, user.getEmail());
+
+            return parameters;
+        });
     }
 
     public void update(final User user) {
-        updateQueryExecutor.update(user);
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        queryExecutor.execute(sql, () -> {
+            final var parameters = new Parameters();
+            parameters.add(1, user.getAccount());
+            parameters.add(2, user.getPassword());
+            parameters.add(3, user.getEmail());
+            parameters.add(4, user.getId());
+
+            return parameters;
+        });
     }
 
     public List<User> findAll() {
