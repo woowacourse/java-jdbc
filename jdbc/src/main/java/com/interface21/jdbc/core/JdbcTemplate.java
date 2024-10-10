@@ -23,7 +23,14 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        update(sql, new SimplePreparedStatementSetter(params));
+        update(sql, pstmt -> {
+            if (params == null) {
+                return;
+            }
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        });
     }
 
     private void update(final String sql, final PreparedStatementSetter setter) {
@@ -34,7 +41,14 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return query(sql, rowMapper, new SimplePreparedStatementSetter(params));
+        return query(sql, rowMapper, pstmt -> {
+            if (params == null) {
+                return;
+            }
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        });
     }
 
     private  <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
@@ -45,7 +59,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return queryForObject(sql, rowMapper, new SimplePreparedStatementSetter(params));
+        return queryForObject(sql, rowMapper, pstmt -> {
+            if (params == null) {
+                return;
+            }
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        });
     }
 
     private  <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
