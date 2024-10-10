@@ -69,7 +69,6 @@ class Stage2Test {
             }
         };
     }
-
     // 학습 테스트를 위해 HikariPool을 추출
     public static HikariPool getPool(final HikariDataSource hikariDataSource)
     {
