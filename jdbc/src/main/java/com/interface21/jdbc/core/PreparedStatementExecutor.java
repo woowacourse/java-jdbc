@@ -9,5 +9,5 @@ import javax.annotation.Nullable;
 public interface PreparedStatementExecutor<T> {
 
     @Nullable
-    T excute(PreparedStatement preparedStatement) throws SQLException;
+    T execute(PreparedStatement preparedStatement) throws SQLException;
 }

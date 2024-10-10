@@ -63,7 +63,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setArguments(arguments, preparedStatement);
 
-            return preparedStatementExecutor.excute(preparedStatement);
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             String errorMessage = String.format("Error executing: %s with arguments: %s", sql,
                     Arrays.toString(arguments));
