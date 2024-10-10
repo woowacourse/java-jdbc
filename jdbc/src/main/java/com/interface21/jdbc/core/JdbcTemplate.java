@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,8 @@ public class JdbcTemplate {
         }, params);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+    @Nullable
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... params) {
         List<T> result = query(sql, rowMapper, params);
         return DataAccessUtils.getNullableSingleResult(result);
     }
