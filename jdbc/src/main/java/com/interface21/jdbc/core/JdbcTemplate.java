@@ -22,14 +22,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(String sql, PreparedStatementSetter psSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            setParameters(ps, args);
+            psSetter.setValues(ps);
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Update 실패", e);
         }
+    }
+
+    public int update(String sql, Object... args) {
+        return update(sql, ps -> setParameters(ps, args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -37,24 +41,28 @@ public class JdbcTemplate {
         return query.isEmpty() ? null : query.getLast();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = new ArrayList<>();
+    public <T> List<T> query(String sql, PreparedStatementSetter psSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            setParameters(ps, args);
-            retrieveRow(rowMapper, ps, results);
+            psSetter.setValues(ps);
+            return retrieveRow(rowMapper, ps);
         } catch (SQLException e) {
             throw new DataAccessException("Query 실패", e);
         }
-        return results;
     }
 
-    private <T> void retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps, List<T> results) throws SQLException {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, ps -> setParameters(ps, args), rowMapper);
+    }
+
+    private <T> List<T> retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
+        List<T> results = new ArrayList<>();
         try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
         }
+        return results;
     }
 
     private void setParameters(PreparedStatement ps, Object... args) {
