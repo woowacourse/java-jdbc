@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -60,8 +61,12 @@ public class JdbcTemplate {
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    private Connection getConnection()  {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection",e);
+        }
     }
 
     private PreparedStatement getPreparedStatement(String sql, Connection connection, Object[] params)
