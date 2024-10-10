@@ -74,11 +74,9 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            Object[] objects = args.clone();
 
-            for (int i = 1; i <= objects.length; i++) {
-                ps.setObject(i, objects[i - 1]);
-            }
+            setValues(args.clone(), ps);
+
             ResultSet resultSet = ps.executeQuery();
             List<T> results = new ArrayList<>();
 
@@ -130,5 +128,22 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(String sql, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            setValues(args.clone(), ps);
 
+            return ps.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setValues(Object[] objects, PreparedStatement ps) throws SQLException {
+        for (int i = 1; i <= objects.length; i++) {
+            ps.setObject(i, objects[i - 1]);
+        }
+    }
 }

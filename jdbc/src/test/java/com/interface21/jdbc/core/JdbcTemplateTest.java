@@ -143,6 +143,22 @@ class JdbcTemplateTest {
         assertThat(rowCount).isOne();
     }
 
+    @DisplayName("update(Stirng, Object...)으로 insert 가능하다.")
+    @Test
+    void updateWithObjectArgsForInsert() throws SQLException {
+        // given
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        // when
+        jdbcTemplate.update(insertSql, "gugu", "1234", "gugu@naver.com");
+
+        ResultSet resultSet = executeQuery("select count(*) from users");
+        resultSet.next();
+        int rowCount = resultSet.getInt(1);
+
+        // then
+        assertThat(rowCount).isOne();
+    }
+
 
     @DisplayName("update(Stirng, PreparedStatementSetter)으로 update 가능하다.")
     @Test
@@ -160,6 +176,24 @@ class JdbcTemplateTest {
                         ps.setLong(2, 1);
                     }
                 });
+
+        ResultSet resultSet = executeQuery("select account from users where id = 1");
+        resultSet.next();
+        String account = resultSet.getString(1);
+
+        // then
+        assertThat(account).isEqualTo("updateGugu");
+    }
+
+    @DisplayName("update(Stirng, object...)으로 update 가능하다.")
+    @Test
+    void updateWithObjectForUpdate() throws SQLException {
+        // given
+        executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
+        String updateSql = " update users set account = ? where id = ? ";
+
+        // when
+        jdbcTemplate.update(updateSql, "updateGugu", 1);
 
         ResultSet resultSet = executeQuery("select account from users where id = 1");
         resultSet.next();
