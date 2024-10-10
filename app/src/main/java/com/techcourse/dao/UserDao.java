@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.Parameters;
 import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.dao.util.InsertQueryExecutor;
+import com.techcourse.dao.util.UpdateQueryExecutor;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -21,50 +23,21 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
+    private final InsertQueryExecutor insertQueryExecutor;
+    private final UpdateQueryExecutor updateQueryExecutor;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.insertQueryExecutor = new InsertQueryExecutor(jdbcTemplate);
+        this.updateQueryExecutor = new UpdateQueryExecutor(jdbcTemplate);
     }
 
     public void insert(final User user) {
-        final var sql = createQueryForInsert();
-        final var parameters = createParametersForInsert(user);
-
-        jdbcTemplate.update(sql, parameters);
+        insertQueryExecutor.insert(user);
     }
 
     public void update(final User user) {
-        final var sql = createQueryForUpdate();
-        final var parameters = createParametersForUpdate(user);
-
-        jdbcTemplate.update(sql, parameters);
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    private Parameters createParametersForInsert(final User user) {
-        final var parameters = new Parameters();
-        parameters.add(1, user.getAccount());
-        parameters.add(2, user.getPassword());
-        parameters.add(3, user.getEmail());
-
-        return parameters;
-    }
-
-    private Parameters createParametersForUpdate(final User user) {
-        final var parameters = new Parameters();
-        parameters.add(1, user.getAccount());
-        parameters.add(2, user.getPassword());
-        parameters.add(3, user.getEmail());
-        parameters.add(4, user.getId());
-
-        return parameters;
+        updateQueryExecutor.update(user);
     }
 
     public List<User> findAll() {
