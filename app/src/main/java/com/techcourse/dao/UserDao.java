@@ -6,21 +6,17 @@ import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
+    protected final JdbcTemplate jdbcTemplate;
+    
     private final RowMapper<User> mapper = (rs, rowNum) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email")
     );
-
-    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);

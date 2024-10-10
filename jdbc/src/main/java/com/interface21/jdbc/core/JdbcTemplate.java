@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,9 +18,11 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final SQLExceptionTranslator sqlExceptionTranslator;
     private final DataSource dataSource;
 
     public JdbcTemplate(DataSource dataSource) {
+        this.sqlExceptionTranslator = new SQLErrorCodeSQLExceptionTranslator();
         this.dataSource = dataSource;
     }
 
@@ -66,8 +68,7 @@ public class JdbcTemplate {
             }
             return executor.execute(statement);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw sqlExceptionTranslator.translate("execute", sql, e);
         }
     }
 }
