@@ -3,6 +3,7 @@ package com.interface21.webmvc.servlet.mvc.tobe;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.interface21.BeanContainer;
 import com.interface21.web.bind.annotation.RequestMethod;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +15,10 @@ class HandlerExecutionsTest {
     @DisplayName("핸들러를 성공적으로 등록하고 조회한다.")
     @Test
     void registerHandler() {
+        BeanContainer beanContainer = BeanContainer.getInstance();
+        beanContainer.initialize();
         HandlerExecutions handlerExecutions = new HandlerExecutions();
+        handlerExecutions.initialize();
         Method[] methods = TestController.class.getDeclaredMethods();
         handlerExecutions.addHandlerExecution(methods);
 

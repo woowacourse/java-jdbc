@@ -1,43 +1,52 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.context.stereotype.Component;
+import com.interface21.context.stereotype.Inject;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 
+@Component
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    @Inject
+    private DataSource dataSource;
 
-    private final DataSource dataSource;
+    private JdbcTemplate() {}
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object ... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            validateParameterCount(objects, preparedStatement);
-            setParameter(objects, preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ...objects) {
-        List<T> query = query(sql, rowMapper, objects);
+    public void update(String sql, Object ... args) {
+        update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSetExtractor.extract(resultSet);
+        });
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
+        List<T> query = query(sql, rowMapper, args);
         if (query.isEmpty()) {
             throw new DataAccessException("결과가 존재하지 않습니다");
         }
@@ -47,43 +56,12 @@ public class JdbcTemplate {
         return query.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ...objects) {
+    private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            validateParameterCount(objects, preparedStatement);
-            setParameter(objects, preparedStatement);
-            return getQueryResult(rowMapper, preparedStatement);
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
-        try (ResultSet rs = preparedStatement.executeQuery()) {
-            return getQueryResult(rowMapper, rs);
-        }
-    }
-
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        List<T> result = new ArrayList<>();
-        while (resultSet.next()) {
-            result.add(rowMapper.mapRow(resultSet));
-        }
-        return result;
-    }
-
-    private void validateParameterCount(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
-        ParameterMetaData parameterMetaData = preparedStatement.getParameterMetaData();
-        if (objects.length != parameterMetaData.getParameterCount()) {
-            throw new DataAccessException("파라미터 값의 개수가 올바르지 않습니다");
-        }
-    }
-
-    private void setParameter(Object[] objects, PreparedStatement preparedStatement) throws SQLException {
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
         }
     }
 }

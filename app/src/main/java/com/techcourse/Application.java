@@ -1,6 +1,6 @@
 package com.techcourse;
 
-import com.interface21.HandlerContainer;
+import com.interface21.BeanContainer;
 import java.io.IOException;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -13,8 +13,8 @@ public class Application {
     private static final int DEFAULT_PORT = 8080;
 
     public static void main(final String[] args) throws Exception {
-        HandlerContainer handlerContainer = HandlerContainer.getInstance();
-        handlerContainer.initialize(Application.class);
+        BeanContainer beanContainer = BeanContainer.getInstance();
+        beanContainer.initialize();
 
         final int port = defaultPortIfNull(args);
         final var tomcat = new TomcatStarter(port);

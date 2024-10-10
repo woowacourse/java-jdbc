@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.interface21.webmvc.servlet.mvc.sample.TestController;
 
-class HandlerKeyExtractorTest {
+class RequestMappingHandlerKeyExtractorTest {
 
     @DisplayName("메소드의 RequestMapping을 통해 HandlerKey 리스트를 생성한다")
     @Test
@@ -21,7 +21,8 @@ class HandlerKeyExtractorTest {
                 HttpServletRequest.class,
                 HttpServletResponse.class
         );
-        List<HandlerKey> handlerKeys = HandlerKeyExtractor.extract(method);
+        RequestMappingHandlerKeyExtractor requestMappingHandlerKeyExtractor = new RequestMappingHandlerKeyExtractor();
+        List<HandlerKey> handlerKeys = requestMappingHandlerKeyExtractor.extract(method);
 
         List<HandlerKey> expected = List.of(new HandlerKey("/test", RequestMethod.POST));
 
@@ -36,7 +37,8 @@ class HandlerKeyExtractorTest {
                 HttpServletRequest.class,
                 HttpServletResponse.class
         );
-        List<HandlerKey> handlerKeys = HandlerKeyExtractor.extract(method);
+        RequestMappingHandlerKeyExtractor requestMappingHandlerKeyExtractor = new RequestMappingHandlerKeyExtractor();
+        List<HandlerKey> handlerKeys = requestMappingHandlerKeyExtractor.extract(method);
 
         assertThat(handlerKeys).hasSize(RequestMethod.values().length);
     }

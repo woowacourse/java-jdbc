@@ -1,6 +1,7 @@
 package com.interface21.webmvc.servlet.mvc.tobe;
 
 import com.interface21.web.bind.annotation.RequestMapping;
+import com.interface21.webmvc.servlet.mvc.HandlerKeyExtractors;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,9 +11,15 @@ import java.util.Map;
 public class HandlerExecutions {
 
     private final Map<HandlerKey, HandlerExecution> handlerExecutions;
+    private final HandlerKeyExtractors handlerKeyExtractors;
 
     public HandlerExecutions() {
         this.handlerExecutions = new HashMap<>();
+        this.handlerKeyExtractors = new HandlerKeyExtractors();
+    }
+
+    public void initialize() {
+        handlerKeyExtractors.initialize();
     }
 
     public void addHandlerExecution(Method[] methods) {
@@ -22,7 +29,7 @@ public class HandlerExecutions {
     }
 
     private void addHandlerExecution(Method method) {
-        List<HandlerKey> handlerKeys = HandlerKeyExtractor.extract(method);
+        List<HandlerKey> handlerKeys = handlerKeyExtractors.extract(method);
         handlerKeys.forEach(handlerKey -> handlerExecutions.put(handlerKey, new HandlerExecution(method)));
     }
 
