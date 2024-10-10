@@ -69,7 +69,7 @@ public class JdbcTemplate {
         });
     }
 
-    private  <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             setValues(setter, pstmt);
             return getResult(rowMapper, pstmt);
@@ -87,7 +87,7 @@ public class JdbcTemplate {
         });
     }
 
-    private  <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+    private <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             setValues(setter, pstmt);
             List<T> result = getResult(rowMapper, pstmt);
@@ -99,7 +99,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> preparedStatementCallback) {
-        try (Connection conn = connection; PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return preparedStatementCallback.execute(pstmt);
         } catch (SQLException e) {
