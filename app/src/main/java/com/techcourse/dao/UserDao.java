@@ -43,7 +43,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(sql);
@@ -57,13 +57,13 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
+        final String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(con -> {
             PreparedStatement ps = con.prepareStatement(sql);
@@ -74,7 +74,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        final String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(con -> {
             PreparedStatement ps = con.prepareStatement(sql);
