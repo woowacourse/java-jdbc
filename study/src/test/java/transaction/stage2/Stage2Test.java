@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.IllegalTransactionStateException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,8 +46,10 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
+        // REQUIRED는 진행중인 트랜잭션이 없으면 새로 시작하고, 있다면 참여한다.
+        // first에서 진행중인 트랜잭션이 있기 때문에, second는 first의 트랜잭션에 참여한다.
     }
 
     /**
@@ -59,8 +62,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
+        // REQUIRES_NEW는 항상 새로운 트랜잭션을 시작한다.
+        // first에서 진행중인 트랜잭션이 있지만, second는 REQUIRES_NEW로 설정되어 있기 때문에
+        // first의 트랜잭션 존재 여부와 관계 없이 새로운 트랜잭션을 시작한다.
     }
 
     /**
@@ -69,12 +77,16 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
+        // first와 second는 모두 User save를 시도하고 있다.
+        // second를 REQUIRES_NEW로 설정했기 때문에, 별개의 트랜잭션에서 save가 발생한다.
+        // first에서 예외가 발생하면서, first는 롤백되었지만
+        // second는 별개의 트랜잭션이므로 롤백되지 않고 데이터가 save된 상태로 남아 있다.
     }
 
     /**
@@ -87,8 +99,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
+        // SUPPORTS 옵션: 기존 트랜잭션이 있으면 참여, 없으면 트랜잭션 없이 실행
+
+        // (1) first에 트랜잭션 X, second에 트랜잭션 O (SUPPORTS)
+        // 트랜잭션을 사용하지 않음. 트랜잭션이 active하지 않음.
+
+        // (2) fisrt에 트랜잭션 O, second에 트랜잭션 O (SUPPORTS)
+        // second가 first 트랜잭션에 참여하면서, 트랜잭션명이 first로 나타나고 트랜잭션이 active함.
     }
 
     /**
@@ -98,12 +117,23 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
+//        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+//                .isInstanceOf(IllegalTransactionStateException.class)
+//                .hasMessage("No existing transaction found for transaction marked with propagation 'mandatory'");
+
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
+        // MANDATORY 옵션: 트랜잭션이 있으면 합류, 없으면 예외 발생
+
+        // (1) first에 트랜잭션 X, second에 트랜잭션 O (MANDATORY)
+        // 예외 발생, 트랜잭션 not active
+
+        // (2) fisrt에 트랜잭션 O, second에 트랜잭션 O (MANDATORY)
+        // second가 first 트랜잭션에 참여하면서, 트랜잭션명이 first로 나타나고 트랜잭션이 active함.
     }
 
     /**
@@ -119,8 +149,25 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported"
+                );
+
+        // Physical Transactions: 실제 JDBC 상에서의 트랜잭션
+        // Logical Transactions: @Transaction 어노테이션을 작성한 메서드 내의 트랜잭션
+
+        // first가 트랜잭션을 사용한다면 1개의 물리적 트랜잭션이 동작
+        // first가 트랜잭션을 사용하지 않는다면, second 역시 트랜잭션을 사용하지 않는다는 옵션을 걸었기 때문에, 0개의 물리적 트랜잭션이 동작
+
+        // NOT_SUPPORTED 옵션: 트랜잭션을 전혀 사용하지 않는다.
+
+        // (1) first에 트랜잭션 X, second에 트랜잭션 O (NOT_SUPPORTED)
+        // 트랜잭션을 사용하지 않음.
+
+        // (2) fisrt에 트랜잭션 O, second에 트랜잭션 O (NOT_SUPPORTED)
+        // second는 first 트랜잭션에 참여하지 않음. first 트랜잭션만 active함.
     }
 
     /**
@@ -133,8 +180,20 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
+
+        // NESTED 옵션: 트랜잭션이 있으면 중첩 트랜잭션을 만든다. 트랜잭션이 없으면 REQUIRED와 동일하게 동작한다.
+        // 중첩 트랜잭션은 부모 트랜잭션의 커밋과 롤백에 영향을 받는다.
+        // 하지만 중첩 트랜잭션의 커밋과 롤백이 외부에 영향을 주지는 않는다.
+
+        // (1) first에 트랜잭션 X, second에 트랜잭션 O (NESTED)
+        // second의 트랜잭션만 동작한다.
+
+        // (2) fisrt에 트랜잭션 O, second에 트랜잭션 O (NESTED)
+        // 예외가 발생한다.
+        // 이유: 중첩 트랜잭션은 외부에서 롤백이 발생하면 내부에서도 롤백시켜야 한다.
+        // 이 기능은 savepoint라는 것으로 구현되어 있는데, JPA는 savepoint를 지원하지 않는다.
     }
 
     /**
@@ -146,7 +205,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
+
+        // NEVER 옵션: 트랜잭션을 절대로 사용하지 않는다. 트랜잭션이 있으면 예외가 발생한다.
+
+        // (1) first에 트랜잭션 X, second에 트랜잭션 O (NEVER)
+        // 트랜잭션 없이 동작한다.
+
+        // (2) fisrt에 트랜잭션 O, second에 트랜잭션 O (NEVER)
+        // 예외가 발생한다.
     }
 }
