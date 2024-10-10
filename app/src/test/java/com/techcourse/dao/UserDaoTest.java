@@ -33,7 +33,7 @@ class UserDaoTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.executeUpdate("TRUNCATE TABLE users RESTART IDENTITY");
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 
     @Test

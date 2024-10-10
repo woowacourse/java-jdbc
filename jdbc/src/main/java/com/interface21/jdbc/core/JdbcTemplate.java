@@ -13,8 +13,10 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate {
+import com.interface21.jdbc.exception.DatabaseException;
+import com.interface21.jdbc.exception.UnexpectedResultSizeException;
 
+public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -23,50 +25,56 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(final String sql, final Object... params) {
+    public void update(final String sql, Object... params) {
+        update(sql, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setParameters(pstmt, params);
+            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
-    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        List<T> resultSet = executeQuery(sql, rowMapper, params);
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, Object... params) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
+        List<T> resultSet = query(sql, rowMapper, pstmtSetter);
         if (resultSet.size() > 1) {
-            throw new IllegalArgumentException("Multiple results returned for query, but only one result expected.");
+            throw new UnexpectedResultSizeException("Multiple results returned for query, but only one result expected.");
         }
 
         return resultSet.stream().findFirst();
     }
 
-    public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... params) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, params);
-            return getResultSet(sql, pstmt, rowMapper);
+            log.debug("query : {}", sql);
+            pstmtSetter.setValues(pstmt);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DatabaseException(e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
-    }
-
-    private <T> List<T> getResultSet(final String sql, final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
+    private <T> List<T> executeQuery(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
             List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         }

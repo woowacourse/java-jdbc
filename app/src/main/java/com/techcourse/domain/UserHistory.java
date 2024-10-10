@@ -1,6 +1,7 @@
 package com.techcourse.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class UserHistory {
 
@@ -13,20 +14,20 @@ public class UserHistory {
 
     private final LocalDateTime createdAt;
 
-    private final String createBy;
+    private final String createdBy;
 
-    public UserHistory(final User user, final String createBy) {
-        this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createBy);
+    public UserHistory(final User user, final String createdBy) {
+        this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createdBy);
     }
 
-    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createBy) {
+    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createdBy) {
         this.id = id;
         this.userId = userId;
         this.account = account;
         this.password = password;
         this.email = email;
         this.createdAt = LocalDateTime.now();
-        this.createBy = createBy;
+        this.createdBy = createdBy;
     }
 
     public Long getId() {
@@ -53,7 +54,27 @@ public class UserHistory {
         return createdAt;
     }
 
-    public String getCreateBy() {
-        return createBy;
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        UserHistory that = (UserHistory) o;
+        return userId == that.userId &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(account, that.account) &&
+                Objects.equals(password, that.password) &&
+                Objects.equals(email, that.email) &&
+                Objects.equals(createdBy, that.createdBy);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, userId, account, password, email, createdBy);
     }
 }
