@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -23,8 +22,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = query(sql, rowMapper, parameters);
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
+        return queryForObject(sql, rowMapper, new DefaultPreparedStatementSetter());
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object[] parameters) {
+        return queryForObject(sql, rowMapper, new ParameterPreparedStatementSetter(parameters));
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) {
+        List<T> results = query(sql, rowMapper, pstmtSetter);
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -34,11 +41,19 @@ public class JdbcTemplate {
         throw new NotSingleResultDataAccessException();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, rowMapper, new DefaultPreparedStatementSetter());
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object[] parameters) {
+        return query(sql, rowMapper, new ParameterPreparedStatementSetter(parameters));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(connection, sql, parameters);
+             PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtSetter);
              ResultSet resultSet = pstmt.executeQuery()) {
-            log.debug("query = {}, {}", sql, Arrays.toString(parameters));
+            log.debug("query = {}", sql);
 
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
@@ -50,10 +65,18 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(String sql) {
+        update(sql, new DefaultPreparedStatementSetter());
+    }
+
+    public void update(String sql, Object[] parameters) {
+        update(sql, new ParameterPreparedStatementSetter(parameters));
+    }
+
+    public void update(String sql, PreparedStatementSetter pstmtsetter) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(connection, sql, parameters)) {
-            log.debug("query = {}, {}", sql, Arrays.toString(parameters));
+             PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtsetter)) {
+            log.debug("query = {}", sql);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -61,21 +84,11 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object[] parameters)
-            throws SQLException {
+    private PreparedStatement createPreparedStatement(Connection connection,
+                                                      String sql,
+                                                      PreparedStatementSetter pstmtSetter) throws SQLException {
         PreparedStatement pstmt = connection.prepareStatement(sql);
-        setPreparedStatement(pstmt, parameters);
+        pstmtSetter.setValue(pstmt);
         return pstmt;
-    }
-
-    private void setPreparedStatement(PreparedStatement pstmt, Object[] parameters) throws SQLException {
-        for (int arrayIndex = 0; arrayIndex < parameters.length; arrayIndex++) {
-            Object parameter = parameters[arrayIndex];
-            pstmt.setObject(toParameterIndex(arrayIndex), parameter);
-        }
-    }
-
-    private int toParameterIndex(int arrayIndex) {
-        return arrayIndex + 1;
     }
 }
