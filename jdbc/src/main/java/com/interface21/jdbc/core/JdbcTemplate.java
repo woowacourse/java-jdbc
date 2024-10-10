@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Object... parameters) {
+    public void update(String sql, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -33,7 +33,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = execute(pstmt, parameters)) {
@@ -52,7 +52,7 @@ public class JdbcTemplate {
         return rowMapper.mapRow(rs);
     }
 
-    public <T> List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = execute(pstmt, parameters)) {
