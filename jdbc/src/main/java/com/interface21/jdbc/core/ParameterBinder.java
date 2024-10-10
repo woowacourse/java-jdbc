@@ -9,8 +9,10 @@ import com.interface21.dao.DataAccessException;
 
 public class ParameterBinder {
 
+	private static final int FIRST_INDEX = 1;
+
 	public void bindParameters(PreparedStatement preparedStatement, Object... args) {
-		AtomicInteger index = new AtomicInteger(1);
+		AtomicInteger index = new AtomicInteger(FIRST_INDEX);
 		Arrays.stream(args)
 			.forEach(arg -> bindParameter(preparedStatement, index.getAndIncrement(), arg));
 	}

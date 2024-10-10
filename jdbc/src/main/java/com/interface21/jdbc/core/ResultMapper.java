@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public class ResultMapper {
 
+	private static final int FIRST_ROW = 1;
+
 	public <T> Optional<T> findResult(ResultSet resultSet, RowMapper<T> rowMapper) {
 		if (existsNext(resultSet)) {
 			return Optional.ofNullable(getResult(resultSet, rowMapper, 1));
@@ -16,7 +18,7 @@ public class ResultMapper {
 	}
 
 	public <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) {
-		int rowNum = 1;
+		int rowNum = FIRST_ROW;
 		List<T> results = new ArrayList<>();
 
 		while (existsNext(resultSet)) {
