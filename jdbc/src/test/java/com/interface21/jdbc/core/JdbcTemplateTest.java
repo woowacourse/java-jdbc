@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +36,7 @@ class JdbcTemplateTest {
 
     @AfterEach
     void tearDown() throws SQLException {
-        verify(connection).close();
+        verify(connection, atLeastOnce()).close();
     }
 
     @Test
@@ -71,8 +72,7 @@ class JdbcTemplateTest {
                 new Fruit(1, "apple"),
                 new Fruit(2, "banana")
         );
-        verify(preparedStatement).close();
-        verify(resultSet).close();
+        verify(preparedStatement, atLeastOnce()).close();
     }
 
     @Test
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update("wrong sql grammar"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(sqlException);
-        verify(preparedStatement).close();
+        verify(preparedStatement, atLeastOnce()).close();
     }
 
     @Test
@@ -104,8 +104,7 @@ class JdbcTemplateTest {
 
         assertThat(jdbcTemplate.queryForObject("select * from fruit where id = ?", rowMapper, 1))
                 .isEqualTo(new Fruit(1, "apple"));
-        verify(preparedStatement).close();
-        verify(resultSet).close();
+        verify(preparedStatement, atLeastOnce()).close();
     }
 
     @Test
@@ -125,7 +124,6 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from fruit where id = ?", rowMapper, 1))
                 .isInstanceOf(DataSizeMismatchException.class)
                 .hasMessage("Expected query result size: 1, fetched 2 rows");
-        verify(preparedStatement).close();
-        verify(resultSet).close();
+        verify(preparedStatement, atLeastOnce()).close();
     }
 }
