@@ -10,6 +10,7 @@ import com.techcourse.domain.User;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ResultSetCallBack<User> resultSetCallBack;
 
     public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
@@ -17,6 +18,16 @@ public class UserDao {
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.resultSetCallBack = getUserResultSetCallBack();
+    }
+
+    private ResultSetCallBack<User> getUserResultSetCallBack() {
+        return (rs) -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4)
+        );
     }
 
     public void insert(User user) {
@@ -47,27 +58,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users;";
 
-        return jdbcTemplate.query(sql, getUserResultSetCallBack());
+        return jdbcTemplate.query(sql, resultSetCallBack);
     }
 
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryOne(sql, getUserResultSetCallBack(), id);
+        return jdbcTemplate.queryOne(sql, resultSetCallBack, id);
     }
 
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryOne(sql, getUserResultSetCallBack(), account);
-    }
-
-    private ResultSetCallBack<User> getUserResultSetCallBack() {
-        return (rs) -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        );
+        return jdbcTemplate.queryOne(sql, resultSetCallBack, account);
     }
 }
