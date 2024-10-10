@@ -22,3 +22,8 @@
 
 - [x] UserDao 미구현 메서드 구현
 - [x] JdbcTemplate 구현
+
+## 2단계 - 리팩터링
+
+- [x] PreparedStatementSetter 분리
+- [x] 메서드 예외 처리 중복 제거
