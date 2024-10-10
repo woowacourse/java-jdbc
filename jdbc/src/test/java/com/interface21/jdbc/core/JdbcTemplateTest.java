@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,7 @@ class JdbcTemplateTest {
             resultSet.getString("email")
     );
 
-    @BeforeEach
+    @AfterEach
     void tearDown() {
         truncateUser(dataSource);
     }
@@ -239,7 +241,7 @@ class JdbcTemplateTest {
                             rs.setString(1, "gugu");
                         },
                         userMapper))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(NoSingleResultException.class)
                 .hasMessage("조회 결과가 하나가 아닙니다. size: 2");
     }
 
