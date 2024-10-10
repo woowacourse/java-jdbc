@@ -35,8 +35,8 @@ public class UserService {
             connection.setAutoCommit(false);
                 final var user = findById(id);
                 user.changePassword(newPassword);
-                userDao.update(user);
-                userHistoryDao.log(new UserHistory(user, createBy));
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
