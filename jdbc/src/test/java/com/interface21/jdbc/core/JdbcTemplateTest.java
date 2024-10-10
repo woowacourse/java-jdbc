@@ -12,6 +12,8 @@ import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.sample.Person;
 import java.sql.Connection;
+import java.sql.JDBCType;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,6 +35,7 @@ class JdbcTemplateTest {
     private PreparedStatement preparedStatement;
     private Connection connection;
     private DataSource dataSource;
+    private ParameterMetaData parameterMetaData;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -41,6 +44,8 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         dataSource = mock(DataSource.class);
         resultSet = mock(ResultSet.class);
+        parameterMetaData = mock(ParameterMetaData.class);
+        when(preparedStatement.getParameterMetaData()).thenReturn(parameterMetaData);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
@@ -52,6 +57,7 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         // given
         String sql = "insert into people (name, age) values (?, ?)";
+        when(parameterMetaData.getParameterCount()).thenReturn(2);
 
         // when
         int updated = jdbcTemplate.update(sql, "name", 15);
@@ -59,8 +65,8 @@ class JdbcTemplateTest {
         // then
         verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
-        verify(preparedStatement).setObject(1, "name");
-        verify(preparedStatement).setObject(2, 15);
+        verify(preparedStatement).setObject(1, "name", JDBCType.JAVA_OBJECT);
+        verify(preparedStatement).setObject(2, 15, JDBCType.JAVA_OBJECT);
         verify(preparedStatement).executeUpdate();
         assertThat(updated).isEqualTo(0);
     }
@@ -74,6 +80,7 @@ class JdbcTemplateTest {
         when(resultSet.getLong(1)).thenReturn(1L);
         when(resultSet.getString(2)).thenReturn("myungoh");
         when(resultSet.getInt(3)).thenReturn(25);
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
 
         // when
         Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1);
@@ -92,6 +99,7 @@ class JdbcTemplateTest {
         // given
         String sql = "select id, name, age from people where id = ?";
         when(resultSet.next()).thenReturn(false);
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 3))
@@ -111,6 +119,7 @@ class JdbcTemplateTest {
         when(resultSet.getLong(1)).thenReturn(1L, 2L);
         when(resultSet.getString(2)).thenReturn("myungoh", "paper");
         when(resultSet.getInt(3)).thenReturn(25, 25);
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 25))
@@ -130,6 +139,7 @@ class JdbcTemplateTest {
         when(resultSet.getLong(1)).thenReturn(1L, 2L);
         when(resultSet.getString(2)).thenReturn("myungoh", "paper");
         when(resultSet.getInt(3)).thenReturn(25, 25);
+        when(parameterMetaData.getParameterCount()).thenReturn(0);
 
         // when
         List<Person> people = jdbcTemplate.queryForList(sql, ROW_MAPPER);

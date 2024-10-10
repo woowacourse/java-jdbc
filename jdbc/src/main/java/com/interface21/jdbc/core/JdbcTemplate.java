@@ -33,7 +33,7 @@ public class JdbcTemplate {
     }
 
     private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] parameters) {
-        return new OrderBasedPreparedStatementSetter(parameters);
+        return new DefaultPreparedStatementSetter(parameters);
     }
 
     private <T> T execute(
