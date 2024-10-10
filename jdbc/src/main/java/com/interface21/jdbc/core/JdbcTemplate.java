@@ -80,7 +80,7 @@ public class JdbcTemplate {
             return callBack.call(rowMapper, ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLExecuteException("SQL을 실행할 수 없습니다.", e);
         }
     }
 
