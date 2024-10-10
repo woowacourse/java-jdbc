@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import static java.util.Objects.requireNonNull;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -8,6 +10,7 @@ public class PreparedStatementSetter {
     private final Object[] args;
 
     public PreparedStatementSetter(final Object[] args) {
+        requireNonNull(args, "args must not be null");
         this.args = args;
     }
 
