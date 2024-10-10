@@ -1,4 +1,4 @@
-package com.techcourse.domain;
+package com.interface21.jdbc.core.mock;
 
 public class User {
 
