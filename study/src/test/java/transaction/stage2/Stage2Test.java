@@ -178,7 +178,7 @@ class Stage2Test {
 
     /**
      * [아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?]
-     * 1게
+     * 1개
      * <p>
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
      * [다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?]
