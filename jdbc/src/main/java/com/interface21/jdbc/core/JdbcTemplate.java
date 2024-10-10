@@ -21,86 +21,72 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(String sql, PreparedStatementSetter pss) {
+        execute(sql, pss, PreparedStatement::executeUpdate);
+    }
+
     public void update(String sql, Object... args) {
-        execute(sql, null, args, (rm, ps) -> ps.executeUpdate());
+        update(sql, createArgumentPreparedStatementSetter(args));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        var callBack = new ResultSetClosePreparedStatementCallBack<T, List<T>>(getEntityList());
-        return execute(sql, rowMapper, args, callBack);
+    public <T> List<T> query(String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
+        return execute(sql, pss, ps -> mapResultSet(rm, ps));
     }
 
-    private <T> ThrowingBiFunction<ResultSet, RowMapper<T>, List<T>, SQLException> getEntityList() {
-        return (rs, rm) -> {
+    public <T> List<T> query(String sql, RowMapper<T> rm, Object... args) {
+        return query(sql, rm, createArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
+        List<T> results = query(sql, rm, pss);
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() > 1) {
+            throw new SQLExecuteException("조회된 레코드가 2건 이상입니다.");
+        }
+        return Optional.ofNullable(results.getFirst());
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rm, Object... args) {
+        return queryForObject(sql, rm, createArgumentPreparedStatementSetter(args));
+    }
+
+    private PreparedStatementSetter createArgumentPreparedStatementSetter(Object[] args) {
+        return ps -> {
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
+        };
+    }
+
+    private <T> List<T> mapResultSet(RowMapper<T> rm, PreparedStatement ps) {
+        try (ResultSet rs = ps.executeQuery()) {
             List<T> entityList = new ArrayList<>();
             while (rs.next()) {
                 T entity = rm.mapRow(rs, rs.getRow());
                 entityList.add(entity);
             }
             return entityList;
-        };
+        } catch (SQLException e) {
+            throw new SQLExecuteException("SQL을 실행할 수 없습니다.", e);
+        }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        var callBack = new ResultSetClosePreparedStatementCallBack<T, Optional<T>>(getEntity());
-        return execute(sql, rowMapper, args, callBack);
-    }
+    private <T> T execute(String sql, PreparedStatementSetter pss, SqlExecutor<T> sqlExecutor) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
 
-    private <T> ThrowingBiFunction<ResultSet, RowMapper<T>, Optional<T>, SQLException> getEntity() {
-        return (rs, rm) -> {
-            if (rs.next()) {
-                T entity = rm.mapRow(rs, rs.getRow());
-                validateResultSetCount(rs);
-                return Optional.ofNullable(entity);
-            }
-            return Optional.empty();
-        };
-    }
-
-    private void validateResultSetCount(ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+            pss.setValues(ps);
+            return sqlExecutor.execute(ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new SQLExecuteException("SQL을 실행할 수 없습니다.", e);
         }
     }
 
     public DataSource getDataSource() {
         return dataSource;
     }
-
-    private <T, R> R execute(
-            String sql, RowMapper<T> rowMapper, Object[] args, PreparedStatementCallBack<T, R> callBack
-    ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                ps.setObject(i + 1, args[i]);
-            }
-            return callBack.call(rowMapper, ps);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static class ResultSetClosePreparedStatementCallBack<T, R> implements PreparedStatementCallBack<T, R> {
-
-        private final ThrowingBiFunction<ResultSet, RowMapper<T>, R, SQLException> createEntity;
-
-        private ResultSetClosePreparedStatementCallBack(
-                ThrowingBiFunction<ResultSet, RowMapper<T>, R, SQLException> createEntity
-        ) {
-            this.createEntity = createEntity;
-        }
-
-        @Override
-        public R call(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
-            try (ResultSet rs = ps.executeQuery()) {
-                return createEntity.apply(rs, rowMapper);
-            }
-        }
-    }
-
-
 }

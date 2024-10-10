@@ -127,7 +127,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 sql, new BeanPropertyRowMapper<User>(User.class), "account1"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(SQLExecuteException.class)
                 .hasMessage("조회된 레코드가 2건 이상입니다.");
     }
 
