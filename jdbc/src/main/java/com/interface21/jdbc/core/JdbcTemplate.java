@@ -69,11 +69,14 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement getPreparedStatement(String sql, Connection connection, Object[] params)
-            throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        setPreparedStatement(params, preparedStatement);
-        return preparedStatement;
+    private PreparedStatement getPreparedStatement(String sql, Connection connection, Object[] params) {
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            setPreparedStatement(params, preparedStatement);
+            return preparedStatement;
+        } catch (SQLException e) {
+            throw new CannotGetPreParedStatementException("Failed to get PreparedStatement", e);
+        }
     }
 
     private void setPreparedStatement(Object[] params, PreparedStatement preparedStatement) throws SQLException {
