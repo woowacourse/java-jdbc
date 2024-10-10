@@ -27,24 +27,44 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final var parameters = new Parameters();
-        parameters.add(1, user.getAccount());
-        parameters.add(2, user.getPassword());
-        parameters.add(3, user.getEmail());
+        final var sql = createQueryForInsert();
+        final var parameters = createParametersForInsert(user);
 
         jdbcTemplate.update(sql, parameters);
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var sql = createQueryForUpdate();
+        final var parameters = createParametersForUpdate(user);
+
+        jdbcTemplate.update(sql, parameters);
+    }
+
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = ?, password = ?, email = ? where id = ?";
+    }
+
+    private Parameters createParametersForInsert(final User user) {
+        final var parameters = new Parameters();
+        parameters.add(1, user.getAccount());
+        parameters.add(2, user.getPassword());
+        parameters.add(3, user.getEmail());
+
+        return parameters;
+    }
+
+    private Parameters createParametersForUpdate(final User user) {
         final var parameters = new Parameters();
         parameters.add(1, user.getAccount());
         parameters.add(2, user.getPassword());
         parameters.add(3, user.getEmail());
         parameters.add(4, user.getId());
 
-        jdbcTemplate.update(sql, parameters);
+        return parameters;
     }
 
     public List<User> findAll() {

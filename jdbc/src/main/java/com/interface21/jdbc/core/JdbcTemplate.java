@@ -92,7 +92,6 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query (String sql, Parameters parameters, RowMapper<T> rowMapper) {
     public <T> List<T> query(String sql, Parameters parameters, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
