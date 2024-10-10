@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.mapper.SqlResultSetMapper;
+import com.interface21.jdbc.mapper.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -59,7 +60,7 @@ class JdbcTemplateTest {
         when(resultSet.isAfterLast()).thenReturn(false);
         when(resultSet.next()).thenReturn(true, false);
 
-        Assertions.assertThatCode(() -> jdbcTemplate.query(String.class, "select * from user"))
+        Assertions.assertThatCode(() -> jdbcTemplate.query(User.class, "select * from user"))
                 .doesNotThrowAnyException();
     }
 
@@ -67,16 +68,16 @@ class JdbcTemplateTest {
     @DisplayName("단건 조회시 데이터가 없다면 null을 반환한다.")
     @Test
     void queryNull() {
-        Assertions.assertThat(jdbcTemplate.query(String.class, "select * from user")).isNull();
+        Assertions.assertThat(jdbcTemplate.query(User.class, "select * from user")).isNull();
     }
 
     @DisplayName("단건 조회시 데이터가 두 개 이상이라면 예외가 발생한다.")
     @Test
     void queryDuplicatedData() throws SQLException {
         String sql = "select id from users";
-        when(SqlResultSetMapper.doQueryMapping(String.class, resultSet)).thenReturn(List.of("one", "two"));
+        when(SqlResultSetMapper.doQueryMapping(User.class, resultSet)).thenReturn(List.of(new User(),new User()));
 
-        Assertions.assertThatThrownBy(() -> jdbcTemplate.query(String.class, sql))
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.query(User.class, sql))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("두 개 이상의 데이터가 조회되었습니다.");
     }
@@ -87,7 +88,7 @@ class JdbcTemplateTest {
         when(resultSet.isAfterLast()).thenReturn(false);
         when(resultSet.next()).thenReturn(true, true, false);
 
-        Assertions.assertThatCode(() -> jdbcTemplate.queryForAll(String.class, "select * from user"))
+        Assertions.assertThatCode(() -> jdbcTemplate.queryForAll(User.class, "select * from user"))
                 .doesNotThrowAnyException();
     }
 
@@ -96,9 +97,9 @@ class JdbcTemplateTest {
     void queryForAllEmptyList() throws SQLException {
         String sql = "select id from users";
 
-        when(SqlResultSetMapper.doQueryMapping(String.class, resultSet)).thenReturn(List.of());
+        when(SqlResultSetMapper.doQueryMapping(User.class, resultSet)).thenReturn(List.of());
 
-        Assertions.assertThat(jdbcTemplate.queryForAll(String.class, sql)).isEmpty();
+        Assertions.assertThat(jdbcTemplate.queryForAll(User.class, sql)).isEmpty();
     }
 
     @DisplayName("업데이트가 메서드가 실행되는지 확인한다.")
