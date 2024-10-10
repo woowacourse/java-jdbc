@@ -19,7 +19,7 @@ public class ParameterBinder {
 		try {
 			preparedStatement.setObject(index, arg);
 		} catch (SQLException e) {
-			throw new DataAccessException("파라미터 값이 잘못 되었습니다.");
+			throw new DataAccessException("파라미터 값이 잘못 되었습니다.", e);
 		}
 	}
 }

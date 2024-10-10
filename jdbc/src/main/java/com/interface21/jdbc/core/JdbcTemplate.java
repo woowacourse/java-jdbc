@@ -50,7 +50,7 @@ public class JdbcTemplate {
             parameterBinder.bindParameters(preparedStatement, args);
             return query.execute(preparedStatement);
         } catch (SQLException e) {
-            throw new DataAccessException("쿼리 실행 도중 에러가 발생했습니다.");
+            throw new DataAccessException("쿼리 실행 도중 에러가 발생했습니다.", e);
         }
     }
 }

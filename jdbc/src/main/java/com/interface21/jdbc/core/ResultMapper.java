@@ -30,7 +30,7 @@ public class ResultMapper {
 		try {
 			return resultSet.next();
 		} catch (Exception e) {
-			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.");
+			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.", e);
 		}
 	}
 
@@ -38,7 +38,7 @@ public class ResultMapper {
 		try {
 			return rowMapper.mapRow(resultSet, rowNum);
 		} catch (SQLException e) {
-			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.");
+			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.", e);
 		}
 	}
 }
