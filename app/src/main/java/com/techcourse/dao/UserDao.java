@@ -1,12 +1,10 @@
 package com.techcourse.dao;
 
-import java.sql.PreparedStatement;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementStrategy;
 import com.interface21.jdbc.core.RowMapStrategy;
 import com.techcourse.domain.User;
 
@@ -31,57 +29,29 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        final PreparedStatementStrategy strategy = connection -> {
-            final PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            return statement;
-        };
-        jdbcTemplate.update(strategy);
+        final String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        final PreparedStatementStrategy strategy = connection -> {
-            final PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
-            return statement;
-        };
-        jdbcTemplate.update(strategy);
+        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        final var sql = "SELECT id, account, password, email FROM users";
-        final PreparedStatementStrategy preparedStatementStrategy = connection -> connection.prepareStatement(sql);
-        return jdbcTemplate.query(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
+        final String sql = "SELECT id, account, password, email FROM users";
+        return jdbcTemplate.query(sql, USER_ROW_MAP_STRATEGY);
     }
 
     public User findById(final Long id) {
-        final var sql = "SELECT id, account, password, email FROM users WHERE id = ?";
+        final String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
 
-        final PreparedStatementStrategy preparedStatementStrategy = connection -> {
-            final PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setLong(1, id);
-            return statement;
-        };
-
-        return jdbcTemplate.queryForObject(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAP_STRATEGY, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
 
-        final PreparedStatementStrategy preparedStatementStrategy = connection -> {
-            final PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, account);
-            return statement;
-        };
-
-        return jdbcTemplate.queryForObject(preparedStatementStrategy, USER_ROW_MAP_STRATEGY);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAP_STRATEGY, account);
     }
 }
