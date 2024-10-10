@@ -185,7 +185,8 @@ class Stage1Test {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withLogConsumer(new Slf4jLogConsumer(log));
+                .withLogConsumer(new Slf4jLogConsumer(log))
+                .withUrlParam("allowMultiQueries", "true");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
@@ -241,7 +242,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
+        config.setJdbcUrl(container.getJdbcUrl());
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
