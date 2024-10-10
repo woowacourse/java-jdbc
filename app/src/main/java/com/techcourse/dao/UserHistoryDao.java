@@ -16,14 +16,7 @@ public class UserHistoryDao {
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(userHistory.getUserId());
-        paramList.add(userHistory.getAccount());
-        paramList.add(userHistory.getPassword());
-        paramList.add(userHistory.getEmail());
-        paramList.add(userHistory.getCreatedAt());
-        paramList.add(userHistory.getCreateBy());
-
-        jdbcTemplate.executeQuery(sql, paramList);
+        jdbcTemplate.executeQuery(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
+                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
     }
 }

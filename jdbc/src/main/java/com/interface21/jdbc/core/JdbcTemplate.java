@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SQL_PARAMETER_INDEX_OFFSET = 1;
 
     private final DataSource dataSource;
 
@@ -22,13 +23,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeQuery(String sql, List<Object> paramList) {
+    public void executeQuery(String sql, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParams(paramList, preparedStatement);
+            setParams(preparedStatement, params);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -36,11 +37,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> executeQueryForObject(String sql, List<Object> paramList, ObjectMaker<T> maker) {
+    public <T> Optional<T> executeQueryForObject(String sql, ObjectMaker<T> maker, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setParams(paramList, preparedStatement);
+            setParams(preparedStatement, params);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
@@ -61,11 +62,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQueryForObjects(String sql, List<Object> paramList, ObjectMaker<T> maker) {
+    public <T> List<T> executeQueryForObjects(String sql, ObjectMaker<T> maker, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            setParams(paramList, preparedStatement);
+            setParams(preparedStatement, params);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
@@ -82,9 +83,9 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(List<Object> paramList, PreparedStatement preparedStatement) throws SQLException {
-        for (int index = 1; index <= paramList.size(); index++) {
-            preparedStatement.setObject(index, paramList.get(index - 1));
+    private void setParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
+        for (int index = 0; index < params.length; index++) {
+            preparedStatement.setObject(index + SQL_PARAMETER_INDEX_OFFSET, params[index]);
         }
     }
 }
