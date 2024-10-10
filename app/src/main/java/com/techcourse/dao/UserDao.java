@@ -31,29 +31,40 @@ public class UserDao {
 
     public int insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        int rowCount = jdbcTemplate.executeUpdate(sql, preparedStatement -> {
+                    preparedStatement.setObject(1, user.getAccount());
+                    preparedStatement.setObject(2, user.getPassword());
+                    preparedStatement.setObject(3, user.getEmail());
+                });
+
         log.debug("insert 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }
 
     public int update(final User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(),
-                user.getId());
+        int rowCount = jdbcTemplate.executeUpdate(sql, preparedStatement -> {
+            preparedStatement.setObject(1, user.getAccount());
+            preparedStatement.setObject(2, user.getPassword());
+            preparedStatement.setObject(3, user.getEmail());
+            preparedStatement.setObject(4, user.getId());
+        });
         log.debug("update 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }
 
     public List<User> findAll() {
         String sql = "select * from users";
-        List<User> result = jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        List<User> result = jdbcTemplate.query(sql, preparedStatement -> {}, USER_ROW_MAPPER);
         log.debug("select 성공한 row 개수 : {}", result.size());
         return result;
     }
 
     public Optional<User> findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        Optional<User> result = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        Optional<User> result = jdbcTemplate.queryForObject(sql, preparedStatement -> {
+            preparedStatement.setObject(1, id);
+        }, USER_ROW_MAPPER);
         result.ifPresentOrElse(
                 user -> log.debug("select 성공한 row id : {}", user.getId()),
                 () -> log.debug("다음 id에 해당하는 값이 존재하지 않습니다 : {}", id)
@@ -63,7 +74,9 @@ public class UserDao {
 
     public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        Optional<User> result = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        Optional<User> result = jdbcTemplate.queryForObject(sql, preparedStatement -> {
+            preparedStatement.setObject(1, account);
+        }, USER_ROW_MAPPER);
         result.ifPresentOrElse(
                 user -> log.debug("select 성공한 row id : {}", user.getId()),
                 () -> log.debug("다음 account에 해당하는 값이 존재하지 않습니다 : {}", account)

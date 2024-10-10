@@ -22,14 +22,14 @@ public class UserHistoryDao {
 
     public int log(UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        int rowCount = jdbcTemplate.executeUpdate(sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+        int rowCount = jdbcTemplate.executeUpdate(sql, preparedStatement -> {
+            preparedStatement.setObject(1, userHistory.getUserId());
+            preparedStatement.setObject(2, userHistory.getAccount());
+            preparedStatement.setObject(3, userHistory.getPassword());
+            preparedStatement.setObject(4, userHistory.getEmail());
+            preparedStatement.setObject(5, userHistory.getCreatedAt());
+            preparedStatement.setObject(6, userHistory.getCreateBy());
+        });
         log.debug("insert 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }
