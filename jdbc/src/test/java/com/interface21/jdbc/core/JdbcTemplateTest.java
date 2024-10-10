@@ -51,7 +51,7 @@ class JdbcTemplateTest {
         String sql = "select * from users where id = ?;";
         long id = 1L;
 
-        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{id});
 
         assertThat(user).contains(new User(id, "1111"));
     }
@@ -61,7 +61,7 @@ class JdbcTemplateTest {
         String sql = "select * from users where id = ?;";
         long id = 10000L;
 
-        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{id});
 
         assertThat(user).isEmpty();
     }
