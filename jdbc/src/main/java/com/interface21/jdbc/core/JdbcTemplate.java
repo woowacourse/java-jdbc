@@ -50,18 +50,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtSetter);
-             ResultSet resultSet = pstmt.executeQuery()) {
-            log.debug("query = {}", sql);
+        return preparePreparedStatement(pstmt -> createResult(pstmt, rowMapper), sql, pstmtSetter);
+    }
 
+    private <T> List<T> createResult(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
     }
 
@@ -74,11 +72,14 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter pstmtsetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtsetter)) {
-            log.debug("query = {}", sql);
+        preparePreparedStatement(PreparedStatement::executeUpdate, sql, pstmtsetter);
+    }
 
-            pstmt.executeUpdate();
+    private <T> T preparePreparedStatement(JdbcRunner<T> jdbcRunner, String sql, PreparedStatementSetter pstmtSetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtSetter)) {
+            log.debug("query = {}", sql);
+            return jdbcRunner.run(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -90,5 +91,11 @@ public class JdbcTemplate {
         PreparedStatement pstmt = connection.prepareStatement(sql);
         pstmtSetter.setValue(pstmt);
         return pstmt;
+    }
+
+    @FunctionalInterface
+    private interface JdbcRunner<T> {
+
+          T run(PreparedStatement pstmt) throws SQLException;
     }
 }
