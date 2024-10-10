@@ -1,10 +1,10 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import javax.sql.DataSource;
 
-import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -40,6 +40,12 @@ public class UserDao {
         final var query = "update users set account = ?, password = ?, email = ?";
 
         jdbcTemplate.update(query, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void update(final Connection conn, final User user) {
+        final var query = "update users set account = ?, password = ?, email = ?";
+
+        jdbcTemplate.update(conn, query, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
