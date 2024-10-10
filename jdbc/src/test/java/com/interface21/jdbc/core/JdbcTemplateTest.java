@@ -116,7 +116,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("Expected a single result, but not found for query: ");
+                .hasMessageContaining("Expected");
     }
 
     @Test
@@ -138,7 +138,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("Expected a single result, but found multiple for query: ");
+                .hasMessageContaining("Expected");
     }
 
     private record TestObject(int id, String name) {

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    public static final int MAX_ALLOWED_RESULTS = 1;
+    public static final int ALLOWED_RESULTS = 1;
 
     private final DataSource dataSource;
 
@@ -42,11 +42,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         List<T> result = query(sql, rowMapper, preparedStatementSetter);
-        if (result.isEmpty()) {
-            throw new DataAccessException("Expected a single result, but not found for query: " + sql);
-        }
-        if (result.size() > MAX_ALLOWED_RESULTS) {
-            throw new DataAccessException("Expected a single result, but found multiple for query: " + sql);
+        if (result.size() != ALLOWED_RESULTS) {
+            throw new DataAccessException("Expected " + ALLOWED_RESULTS + " result, but found  "+ result.size() + " for query: " + sql);
         }
         return result.getFirst();
     }
