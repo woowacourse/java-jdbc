@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core;
+package com.interface21.dao;
 
 public class EmptyResultDataAccessException extends IncorrectResultSizeDataAccessException {
 

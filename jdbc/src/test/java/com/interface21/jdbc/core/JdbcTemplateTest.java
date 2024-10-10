@@ -7,6 +7,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.core.support.User;
+import com.interface21.jdbc.core.support.UserRowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -122,21 +126,6 @@ class JdbcTemplateTest {
                 () -> assertThat(actual).containsExactly(new User(1L, "jerry"), new User(2L, "myeongoh")),
                 () -> verify(rs).close()
         );
-    }
-
-    private record User(Long id, String name) {
-
-    }
-
-    private static class UserRowMapper implements RowMapper<User> {
-
-        @Override
-        public User mapRow(ResultSet rs) throws SQLException {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("name")
-            );
-        }
     }
 }
 
