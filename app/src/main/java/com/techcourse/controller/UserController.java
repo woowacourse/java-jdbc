@@ -23,6 +23,7 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = new UserService(
+                DataSourceConfig.getInstance(),
                 new UserDao(DataSourceConfig.getInstance()),
                 new UserHistoryDao(DataSourceConfig.getInstance())
         );
