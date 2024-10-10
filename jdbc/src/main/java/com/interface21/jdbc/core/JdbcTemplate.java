@@ -56,10 +56,10 @@ public class JdbcTemplate {
         return query.getFirst();
     }
 
-    private <T> T execute(String sql, Executor<T> executor) {
+    private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return executor.execute(preparedStatement);
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
