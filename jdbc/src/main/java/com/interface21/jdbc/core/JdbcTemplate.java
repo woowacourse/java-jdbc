@@ -29,8 +29,8 @@ public class JdbcTemplate {
         }));
     }
 
-    <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
-                  PreparedStatementStrategy<T> strategy) {
+    private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
+                          PreparedStatementStrategy<T> strategy) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
