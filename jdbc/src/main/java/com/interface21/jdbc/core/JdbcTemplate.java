@@ -25,17 +25,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error("Failed to get connection", e);
-            throw new CannotGetJdbcConnectionException("Unable to get a connection", e);
-        }
-    }
-
     public void update(String sql, Object... params) {
-        executeUpdate(sql, params);
+        executeStatement(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -45,35 +36,35 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, params);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            return mapResults(rs, rowMapper);
-
-        } catch (SQLException e) {
-            log.error("Error during query execution.", e);
-            throw new DataAccessException("Failed to execute query", e);
-        }
+        return executeStatement(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapResults(rs, rowMapper);
+            }
+        }, params);
     }
 
     public void execute(String sql) {
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+        executeStatement(sql, PreparedStatement::execute);
+    }
+
+    private <T> T executeStatement(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
+            log.debug("Executing query: {}", sql);
+
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
-            log.error("Execution failed", e);
+            log.error("Error executing statement: {}", e.getMessage(), e);
             throw new DataAccessException("Failed to execute statement", e);
         }
     }
 
-    private void executeUpdate(String sql, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, params)) {
-            pstmt.executeUpdate();
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
         } catch (SQLException e) {
-            log.error("Update failed", e);
-            throw new DataAccessException("Failed to execute update", e);
+            log.error("Failed to get connection", e);
+            throw new CannotGetJdbcConnectionException("Unable to get a connection", e);
         }
     }
 
@@ -101,3 +92,4 @@ public class JdbcTemplate {
         }
     }
 }
+
