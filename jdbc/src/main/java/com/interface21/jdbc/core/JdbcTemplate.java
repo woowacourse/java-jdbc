@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
 import com.interface21.jdbc.IncorrectBindingSizeDataAccessException;
@@ -24,11 +25,11 @@ public class JdbcTemplate implements JdbcOperations {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
         return executeQuery(sql, (pstmt) -> executeAndGet(pstmt, rowMapper));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) throws DataAccessException {
         return executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
             return executeAndGet(pstmt, rowMapper);
@@ -40,7 +41,7 @@ public class JdbcTemplate implements JdbcOperations {
             return callBack.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -69,7 +70,7 @@ public class JdbcTemplate implements JdbcOperations {
         }
     }
 
-    public <T> T queryForObject(String sql, Class<T> clazz, Object... values) {
+    public <T> T queryForObject(String sql, Class<T> clazz, Object... values) throws DataAccessException {
         RowMapper<T> rowMapper = RowMapperFactory.getRowMapper(clazz);
         List<T> result = query(sql, rowMapper, values);
         validateSingleResult(result);
@@ -85,14 +86,14 @@ public class JdbcTemplate implements JdbcOperations {
         }
     }
 
-    public void update(String sql, Object... values) {
+    public void update(String sql, Object... values) throws DataAccessException {
         executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
             return pstmt.executeUpdate();
         });
     }
 
-    public void execute(String sql) {
+    public void execute(String sql) throws DataAccessException {
         executeQuery(sql, PreparedStatement::execute);
     }
 
