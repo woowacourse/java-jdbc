@@ -16,11 +16,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public int update(PreparedStatementCreator preparedStatementCreator,
+                       PreparedStatementSetter preparedStatementSetter) {
+        try {
+            PreparedStatement ps = preparedStatementCreator.create();
             preparedStatementSetter.setValues(ps);
             return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = dataSource.getConnection()) {
+            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(conn, sql);
+            return update(preparedStatementCreator, preparedStatementSetter);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -31,8 +41,7 @@ public class JdbcTemplate {
     }
 
     public <T> T query(PreparedStatement preparedStatement, ResultSetExtractor<T> resultSetExtractor) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = preparedStatement;
+        try (PreparedStatement ps = preparedStatement;
              ResultSet rs = ps.executeQuery()) {
             return resultSetExtractor.extractData(rs);
         } catch (SQLException e) {
