@@ -54,6 +54,7 @@ class Stage1Test {
      *
      * HikariCP의 pool size는 몇으로 설정하는게 좋을까?
      * https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
+     * 운 나쁘면 데드락이 생길 수 있는 최대 커넥션의 수(스레드 수 * (필요한 커넥션 수 - 1)) + 1 !!
      *
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration

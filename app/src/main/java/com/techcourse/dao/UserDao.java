@@ -2,8 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -18,49 +18,30 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(user.getAccount());
-        paramList.add(user.getPassword());
-        paramList.add(user.getEmail());
-
-        jdbcTemplate.executeQuery(sql, paramList);
+        jdbcTemplate.executeQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(user.getAccount());
-        paramList.add(user.getPassword());
-        paramList.add(user.getEmail());
-        paramList.add(user.getId());
-
-        jdbcTemplate.executeQuery(sql, paramList);
+        jdbcTemplate.executeQuery(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        List<Object> paramList = new ArrayList<>();
-
-        return jdbcTemplate.executeQueryForObjects(sql, paramList, maker);
+        return jdbcTemplate.executeQueryForObjects(sql, maker);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(id);
-
-        return jdbcTemplate.executeQueryForObject(sql, paramList, maker);
+        return jdbcTemplate.executeQueryForObject(sql, maker, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(account);
-
-        return jdbcTemplate.executeQueryForObject(sql, paramList, maker);
+        return jdbcTemplate.executeQueryForObject(sql, maker, account);
     }
 }

@@ -37,7 +37,9 @@ class Stage2Test {
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
+     * 1개
      * 왜 그런 결과가 나왔을까?
+     * REQUIRED는 활성화된 트랜잭션이 있으면 해당 트랜잭션에 참여
      */
     @Test
     void testRequired() {
@@ -45,13 +47,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
+     * 2개
      * 왜 그런 결과가 나왔을까?
+     * REQUIRED_NEW는 항상 새로운 트랜잭션을 생성
      */
     @Test
     void testRequiredNew() {
@@ -59,27 +63,32 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
+     * saveSecondTransactionWithRequiresNew는 롤백되지 않고
+     * saveAndExceptionWithRequiredNew는 롤백
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * 주석인 상태 : transaction.stage2.SecondUserService.saveSecondTransactionWithSupports
+     * 주석이 아닌 상태 : transaction.stage2.FirstUserService.saveFirstTransactionWithSupports -> supports는 활성 트랜잭션이 있으므로 거기에 바로 참여
      */
     @Test
     void testSupports() {
@@ -87,14 +96,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * 주석인 상태 : saveSecondTransactionWithMandatory 호출 시 예외 -> mandatory는 활성 트랜잭션이 반드시 있어야 함
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * supports는 없어도 됨!
      */
     @Test
     void testMandatory() {
@@ -102,16 +113,21 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
      * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 주석이 아닌 상태 : 논리적 2개 물리적 1개
+     * 주석인 상태 : 논리적 1개 물리적 0개
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     * 물리적 트랜잭션은 실제 데이터베이스 커넥션을 통해 관리되는 트랜잭션 단위
+     * 논리적 트랜잭션은 스프링 프레임워크가 트랜잭션 전파 및 관리를 위해 내부적으로 사용하는 논리적 트랜잭션 단위
+     * 물리적 트랜잭션 내에서 여러 개의 논리적 트랜잭션 존재 가능
      */
     @Test
     void testNotSupported() {
@@ -119,13 +135,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
      * 아래 테스트는 왜 실패할까?
+     * JPA가 save point를 지원하지 않아서 중첩 트랜잭션 실행 불가
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * 바깥의 트랜잭션이 없기 때문에 NESTED에서 중첩이 아닌 새로운 트랜잭션을 생성!
      */
     @Test
     void testNested() {
@@ -133,12 +152,14 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     * saveSecondTransactionWithNever는 트랜잭션이 없는 상태에서만 실행 가능하기 때문에
+     * saveFirstTransactionWithNever에 트랜잭션이 있으면 예외가 발생
      */
     @Test
     void testNever() {
@@ -146,7 +167,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
