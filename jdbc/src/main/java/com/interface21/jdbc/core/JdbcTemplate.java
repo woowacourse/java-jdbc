@@ -38,14 +38,14 @@ public class JdbcTemplate {
 
     private <T> T execute(
             String sql,
-            SQLFunction<PreparedStatement, T> function,
+            PreparedStatementCallback<T> callback,
             PreparedStatementSetter preparedStatementSetter
     ) {
         log.debug("query : {}", sql);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
-            return function.apply(preparedStatement);
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
