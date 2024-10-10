@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
@@ -21,7 +22,16 @@ public class UserHistoryDao {
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
-        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter =
+                new ArgumentPreparedStatementSetter(
+                        userHistory.getUserId(),
+                        userHistory.getAccount(),
+                        userHistory.getPassword(),
+                        userHistory.getEmail(),
+                        userHistory.getCreatedAt(),
+                        userHistory.getCreateBy()
+                );
+        jdbcTemplate.update(sql, argumentPreparedStatementSetter);
         log.info("userHistory 업데이트에 성공했습니다.");
     }
 }

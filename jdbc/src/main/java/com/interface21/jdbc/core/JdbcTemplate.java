@@ -16,7 +16,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int INIT_ROW_NUMBER = 0;
-    private static final int INIT_PARAMETER_INDEX = 1;
     private static final int REQUIRED_DATA_SIZE = 1;
 
     private final DataSource dataSource;
@@ -25,11 +24,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            setStatement(args, statement);
+            preparedStatementSetter.setValues(statement);
             int rows = statement.executeUpdate();
             connection.commit();
 
@@ -40,11 +39,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            setStatement(args, statement);
+            preparedStatementSetter.setValues(statement);
             ResultSet resultSet = statement.executeQuery();
             return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
@@ -53,15 +52,13 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> data = query(sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> data = query(sql, rowMapper, preparedStatementSetter);
         return makeSingleResult(data);
     }
 
-    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
-        for (int index = 0; index < args.length; index++) {
-            statement.setObject(index + INIT_PARAMETER_INDEX, args[index]);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     private <T> List<T> extractData(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
