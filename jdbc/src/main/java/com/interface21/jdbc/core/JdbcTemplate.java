@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int UNIQUE_SIZE = 1;
+    private static final int SINGLE = 1;
 
     private final DataSource dataSource;
 
@@ -58,7 +58,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
-        validateResultUniqueness(results);
+        validateSingleResult(results);
         return results.getFirst();
     }
 
@@ -70,12 +70,12 @@ public class JdbcTemplate {
         return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper), preparedStatementSetter);
     }
 
-    private <T> void validateResultUniqueness(List<T> results) {
+    private <T> void validateSingleResult(List<T> results) {
         if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(UNIQUE_SIZE);
+            throw new EmptyResultDataAccessException(SINGLE);
         }
-        if (results.size() > UNIQUE_SIZE) {
-            throw new IncorrectResultSizeDataAccessException(UNIQUE_SIZE, results.size());
+        if (results.size() > SINGLE) {
+            throw new IncorrectResultSizeDataAccessException(SINGLE, results.size());
         }
     }
 
