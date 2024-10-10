@@ -16,3 +16,6 @@ create table if not exists user_history (
     created_by varchar(100) not null,
     primary key(id)
 );
+
+truncate table user_history restart identity;
+truncate table users restart identity;

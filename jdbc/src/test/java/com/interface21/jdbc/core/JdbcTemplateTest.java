@@ -58,7 +58,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(SQLException.class);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(INSERT_SQL))
+        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -69,7 +69,7 @@ class JdbcTemplateTest {
         when(conn.prepareStatement(anyString())).thenThrow(SQLException.class);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(INSERT_SQL))
+        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -80,7 +80,7 @@ class JdbcTemplateTest {
         doThrow(SQLException.class).when(pstmt).setObject(anyInt(), any(Object.class));
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -91,7 +91,7 @@ class JdbcTemplateTest {
         doThrow(SQLException.class).when(pstmt).executeUpdate();
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(SELECT_ALL_SQL))
+        assertThatThrownBy(() -> jdbcTemplate.update(SELECT_ALL_SQL))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -99,7 +99,7 @@ class JdbcTemplateTest {
     @Test
     void should_setObjectAndExecute_when_executeInsertQuery() throws SQLException {
         // when
-        jdbcTemplate.executeUpdate(INSERT_SQL, "ever");
+        jdbcTemplate.update(INSERT_SQL, "ever");
 
         // then
         verify(pstmt).setObject(1, "ever");
@@ -115,7 +115,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("ever");
 
         // when
-        TestUser user = jdbcTemplate.executeQueryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L);
+        TestUser user = jdbcTemplate.queryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L);
 
         // then
         verify(pstmt).setObject(1, 1L);
@@ -128,15 +128,15 @@ class JdbcTemplateTest {
     @Test
     void executeQuery() throws SQLException {
         // given
-        jdbcTemplate.executeUpdate(INSERT_SQL, "ever1");
-        jdbcTemplate.executeUpdate(INSERT_SQL, "ever2");
+        jdbcTemplate.update(INSERT_SQL, "ever1");
+        jdbcTemplate.update(INSERT_SQL, "ever2");
 
         when(rs.next()).thenReturn(true)
                 .thenReturn(true)
                 .thenReturn(false);
 
         // when
-        List<TestUser> testUsers = jdbcTemplate.executeQuery(SELECT_ALL_SQL, TEST_USER_ROW_MAPPER);
+        List<TestUser> testUsers = jdbcTemplate.query(SELECT_ALL_SQL, TEST_USER_ROW_MAPPER);
 
         // then
         verify(pstmt).executeQuery();

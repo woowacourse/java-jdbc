@@ -1,19 +1,20 @@
 package transaction;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
+
+    private static final String DELIMITER_OF_QUERY = ";\n\n";
 
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
@@ -24,7 +25,7 @@ public class DatabasePopulatorUtils {
             final var sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
             statement = connection.createStatement();
-            statement.execute(sql);
+            executeSql(sql, statement);
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e.getCause());
         } finally {
@@ -32,15 +33,26 @@ public class DatabasePopulatorUtils {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private static void executeSql(String sql, Statement statement) throws SQLException {
+        String[] queries = sql.split(DELIMITER_OF_QUERY);
+        for (String query : queries) {
+            statement.addBatch(query);
+        }
+        statement.executeBatch();
+    }
+
+    private DatabasePopulatorUtils() {
+    }
 }
