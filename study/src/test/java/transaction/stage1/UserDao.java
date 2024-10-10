@@ -26,7 +26,7 @@ public class UserDao {
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void updatePasswordGreaterThan(final Connection connection, final String password, final long id) {
+    public void updatePasswordGreaterThanOrEqualTo(final Connection connection, final String password, final long id) {
         final var sql = "update users set password = ? where id >= ?";
         jdbcTemplate.update(connection, sql, password, id);
     }
@@ -41,7 +41,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(connection, sql, createRowMapper(), account);
     }
 
-    public List<User> findGreaterThan(final Connection connection, final long id) {
+    public List<User> findGreaterThanOrEqualTo(final Connection connection, final long id) {
         final var sql = "select id, account, password, email from users where id >= ?";
         return jdbcTemplate.query(connection, sql, createRowMapper(), id);
     }

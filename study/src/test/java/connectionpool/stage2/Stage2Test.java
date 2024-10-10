@@ -47,10 +47,12 @@ class Stage2Test {
 
         for (final var thread : threads) {
             thread.join();
+            assertThat(hikariPool.getActiveConnections()).isLessThanOrEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
         }
 
         // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
         assertThat(hikariPool.getTotalConnections()).isEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
+        assertThat(hikariPool.getActiveConnections()).isZero();  // join() 했으므로 메인 스레드는 블록됨. 스레드 안에서 try-with-resource로 커넥션을 닫았으므로 active는 0.
 
         // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
         assertThat(hikariDataSource.getPoolName()).isEqualTo("gugu");
@@ -65,7 +67,7 @@ class Stage2Test {
                     log.info("After acquire ");
                     quietlySleep(500); // Thread.sleep(500)과 동일한 기능
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         };
     }
