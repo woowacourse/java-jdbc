@@ -59,7 +59,7 @@ public class JdbcTemplate {
 
     private void validateResultSetCount(ResultSet rs) throws SQLException {
         if (rs.next()) {
-            throw new IllegalArgumentException("조회된 레코드가 2건 이상입니다.");
+            throw new SQLExecuteException("조회된 레코드가 2건 이상입니다.");
         }
     }
 
