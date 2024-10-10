@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.TestUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -99,7 +100,7 @@ public class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("객체 조회 실패 시 예외 발생")
+    @DisplayName("객체 조회 시 결과가 없으면 예외 발생")
     public void testQueryForObjectNotFound() throws SQLException {
         // Given
         String sql = "SELECT * FROM users WHERE account = ?";
@@ -114,6 +115,24 @@ public class JdbcTemplateTest {
             jdbcTemplate.queryForObject(sql, userRowMapper, params);
         });
     }
+
+    @Test
+    @DisplayName("객체 조회 시 다수의 결과가 반환되면 예외 발생")
+    public void testQueryForObjectMultipleResults() throws SQLException {
+        // Given
+        String sql = "SELECT * FROM users WHERE account = ?";
+        Object[] params = {"duplicateAccount"};
+
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+
+        // When & Then
+        assertThrows(IncorrectResultSizeDataAccessException.class, () -> {
+            jdbcTemplate.queryForObject(sql, userRowMapper, params);
+        });
+    }
+
 
     private void setupResultSetForSingleUser(TestUser expectedUser) throws SQLException {
         when(resultSet.next()).thenReturn(true).thenReturn(false);
