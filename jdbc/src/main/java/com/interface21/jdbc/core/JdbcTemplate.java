@@ -16,9 +16,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public int update(PreparedStatementCreator preparedStatementCreator,
+                       PreparedStatementSetter preparedStatementSetter) {
+        try {
+            PreparedStatement ps = preparedStatementCreator.create();
             preparedStatementSetter.setValues(ps);
             return ps.executeUpdate();
         } catch (SQLException e) {
@@ -26,12 +27,10 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(PreparedStatementCreator preparedStatementCreator,
-                       PreparedStatementSetter preparedStatementSetter) {
-        try {
-            PreparedStatement preparedStatement = preparedStatementCreator.create();
-            preparedStatementSetter.setValues(preparedStatement);
-            preparedStatement.executeUpdate();
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = dataSource.getConnection()) {
+            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator(conn, sql);
+            return update(preparedStatementCreator, preparedStatementSetter);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
