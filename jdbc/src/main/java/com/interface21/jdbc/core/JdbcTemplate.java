@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.CannotQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,34 +21,32 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object ... objects) {
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameterIntoStatement(preparedStatement, objects);
+            preparedStatementSetter.setValues(preparedStatement);
             int rowCount = preparedStatement.executeUpdate();
             log.debug("query : {}, rowCount : {}", sql, rowCount);
             return rowCount;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... objects) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            if (objects != null) {
-                setParameterIntoStatement(preparedStatement, objects);
-            }
+            preparedStatementSetter.setValues(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
             return getObject(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error("SQL error during queryForObject: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         List<T> result = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -59,16 +58,10 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotQueryException(e);
         }
 
         return result;
-    }
-
-    private void setParameterIntoStatement(PreparedStatement preparedStatement, Object ... objects) throws SQLException {
-        for (int i = 0; i < objects.length; i++) {
-            preparedStatement.setObject(i + 1, objects[i]);
-        }
     }
 
     private <T> T getObject(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
