@@ -2,15 +2,16 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -102,7 +103,16 @@ public class JdbcTemplate {
             return conn.prepareStatement(sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            closeConnection(conn);
             throw new DataAccessException("Create PrepareStatement failed.");
+        }
+    }
+
+    private void closeConnection(final Connection conn) {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -112,7 +122,17 @@ public class JdbcTemplate {
             return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            closePreparedStatement(pstmt);
             throw new DataAccessException("Get ResultSet failed.");
+        }
+    }
+
+    private void closePreparedStatement(final PreparedStatement pstmt) {
+        try {
+            closeConnection(pstmt.getConnection());
+            pstmt.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 }
