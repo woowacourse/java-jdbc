@@ -22,10 +22,14 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
+        executeUpdate(sql, parameters, PreparedStatement::executeUpdate);
+    }
+
+    private void executeUpdate(String sql, Object[] parameters, ConsumerWrapper<PreparedStatement> execution) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
-            pstmt.executeUpdate();
+            execution.accept(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -33,11 +37,19 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(sql, parameters, rs -> getInstance(rowMapper, rs));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(sql, parameters, rs -> getInstances(rowMapper, rs));
+    }
+
+    private <T> T executeQuery(String sql, Object[] parameters, FunctionWrapper<ResultSet, T> execution) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
-            return getInstance(rowMapper, rs);
+            return execution.apply(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -49,18 +61,6 @@ public class JdbcTemplate {
             return null;
         }
         return rowMapper.mapRow(rs);
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
-             ResultSet rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-            return getInstances(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
     }
 
     private <T> List<T> getInstances(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
