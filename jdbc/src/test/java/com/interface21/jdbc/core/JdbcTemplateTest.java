@@ -18,18 +18,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 
 class JdbcTemplateTest {
 
-    @Mock
     private Connection connection;
-    @Mock
     private PreparedStatement preparedStatement;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
+        connection = mock(Connection.class);
+        preparedStatement = mock(PreparedStatement.class);
         DataSource dataSource = mock(DataSource.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
