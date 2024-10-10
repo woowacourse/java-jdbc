@@ -4,6 +4,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
@@ -11,6 +12,7 @@ import com.interface21.jdbc.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,5 +97,23 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from users where id = ?", rowMapper, 1))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("조회하려는 데이터가 여러 개입니다.");
+    }
+
+    @DisplayName("사용한 자원은 모두 close한다.")
+    @Test
+    public void closeAllResources() throws SQLException {
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, true, false);
+        when(resultSet.getString("name")).thenReturn("이은정", "클로버", "지니아");
+
+        RowMapper<String> rowMapper = (rs, rowNum) -> rs.getString("name");
+
+        jdbcTemplate.query("select name from users", rowMapper);
+
+        assertAll(
+                () -> verify(connection).close(),
+                () -> verify(preparedStatement).close(),
+                () -> verify(resultSet).close()
+        );
     }
 }
