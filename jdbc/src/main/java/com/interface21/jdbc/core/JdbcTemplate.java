@@ -1,14 +1,13 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,33 +23,31 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setValues(pstmt, args);
+            pss.setValues(pstmt);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        return query(sql, new RowMapperResultSetExtractor<>(rowMapper), pss);
+    }
+
+    public <T> T query(String sql, ResultSetExtractor<T> rse, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setValues(pstmt, args);
+            pss.setValues(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
-                return mapRows(rs, rowMapper);
+                return rse.extractData(rs);
             }
         });
-    }
-
-    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
-    private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
-        }
-        return results;
     }
 
     private <T> T execute(String sql, PreparedStatementCallBack<T> callBack) {
@@ -70,14 +67,18 @@ public class JdbcTemplate {
         log.debug("Executing prepared SQL statement : [ {} ]", sql);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
-        }
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> results = query(sql, rowMapper, pss);
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
-        return results.getFirst();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(results.getFirst());
     }
 }

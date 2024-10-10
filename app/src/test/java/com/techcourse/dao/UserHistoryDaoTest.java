@@ -37,7 +37,7 @@ class UserHistoryDaoTest {
         userHistoryDao.log(userHistory);
 
         // then
-        long count = jdbcTemplate.queryForObject("SELECT count(*) FROM user_history", rs -> rs.getLong(1));
+        long count = jdbcTemplate.queryForObject("SELECT count(*) FROM user_history", rs -> rs.getLong(1)).orElseThrow();
         assertThat(count).isEqualTo(1);
     }
 }
