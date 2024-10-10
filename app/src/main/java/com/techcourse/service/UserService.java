@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
@@ -33,24 +34,32 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (final var conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-                conn.commit();
-            } catch (DataAccessException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackException) {
-                    throw new DataAccessException("Rollback Failed", rollbackException);
-                }
-                throw new DataAccessException("Transaction failed and rolled back", e);
-            }
+            changePasswordWithTransaction(id, newPassword, createBy, conn);
         } catch (SQLException e) {
             throw new DataAccessException("Connection failed", e);
+        }
+    }
+
+    private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy, final Connection conn) throws SQLException {
+        conn.setAutoCommit(false);
+        try {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(conn, user);
+            userHistoryDao.log(conn, new UserHistory(user, createBy));
+
+            conn.commit();
+        } catch (DataAccessException e) {
+            handleRollback(conn);
+            throw new DataAccessException("Transaction failed and rolled back", e);
+        }
+    }
+
+    private void handleRollback(Connection conn) {
+        try {
+            conn.rollback();
+        } catch (SQLException rollbackException) {
+            throw new DataAccessException("Rollback Failed", rollbackException);
         }
     }
 }
