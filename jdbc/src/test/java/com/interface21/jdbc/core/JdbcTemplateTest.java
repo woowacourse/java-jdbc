@@ -21,10 +21,10 @@ class JdbcTemplateTest {
     private final JdbcTemplate jdbcTemplate;
 
     private static final RowMapper<User> userMapper = (resultSet) -> new User(
-            resultSet.getLong(1),
-            resultSet.getString(2),
-            resultSet.getString(3),
-            resultSet.getString(4)
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
     );
 
     @BeforeEach
@@ -230,6 +230,7 @@ class JdbcTemplateTest {
         executeUpdateQuery("insert into users (account, password, email) values('gugu', '123', 'gugu@naver.com')");
         executeUpdateQuery("insert into users (account, password, email) values('gugu2', '123', 'gugu2@naver.com')");
         String selectQuery = "select * from users where account = ?";
+
         // when
         User user = jdbcTemplate.queryForObejct(selectQuery, userMapper, "gugu");
 
