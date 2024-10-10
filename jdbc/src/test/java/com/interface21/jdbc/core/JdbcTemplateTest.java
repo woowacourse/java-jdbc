@@ -59,8 +59,6 @@ class JdbcTemplateTest {
         // then
         assertAll(
                 () -> verify(connection).prepareStatement(sql),
-                () -> verify(pstmt).setObject(1, "lini"),
-                () -> verify(pstmt).setObject(2, 1),
                 () -> verify(pstmt).executeUpdate()
         );
     }

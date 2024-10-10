@@ -1,13 +1,13 @@
 package connectionpool.stage1;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class Stage1Test {
 
@@ -20,24 +20,31 @@ class Stage1Test {
      * DataSource 객체를 통해 미리 커넥션(Connection)을 만들어 두는 것을 의미한다.
      * 새로운 커넥션을 생성하는 것은 많은 비용이 들기에 미리 커넥션을 만들어두면 성능상 이점이 있다.
      * 커넥션 풀링에 미리 만들어둔 커넥션은 재사용 가능하다.
-     *
+     * <p>
      * h2에서 제공하는 JdbcConnectionPool를 다뤄보며 커넥션 풀에 대한 감을 잡아보자.
-     *
+     * <p>
      * Connection Pooling and Statement Pooling
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
+        //default connection count = 10
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
+            // This is the number of Connection objects that have been issued by getConnection() for which Connection.close() has not yet been called.
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
+        //Closes all unused pooled connections. Exceptions while closing are written to the log stream (if set).
         jdbcConnectionPool.dispose();
+
+        //all connections closed when jdbcConnectionPool is disposed
+        assertThatThrownBy(jdbcConnectionPool::getConnection)
+                .isInstanceOf(IllegalStateException.class);
     }
 
     /**
@@ -45,25 +52,36 @@ class Stage1Test {
      * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#data.sql.datasource.connection-pool
      * Supported Connection Pools
      * We prefer HikariCP for its performance and concurrency. If HikariCP is available, we always choose it.
-     *
+     * <p>
      * HikariCP 공식 문서를 참고하여 HikariCP를 설정해보자.
      * https://github.com/brettwooldridge/HikariCP#rocket-initialization
-     *
+     * <p>
      * HikariCP 필수 설정
      * https://github.com/brettwooldridge/HikariCP#essentials
-     *
+     * - dataSourceClassName
+     * - jdbcUrl
+     * - username
+     * - password
+     * <p>
      * HikariCP의 pool size는 몇으로 설정하는게 좋을까?
      * https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
-     *
+     * connections = ((core_count * 2) + effective_spindle_count)
+     * <p>
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
+     * - prepStntCacheSize
+     * - prepStmtCacheSqlLimit
+     * - cachePrepStmts
+     * - userServerPrepStmts
      */
     @Test
     void testHikariCP() {
+        // default pool size = 10
         final var hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl(H2_URL);
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
+        // initial: -1 -> maximumPoolSize가 -1일때는 default pool size를 따른다.
         hikariConfig.setMaximumPoolSize(5);
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
