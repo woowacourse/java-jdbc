@@ -76,6 +76,17 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return queryForObject(connection, sql, rowMapper, pstmt -> {
+            if (params == null) {
+                return;
+            }
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        });
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return queryForObject(sql, rowMapper, pstmt -> {
             if (params == null) {
@@ -84,6 +95,17 @@ public class JdbcTemplate {
             for (int i = 0; i < params.length; i++) {
                 pstmt.setObject(i + 1, params[i]);
             }
+        });
+    }
+
+    private <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(connection, sql, pstmt -> {
+            setValues(setter, pstmt);
+            List<T> result = getResult(rowMapper, pstmt);
+            if (result.size() != 1) {
+                throw new DataAccessException("result for query have not exactly one");
+            }
+            return result.getFirst();
         });
     }
 
