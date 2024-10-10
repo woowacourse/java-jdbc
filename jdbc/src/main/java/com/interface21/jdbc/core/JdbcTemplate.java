@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,13 +26,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(conn, sql);
 
-            setPreparedStatement(pstmt, args);
+        try (conn; pstmt) {
+            pss.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,19 +39,24 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + BASE_PARAMETER_INDEX, args[i]);
-        }
+    public void update(final String sql, final Object... parameters) throws DataAccessException {
+        update(sql, createPreparedStatementSetter(parameters));
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
+        return pstmt -> {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + BASE_PARAMETER_INDEX, parameters[i]);
+            }
+        };
+    }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(conn, sql);
+        final ResultSet rs = getResultSet(pstmt, pss);
+
+        try (conn; pstmt; rs) {
             return extractData(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -59,22 +64,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setPreparedStatement(pstmt, args);
-            rs = pstmt.executeQuery();
-
-            return extractData(rowMapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        } finally {
-            closeResultSet(rs);
-        }
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return query(sql, rowMapper, createPreparedStatementSetter(parameters));
     }
 
     private <T> List<T> extractData(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
@@ -97,12 +88,51 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private void closeResultSet(ResultSet rs) {
+    private Connection getConnection() {
         try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException ignored) {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new CannotGetJdbcConnectionException("Get DB connection failed.");
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(final Connection conn, final String sql) {
+        try {
+            log.info("query = {}", sql);
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            closeConnection(conn);
+            throw new DataAccessException("Create PrepareStatement failed.");
+        }
+    }
+
+    private void closeConnection(final Connection conn) {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private ResultSet getResultSet(final PreparedStatement pstmt, final PreparedStatementSetter pss) {
+        try {
+            pss.setValues(pstmt);
+            return pstmt.executeQuery();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            closePreparedStatement(pstmt);
+            throw new DataAccessException("Get ResultSet failed.");
+        }
+    }
+
+    private void closePreparedStatement(final PreparedStatement pstmt) {
+        try {
+            closeConnection(pstmt.getConnection());
+            pstmt.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 }

@@ -173,3 +173,7 @@ tomcat.*
 tomcat.*/**
 
 **/WEB-INF/classes/**
+
+# Test DB files
+study/test.mv.db
+study/test.trace.db
