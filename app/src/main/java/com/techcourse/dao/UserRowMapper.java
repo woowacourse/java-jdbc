@@ -8,6 +8,15 @@ import com.techcourse.domain.User;
 
 public class UserRowMapper implements RowMapper<User> {
 
+	private static final UserRowMapper instance = new UserRowMapper();
+
+	public static UserRowMapper getInstance() {
+		return instance;
+	}
+
+	private UserRowMapper() {
+	}
+
 	@Override
 	public User mapRow(ResultSet resultSet, int rowNum) throws SQLException {
 		return new User(
