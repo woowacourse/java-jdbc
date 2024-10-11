@@ -1,5 +1,10 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.IncorrectBindingSizeDataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,27 +25,27 @@ public class JdbcTemplate implements JdbcOperations {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return executeStatement(sql, (pstmt) -> executeQueryAndGet(pstmt, rowMapper));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+        return executeQuery(sql, (pstmt) -> executeAndGet(pstmt, rowMapper));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeStatement(sql, (pstmt) -> {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) throws DataAccessException {
+        return executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
-            return executeQueryAndGet(pstmt, rowMapper);
+            return executeAndGet(pstmt, rowMapper);
         });
     }
 
-    private <T> T executeStatement(String sql, PreparedStatementCallBack<T> callBack) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    private <T> List<T> executeQueryAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> executeAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         List<T> result = new ArrayList<>();
         try (ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -51,12 +56,21 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     private void bindValues(PreparedStatement pstmt, Object... values) throws SQLException {
+        validateBindingValueCount(pstmt, values);
         for (int idx = 1; idx <= values.length; idx++) {
             pstmt.setObject(idx, values[idx - 1]);
         }
     }
 
-    public <T> T queryForObject(String sql, Class<T> clazz, Object... values) {
+    private void validateBindingValueCount(PreparedStatement pstmt, Object... values) throws SQLException {
+        int expectedSize = pstmt.getParameterMetaData().getParameterCount();
+        int actualSize = values.length;
+        if (expectedSize != actualSize) {
+            throw new IncorrectBindingSizeDataAccessException(expectedSize, actualSize);
+        }
+    }
+
+    public <T> T queryForObject(String sql, Class<T> clazz, Object... values) throws DataAccessException {
         RowMapper<T> rowMapper = RowMapperFactory.getRowMapper(clazz);
         List<T> result = query(sql, rowMapper, values);
         validateSingleResult(result);
@@ -64,24 +78,31 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     private <T> void validateSingleResult(List<T> result) {
-        if (result.size() != 1) {
-            throw new IllegalStateException("결과가 1개만 조회되어야 하지만, " + result.size() + "개의 결과가 조회되었습니다: " + result);
+        if (result.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, result.size());
+        }
+        if (result.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
         }
     }
 
-    public void update(String sql, Object... values) {
-        executeStatement(sql, (pstmt) -> {
+    public void update(String sql, Object... values) throws DataAccessException {
+        executeQuery(sql, (pstmt) -> {
             bindValues(pstmt, values);
             return pstmt.executeUpdate();
         });
     }
 
-    public void execute(String sql) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.execute();
+    public void execute(String sql) throws DataAccessException {
+        executeQuery(sql, PreparedStatement::execute);
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
         }
     }
 }

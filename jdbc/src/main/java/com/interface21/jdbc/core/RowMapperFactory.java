@@ -15,7 +15,7 @@ public class RowMapperFactory {
 
     @SuppressWarnings("unchecked")
     public static <T> RowMapper<T> getRowMapper(Class<T> clazz) {
-        return (RowMapper<T>) RowMapperHolder.INSTANCE.computeIfAbsent(clazz, ignored -> createRowMapper(clazz));
+        return (RowMapper<T>) RowMapperHolder.INSTANCE.computeIfAbsent(clazz, RowMapperFactory::createRowMapper);
     }
 
     private static <T> RowMapper<T> createRowMapper(Class<T> clazz) {
@@ -38,8 +38,8 @@ public class RowMapperFactory {
         return Arrays.stream(clazz.getDeclaredConstructors())
                 .filter(constructor -> constructor.getParameterCount() == fieldCount)
                 .findFirst()
-                .orElseThrow(
-                        () -> new NoSuchMethodException("모든 필드를 포함한 생성자를 찾을 수 없습니다. class: " + clazz.getName()));
+                .orElseThrow(() -> new NoSuchMethodException(String.format(
+                        "Cannot find a constructor that includes all fields. Class: %s", clazz.getName())));
     }
 
     private static Object[] getConstructorArguments(Constructor<?> constructor, Class<?> clazz, ResultSet rs)
