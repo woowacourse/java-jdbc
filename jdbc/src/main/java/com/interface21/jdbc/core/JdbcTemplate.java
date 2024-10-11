@@ -40,7 +40,7 @@ public class JdbcTemplate {
     public <T> List<T> readAll(String sql, RowMapper<T> rowMapper, Object... args) {
         return executeQuery(sql, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-            return resultMapper.getResults(resultSet, rowMapper);
+            return resultMapper.getAllResult(resultSet, rowMapper);
         }, args);
     }
 
