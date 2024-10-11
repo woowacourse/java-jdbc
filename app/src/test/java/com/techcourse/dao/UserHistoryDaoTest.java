@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.config.DataSourceConfig;
@@ -44,7 +45,7 @@ class UserHistoryDaoTest {
 
         UserHistory userHistory = new UserHistory(insertedUser, "2024.05.10");
 
-        userHistoryDao.update(userHistory);
+        userHistoryDao.insert(userHistory);
 
         String sql = """
                 SELECT id, user_id, account, password, email, created_at, created_by
@@ -52,7 +53,9 @@ class UserHistoryDaoTest {
                 WHERE id = ?
                 """;
 
-        UserHistory expectedUserHistory = jdbcTemplate.queryForObject(sql, USER_HISTORY_ROW_MAPPER, 1);
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(1);
+
+        UserHistory expectedUserHistory = jdbcTemplate.queryForObject(sql, USER_HISTORY_ROW_MAPPER, argumentPreparedStatementSetter);
 
         assertThat(userHistory.getAccount()).isEqualTo(expectedUserHistory.getAccount());
     }
