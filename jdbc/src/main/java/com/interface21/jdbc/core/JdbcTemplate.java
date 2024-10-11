@@ -12,7 +12,8 @@ import com.interface21.dao.DataAccessException;
 
 public class JdbcTemplate {
 
-    private final DataSource dataSource;
+    private DataSource dataSource;
+
     private final ResultMapper resultMapper;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -23,6 +24,16 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... values) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("데이터베이스 연결 중 에러가 발생했습니다.", e);
+        }
+    }
+
+    public void update(final Connection connection, final String sql, final Object... values) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(values);
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
