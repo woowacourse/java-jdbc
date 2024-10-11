@@ -9,46 +9,40 @@ import javax.sql.DataSource;
 
 public class TransactionManager {
 
-    private static final Map<DataSource, Connection> CONNECTIONS = new HashMap<>();
+    private final Map<DataSource, Connection> connections = new HashMap<>();
 
-    private final DataSource dataSource;
-
-    public TransactionManager(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void begin() throws SQLException {
-        if (CONNECTIONS.containsKey(dataSource)) {
+    public void begin(DataSource dataSource) throws SQLException {
+        if (connections.containsKey(dataSource)) {
             throw new JdbcAccessException("Transaction already started for this datasource");
         }
 
         Connection connection = dataSource.getConnection();
         connection.setAutoCommit(false);
-        CONNECTIONS.put(dataSource, connection);
+        connections.put(dataSource, connection);
     }
 
-    public void commit() throws SQLException {
-        try (Connection connection = getConnection()) {
+    public void commit(DataSource dataSource) throws SQLException {
+        try (Connection connection = getConnection(dataSource)) {
             connection.commit();
-            CONNECTIONS.remove(dataSource);
+            connections.remove(dataSource);
         }
     }
 
-    public void rollback() throws SQLException {
-        try (Connection connection = getConnection()) {
+    public void rollback(DataSource dataSource) throws SQLException {
+        try (Connection connection = getConnection(dataSource)) {
             connection.rollback();
-            CONNECTIONS.remove(dataSource);
+            connections.remove(dataSource);
         }
     }
 
-    public Connection getConnection() {
-        if (!hasConnection()) {
+    public Connection getConnection(DataSource dataSource) {
+        if (!hasConnection(dataSource)) {
             throw new JdbcAccessException("Connection not found for this datasource");
         }
-        return CONNECTIONS.get(dataSource);
+        return connections.get(dataSource);
     }
 
-    public boolean hasConnection() {
-        return CONNECTIONS.containsKey(dataSource);
+    public boolean hasConnection(DataSource dataSource) {
+        return connections.containsKey(dataSource);
     }
 }

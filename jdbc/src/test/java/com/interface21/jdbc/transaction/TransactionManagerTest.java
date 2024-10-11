@@ -22,7 +22,7 @@ class TransactionManagerTest {
     void setUp() {
         dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
-        transactionManager = new TransactionManager(dataSource);
+        transactionManager = new TransactionManager();
     }
 
     @DisplayName("트랜잭션을 시작한다.")
@@ -30,7 +30,7 @@ class TransactionManagerTest {
     void testBeginTransaction() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
 
-        transactionManager.begin();
+        transactionManager.begin(dataSource);
 
         verify(connection).setAutoCommit(false);
     }
@@ -39,9 +39,9 @@ class TransactionManagerTest {
     @Test
     void transactionAlreadyStarted() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
-        transactionManager.begin();
+        transactionManager.begin(dataSource);
 
-        assertThatThrownBy(transactionManager::begin)
+        assertThatThrownBy(() -> transactionManager.begin(dataSource))
                 .isInstanceOf(JdbcAccessException.class)
                 .hasMessage("Transaction already started for this datasource");
     }
@@ -50,9 +50,9 @@ class TransactionManagerTest {
     @Test
     void commitTransaction() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
-        transactionManager.begin();
+        transactionManager.begin(dataSource);
 
-        transactionManager.commit();
+        transactionManager.commit(dataSource);
 
         verify(connection).commit();
     }
@@ -61,9 +61,9 @@ class TransactionManagerTest {
     @Test
     void rollbackTransaction() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
-        transactionManager.begin();
+        transactionManager.begin(dataSource);
 
-        transactionManager.rollback();
+        transactionManager.rollback(dataSource);
 
         verify(connection).rollback();
     }
@@ -71,7 +71,7 @@ class TransactionManagerTest {
     @DisplayName("커넥션이 존재하지 않는 경우 예외가 발생한다.")
     @Test
     void connectionNotFound() {
-        assertThatThrownBy(transactionManager::getConnection)
+        assertThatThrownBy(() -> transactionManager.getConnection(dataSource))
                 .isInstanceOf(JdbcAccessException.class)
                 .hasMessage("Connection not found for this datasource");
     }

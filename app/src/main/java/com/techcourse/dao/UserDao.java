@@ -5,7 +5,6 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
 import java.util.Optional;
-import javax.sql.DataSource;
 import java.util.List;
 
 public class UserDao {
@@ -18,10 +17,6 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

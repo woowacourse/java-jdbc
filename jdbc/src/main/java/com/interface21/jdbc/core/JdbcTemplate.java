@@ -19,9 +19,9 @@ public class JdbcTemplate {
     private final DataSource dataSource;
     private final TransactionManager transactionManager;
 
-    public JdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource, TransactionManager transactionManager) {
         this.dataSource = dataSource;
-        this.transactionManager = new TransactionManager(dataSource);
+        this.transactionManager = transactionManager;
     }
 
     public int update(String sql, Object... values) {
@@ -74,8 +74,8 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() {
-        if (transactionManager.hasConnection()) {
-            return transactionManager.getConnection();
+        if (transactionManager.hasConnection(dataSource)) {
+            return transactionManager.getConnection(dataSource);
         }
         try {
             return dataSource.getConnection();
@@ -86,7 +86,7 @@ public class JdbcTemplate {
     }
 
     private void closeConnection(Connection connection) {
-        if (transactionManager.hasConnection()) {
+        if (transactionManager.hasConnection(dataSource)) {
             return;
         }
 

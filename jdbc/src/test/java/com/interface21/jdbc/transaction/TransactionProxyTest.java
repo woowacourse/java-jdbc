@@ -23,7 +23,7 @@ class TransactionProxyTest {
         when(dataSource.getConnection()).thenReturn(connection);
 
         TestService testService = new TestService();
-        transactionProxy = new TransactionProxy(testService, dataSource);
+        transactionProxy = new TransactionProxy(testService, dataSource, new TransactionManager());
     }
 
     @DisplayName("메서드 실행 성공 시 트랜잭션을 커밋한다.")
