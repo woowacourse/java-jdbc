@@ -96,6 +96,6 @@ public class JdbcTemplate {
     @FunctionalInterface
     private interface JdbcRunner<T> {
 
-          T run(PreparedStatement pstmt) throws SQLException;
+        T run(PreparedStatement pstmt) throws SQLException;
     }
 }
