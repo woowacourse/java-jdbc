@@ -63,9 +63,22 @@ public class JdbcTemplate {
         preparePreparedStatement(PreparedStatement::executeUpdate, sql, pstmtsetter);
     }
 
+    public void update(String sql, PreparedStatementSetter pstmtsetter, Connection connection) {
+        preparePreparedStatement(PreparedStatement::executeUpdate, sql, pstmtsetter, connection);
+    }
+
     private <T> T preparePreparedStatement(JdbcRunner<T> jdbcRunner, String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtSetter)) {
+            log.debug("query = {}", sql);
+            return jdbcRunner.run(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T preparePreparedStatement(JdbcRunner<T> jdbcRunner, String sql, PreparedStatementSetter pstmtSetter, Connection connection) {
+        try (PreparedStatement pstmt = createPreparedStatement(connection, sql, pstmtSetter)) {
             log.debug("query = {}", sql);
             return jdbcRunner.run(pstmt);
         } catch (SQLException e) {
