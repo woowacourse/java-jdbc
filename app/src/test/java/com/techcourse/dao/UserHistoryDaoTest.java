@@ -1,7 +1,10 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -40,10 +43,13 @@ class UserHistoryDaoTest {
 
     @DisplayName("사용자에 대한 기록을 저장한다.")
     @Test
-    void log() {
+    void log() throws SQLException {
         // given
         User user = new User(1, "gugu", "password", "hkkang@woowahan.com");
-        jdbcTemplate.update("insert into users (account, password, email) values (?, ?, ?)",
+        Connection connection = DataSourceConfig.getInstance().getConnection();
+        jdbcTemplate.update(
+                connection,
+                "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail());
@@ -51,7 +57,7 @@ class UserHistoryDaoTest {
         UserHistory userHistory = new UserHistory(user, createdBy);
 
         // when
-        userHistoryDao.log(userHistory);
+        userHistoryDao.log(DataSourceConfig.getInstance().getConnection(), userHistory);
 
         // then
         UserHistory result = jdbcTemplate.queryForObject("select * from user_history where user_id = ?", rowMapper, 1);

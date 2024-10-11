@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -20,24 +21,24 @@ public class UserDao {
         );
     };
 
-    public UserDao(final DataSource dataSource) {
+    public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(User user) {
+    public void update(Connection connection, User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
