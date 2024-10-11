@@ -1,6 +1,9 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
+
+import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +38,14 @@ public class UserDao {
         );
     }
 
-    public void update(final User user) {
+    public void update(User user) {
         String sql = "update users set password = ? where id = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
+    }
+
+    public void update(Connection connection, User user) {
+        String sql = "update users set password = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
@@ -53,5 +61,9 @@ public class UserDao {
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+    }
+
+    public DataSource getDataSource() {
+        return jdbcTemplate.getDataSource();
     }
 }

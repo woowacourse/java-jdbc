@@ -40,6 +40,18 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(Connection conn, String sql, Object... parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, parameters);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(String.format(SQL_EXCEPTION_MESSAGE, sql), e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -91,5 +103,9 @@ public class JdbcTemplate {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + PARAMETER_INDEX_OFFSET, parameters[i]);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
