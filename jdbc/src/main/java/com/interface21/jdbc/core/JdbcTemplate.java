@@ -22,9 +22,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Parameters parameters) {
+    public void update(String sql, ParameterSetter parameterSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            Parameters parameters = parameterSetter.createParameters();
             parameters.setPreparedStatement(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException exception) {
@@ -33,11 +34,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Parameters parameters, RowMapper<T> rowMapper) {
+    public <T> T queryForObject(String sql, ParameterSetter parameterSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            Parameters parameters = parameterSetter.createParameters();
             parameters.setPreparedStatement(pstmt);
-
             return getObject(rowMapper, pstmt);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);

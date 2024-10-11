@@ -21,16 +21,14 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
-    private final QueryExecutor queryExecutor;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.queryExecutor = new QueryExecutor(jdbcTemplate);
     }
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        queryExecutor.update(sql, () -> {
+        jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -42,7 +40,7 @@ public class UserDao {
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        queryExecutor.update(sql, () -> {
+        jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -62,18 +60,23 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final var parameters = new Parameters();
-        parameters.add(1, id);
+        return jdbcTemplate.queryForObject(sql, () -> {
+            final var parameters = new Parameters();
+            parameters.add(1, id);
 
-        return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
+            return parameters;
+        }, userRowMapper);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        final var parameters = new Parameters();
-        parameters.add(1, account);
 
-        return jdbcTemplate.queryForObject(sql, parameters, userRowMapper);
+        return jdbcTemplate.queryForObject(sql, () -> {
+            final var parameters = new Parameters();
+            parameters.add(1, account);
+
+            return parameters;
+        }, userRowMapper);
     }
 }
