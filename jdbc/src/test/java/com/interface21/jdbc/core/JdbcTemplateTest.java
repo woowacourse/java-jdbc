@@ -23,10 +23,10 @@ class JdbcTemplateTest {
     private static final RowMapper<TestUser> ROW_MAPPER = rs ->
             new TestUser(rs.getLong("id"), rs.getString("account"));
 
-    private DataSource dataSource = mock(DataSource.class);
-    private Connection connection = mock(Connection.class);
-    private PreparedStatement preparedStatement = mock(PreparedStatement.class);
-    private ResultSet resultSet = mock(ResultSet.class);
+    private final DataSource dataSource = mock(DataSource.class);
+    private final Connection connection = mock(Connection.class);
+    private final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    private final ResultSet resultSet = mock(ResultSet.class);
 
     private JdbcTemplate jdbcTemplate;
 
