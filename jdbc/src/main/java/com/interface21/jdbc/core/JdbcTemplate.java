@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,9 +36,22 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
             preparedStatementSetter.setValues(preparedStatement);
-            return strategy.execute(preparedStatement);
+            return executeTransaction(strategy, preparedStatement, connection);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeTransaction(PreparedStatementStrategy<T> strategy, PreparedStatement preparedStatement,
+                                     Connection connection) throws SQLException {
+        try {
+            connection.setAutoCommit(false);
+            T result = strategy.execute(preparedStatement);
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            connection.rollback();
+            throw new SQLTransactionRollbackException(e);
         }
     }
 
