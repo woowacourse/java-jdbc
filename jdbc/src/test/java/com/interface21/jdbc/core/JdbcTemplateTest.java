@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -98,6 +100,109 @@ class JdbcTemplateTest {
         verify(preparedStatement).setObject(2, updated.id);
         verify(connection).close();
         verify(preparedStatement).close();
+    }
+
+    @Test
+    @DisplayName("Query an object from the datasource.")
+    void executeQueryForObject() throws SQLException {
+        // given
+        final var saved = new User(1L, "gugu");
+
+        given(resultSet.next()).willReturn(true);
+        given(resultSet.getLong("id")).willReturn(saved.id);
+        given(resultSet.getString("account")).willReturn(saved.account);
+
+        class UserPreparedStatementSetter implements PreparedStatementSetter {
+
+            final long id;
+
+            UserPreparedStatementSetter(long id) {
+                this.id = id;
+            }
+
+            @Override
+            public void setValues(PreparedStatement preparedStatement) throws SQLException {
+                preparedStatement.setLong(1, id);
+            }
+        }
+
+        class UserResultSetExtractor implements ResultSetExtractor<User> {
+            @Override
+            public User extract(ResultSet resultSet) throws SQLException {
+                if (resultSet.next()) {
+                    return userRowMapper.mapRow(resultSet, resultSet.getRow());
+                }
+                return null;
+            }
+        }
+
+        // when
+        final var actual = sut.execute(
+                "select * from users where id = ?",
+                new UserPreparedStatementSetter(saved.id),
+                new UserResultSetExtractor());
+
+        // then
+        assertThat(actual).isEqualTo(saved);
+    }
+
+    @Test
+    @DisplayName("Query objects from the datasource.")
+    void executeQueryForList() throws SQLException {
+        // given
+        final var saved1 = new User(1L, "gugu");
+        final var saved2 = new User(2L, "wonny");
+        final var saved3 = new User(3L, "tommy");
+
+        given(resultSet.next()).willReturn(true, true, false);
+        given(resultSet.getLong("id")).willReturn(saved1.id, saved3.id);
+        given(resultSet.getString("account")).willReturn(saved1.account, saved3.account);
+
+        class PairUserPreparedStatementSetter implements PreparedStatementSetter {
+
+            final long id1;
+            final long id2;
+
+            PairUserPreparedStatementSetter(long id11, long id21) {
+                this.id1 = id11;
+                this.id2 = id21;
+            }
+
+            @Override
+            public void setValues(PreparedStatement preparedStatement) throws SQLException {
+                preparedStatement.setLong(1, id1);
+                preparedStatement.setLong(2, id2);
+            }
+        }
+
+        class PairUserResultSetExtractor implements ResultSetExtractor<List<User>> {
+
+            static final int SIZE = 2;
+
+            @Override
+            public List<User> extract(ResultSet resultSet) throws SQLException {
+                final var users = new ArrayList<User>();
+                while (resultSet.next()) {
+                    final var user = userRowMapper.mapRow(resultSet, resultSet.getRow());
+                    users.add(user);
+                }
+                if (users.size() != SIZE) {
+                    throw new IllegalArgumentException("Pair must be 2!");
+                }
+                return users;
+            }
+        }
+
+        // when
+        final var actual = sut.execute(
+                "select * from users where id in (?, ?)",
+                new PairUserPreparedStatementSetter(saved1.id, saved3.id),
+                new PairUserResultSetExtractor());
+
+        // then
+        assertThat(actual)
+                .containsExactly(saved1, saved3)
+                .doesNotContain(saved2);
     }
 
     private record User(Long id, String account) {}
