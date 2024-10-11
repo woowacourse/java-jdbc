@@ -116,7 +116,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> mapResultSet(
+    private <T> List<T> mapResultSet(
             PreparedStatementSetter pss,
             RowMapper<T> rowMapper,
             PreparedStatement pstmt
