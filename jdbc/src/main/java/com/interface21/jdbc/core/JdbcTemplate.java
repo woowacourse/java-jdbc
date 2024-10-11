@@ -23,12 +23,10 @@ public class JdbcTemplate {
     }
 
     public void write(String sql, Object... params) {
-        log.debug("query : {}", sql);
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> List<T> readAll(String sql, RowMapper<T> rowMapper, Object... params) {
-        log.debug("query : {}", sql);
         return execute(sql, pstmt -> mapResultSetToList(rowMapper, pstmt), params);
     }
 
@@ -59,6 +57,8 @@ public class JdbcTemplate {
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
 
             setParameters(pstmt, params);
             return executor.execute(pstmt);
