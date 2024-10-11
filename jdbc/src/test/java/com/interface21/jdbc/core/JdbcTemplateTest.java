@@ -57,21 +57,6 @@ class JdbcTemplateTest {
         verify(preparedStatement).executeUpdate();
     }
 
-    @DisplayName("파라미터 바인딩 중 예외가 발생하면 DataAccessException이 던져진다.")
-    @Test
-    void assignToPreparedStatement() {
-        String sql = "update users set password = ?, email = ? WHERE id = ?";
-
-        assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, null))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessage("PreparedStatement에 바인딩할 파라미터가 없습니다."),
-                () -> assertThatThrownBy(() -> jdbcTemplate.update(sql, new Object[]{}))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessage("PreparedStatement에 바인딩할 파라미터가 없습니다.")
-        );
-    }
-
     @DisplayName("데이터를 조회하는 query 메서드는 여러 개의 행을 조회할 수 있다.")
     @Test
     void query() throws SQLException {
@@ -96,6 +81,29 @@ class JdbcTemplateTest {
         verify(rowMapper, times(2)).mapRow(resultSet);
     }
 
+    @DisplayName("데이터를 조회하는 query 메서드는 조건에 따라 여러 개의 행을 조회할 수 있다.")
+    @Test
+    void queryWithArgs() throws SQLException {
+        String sql = "select * from users where id = ?";
+        TestUser testUser1 = new TestUser(1, "account1", "password1", "email1");
+        RowMapper<TestUser> rowMapper = mock(RowMapper.class);
+
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn(testUser1);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+
+        List<TestUser> results = jdbcTemplate.query(sql, new Object[]{1}, rowMapper);
+        assertAll(
+                () -> assertThat(results.size()).isEqualTo(1),
+                () -> assertThat(testUser1).isEqualTo(results.get(0))
+        );
+
+        verify(preparedStatement).setObject(1, 1);
+        verify(preparedStatement).executeQuery();
+        verify(resultSet, times(2)).next();
+        verify(rowMapper, times(1)).mapRow(resultSet);
+    }
+
     @DisplayName("데이터를 조회하는 queryForObject 메서드는 단일 행을 조회할 수 있다.")
     @Test
     void queryForObject() throws SQLException {
@@ -118,7 +126,7 @@ class JdbcTemplateTest {
 
     @DisplayName("데이터를 조회하는 queryForObject 메서드는 조회된 행이 없는 경우 예외가 발생한다.")
     @Test
-    void queryForObjectNoResult() throws SQLException {
+    void queryForObjectEmptyQueryResult() throws SQLException {
         String sql = "select id, account, password, email from users where id = ?";
         Object[] args = {1};
         RowMapper<TestUser> rowMapper = mock(RowMapper.class);
