@@ -45,15 +45,20 @@ class Stage1Test {
      * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#data.sql.datasource.connection-pool
      * Supported Connection Pools
      * We prefer HikariCP for its performance and concurrency. If HikariCP is available, we always choose it.
+     * HikariCP > DataSource > Common DBCP2 > Oracle UCP
      *
      * HikariCP 공식 문서를 참고하여 HikariCP를 설정해보자.
      * https://github.com/brettwooldridge/HikariCP#rocket-initialization
      *
      * HikariCP 필수 설정
      * https://github.com/brettwooldridge/HikariCP#essentials
+     * dataSourceClassName or jadbcURl
+     * ysername
+     * password
      *
      * HikariCP의 pool size는 몇으로 설정하는게 좋을까?
      * https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
+     * ((core_count * 2) + effective_spindle_count)
      *
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
