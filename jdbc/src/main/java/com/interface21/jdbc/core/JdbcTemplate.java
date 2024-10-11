@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.ConnectionContext;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,12 +21,12 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public int update(String sql, @Nullable Object... args) throws DataAccessException {
-        final Connection conn = getConnection();
+        Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
@@ -37,7 +38,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
-        final Connection conn = getConnection();
+        Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
@@ -50,7 +51,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args)
             throws DataAccessException {
-        final Connection conn = getConnection();
+        Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
         try (conn; pstmt) {
@@ -107,9 +108,13 @@ public class JdbcTemplate {
 
     private Connection getConnection() {
         try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            return ConnectionContext.conn.get().getConnection();
+        } catch (NullPointerException nullPointerException) {
+            try {
+                return dataSource.getConnection();
+            } catch (SQLException sqlException) {
+                throw new DataAccessException(sqlException);
+            }
         }
     }
 }
