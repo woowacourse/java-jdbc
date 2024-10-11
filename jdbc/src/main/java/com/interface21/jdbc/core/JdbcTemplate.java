@@ -21,130 +21,64 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public void update(String sql, Object... parameters) {
+        executeUpdate(sql, parameters, PreparedStatement::executeUpdate);
+    }
 
+    private void executeUpdate(String sql, Object[] parameters, ConsumerWrapper<PreparedStatement> execution) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
-
-            setParameter(pstmt, parameters);
-            pstmt.executeUpdate();
-
+            execution.accept(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    public <T> T executeQueryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(sql, parameters, rs -> getInstance(rowMapper, rs));
+    }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(sql, parameters, rs -> getInstances(rowMapper, rs));
+    }
+
+    private <T> T executeQuery(String sql, Object[] parameters, FunctionWrapper<ResultSet, T> execution) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
+             ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
-
-            setParameter(pstmt, parameters);
-            rs = pstmt.executeQuery();
-
-            if (!rs.next()) {
-                return null;
-            }
-            return rowMapper.mapRow(rs);
-
+            return execution.apply(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    public <T> List<T> executeQuery(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setParameter(pstmt, parameters);
-            rs = pstmt.executeQuery();
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
-            }
-            return result;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+    private <T> T getInstance(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        if (!rs.next()) {
+            return null;
         }
+        return rowMapper.mapRow(rs);
     }
 
-    private void setParameter(PreparedStatement pstmt, Object[] parameters) throws SQLException {
+    private <T> List<T> getInstances(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> instances = new ArrayList<>();
+        while (rs.next()) {
+            instances.add(rowMapper.mapRow(rs));
+        }
+        return instances;
+    }
+
+    private PreparedStatement getPreparedStatement(Connection conn, String sql, Object[] parameters)
+            throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        setParameters(pstmt, parameters);
+        return pstmt;
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }

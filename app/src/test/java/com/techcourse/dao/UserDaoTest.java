@@ -24,9 +24,11 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("ever2", "password", "ever@woowahan.com"));
         final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(2);
     }
 
     @Test
