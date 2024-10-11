@@ -27,8 +27,19 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return update(connection, sql, preparedStatementSetter);
+        } catch (SQLException e) {
+            throw new DataAccessException("Error insert sql: " + sql, e);
+        }
+    }
+
+    public int update(Connection connection, String sql, Object... params) {
+        return update(connection, sql, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
@@ -43,7 +54,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         List<T> result = query(sql, rowMapper, preparedStatementSetter);
         if (result.size() != ALLOWED_RESULTS) {
-            throw new DataAccessException("Expected " + ALLOWED_RESULTS + " result, but found  "+ result.size() + " for query: " + sql);
+            throw new DataAccessException("Expected " + ALLOWED_RESULTS + " result, but found  " + result.size() + " for query: " + sql);
         }
         return result.getFirst();
     }
