@@ -12,8 +12,8 @@
 
 ### JdbcTemplate
 
-- [ ] SQLException을 Unchecked Exception로 변경
+- [x] SQLException을 Unchecked Exception로 변경
 
 ### Dao
 
-- [ ] 가변인자를 사용해서 prepareStatement 생성
+- [x] 가변인자를 사용해서 prepareStatement 생성
