@@ -30,7 +30,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
+            throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
         }
     }
 
@@ -42,7 +42,7 @@ public class JdbcTemplate {
             return getObject(rowMapper, pstmt);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
+            throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
         }
     }
 
@@ -63,7 +63,7 @@ public class JdbcTemplate {
             return getObjects(rowMapper, pstmt);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
+            throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
         }
     }
 
