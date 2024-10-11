@@ -80,9 +80,10 @@ class Stage2Test {
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다. 주석인 상태에서 테스트를 실행했을 때와 주석을
      * 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
-     * - @Transaction 있는 경우: saveFirstTransactionWithSupports가 담겨있으며, 트랜잭션이 두 메서드에서 모두 active되어 있다. -> 기존 트랜잭션이 없으면 물리적 트랜잭션이 생성되지 않는다. -> 이전에
+     * - @Transaction 있는 경우: saveFirstTransactionWithSupports가 담겨있으며, 트랜잭션이 두 메서드에서 모두 active되어 있다.
+     * -> 트랜잭션이 존재한다면, 그대로 사용하므로 첫번째 메서드에서 생성된 트랜잭션이 담긴다.
      * - @Transaction 없는 경우:: active되어있는 트랜잭션이 존재하지 않는다.
-     * 트랜잭션이 존재한다면, 그대로 사용하므로 첫번째 메서드에서 생성된 트랜잭션이 담긴다.
+     * -> 기존 트랜잭션이 없으면 물리적 트랜잭션이 생성되지 않는다.
      */
     @Test
     void testSupports() {
