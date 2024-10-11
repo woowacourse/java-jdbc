@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -29,18 +30,18 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(User user) {
+    public void insert(Connection connection, User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, pss -> {
+        jdbcTemplate.update(connection, sql, pss -> {
             pss.setString(1, user.getAccount());
             pss.setString(2, user.getPassword());
             pss.setString(3, user.getEmail());
         });
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.update(sql, pss -> {
+        jdbcTemplate.update(connection, sql, pss -> {
             pss.setString(1, user.getAccount());
             pss.setString(2, user.getPassword());
             pss.setString(3, user.getEmail());
@@ -48,18 +49,19 @@ public class UserDao {
         });
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         String sql = "select * from users";
-        return jdbcTemplate.query(sql, rowMapper, pss -> {});
+        return jdbcTemplate.query(connection, sql, rowMapper, pss -> {
+        });
     }
 
-    public User findById(final Long id) {
+    public User findById(Connection connection, Long id) {
         String sql = "select * from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setLong(1, id));
+        return jdbcTemplate.queryForObject(connection, sql, rowMapper, pss -> pss.setLong(1, id));
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(Connection connection, String account) {
         String sql = "select * from users where account=?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setString(1, account));
+        return jdbcTemplate.queryForObject(connection, sql, rowMapper, pss -> pss.setString(1, account));
     }
 }
