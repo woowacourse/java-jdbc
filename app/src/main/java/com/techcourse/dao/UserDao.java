@@ -21,12 +21,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()});
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -36,11 +36,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{id}).orElseThrow(IdNotExistException::new);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id).orElseThrow(IdNotExistException::new);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{account}).orElseThrow(AccountNotExistException::new);
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow(AccountNotExistException::new);
     }
 }

@@ -51,9 +51,20 @@ class JdbcTemplateTest {
         String sql = "select * from users where id = ?;";
         long id = 1L;
 
-        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{id});
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
 
         assertThat(user).contains(new User(id, "1111"));
+    }
+
+    @Test
+    void queryForObjectTest_whenUsingPreparedStatementSetter() {
+        String sql = "select * from users where id = ?;";
+        PreparedStatementSetter preparedStatementSetter = preparedStatement ->
+            preparedStatement.setLong(1, 1L);
+
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, preparedStatementSetter);
+
+        assertThat(user).contains(new User(1L, "1111"));
     }
 
     @Test
@@ -61,7 +72,7 @@ class JdbcTemplateTest {
         String sql = "select * from users where id = ?;";
         long id = 10000L;
 
-        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, new Object[]{id});
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
 
         assertThat(user).isEmpty();
     }
@@ -84,10 +95,54 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryTest_whenUsingParameter() {
+        String sql = "select * from users where id = ?;";
+        long id = 1L;
+
+        List<User> users = jdbcTemplate.query(sql, ROW_MAPPER, id);
+
+        assertThat(users).containsOnly(new User(1L, "1111"));
+    }
+
+    @Test
+    void queryTest_whenUsingPreparedStatementSetter() {
+        String sql = "select * from users where id = ?;";
+        PreparedStatementSetter preparedStatementSetter = preparedStatement ->
+                preparedStatement.setLong(1, 1L);
+
+        List<User> users = jdbcTemplate.query(sql, ROW_MAPPER, preparedStatementSetter);
+
+        assertThat(users).containsOnly(new User(1L, "1111"));
+    }
+
+    @Test
     void updateTest() {
         String sql = "insert into users (password) values ('3333');";
 
         jdbcTemplate.update(sql);
+
+        List<User> users = jdbcTemplate.query("select * from users;", ROW_MAPPER);
+        assertThat(users).hasSize(3);
+    }
+
+    @Test
+    void updateTest_whenUsingParameter() {
+        String sql = "insert into users (password) values (?);";
+        String password = "3333";
+
+        jdbcTemplate.update(sql, password);
+
+        List<User> users = jdbcTemplate.query("select * from users;", ROW_MAPPER);
+        assertThat(users).hasSize(3);
+    }
+
+    @Test
+    void updateTest_whenUsingPreparedStatementSetter() {
+        String sql = "insert into users (password) values (?);";
+        PreparedStatementSetter preparedStatementSetter = preparedStatement ->
+                preparedStatement.setString(1, "3333");
+
+        jdbcTemplate.update(sql, preparedStatementSetter);
 
         List<User> users = jdbcTemplate.query("select * from users;", ROW_MAPPER);
         assertThat(users).hasSize(3);
