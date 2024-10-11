@@ -39,7 +39,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            ArgumentPreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
+            PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
             parameterSetter.setValues(pstmt);
             ResultSet resultSet = pstmt.executeQuery();
 
@@ -67,7 +67,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+            PreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
             statementSetter.setValues(pstmt);
 
             return pstmt.executeUpdate();
