@@ -24,28 +24,12 @@ public class JdbcTemplate {
     }
 
     public void executeQuery(String sql, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParams(preparedStatement, params);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
-        }
+        execute(sql, params, PreparedStatement::executeUpdate);
     }
 
     public <T> Optional<T> executeQueryForObject(String sql, ObjectMaker<T> maker, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setParams(preparedStatement, params);
+        return execute(sql, params, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
-
             if (!resultSet.next()) {
                 return Optional.empty();
             }
@@ -56,27 +40,31 @@ public class JdbcTemplate {
             }
 
             return Optional.of(object);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
-        }
+        });
     }
 
     public <T> List<T> executeQueryForObjects(String sql, ObjectMaker<T> maker, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setParams(preparedStatement, params);
+        return execute(sql, params, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
 
             List<T> objects = new ArrayList<>();
             while (resultSet.next()) {
                 T object = maker.make(resultSet);
                 objects.add(object);
             }
+
             return objects;
+        });
+    }
+
+    private <T> T execute(String sql, Object[] params, PreparedStatementExecutor<T> executor) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            setParams(preparedStatement, params);
+            log.debug("query : {}", sql);
+
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
@@ -87,5 +75,10 @@ public class JdbcTemplate {
         for (int index = 0; index < params.length; index++) {
             preparedStatement.setObject(index + SQL_PARAMETER_INDEX_OFFSET, params[index]);
         }
+    }
+
+    @FunctionalInterface
+    public interface PreparedStatementExecutor<T> {
+        T execute(PreparedStatement preparedStatement) throws SQLException;
     }
 }
