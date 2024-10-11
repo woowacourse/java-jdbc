@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Connection getConnection() {
+    private Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
