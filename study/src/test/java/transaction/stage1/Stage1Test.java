@@ -111,6 +111,7 @@ class Stage1Test {
      */
     @Test
     void noneRepeatable() throws SQLException {
+        // TODO: 테스트 하나만, 테스트 클래스 하나만 돌렸을 땐 성공, but test 패키지 전체 돌렸을 때 실패 ㅠ
         setUp(createH2DataSource());
 
         // 테스트 전에 필요한 데이터를 추가한다.
@@ -229,7 +230,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());

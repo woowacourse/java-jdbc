@@ -14,8 +14,6 @@ public class DatabasePopulatorUtils {
 
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
-    private static final String DELIMITER_OF_QUERY = ";\n\n";
-
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;
@@ -25,7 +23,7 @@ public class DatabasePopulatorUtils {
             final var sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
             statement = connection.createStatement();
-            executeSql(sql, statement);
+            statement.execute(sql);
         } catch (NullPointerException | IOException | SQLException e) {
             log.error(e.getMessage(), e.getCause());
         } finally {
@@ -43,14 +41,6 @@ public class DatabasePopulatorUtils {
             } catch (SQLException ignored) {
             }
         }
-    }
-
-    private static void executeSql(String sql, Statement statement) throws SQLException {
-        String[] queries = sql.split(DELIMITER_OF_QUERY);
-        for (String query : queries) {
-            statement.addBatch(query);
-        }
-        statement.executeBatch();
     }
 
     private DatabasePopulatorUtils() {
