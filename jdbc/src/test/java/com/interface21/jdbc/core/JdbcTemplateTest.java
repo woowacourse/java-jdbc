@@ -49,7 +49,7 @@ class JdbcTemplateTest {
 
         String sql = "select * from users where id = ?";
         RowMapper<String> rowMapper = rs -> rs.getString("column");
-        String result = jdbcTemplate.queryForObject(sql, rowMapper, 1);
+        String result = jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setLong(1, 1L));
 
         assertAll(
                 () -> assertEquals("expected", result),
@@ -68,7 +68,7 @@ class JdbcTemplateTest {
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                         "select * from users where id=?",
                         rs -> rs.getString("column"),
-                        1
+                        pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
                 () -> verify(this.pstmt).close(),
@@ -85,7 +85,7 @@ class JdbcTemplateTest {
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                         "select * from users where id=?",
                         rs -> rs.getString("column"),
-                        1
+                        pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
                 () -> verify(this.pstmt).close(),
@@ -101,7 +101,8 @@ class JdbcTemplateTest {
 
         String sql = "select * from users";
         RowMapper<String> rowMapper = rs -> rs.getString("column");
-        List<String> result = jdbcTemplate.query(sql, rowMapper);
+        List<String> result = jdbcTemplate.query(sql, rowMapper, pss -> {
+        });
 
         assertAll(
                 () -> assertEquals(2, result.size()),
@@ -119,9 +120,10 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenReturn(1);
 
         String sql = "update users set column = ? where id = ?";
-        Object[] parameters = {"value", 1};
-
-        jdbcTemplate.update(sql, parameters);
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setObject(1, "value");
+            pstmt.setObject(2, 1);
+        });
 
         assertAll(
                 () -> verify(pstmt, times(1)).executeUpdate(),

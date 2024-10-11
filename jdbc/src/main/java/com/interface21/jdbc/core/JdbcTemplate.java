@@ -21,8 +21,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> result = query(sql, rowMapper, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> result = query(sql, rowMapper, pss);
         if (result.isEmpty()) {
             throw new DataAccessException("조회된 데이터가 없습니다.");
         }
@@ -32,9 +32,9 @@ public class JdbcTemplate {
         return result.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setObject(pstmt, parameters);
+            pss.setObject(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapResults(rs, rowMapper);
             }
@@ -49,9 +49,9 @@ public class JdbcTemplate {
         return result;
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(String sql, PreparedStatementSetter pss) {
         execute(sql, pstmt -> {
-            setObject(pstmt, parameters);
+            pss.setObject(pstmt);
             return pstmt.executeUpdate();
         });
     }
@@ -62,12 +62,6 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setObject(PreparedStatement pstmt, Object... parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
         }
     }
 }
