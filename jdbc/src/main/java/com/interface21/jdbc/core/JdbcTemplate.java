@@ -12,6 +12,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.dao.DataAccessException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -86,7 +88,7 @@ public class JdbcTemplate {
             return result;
         } catch (final SQLException exception) {
             log.warn("SQL 쿼리 중 에외가 발생했습니다. : {}", exception.getMessage());
-            throw new IllegalStateException("SQL 쿼리 중 예외가 발생했습니다.");
+            throw new DataAccessException("SQL 쿼리 중 예외가 발생했습니다.");
         }
     }
 }
