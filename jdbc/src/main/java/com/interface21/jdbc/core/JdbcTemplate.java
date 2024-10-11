@@ -32,16 +32,13 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForObject Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-            final ResultSet rs = preparedStatement.executeQuery();
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
+        try {
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (final SQLException e) {
+        } catch (SQLException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -49,14 +46,11 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForList Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-
-            final ResultSet rs = preparedStatement.executeQuery();
+        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
+        try {
             final List<T> values = new ArrayList<>();
-            while (rs.next()) {
-                values.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                values.add(rowMapper.mapRow(resultSet));
             }
             return values;
         } catch (final SQLException e) {
