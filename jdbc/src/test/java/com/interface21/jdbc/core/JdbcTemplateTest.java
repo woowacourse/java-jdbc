@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.DataSizeNotMatchedException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -70,7 +71,7 @@ class JdbcTemplateTest {
         Long id = 2L;
         String account = "daon";
         given(preparedStatement.executeQuery()).willReturn(resultSet);
-        given(resultSet.next()).willReturn(true);
+        given(resultSet.next()).willReturn(true).willReturn(false);
         given(resultSet.getLong("id")).willReturn(id);
         given(resultSet.getString("account")).willReturn(account);
 
@@ -85,6 +86,22 @@ class JdbcTemplateTest {
                 () -> assertThat(result.id).isEqualTo(id),
                 () -> assertThat(result.account).isEqualTo(account)
         );
+    }
+
+    @DisplayName("단 건 조회 로직의 결과가 한 건이 아닌 경우 예외가 발생한다.")
+    @Test
+    void throwsQueryForObjectWhenIllegalQuerySize() throws SQLException {
+        String sql = "SELECT id, account FROM users WHERE id = ?";
+        Long id = 2L;
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(true).willReturn(true);
+        RowMapper<TestObject> mapper = result -> new TestObject(
+                result.getLong("id"),
+                result.getString("account")
+        );
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, mapper, id))
+                .isInstanceOf(DataSizeNotMatchedException.class);
     }
 
     @DisplayName("checked 예외를 unchecked 예외로 바꿔준다.")
