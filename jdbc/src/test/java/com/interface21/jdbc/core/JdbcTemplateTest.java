@@ -22,7 +22,7 @@ import com.techcourse.domain.User;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(
+    private static final RowMapper<User> ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
