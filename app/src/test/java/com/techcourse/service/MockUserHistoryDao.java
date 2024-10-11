@@ -8,7 +8,7 @@ import java.sql.Connection;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public MockUserHistoryDao(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
