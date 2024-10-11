@@ -12,11 +12,11 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserHistoryDao(final DataSource dataSource) {
+    public UserHistoryDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
     }
 
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
