@@ -10,9 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class JdbcTemplate {
 
@@ -31,10 +29,7 @@ public class JdbcTemplate {
     public void update(String sql, Object... params) {
         update(con -> {
             PreparedStatement ps = con.prepareStatement(sql);
-
-            AtomicInteger index = new AtomicInteger(1);
-            Arrays.stream(params)
-                    .forEach(ConsumerWrapper.accept(param -> ps.setObject(index.getAndIncrement(), param)));
+            StatementParamSetter.setParams(ps, params);
             return ps;
         });
     }
@@ -49,6 +44,14 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return queryForObject(con -> {
+            PreparedStatement ps = con.prepareStatement(sql);
+            StatementParamSetter.setParams(ps, params);
+            return ps;
+        }, rowMapper);
     }
 
     public <T> T queryForObject(PreparedStatementCreator creator, RowMapper<T> rowMapper) {
