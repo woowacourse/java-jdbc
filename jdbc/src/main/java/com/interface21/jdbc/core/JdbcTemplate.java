@@ -1,7 +1,10 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.mapper.SqlResultSetMapper;
+import com.interface21.jdbc.core.mapper.ObjectMapper;
+import com.interface21.jdbc.core.mapper.PreparedStatementMapper;
+import com.interface21.jdbc.core.extractor.ResultSetExtractor;
+import com.interface21.jdbc.core.extractor.ReflectiveExtractor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,6 +22,7 @@ import javax.sql.DataSource;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    public static final String MULTIPLE_DATA_ERROR = "두 개 이상의 데이터가 조회되었습니다.";
 
     private final DataSource dataSource;
 
@@ -30,56 +34,45 @@ public class JdbcTemplate {
     @Nullable
     public <T> T query(Class<T> clazz, String sqlStatement, Object... params) {
         List<T> result = queryForAll(clazz, sqlStatement, params);
-
         if (result.isEmpty()) {
             return null;
         }
-        if (result.size() > 1) {
-            throw new DataAccessException("두 개 이상의 데이터가 조회되었습니다.");
-        }
+        validateSizeIsOne(result);
 
         return result.getFirst();
     }
 
+    private <T> void validateSizeIsOne(List<T> result) {
+        if (result.size() > 1) {
+            throw new DataAccessException(MULTIPLE_DATA_ERROR);
+        }
+    }
+
+    public int update(String sqlStatement, Object... params) {
+        log.info("update sql = {}", sqlStatement);
+        return getMapper(sqlStatement, params).executeUpdate();
+    }
+
     @Nonnull
     public <T> List<T> queryForAll(Class<T> clazz, String sqlStatement, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = setStatement(conn, sqlStatement, params);
-                ResultSet resultSet = preparedStatement.executeQuery();
-        ) {
-            log.debug("query : {}", sqlStatement);
+        log.info("query sql = {}", sqlStatement);
+        try (PreparedStatementMapper wrapper = getMapper(sqlStatement, params);
+             ResultSet resultSet = wrapper.executeQuery();
+             ResultSetExtractor<T> extractor = new ReflectiveExtractor<>(resultSet, clazz)) {
 
-            return SqlResultSetMapper.doQueryMapping(clazz, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            return extractor.extract();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public void update(String sqlStatement, Object... params) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = setStatement(connection, sqlStatement, params);
-        ) {
-            log.debug("query : {}", sqlStatement);
-            preparedStatement.executeUpdate();
+    private PreparedStatementMapper getMapper(String sqlStatement, Object[] params) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sqlStatement)) {
+
+            return new ObjectMapper(ps, params);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new RuntimeException(e);
         }
-    }
-
-    @Nonnull
-    private PreparedStatement setStatement(Connection connection, String sqlStatement, Object[] params)
-            throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sqlStatement);
-
-        for (int index = 0; index < params.length; index++) {
-            int databaseIndex = index + 1;
-            preparedStatement.setObject(databaseIndex, params[index]);
-        }
-
-        return preparedStatement;
     }
 }
