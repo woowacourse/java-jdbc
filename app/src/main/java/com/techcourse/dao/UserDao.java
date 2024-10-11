@@ -63,7 +63,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         PreparedStatementSetter pss = pstmt -> pstmt.setString(1, account);
-        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account)
+        return jdbcTemplate.queryForObject(sql, ROW_MAPPER, pss)
                 .orElseThrow(() -> new IllegalArgumentException("User not found for the given account"));
     }
 }
