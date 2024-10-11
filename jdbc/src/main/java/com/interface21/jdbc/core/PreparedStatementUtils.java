@@ -16,11 +16,11 @@ public class PreparedStatementUtils {
         }
     }
 
-    public static <T> List<T> extractData(final ResultSet resultSet, final RowMapper<T> rowMapper, final Object... args)
+    public static <T> List<T> extractData(final ResultSet resultSet, final RowMapper<T> rowMapper)
             throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet, args.length));
+            results.add(rowMapper.mapRow(resultSet));
         }
         return results;
     }

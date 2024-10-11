@@ -34,7 +34,7 @@ public class JdbcTemplate {
         return execute(sql, args, statement -> {
             log.info("select query : {}", sql);
             final ResultSet resultSet = statement.executeQuery();
-            final List<T> data = PreparedStatementUtils.extractData(resultSet, rowMapper, args);
+            final List<T> data = PreparedStatementUtils.extractData(resultSet, rowMapper);
             return result(data);
         });
     }
