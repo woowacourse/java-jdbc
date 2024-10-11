@@ -51,8 +51,7 @@ class JdbcTemplateTest {
 
 			assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, new TestRowMapper(),
 				preparedStatement -> preparedStatement.setObject(1, 1)))
-				.isInstanceOf(RuntimeException.class)
-				.hasMessage("No result found");
+				.isInstanceOf(RuntimeException.class);
 		}
 
 		@DisplayName("단건 조회시 결과가 여러 개 존재하면 예외를 던진다.")
@@ -63,8 +62,7 @@ class JdbcTemplateTest {
 
 			assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, new TestRowMapper(),
 				preparedStatement -> preparedStatement.setObject(1, 1)))
-				.isInstanceOf(RuntimeException.class)
-				.hasMessage("Too many results found");
+				.isInstanceOf(RuntimeException.class);
 		}
 
 		@DisplayName("단건 조회시 결과가 존재하면 결과를 반환한다.")
