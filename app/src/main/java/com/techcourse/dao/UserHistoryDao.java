@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import javax.sql.DataSource;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
@@ -12,10 +11,6 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserHistoryDao(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -24,12 +19,14 @@ public class UserHistoryDao {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(
                 sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
+                pss -> {
+                    pss.setLong(1, userHistory.getUserId());
+                    pss.setString(2, userHistory.getAccount());
+                    pss.setString(3, userHistory.getPassword());
+                    pss.setString(4, userHistory.getEmail());
+                    pss.setObject(5, userHistory.getCreatedAt());
+                    pss.setString(6, userHistory.getCreateBy());
+                }
         );
     }
 }
