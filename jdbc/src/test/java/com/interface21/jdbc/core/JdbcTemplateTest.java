@@ -113,9 +113,9 @@ class JdbcTemplateTest {
         List<TestUser> users = jdbcTemplate.queryForList(
                 "SELECT id, name, age FROM test_user WHERE age=?",
                 resultSet -> new TestUser(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getInt(3)
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getInt("age")
                 ), 19);
 
         // then
@@ -133,9 +133,9 @@ class JdbcTemplateTest {
         List<TestUser> users = jdbcTemplate.queryForList(
                 "SELECT id, name, age FROM test_user WHERE age=?",
                 resultSet -> new TestUser(
-                        resultSet.getLong(1),
-                        resultSet.getString(2),
-                        resultSet.getInt(3)
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getInt("age")
                 ), 20);
 
         // then
