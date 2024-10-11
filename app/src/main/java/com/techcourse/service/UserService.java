@@ -5,7 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import com.techcourse.util.SQLExceptionUtil;
+import com.interface21.transaction.util.SQLExceptionUtil;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
