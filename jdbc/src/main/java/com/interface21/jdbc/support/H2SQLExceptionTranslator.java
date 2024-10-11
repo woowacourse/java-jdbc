@@ -9,7 +9,7 @@ import com.interface21.dao.DataAccessResourceFailureException;
 import com.interface21.dao.DataIntegrityViolationException;
 import com.interface21.dao.DuplicateKeyException;
 
-class H2SQLExceptionTranslator {
+public class H2SQLExceptionTranslator {
 
     private final List<Integer> badGrammarsErrorCodes;
     private final List<Integer> dataIntegrityViolationCodes;
