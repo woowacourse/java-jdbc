@@ -25,41 +25,34 @@ public class JdbcTemplate {
 
     public int executeUpdate(String sql, Object... args) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
-        return executeUpdate(sql, argumentPreparedStatementSetter);
+        return execute(sql, argumentPreparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    private int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
+    private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter, Callback<T> callback) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new JdbcQueryException("executeUpdate 메서드 실패 : " + e.getMessage(), e);
+            throw new JdbcQueryException("execute 메서드 실패 : " + e.getMessage(), e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
-        return query(sql, argumentPreparedStatementSetter, rowMapper);
+        return execute(sql, argumentPreparedStatementSetter, preparedStatement -> query(preparedStatement, rowMapper));
     }
 
-    private  <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            ResultSet rs = preparedStatement.executeQuery();
-            return collectResultSet(rs, rowMapper, sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcQueryException("query 메서드 실패 : " + e.getMessage(), e);
-        }
+    private <T> List<T> query(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
+            throws SQLException {
+        ResultSet rs = preparedStatement.executeQuery();
+        return collectResultSet(rs, rowMapper);
     }
 
-    private <T> List<T> collectResultSet(ResultSet resultSet, RowMapper<T> rowMapper, String sql) throws SQLException {
+    private <T> List<T> collectResultSet(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         List<T> resultSets = new ArrayList<>();
-        log.debug("query : {}", sql);
         while (resultSet.next()) {
             resultSets.add(rowMapper.mapRow(resultSet));
         }
@@ -69,8 +62,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql,
                                           RowMapper<T> rowMapper,
                                           Object... args) {
-        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
-        List<T> resultSets = query(sql, argumentPreparedStatementSetter, rowMapper);
+        List<T> resultSets = query(sql, rowMapper, args);
         try {
             return Optional.ofNullable(resultSets.getFirst());
         } catch (NoSuchElementException e) {
