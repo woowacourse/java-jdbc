@@ -36,8 +36,12 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? => 1개
      * 왜 그런 결과가 나왔을까?
+     * REQUIRED = 이미 진행 중인 트랜잭션이 있으면 그 트랜잭션에 참여하고 없으면 새로운 트랜잭션을 생성한다.
+     * 첫 번째 메서드에서 트랜잭션을 생성하고 그 이후 호출된 메서드는 같은 트랜잭션에 참여했기 때문에 트랜잭션이 1개만 생성된다.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ✅ true
      */
     @Test
     void testRequired() {
@@ -50,8 +54,13 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? => 2개
      * 왜 그런 결과가 나왔을까?
+     * REQUIRES_NEW = 기존에 진행 중인 트랜잭션이 있어도 새로운 트랜잭션을 무조건 생성한다.
+     * FirstUserService.saveFirstTransactionWithRequiredNew()에서 SecondUserService.saveSecondTransactionWithRequiresNew()를 호출하면
+     * 새로운 트랜잭션이 생성되어 총 2개의 트랜잭션이 발생한다.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ✅ true
      */
     @Test
     void testRequiredNew() {
@@ -67,6 +76,9 @@ class Stage2Test {
     /**
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
+     * 예외가 발생한 REQUIRES_NEW 트랜잭션은 롤백되고 saveFirstTransactionWithRequiredNew 는 정상 커밋된다.
+     * secondTransactionName is Actual Transaction Active : ✅ true
+     * firstTransactionName is Actual Transaction Active : ❌ false
      */
     @Test
     void testRequiredNewWithRollback() {
@@ -81,6 +93,10 @@ class Stage2Test {
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * 주석 처리: 트랜잭션 없이 메서드가 실행되므로 트랜잭션이 생성되지 않는다.
+     * SUPPORTS = 트랜잭션이 있을 때 트랜잭션에 참여하고 없으면 트랜잭션 없이 실행된다.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ❌ false
      */
     @Test
     void testSupports() {
@@ -96,6 +112,10 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * MANDATORY = 반드시 기존 트랜잭션이 있어야 한다.
+     * SUPPORTS는 트랜잭션이 없으면 트랜잭션 없이 실행되지만 MANDATORY는 트랜잭션이 없으면 예외를 던진다.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ✅ true
      */
     @Test
     void testMandatory() {
@@ -108,11 +128,13 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? => 1
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? => 0
      * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ❌ false
      */
     @Test
     void testNotSupported() {
@@ -128,6 +150,10 @@ class Stage2Test {
     /**
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * NESTED = 기존 트랜잭션 내에서 별도의 중첩 트랜잭션을 생성한다.
+     * @Transactional이 없으면 중첩 트랜잭션이 생성되지 않으므로 트랜잭션 없이 메서드가 실행된다.
+     * firstTransactionName is Actual Transaction Active : ✅ true
+     * secondTransactionName is Actual Transaction Active : ✅ true
      */
     @Test
     void testNested() {
@@ -141,6 +167,8 @@ class Stage2Test {
 
     /**
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     * NEVER = 트랜잭션이 있으면 예외 발생
+     * firstTransactionName is Actual Transaction Active : ❌ false
      */
     @Test
     void testNever() {
