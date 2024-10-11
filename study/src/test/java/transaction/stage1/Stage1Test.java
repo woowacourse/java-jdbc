@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |     +       |          +           |       +
+ * Read Committed   |     -       |          +           |       +
+ * Repeatable Read  |     -       |          -           |       +
+ * Serializable     |     -       |          -           |       -
  */
 class Stage1Test {
 
@@ -47,12 +47,15 @@ class Stage1Test {
 
     private void setUp(final DataSource dataSource) {
         this.dataSource = dataSource;
-        DatabasePopulatorUtils.execute(dataSource);
+        DatabasePopulatorUtils.execute(dataSource); // schema.sql을 실행시킨다.
         this.userDao = new UserDao(dataSource);
     }
 
     /**
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
+     * -> A트랜잭션이 테이블의 값을 변경하고 아직 커밋하지 않은 시점에서 B트랜잭션이 해당 값을 read했을 때
+     * 변경된 값이 읽어지는 현상이 Dirty reads다. ReadCommitted부터는 커밋되지 않은 값을 read시 읽어오지 않으므로
+     * Dirty reads가 발생하지 않는다.
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Dirty reads
@@ -89,10 +92,11 @@ class Stage1Test {
             // ❗️gugu 객체는 connection에서 아직 커밋하지 않은 상태다.
             // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다.
             // 사용자B가 사용자A가 커밋하지 않은 데이터를 조회하는게 적절할까?
+            // -> 적절하지 않다. 사용자A의 트랜잭션이 롤백된다면, gugu 객체는 실제로 존재하지 않는 값이 되기 때문이다.
             final var actual = userDao.findByAccount(subConnection, "gugu");
 
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
-            // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
+            // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자. -> Read uncommitted
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
             assertThat(actual).isNull();
@@ -100,7 +104,7 @@ class Stage1Test {
 
         sleep(0.5);
 
-        // 롤백하면 사용자A의 user 데이터를 저장하지 않았는데 사용자B는 user 데이터가 있다고 인지한 상황이 된다.
+        // 롤백하면 사용자A의 user 데이터를 저장하지 않았는데 사용자B는 user 데이터가 있다고 인지한 상황이 된다. -> Read uncommitted 일 때 발생하는 현상
         connection.rollback();
     }
 
@@ -158,6 +162,11 @@ class Stage1Test {
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+        /*
+        변경된 패스워드가 읽어지면, Non-repeatable reads 현상이 발생한다고 본다.
+        하나의 트랜잭션이 작업하는 동안에도 다른 트랜잭션의 커밋에 영향을 받아 반복된 read 작업을 할 때마다 값이 달라질 수 있는 현상이다.
+        하나의 트랜잭션에서 같은 데이터나 테이블을 여러 번 조회해야 할 때, 데이터 정합성이 중요한 요소라면 Repeatable read가 보장되어야 한다.
+         */
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
         assertThat(actual.getPassword()).isEqualTo("password");
 
@@ -166,10 +175,11 @@ class Stage1Test {
 
     /**
      * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자.
+     * phantom read : 특정 트랜잭션이 실행되는 동안, 다른 트랜잭션이 데이터를 삽입하거나 삭제하여 첫 번째 트랜잭션이 결과를 조회할 때 예상과 다른 결과를 얻게 되는 현상
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Phantom reads
+     * Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
      * Read Uncommitted |       +
@@ -229,6 +239,7 @@ class Stage1Test {
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+        // Serializable의 경우에만 1이 나오고, 그 외에는 2개의 데이터가 조회된다. (bird도 조회된다)
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
         assertThat(actual).hasSize(1);
 
@@ -238,7 +249,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());

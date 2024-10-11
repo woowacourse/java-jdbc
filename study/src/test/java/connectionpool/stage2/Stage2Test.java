@@ -23,7 +23,7 @@ class Stage2Test {
 
     /**
      * spring boot에서 설정 파일인 application.yml를 사용하여 DataSource를 설정할 수 있다.
-     * 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는 방법을 사용한다.
+     * 하지만 DataSource를 여러 개 사용하거나 세부 설정을 하려면 빈을 직접 생성하는 방법을 사용한다. -> RDS 때문에 DataSource를 두 개 설정할 때 Config를 빈으로 등록한 이유가 이거구나
      * DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자.
      * 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName() 메서드로 확인해보자.
      */
@@ -36,6 +36,7 @@ class Stage2Test {
         final var hikariPool = getPool((HikariDataSource) dataSource);
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
+        // -> 최대 풀 사이즈 만큼의 커넥션만이 계속 사용된다. 따라서 15개의 쓰레드는 커넥션을 바로 획득하지 못하고 대기한다.
         final var threads = new Thread[20];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
