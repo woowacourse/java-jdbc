@@ -10,7 +10,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class JdbcTemplate {
 
@@ -24,6 +26,17 @@ public class JdbcTemplate {
 
     public DataSource getDataSource() {
         return dataSource;
+    }
+
+    public void update(String sql, Object... params) {
+        update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql);
+
+            AtomicInteger index = new AtomicInteger(1);
+            Arrays.stream(params)
+                    .forEach(ConsumerWrapper.accept(param -> ps.setObject(index.getAndIncrement(), param)));
+            return ps;
+        });
     }
 
     public void update(PreparedStatementCreator creator) {
