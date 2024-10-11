@@ -11,12 +11,12 @@
 
 ### 2단계 요구사항(리팩터링)
 
-- [ ] 불필요한 메서드 제거
-    - [ ] setParameters 메서드 인터페이스로 분리
+- [x] 불필요한 메서드 제거
+    - [x] setParameters 메서드 인터페이스로 분리
 
-- [ ] 라이브러리 확장
-    - [ ] PreparedStatementSetter 인터페이스가 가변인자를 사용
-    - [ ] 람다를 적극적으로 활용해서 코드량을 줄여보자.
+- [x] 라이브러리 확장
+    - [x] PreparedStatementSetter 인터페이스가 가변인자를 사용
+    - [x] 람다를 적극적으로 활용해서 코드량을 줄여보자.
 
 - [ ] 1단계 피드백 반영
     - [x] `queryForObject`가 `Optional`을 반환하도록 변경
