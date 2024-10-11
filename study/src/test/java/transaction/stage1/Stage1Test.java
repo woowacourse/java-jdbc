@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |     +       |          +           |       +
+ * Read Committed   |     -       |          +           |       +
+ * Repeatable Read  |     -       |          -           |       +
+ * Serializable     |     -       |          -           |       -
  */
 class Stage1Test {
 
@@ -58,10 +58,15 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |+
+     * Read Committed   |-
+     * Repeatable Read  |-
+     * Serializable     |-
+     */
+
+    /*
+    Dirty reads : 특정 트랜잭션에 의해 데이터가 변경되었지만, 아직 커밋되지 않은 상황에서
+    다른 트랜잭션이 해당 변경 사항을 조회할 수 있는 문제
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +86,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -94,6 +99,8 @@ class Stage1Test {
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
             // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+
+            // 테스트 결과 Read Uncommitted일 때만 다른 연결의 커밋 전 데이터를 조회할 수 있다.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
             assertThat(actual).isNull();
         })).start();
@@ -111,11 +118,16 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |+
+     * Read Committed   |+
+     * Repeatable Read  |-
+     * Serializable     |-
      */
+
+    /*
+    Non-repeatable reads : 같은 트랜잭션 내에서 데이터를 여러 번 조회했을 때 읽어온 데이터가 다른 경우
+     */
+
     @Test
     void noneRepeatable() throws SQLException {
         setUp(createH2DataSource());
@@ -130,7 +142,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,10 +185,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |+
+     * Read Committed   |+
+     * Repeatable Read  |+
+     * Serializable     |-
      */
     @Test
     void phantomReading() throws SQLException {
@@ -197,7 +209,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -239,7 +251,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
