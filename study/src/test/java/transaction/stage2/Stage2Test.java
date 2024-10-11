@@ -3,12 +3,21 @@ package transaction.stage2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
@@ -112,10 +121,9 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
-     * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
-     *
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석
+     * 처리하자. 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
     @Test
@@ -131,10 +139,11 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 왜 실패할까?  .NestedTransactionNotSupportedException 발생(h2는 중첩 트랜잭션 지원 XX)
+     * 아래 테스트는 왜 실패할까?  .NestedTransactionNotSupportedException 발생
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
      * -> transaction.stage2.SecondUserService.saveSecondTransactionWithNested is Actual Transaction Active : ✅ true
      */
+
     @Test
     void testNested() {
         final var actual = firstUserService.saveFirstTransactionWithNested();
@@ -145,9 +154,51 @@ class Stage2Test {
                 .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
+    @Nested
+    @SpringBootTest
+    class NestedTransaction {
+
+        @Autowired
+        private FirstUserService firstUserService;
+
+        static PostgreSQLContainer postgreSql = new PostgreSQLContainer<>(DockerImageName.parse("postgres:14.13"));
+        /*
+        * NestedTransactionNotSupportedException 가 발생
+        * NestedTransactionNotSupportedException 은 JPA가 savePoint를 명시적으로 지원하지 않아서 발생하는 예외
+        * savePoint -> 롤백 지점을 설정할 수 있는 기능
+         */
+        @Test
+        void testNested_mysql() {
+            final var actual = firstUserService.saveFirstTransactionWithNested();
+
+            log.info("transactions : {}", actual);
+            assertThat(actual)
+                    .hasSize(1)
+                    .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
+        }
+
+        @TestConfiguration
+        static class TestDataSourceConfig {
+
+            @Bean
+            public DataSource dataSource() {
+                postgreSql.start();
+                return createMySQLDataSource(postgreSql);
+            }
+
+            private DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
+                final var config = new HikariConfig();
+                config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=TRUE");
+                config.setUsername(container.getUsername());
+                config.setPassword(container.getPassword());
+                config.setDriverClassName(container.getDriverClassName());
+                return new HikariDataSource(config);
+            }
+        }
+    }
+
     /**
-     * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
-     * Never -> 기존에 트랜잭션이 존재할 경우 예외가 발생함
+     * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자. Never -> 기존에 트랜잭션이 존재할 경우 예외가 발생함
      */
     @Test
     void testNever() {
