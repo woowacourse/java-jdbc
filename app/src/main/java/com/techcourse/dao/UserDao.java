@@ -1,8 +1,10 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -27,6 +29,17 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(User user, Connection connection) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+        };
+        jdbcTemplate.update(sql, preparedStatementSetter, connection);
     }
 
     public List<User> findAll() {
