@@ -58,7 +58,6 @@ public class JdbcTemplate {
         }
     }
 
-    //TODO 줄일건지 말건지 하나만 하기
     private <T> T executeQuery(final String sql, final PreparedStatementSetter pss, final SqlExecutor<T> executor) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -71,7 +70,6 @@ public class JdbcTemplate {
 
     private PreparedStatementSetter setParameter(final Object... params) {
         final AtomicInteger index = new AtomicInteger(1);
-        //TODO 너무 후짐
         return ps -> {
             for (final Object param : params) {
                 ps.setObject(index.getAndIncrement(), param);
