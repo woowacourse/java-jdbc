@@ -25,5 +25,3 @@ public class ParameterPreparedStatementSetter implements PreparedStatementSetter
         return index + 1;
     }
 }
-
-
