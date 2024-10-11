@@ -17,7 +17,7 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        jdbcTemplate.update("Truncate TABLE users RESTART IDENTITY");
+        jdbcTemplate.update("Truncate TABLE users RESTART IDENTITY", preparedStatement -> {});
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);

@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +21,15 @@ public class FirstUserService {
 
     private final UserRepository userRepository;
     private final SecondUserService secondUserService;
+    private final ApplicationContext applicationContext;
 
     @Autowired
     public FirstUserService(final UserRepository userRepository,
-                            final SecondUserService secondUserService) {
+                            final SecondUserService secondUserService,
+                            final ApplicationContext applicationContext) {
         this.userRepository = userRepository;
         this.secondUserService = secondUserService;
+        this.applicationContext = applicationContext;
     }
 
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
@@ -103,7 +107,7 @@ public class FirstUserService {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
-
+       
         final var secondTransactionName = secondUserService.saveSecondTransactionWithNested();
 
         return of(firstTransactionName, secondTransactionName);

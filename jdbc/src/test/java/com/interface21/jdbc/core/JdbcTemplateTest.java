@@ -50,9 +50,9 @@ class JdbcTemplateTest {
         String sql = "INSERT INTO users (name) VALUES (?)";
         String name = "wiib";
 
-        jdbcTemplate.update(sql, name);
+        jdbcTemplate.update(sql, pstmt -> pstmt.setString(1,name));
 
-        verify(preparedStatement).setObject(1, name);
+        verify(preparedStatement).setString(1, name);
         verify(preparedStatement).executeUpdate();
     }
 
@@ -62,9 +62,9 @@ class JdbcTemplateTest {
         String sql = "UPDATE users SET name = ?";
         String name = "wiib";
 
-        jdbcTemplate.update(sql, name);
+        jdbcTemplate.update(sql, pstmt -> pstmt.setString(1,name));
 
-        verify(preparedStatement).setObject(1, name);
+        verify(preparedStatement).setString(1, name);
         verify(preparedStatement).executeUpdate();
     }
 
@@ -74,9 +74,9 @@ class JdbcTemplateTest {
         String sql = "DELETE FROM users WHERE id = ?";
         Long id = 1L;
 
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update(sql, pstmt -> pstmt.setLong(1,id));
 
-        verify(preparedStatement).setObject(1, id);
+        verify(preparedStatement).setLong(1, id);
         verify(preparedStatement).executeUpdate();
     }
 
@@ -88,7 +88,7 @@ class JdbcTemplateTest {
 
         when(preparedStatement.executeUpdate()).thenThrow(new SQLException("SQL error"));
 
-        assertThatThrownBy(() -> jdbcTemplate.update(sql, name))
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, pstmt -> pstmt.setString(1,name)))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("java.sql.SQLException: SQL error");
     }
@@ -129,7 +129,7 @@ class JdbcTemplateTest {
         TestUser actual = jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
-        ), 1L);
+        ), pstmt -> pstmt.setLong(1,1L));
 
         assertAll(
                 () -> assertThat(actual.getId()).isEqualTo(1L),
@@ -151,7 +151,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
-        ), 1L))
+        ), pstmt -> pstmt.setLong(1,1L)))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
@@ -167,7 +167,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> new TestUser(
                 rs.getLong("id"),
                 rs.getString("name")
-        ), 1L))
+        ), pstmt -> pstmt.setLong(1,1L)))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }
