@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.Parameters;
 import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.dao.executor.QueryExecutor;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -31,7 +30,7 @@ public class UserDao {
 
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        queryExecutor.execute(sql, () -> {
+        queryExecutor.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -43,7 +42,7 @@ public class UserDao {
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        queryExecutor.execute(sql, () -> {
+        queryExecutor.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());

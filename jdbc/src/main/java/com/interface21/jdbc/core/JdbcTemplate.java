@@ -23,115 +23,57 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Parameters parameters) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameters.setPreparedStatement(pstmt);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
             throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> T queryForObject(String sql, Parameters parameters, RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameters.setPreparedStatement(pstmt);
 
-            rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
+            return getObject(rowMapper, pstmt);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
+        }
+    }
 
+    private static <T> T getObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
-                return (T) rowMapper.mapRow(rs);
+                return rowMapper.mapRow(rs);
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public <T> List<T> query(String sql, Parameters parameters, RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameters.setPreparedStatement(pstmt);
 
-            rs = pstmt.executeQuery();
-            log.debug("query : {}", sql);
+            return getObjects(rowMapper, pstmt);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
+        }
+    }
 
+    private static <T> List<T> getObjects(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
             List<T> objects = new ArrayList<>();
             while (rs.next()) {
                 T object = rowMapper.mapRow(rs);
                 objects.add(object);
             }
             return objects;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException("Cannot access database and connection or invalid sql query : " + sql);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 }
