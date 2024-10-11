@@ -47,7 +47,7 @@ public class JdbcTemplate {
         List<T> results = query(sql, rowMapper, arguments);
 
         if (results.size() > SINGLE_RESULT_SIZE) {
-            throw new JdbcException("multiple row found.");
+            throw new JdbcException("multiple rows found.");
         }
         if (results.size() == SINGLE_RESULT_SIZE) {
             return results.getFirst();
