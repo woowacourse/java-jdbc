@@ -65,9 +65,11 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
-        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        hikariConfig.addDataSourceProperty("cachePrepStmts", "true"); // 캐시를 할 수 있도록 true로 변경해줘야 아래 두 설정이 효과가 있다.
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        // default는 25(보수적) 205-500 추천
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        // MySQL default = 256 ORM은 쿼리가 보통 더 길어지기 때문에 2048 추천
 
         final var dataSource = new HikariDataSource(hikariConfig);
         final var properties = dataSource.getDataSourceProperties();

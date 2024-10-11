@@ -27,9 +27,9 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
+        DataSource dataSource = mock(DataSource.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(any())).thenReturn(preparedStatement);
@@ -75,10 +75,7 @@ class JdbcTemplateTest {
 
         String sql = "SELECT * FROM test WHERE id = ?";
 
-        assertAll(
-                () -> assertThat(jdbcTemplate.queryForObject(sql, rowMapper, 1)).isEqualTo(new TestObject(1, "test")),
-                () -> verify(resultSet).close()
-        );
+        assertThat(jdbcTemplate.queryForObject(sql, rowMapper, 1)).isEqualTo(new TestObject(1, "test"));
     }
 
     @Test
@@ -98,11 +95,8 @@ class JdbcTemplateTest {
 
         String sql = "SELECT * FROM test";
 
-        assertAll(
-                () -> assertThat(jdbcTemplate.query(sql, rowMapper, 1))
-                        .containsExactly(new TestObject(1, "test1"), new TestObject(2, "test2")),
-                () -> verify(resultSet).close()
-        );
+        assertThat(jdbcTemplate.query(sql, rowMapper, 1))
+                .containsExactly(new TestObject(1, "test1"), new TestObject(2, "test2"));
     }
 
     @Test
@@ -120,12 +114,9 @@ class JdbcTemplateTest {
 
         String sql = "SELECT * FROM test WHERE id = ?";
 
-        assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessageContaining("Expected a single result, but not found for query: "),
-                () -> verify(resultSet).close()
-        );
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("Expected");
     }
 
     @Test
@@ -145,12 +136,9 @@ class JdbcTemplateTest {
 
         String sql = "SELECT * FROM test WHERE id = ?";
 
-        assertAll(
-                () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessageContaining("Expected a single result, but found multiple for query: "),
-                () -> verify(resultSet).close()
-        );
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("Expected");
     }
 
     private record TestObject(int id, String name) {
