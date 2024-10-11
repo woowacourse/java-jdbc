@@ -140,9 +140,9 @@ class Stage1Test {
         // 적절한 격리 레벨을 찾는다.
         final int isolationLevel =
 //                    Connection.TRANSACTION_NONE;
-                Connection.TRANSACTION_READ_UNCOMMITTED;
+//                Connection.TRANSACTION_READ_UNCOMMITTED;
 //                    Connection.TRANSACTION_READ_COMMITTED;
-//                    Connection.TRANSACTION_REPEATABLE_READ;
+                    Connection.TRANSACTION_REPEATABLE_READ;
 //                    Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
