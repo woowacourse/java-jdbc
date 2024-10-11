@@ -72,15 +72,27 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    public int update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement psmt = conn.prepareStatement(sql)
+    public int update(Connection conn, String sql, PreparedStatementSetter pss) {
+        try (PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
             pss.setValue(psmt);
             return psmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
+        try (Connection conn = dataSource.getConnection()
+        ) {
+            return update(conn, sql, pss);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int update(Connection conn, String sql, Object... args) {
+        return update(conn, sql, createArgumentPreparedStatementSetter(args));
     }
 
     public int update(String sql, Object... args) {
