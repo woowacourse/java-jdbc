@@ -42,7 +42,6 @@ public class JdbcTemplate {
 			pss.setValues(pstmt);
 
 			return fetchSingleResult(rowMapper, pstmt);
-
 		} catch (SQLException e) {
 			log.error(e.getMessage(), e);
 			throw new DataAccessException("Failed to execute Query = " + sql, e);
@@ -55,7 +54,6 @@ public class JdbcTemplate {
 			pss.setValues(pstmt);
 
 			return fetchResults(rowMapper, pstmt);
-
 		} catch (SQLException e) {
 			log.error(e.getMessage(), e);
 			throw new DataAccessException("Failed to execute Query = " + sql, e);
