@@ -205,7 +205,7 @@ class Stage2Test {
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
      *
      * Propagation.NEVER
-     * 트랜잭션이 없는 상태에서만 실행, 트랜잭션 내에서 호출되며 예외 발생
+     * 트랜잭션이 없는 상태에서만 실행, 트랜잭션 내에서 호출되면 예외 발생
      */
     @Test
     void testNever() {

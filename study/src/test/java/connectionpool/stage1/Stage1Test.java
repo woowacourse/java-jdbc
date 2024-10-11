@@ -39,7 +39,7 @@ class Stage1Test {
         try (final var connection = jdbcConnectionPool.getConnection()) {
             // 커넥션 유효성 확인
             assertThat(connection.isValid(1)).isTrue();
-            // 호라성 커넥션 수가 증가했는지 확인
+            // 활성 커넥션 수가 증가했는지 확인
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
         // 커넥션이 종료된 후, 자원이 올바르게 반환되었음을 검증
