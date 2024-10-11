@@ -2,16 +2,15 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -26,7 +25,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final String sql, final Object... parameters) {
+        execute(sql, createPreparedStatementSetter(parameters));
+    }
+
+    private void execute(final String sql, final PreparedStatementSetter pss) {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(conn, sql);
 
@@ -39,8 +42,20 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final Object... parameters) throws DataAccessException {
-        update(sql, createPreparedStatementSetter(parameters));
+    public void update(final Connection conn, final String sql, final Object... parameters) throws DataAccessException {
+        executeWithConnection(conn, sql, createPreparedStatementSetter(parameters));
+    }
+
+    private void executeWithConnection(final Connection conn, final String sql, final PreparedStatementSetter pss) {
+        final PreparedStatement pstmt = getPreparedStatement(conn, sql);
+
+        try (pstmt) {
+            pss.setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
