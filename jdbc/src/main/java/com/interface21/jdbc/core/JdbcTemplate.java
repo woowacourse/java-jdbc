@@ -35,11 +35,8 @@ public class JdbcTemplate {
     }
 
     public void update(PreparedStatementCreator creator) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
-            connection.setAutoCommit(false);
+        try (PreparedStatement preparedStatement = getPreparedStatement(creator);) {
             preparedStatement.executeUpdate();
-            connection.commit();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
@@ -55,8 +52,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(PreparedStatementCreator creator, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = creator.createPreparedStatement(connection);
+        try (PreparedStatement preparedStatement = getPreparedStatement(creator);
              ResultSet resultSet = preparedStatement.executeQuery()) {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
@@ -69,8 +65,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = getPreparedStatement(sql);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
             List<T> results = new ArrayList<>();
@@ -82,5 +77,15 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
+    }
+
+    private PreparedStatement getPreparedStatement(String sql) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        return connection.prepareStatement(sql);
+    }
+
+    private PreparedStatement getPreparedStatement(PreparedStatementCreator creator) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        return creator.createPreparedStatement(connection);
     }
 }
