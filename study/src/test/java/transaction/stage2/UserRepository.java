@@ -1,6 +1,11 @@
 package transaction.stage2;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository{
+    void deleteAll();
+
+    void save(User user);
+
+    List<User> findAll();
 }

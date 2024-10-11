@@ -25,6 +25,13 @@ public class User {
         this.email = email;
     }
 
+    public User(Long id, String account, String password, String email) {
+        this.id = id;
+        this.account = account;
+        this.password = password;
+        this.email = email;
+    }
+
     public boolean checkPassword(String password) {
         return this.password.equals(password);
     }
