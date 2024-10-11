@@ -21,7 +21,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DaoMethodExecutor.executeConsumerInTx(getConnection(), connection -> {
+        DaoMethodExecutor.consumeTransactional(getConnection(), connection -> {
             final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
@@ -38,10 +38,10 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        DaoMethodExecutor.executeConsumer(getConnection(), connection -> userDao.insert(connection, user));
+        DaoMethodExecutor.consume(getConnection(), connection -> userDao.insert(connection, user));
     }
 
     public User findById(final long id) {
-        return DaoMethodExecutor.executeFunction(getConnection(), connection -> userDao.findById(connection, id));
+        return DaoMethodExecutor.execute(getConnection(), connection -> userDao.findById(connection, id));
     }
 }

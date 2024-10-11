@@ -25,12 +25,12 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Consumer를 하나의 트랜잭션 안에서 처리한다.")
     @Test
-    void executeConsumerInTx() throws SQLException {
+    void consumeTransactional() throws SQLException {
         // given
         List<Integer> list = new ArrayList<>();
 
         // when
-        DaoMethodExecutor.executeConsumerInTx(connection, conn -> addZero(connection, list));
+        DaoMethodExecutor.consumeTransactional(connection, conn -> addZero(connection, list));
 
         // then
         assertThat(list).contains(0);
@@ -42,9 +42,10 @@ class DaoMethodExecutorTest {
 
     @DisplayName("예외가 발생하면 롤백한다.")
     @Test
-    void executeConsumerInTx_rollback() throws SQLException {
+    void consumeTransactional_rollback() throws SQLException {
         // when
-        assertThatThrownBy(() -> DaoMethodExecutor.executeConsumerInTx(connection, conn -> throwException(connection)))
+        assertThatThrownBy(
+                () -> DaoMethodExecutor.consumeTransactional(connection, conn -> throwException(connection)))
                 .isInstanceOf(DataAccessException.class);
 
         // then
@@ -56,12 +57,12 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Consumer를 처리하고 커넥션을 닫는다.")
     @Test
-    void executeConsumer() throws SQLException {
+    void consume() throws SQLException {
         // given
         List<Integer> list = new ArrayList<>();
 
         // when
-        DaoMethodExecutor.executeConsumer(connection, conn -> addZero(connection, list));
+        DaoMethodExecutor.consume(connection, conn -> addZero(connection, list));
 
         // then
         assertThat(list).contains(0);
@@ -70,9 +71,9 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Function을 처리하고 커넥션을 닫는다.")
     @Test
-    void executeFunction() throws SQLException {
+    void execute() throws SQLException {
         // when
-        int value = DaoMethodExecutor.executeFunction(connection, this::getZero);
+        int value = DaoMethodExecutor.execute(connection, this::getZero);
 
         // then
         assertThat(value).isEqualTo(0);

@@ -12,7 +12,7 @@ public class DaoMethodExecutor {
 
     }
 
-    public static void executeConsumerInTx(Connection connection, Consumer<Connection> consumer) {
+    public static void consumeTransactional(Connection connection, Consumer<Connection> consumer) {
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
@@ -46,7 +46,7 @@ public class DaoMethodExecutor {
         }
     }
 
-    public static void executeConsumer(Connection connection, Consumer<Connection> consumer) {
+    public static void consume(Connection connection, Consumer<Connection> consumer) {
         try (connection) {
             consumer.accept(connection);
         } catch (SQLException e) {
@@ -54,7 +54,7 @@ public class DaoMethodExecutor {
         }
     }
 
-    public static <T> T executeFunction(Connection connection, Function<Connection, T> function) {
+    public static <T> T execute(Connection connection, Function<Connection, T> function) {
         try (connection) {
             return function.apply(connection);
         } catch (SQLException e) {
