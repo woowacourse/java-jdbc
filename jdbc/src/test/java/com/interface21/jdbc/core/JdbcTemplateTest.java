@@ -55,11 +55,7 @@ class JdbcTemplateTest {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         // when
-        jdbcTemplate.executeUpdate(sql, pre -> {
-            preparedStatement.setObject(1, "account");
-            preparedStatement.setObject(2, "password");
-            preparedStatement.setObject(3, "asdf@gmail.com");
-        });
+        jdbcTemplate.executeUpdate(sql, "account", "password", "asdf@gmail.com");
 
         // then
         verify(preparedStatement).setObject(1, "account");
@@ -81,11 +77,8 @@ class JdbcTemplateTest {
         JdbcTemplate wrongJdbcTemplate = new JdbcTemplate(wrongDataSource);
 
         // when & then
-        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql, preparedStatement -> {
-            preparedStatement.setObject(1, "account");
-            preparedStatement.setObject(2, "password");
-            preparedStatement.setObject(3, "asdf@gmail.com");
-        })).isInstanceOf(JdbcQueryException.class);
+        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql, "account", "password", "asdf@gmail.com"))
+                .isInstanceOf(JdbcQueryException.class);
     }
 
     @Test
@@ -99,7 +92,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("name1", "name2");
 
         // when
-        List<TestObject> testObjects = jdbcTemplate.query(sql, preparedStatement -> {}, testObjectRowMapper);
+        List<TestObject> testObjects = jdbcTemplate.query(sql, testObjectRowMapper);
 
         // then
         assertAll(
@@ -119,7 +112,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when
-        List<TestObject> testUsers = jdbcTemplate.query(sql, preparedStatement -> {}, testObjectRowMapper);
+        List<TestObject> testUsers = jdbcTemplate.query(sql, testObjectRowMapper);
 
         // then
         assertThat(testUsers).isEmpty();
@@ -138,7 +131,7 @@ class JdbcTemplateTest {
         JdbcTemplate wrongJdbcTemplate = new JdbcTemplate(wrongDataSource);
 
         // when & then
-        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql, preparedStatement -> {}))
+        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql))
                 .isInstanceOf(JdbcQueryException.class);
     }
 
@@ -153,9 +146,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("name1");
 
         // when
-        Optional<TestObject> testObject = jdbcTemplate.queryForObject(sql, preparedStatement -> {
-            preparedStatement.setObject(1, 1L);
-        }, testObjectRowMapper);
+        Optional<TestObject> testObject = jdbcTemplate.queryForObject(sql, testObjectRowMapper, 1L);
 
         // then
         assertAll(
@@ -173,9 +164,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when
-        Optional<TestObject> testObject = jdbcTemplate.queryForObject(sql, preparedStatement -> {
-            preparedStatement.setObject(1, 1L);
-        }, testObjectRowMapper);
+        Optional<TestObject> testObject = jdbcTemplate.queryForObject(sql, testObjectRowMapper, 1L);
 
         // then
         assertThat(testObject).isEmpty();

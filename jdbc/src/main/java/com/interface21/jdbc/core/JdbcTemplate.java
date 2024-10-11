@@ -23,7 +23,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
+    public int executeUpdate(String sql, Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return executeUpdate(sql, argumentPreparedStatementSetter);
+    }
+
+    private int executeUpdate(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -35,7 +40,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return query(sql, argumentPreparedStatementSetter, rowMapper);
+    }
+
+    private  <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
@@ -57,9 +67,10 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql,
-                                          PreparedStatementSetter preparedStatementSetter,
-                                          RowMapper<T> rowMapper) {
-        List<T> resultSets = query(sql, preparedStatementSetter, rowMapper);
+                                          RowMapper<T> rowMapper,
+                                          Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        List<T> resultSets = query(sql, argumentPreparedStatementSetter, rowMapper);
         try {
             return Optional.ofNullable(resultSets.getFirst());
         } catch (NoSuchElementException e) {
