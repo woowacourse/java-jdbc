@@ -18,8 +18,12 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        ConnectionSynchronizeManager.getConnection();
-        return userDao.findById(id);
+        Connection conn = ConnectionSynchronizeManager.getConnection();
+        try {
+            return userDao.findById(id);
+        } finally {
+            conn.close();
+        }
     }
 
     public void insert(final User user) {
@@ -32,6 +36,8 @@ public class UserService {
         } catch (Exception e) {
             conn.rollback();
             throw e;
+        } finally {
+            conn.close();
         }
     }
 
@@ -48,6 +54,8 @@ public class UserService {
         } catch (Exception e) {
             conn.rollback();
             throw e;
+        } finally {
+            conn.close();
         }
     }
 }

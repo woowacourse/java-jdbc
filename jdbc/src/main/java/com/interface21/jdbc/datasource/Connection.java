@@ -6,17 +6,11 @@ import javax.sql.DataSource;
 
 public class Connection {
     private final java.sql.Connection connection;
+    private int depth;
 
     public Connection(java.sql.Connection connection) {
         this.connection = connection;
-    }
-
-    public Connection(DataSource dataSource) {
-        try {
-            this.connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        this.depth = 0;
     }
 
     public void setAutoCommit(boolean autoCommit) {
@@ -53,10 +47,17 @@ public class Connection {
 
     public void close() {
         try {
-            this.connection.close();
+            depth--;
+            if(depth == 0) {
+                this.connection.close();
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public void plusDepth() {
+        depth++;
     }
 
     public java.sql.Connection getConnection() {

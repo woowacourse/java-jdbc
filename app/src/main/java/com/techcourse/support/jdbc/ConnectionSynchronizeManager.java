@@ -16,6 +16,7 @@ public class ConnectionSynchronizeManager {
                 ConnectionContext.conn.remove();
                 throw new NullPointerException();
             }
+            conn.plusDepth();
             return conn;
         } catch (NullPointerException nullPointerException) {
             return createNewConnection();
@@ -27,6 +28,7 @@ public class ConnectionSynchronizeManager {
             DataSource dataSource = DataSourceConfig.getInstance();
             Connection conn = new Connection(dataSource.getConnection());
             ConnectionContext.conn.set(conn);
+            conn.plusDepth();
             return conn;
         } catch (SQLException sqlException) {
             throw new DataAccessException(sqlException);
