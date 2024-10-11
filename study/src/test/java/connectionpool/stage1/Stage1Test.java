@@ -52,7 +52,7 @@ class Stage1Test {
      * HikariCP 필수 설정
      * https://github.com/brettwooldridge/HikariCP#essentials
      *
-     * HikariCP의 pool size는 몇으로 설정하는게 좋을까?
+     * HikariCP의 pool size는 몇으로 설정하는게 좋을까? connections = ((core_count * 2) + effective_spindle_count)
      * https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
      *
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정

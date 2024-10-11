@@ -60,19 +60,12 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, params);
+            PreparedStatementSetter.setParameters(pstmt, params);
             return executor.execute(pstmt);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
-        for (int index = 0; index < params.length; index++) {
-            int sqlParamIndex = index + 1;
-            pstmt.setObject(sqlParamIndex, params[index]);
         }
     }
 }
