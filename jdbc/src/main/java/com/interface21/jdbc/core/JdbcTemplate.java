@@ -111,7 +111,10 @@ public class JdbcTemplate {
             return ConnectionContext.conn.get().getConnection();
         } catch (NullPointerException nullPointerException) {
             try {
-                return dataSource.getConnection();
+                Connection conn = dataSource.getConnection();
+                ConnectionContext.conn.set(new com.interface21.jdbc.datasource.Connection(conn));
+
+                return conn;
             } catch (SQLException sqlException) {
                 throw new DataAccessException(sqlException);
             }

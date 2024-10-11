@@ -53,13 +53,25 @@ public class UserService {
 
     private Connection getConnection() {
         try {
+            Connection conn = ConnectionContext.conn.get();
+            if(conn.isClosed()) {
+                ConnectionContext.conn.remove();
+                throw new NullPointerException();
+            }
+            return conn;
+        } catch (NullPointerException nullPointerException) {
+            return createNewConnection();
+        }
+    }
+
+    private Connection createNewConnection() {
+        try {
             DataSource dataSource = DataSourceConfig.getInstance();
             Connection conn = new Connection(dataSource.getConnection());
             ConnectionContext.conn.set(conn);
-
             return conn;
-        } catch (SQLException e) {
-            throw new DataAccessException();
+        } catch (SQLException sqlException) {
+            throw new DataAccessException(sqlException);
         }
     }
 }

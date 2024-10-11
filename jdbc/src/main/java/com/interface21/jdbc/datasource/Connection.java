@@ -35,6 +35,14 @@ public class Connection {
         }
     }
 
+    public boolean isClosed() {
+        try {
+            return connection.isClosed();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public void commit() {
         try {
             this.connection.commit();
