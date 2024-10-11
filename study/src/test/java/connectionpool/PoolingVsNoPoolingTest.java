@@ -4,6 +4,11 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.util.ClockSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,12 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
@@ -45,6 +44,10 @@ class PoolingVsNoPoolingTest {
 
         // 테스트에 사용할 users 테이블을 생성하고 데이터를 추가한다.
         try (Connection conn = dataSource.getConnection()) {
+            /**
+             * setAutoCommit 옵션이 활성화된 경우, 각각의 sql문이 각각의 트랜잭션에서 실행 및 커밋
+             * If a connection is in auto-commit mode, then all its SQL statements will be executed and committed as individual transactions
+             */
             conn.setAutoCommit(true);
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("DROP TABLE IF EXISTS users;");

@@ -13,51 +13,46 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
+    private final PreparedStatementSetter statementSetter;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource, PreparedStatementSetter statementSetter) {
         this.dataSource = dataSource;
+        this.statementSetter = statementSetter;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper rowMapper, final Object... conditions) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
-            for (int argumentIndex = 0; argumentIndex < conditions.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, conditions[argumentIndex]);
-            }
+            statementSetter.setValues(preparedStatement, arguments);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
                 }
-                return null;
+                return results;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the select query.", e);
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
+        List<T> results = query(sql, rowMapper, arguments);
 
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        if (results.size() > SINGLE_RESULT_SIZE) {
+            throw new JdbcException("multiple rows found.");
         }
+        if (results.size() == SINGLE_RESULT_SIZE) {
+            return results.getFirst();
+        }
+        return null;
     }
 
     public void update(final String sql, final Object... arguments) {
@@ -65,15 +60,12 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
-            for (int argumentIndex = 0; argumentIndex < arguments.length; argumentIndex++) {
-                preparedStatement.setObject(argumentIndex + 1, arguments[argumentIndex]);
-            }
+            statementSetter.setValues(preparedStatement, arguments);
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException("An error occurred during the execution of the update query.", e);
         }
     }
 }

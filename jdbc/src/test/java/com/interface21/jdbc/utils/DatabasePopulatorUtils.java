@@ -1,4 +1,4 @@
-package com.techcourse.support.jdbc.init;
+package com.interface21.jdbc.utils;
 
 import java.io.File;
 import java.io.IOException;
