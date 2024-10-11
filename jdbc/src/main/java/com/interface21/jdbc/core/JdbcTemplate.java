@@ -72,10 +72,14 @@ public class JdbcTemplate {
 
     private <T> T getResult(ResultSet rs, RowMapper<T> rowMapper) {
         try {
+            T result = null;
             if (rs.next()) {
-                return rowMapper.doMapping(rs);
+                result = rowMapper.doMapping(rs);
             }
-            return null;
+            if (rs.next()) {
+                throw new JdbcTemplateException("두 개 이상의 검색 결과가 존재합니다.");
+            }
+            return result;
         } catch (SQLException e) {
             throw new JdbcTemplateException(e);
         }
