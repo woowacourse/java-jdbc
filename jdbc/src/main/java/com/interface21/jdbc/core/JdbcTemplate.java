@@ -22,10 +22,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
-        return queryForObject(sql, rowMapper, new DefaultPreparedStatementSetter());
-    }
-
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return queryForObject(sql, rowMapper, new ParameterPreparedStatementSetter(parameters));
     }
@@ -39,10 +35,6 @@ public class JdbcTemplate {
             return Optional.of(results.getFirst());
         }
         throw new NotSingleResultDataAccessException();
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query(sql, rowMapper, new DefaultPreparedStatementSetter());
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -61,10 +53,6 @@ public class JdbcTemplate {
             }
             return result;
         }
-    }
-
-    public void update(String sql) {
-        update(sql, new DefaultPreparedStatementSetter());
     }
 
     public void update(String sql, Object... parameters) {
