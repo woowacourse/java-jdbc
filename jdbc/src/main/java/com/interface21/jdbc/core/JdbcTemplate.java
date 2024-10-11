@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_RESULT_SIZE = 1;
 
     private final DataSource dataSource;
     private final PreparedStatementSetter statementSetter;
@@ -22,18 +23,19 @@ public class JdbcTemplate {
         this.statementSetter = statementSetter;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... conditions) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            statementSetter.setValues(preparedStatement, conditions);
+            statementSetter.setValues(preparedStatement, arguments);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
                 }
-                return null;
+                return results;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -41,22 +43,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            log.debug("query : {}", sql);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
+        List<T> results = query(sql, rowMapper, arguments);
 
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException("An error occurred during the execution of the select query.", e);
+        if (results.size() > SINGLE_RESULT_SIZE) {
+            throw new JdbcException("multiple row found.");
         }
+        if (results.size() == SINGLE_RESULT_SIZE) {
+            return results.getFirst();
+        }
+        return null;
     }
 
     public void update(final String sql, final Object... arguments) {
