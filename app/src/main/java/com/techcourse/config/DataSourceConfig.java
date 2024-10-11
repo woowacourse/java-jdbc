@@ -2,6 +2,7 @@ package com.techcourse.config;
 
 import com.interface21.context.stereotype.Bean;
 import com.interface21.context.stereotype.Configuration;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
@@ -9,10 +10,10 @@ import java.util.Objects;
 @Configuration
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static DataSource INSTANCE;
 
     @Bean
-    public static javax.sql.DataSource getInstance() {
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
