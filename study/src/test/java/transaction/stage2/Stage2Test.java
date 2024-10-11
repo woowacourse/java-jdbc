@@ -133,6 +133,8 @@ class Stage2Test {
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? => 0
      * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     * 물리 트랜잭션: 실제 데이터베이스와 연결되어 있는 트랜잭션
+     * 논리 트랜잭션: 물리적 트랜잭션 위에서 실행되는 스프링의 트랜잭션 관리 단위 - 하나의 물리적 트랜잭션 내에 여러 논리적 트랜잭션이 포함될 수 있다.
      * firstTransactionName is Actual Transaction Active : ✅ true
      * secondTransactionName is Actual Transaction Active : ❌ false
      */
