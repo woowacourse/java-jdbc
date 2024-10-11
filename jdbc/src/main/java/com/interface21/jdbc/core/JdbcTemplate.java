@@ -25,7 +25,7 @@ public class JdbcTemplate {
     }
 
     public void insert(final String sql, final SqlParameterSource parameters) {
-        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+        final Sql bindingParametersQuery = new Sql(sql, parameters);
         final BiConsumer<Statement, Sql> insertCallBack = this::execWriteQuery;
         execute(insertCallBack, bindingParametersQuery);
     }
@@ -40,7 +40,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Map<String, Object> parameters) {
-        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+        final Sql bindingParametersQuery = new Sql(sql, parameters);
         final BiConsumer<Statement, Sql> updateCallBack = this::execWriteQuery;
         execute(updateCallBack, bindingParametersQuery);
     }
@@ -50,7 +50,7 @@ public class JdbcTemplate {
             final Map<String, Object> parameters,
             final RowMapper<T> rowMapper
     ) {
-        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+        final Sql bindingParametersQuery = new Sql(sql, parameters);
         final TriFunction<Statement, Sql, RowMapper<T>, List<T>> queryForObjectCallBack = (stmt, query, mapper) -> {
             final ResultSet resultSet = execReadQuery(stmt, query);
             return List.of(mapper.mapping(resultSet));
@@ -73,7 +73,7 @@ public class JdbcTemplate {
             final Map<String, Object> parameters,
             final RowMapper<T> rowMapper
     ) {
-        final Sql bindingParametersQuery = new Sql(sql).bindingParameters(parameters);
+        final Sql bindingParametersQuery = new Sql(sql, parameters);
         final TriFunction<Statement, Sql, RowMapper<T>, List<T>> queryCallBack = (stmt, query, mapper) -> {
             final ResultSet resultSet = execReadQuery(stmt, query);
             return parseResult(resultSet, rowMapper);

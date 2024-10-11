@@ -14,6 +14,38 @@ public class Sql {
 
     private final String value;
 
+    public Sql(final String value, final SqlParameterSource parameterSource) {
+        this.value = bindingParameters(value, parameterSource);
+    }
+
+    private String bindingParameters(final String sql, final SqlParameterSource parameterSource) {
+        validateParameterSourceIsNull(parameterSource);
+        final List<String> bindingParameterNames = parseBindingParameterNames();
+        String result = sql;
+        for (final String bindingParameterName : bindingParameterNames) {
+            final Object parameterValue = parameterSource.getParameter(bindingParameterName);
+            result = bindingParameterValue(result, bindingParameterName, parameterValue);
+        }
+
+        return result;
+    }
+
+    public Sql(final String value, final Map<String, Object> parameters) {
+        this.value = bindingParameters(value, parameters);
+    }
+
+    private String bindingParameters(final String sql, final Map<String, Object> parameters) {
+        validateParametersIsNull(parameters);
+        final List<String> bindingParameterNames = parseBindingParameterNames();
+        String result = sql;
+        for (final String bindingParameterName : bindingParameterNames) {
+            final Object parameterValue = parameters.get(bindingParameterName);
+            result = bindingParameterValue(result, bindingParameterName, parameterValue);
+        }
+
+        return result;
+    }
+
     public Sql(final String value) {
         validateSqlIsNullOrBlank(value);
         this.value = value;
@@ -23,18 +55,6 @@ public class Sql {
         if (sql == null || sql.isBlank()) {
             throw new IllegalArgumentException("sql문은 null 혹은 공백이 입력될 수 없습니다. - " + sql);
         }
-    }
-
-    public Sql bindingParameters(final SqlParameterSource parameterSource) {
-        validateParameterSourceIsNull(parameterSource);
-        final List<String> bindingParameterNames = parseBindingParameterNames();
-        String result = this.value;
-        for (final String bindingParameterName : bindingParameterNames) {
-            final Object parameterValue = parameterSource.getParameter(bindingParameterName);
-            result = bindingParameterValue(result, bindingParameterName, parameterValue);
-        }
-
-        return new Sql(result);
     }
 
     private void validateParameterSourceIsNull(final SqlParameterSource parameterSource) {
@@ -66,18 +86,6 @@ public class Sql {
         }
 
         return sql.replace(":" + parameterName, value);
-    }
-
-    public Sql bindingParameters(final Map<String, Object> parameters) {
-        validateParametersIsNull(parameters);
-        final List<String> bindingParameterNames = parseBindingParameterNames();
-        String result = this.value;
-        for (final String bindingParameterName : bindingParameterNames) {
-            final Object parameterValue = parameters.get(bindingParameterName);
-            result = bindingParameterValue(result, bindingParameterName, parameterValue);
-        }
-
-        return new Sql(result);
     }
 
     private void validateParametersIsNull(final Map<String, Object> parameters) {
