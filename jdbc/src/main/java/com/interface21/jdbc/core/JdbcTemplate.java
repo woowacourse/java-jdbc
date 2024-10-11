@@ -43,7 +43,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> queriedData = query(sql, rowMapper, params);
-        if (queriedData.size() < 1) {
+        if (queriedData.isEmpty()) {
             throw new EmptyResultDataAccessException();
         }
         if (queriedData.size() > 1) {
