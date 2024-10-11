@@ -24,15 +24,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        execute(sql, args, statement -> {
-            log.info("update query : {}", sql);
-            return statement.executeUpdate();
-        });
+        execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
-            log.info("select query : {}", sql);
             final ResultSet resultSet = statement.executeQuery();
             SingleDataExtractor singleDataExtractor = new SingleDataExtractor();
             return singleDataExtractor.extract(resultSet, rowMapper)
@@ -43,7 +39,6 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             final ResultSet resultSet = statement.executeQuery();
-            log.info("select query : {}", sql);
             MultiDataExtractor multiDataExtractor = new MultiDataExtractor();
             return multiDataExtractor.extract(resultSet, rowMapper);
         });
@@ -52,11 +47,19 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final Object[] args, final QueryExecutor<T> executor) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            PreparedStatementUtils.setParameter(statement, args);
+            setArguments(args, statement);
+            log.info("query : {}", sql);
             return executor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void setArguments(final Object[] args, final PreparedStatement statement) throws SQLException {
+        int index = 1;
+        for (final Object arg : args) {
+            statement.setObject(index++, arg);
         }
     }
 }
