@@ -173,3 +173,6 @@ tomcat.*
 tomcat.*/**
 
 **/WEB-INF/classes/**
+
+# For test
+test.*.db

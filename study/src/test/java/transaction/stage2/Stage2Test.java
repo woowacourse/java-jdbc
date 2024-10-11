@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.NestedTransactionNotSupportedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,8 +47,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +61,9 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,12 +72,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -86,9 +89,16 @@ class Stage2Test {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
+
+        // @Transactional 주석이 있을 때
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
+
+        // @Transactional 주석을 없을 때
+//        assertThat(actual)
+//                .hasSize(1)
+//                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -98,12 +108,17 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
-        final var actual = firstUserService.saveFirstTransactionWithMandatory();
+        // @Transactional 주석을 있을 때
+//        final var actual = firstUserService.saveFirstTransactionWithMandatory();
+//        log.info("transactions : {}", actual);
+//        assertThat(actual)
+//                .hasSize(1)
+//                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        // @Transactional 주석을 없을 때
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+                .isInstanceOf(IllegalTransactionStateException.class)
+                .hasMessage("No existing transaction found for transaction marked with propagation 'mandatory'");
     }
 
     /**
@@ -119,8 +134,9 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
@@ -129,12 +145,17 @@ class Stage2Test {
      */
     @Test
     void testNested() {
-        final var actual = firstUserService.saveFirstTransactionWithNested();
+        // @Transactional 주석을 있을 때
+//        final var actual = firstUserService.saveFirstTransactionWithNested();
+//        log.info("transactions : {}", actual);
+//        assertThat(actual)
+//                .hasSize(1)
+//                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        // @Transactional 주석을 없을 때
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNested())
+                .isInstanceOf(NestedTransactionNotSupportedException.class)
+                .hasMessage("JpaDialect does not support savepoints - check your JPA provider's capabilities");
     }
 
     /**
@@ -142,11 +163,16 @@ class Stage2Test {
      */
     @Test
     void testNever() {
-        final var actual = firstUserService.saveFirstTransactionWithNever();
+        // @Transactional 주석을 있을 때
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNever())
+                .isInstanceOf(IllegalTransactionStateException.class)
+                .hasMessage("Existing transaction found for transaction marked with propagation 'never'");
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        // @Transactional 주석을 없을 때
+//        final var actual = firstUserService.saveFirstTransactionWithNever();
+//        log.info("transactions : {}", actual);
+//        assertThat(actual)
+//                .hasSize(1)
+//                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
