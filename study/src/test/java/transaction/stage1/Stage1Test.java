@@ -84,6 +84,7 @@ class Stage1Test {
             // ❗️gugu 객체는 connection에서 아직 커밋하지 않은 상태다.
             // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다.
             // 사용자B가 사용자A가 커밋하지 않은 데이터를 조회하는게 적절할까?
+            // 답변 : 비즈니스 상황에 따라 다르지만, 일반적으로는 적절하지 않다.
             final var actual = userDao.findByAccount(subConnection, "gugu");
 
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.

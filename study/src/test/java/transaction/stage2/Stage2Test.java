@@ -34,7 +34,7 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가? 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 왜 그런 결과가 나왔을까? -> 부모의 트랜잭션을 그대로 자식이 타기 때문에 1개의 트랜잭션이 나옵니다.
      */
     @Test
     void testRequired() {
@@ -47,7 +47,7 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가? 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 왜 그런 결과가 나왔을까? -> 자식은 부모와 상관없이 새로운 트랜잭션을 생성합니다. 따라서 부모 1개, 자식 1개로 총 2개의 트랜잭션이 생성됩니다.
      */
     @Test
     void testRequiredNew() {
@@ -76,7 +76,7 @@ class Stage2Test {
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다. 주석인 상태에서 테스트를 실행했을 때와 주석을
-     * 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자. 외부 트랜잭션이 있다면 타고, 없다면 트랜잭션 없이 동작한다.
      */
     @Test
     void testSupports() {
@@ -90,7 +90,7 @@ class Stage2Test {
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다. 주석인 상태에서 테스트를 실행했을 때와
-     * 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자. SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자. SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자. 외부 트랜잭션이 있다면 타고, 없다면 예외를 발생시킨다.
      */
     @Test
     void testMandatory() {
@@ -103,8 +103,11 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석
-     * 처리하자. 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? -> 1개의 물리적 트랜잭션이 동작한다. FirstUserService.saveFirstTransactionWithNotSupported() 메서드의
+     *
+     * @Transactional을 주석 처리하자. 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? -> 0개의 물리적 트랜잭션이 동작한다.
+     * <p>
+     * NOT_SUPPORTED 가 붙은 트랜잭션의 이름이 나오는 것은, AOP로 인해 프록시가 생성은 되기 때문이다. 다만 active가 flase 로 나오기 때문에 실제 트랜잭션이 동작하는 것은 아니다.
      * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
@@ -120,7 +123,8 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 왜 실패할까? FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * 아래 테스트는 왜 실패할까? FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까? Nested 는
+     * JPA에서 동작하지 않는다. @Transactional을 제거하면 기존의 NOT_SUPPORTED 와 같이 트랜잭션 없이 동작한다.
      */
     @Test
     void testNested() {
@@ -133,7 +137,7 @@ class Stage2Test {
     }
 
     /**
-     * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자. 외부 트랜잭션이 있으면 예외를, 없으면 트랜잭션 없이 동작한다.
      */
     @Test
     void testNever() {
