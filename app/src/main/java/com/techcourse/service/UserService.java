@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.ConnectionUtil;
+import com.interface21.jdbc.core.DaoMethodExecutor;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -21,40 +21,27 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-        try {
-            connection = getConnection();
-            connection.setAutoCommit(false);
+        DaoMethodExecutor.executeConsumerInTx(getConnection(), connection -> {
             final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (Exception e) {  // 모든 예외를 catch
-            ConnectionUtil.rollback(connection);
-            throw new DataAccessException(e);  // 원래 예외를 다시 던짐
-        } finally {
-            ConnectionUtil.setAutoCommitAndClose(connection, true);
-        }
+        });
     }
 
-    private Connection getConnection() throws SQLException {
-        return DataSourceConfig.getInstance().getConnection();
+    private Connection getConnection() {
+        try {
+            return DataSourceConfig.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public void insert(final User user) {
-        try (Connection connection = getConnection()) {
-            userDao.insert(connection, user);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        DaoMethodExecutor.executeConsumer(getConnection(), connection -> userDao.insert(connection, user));
     }
 
     public User findById(final long id) {
-        try (Connection connection = getConnection()) {
-            return userDao.findById(connection, id);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return DaoMethodExecutor.executeFunction(getConnection(), connection -> userDao.findById(connection, id));
     }
 }
