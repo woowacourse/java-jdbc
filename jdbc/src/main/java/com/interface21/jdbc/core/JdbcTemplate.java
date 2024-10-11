@@ -23,10 +23,10 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        execute(sql, preparedStatementSetter, (preparedStatement -> {
+        execute(sql, preparedStatementSetter, (preparedStatement) -> {
             preparedStatement.executeUpdate();
             return null;
-        }));
+        });
     }
 
     private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
