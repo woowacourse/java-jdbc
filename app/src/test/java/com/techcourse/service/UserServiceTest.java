@@ -26,7 +26,7 @@ class UserServiceTest {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), new PreparedStatementSetter());
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.createTables(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
