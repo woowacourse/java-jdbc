@@ -31,6 +31,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    /**
+     * 쓰기 쿼리를 사용하는 경우 메서드를 사용합니다.
+     *
+     * @param query   실행할 SQL 쿼리
+     * @param objects 쿼리에 사용할 파라미터 값
+     */
     public void update(String query, Object... objects) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -74,6 +80,15 @@ public class JdbcTemplate {
         }
     }
 
+    /**
+     * 단 건의 읽기 쿼리를 사용하는 경우 이 메서드를 사용합니다.
+     *
+     * @param query   실행할 SQL 쿼리
+     * @param mapper  객체로 매핑할 mapper
+     * @param objects 쿼리에 사용할 파라미터 값
+     * @return mapper로 매핑이 완료된 객체
+     * @throws DataNotFoundException 데이터가 존재하지 않는 경우 예외가 발생
+     */
     public <T> T queryForObject(String query, RowMapper<T> mapper, Object... objects) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -90,6 +105,14 @@ public class JdbcTemplate {
         }
     }
 
+    /**
+     * 다수 건의 읽기 쿼리를 사용하는 경우 이 메서드를 사용합니다.
+     *
+     * @param query   실행할 SQL 쿼리
+     * @param mapper  객체로 매핑할 mapper
+     * @param objects 쿼리에 사용할 파라미터 값
+     * @return mapper로 매핑이 완료된 객체
+     */
     public <T> List<T> queryForList(String query, RowMapper<T> mapper, Object... objects) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(query)) {
