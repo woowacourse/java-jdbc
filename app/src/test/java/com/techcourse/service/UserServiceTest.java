@@ -48,7 +48,7 @@ class UserServiceTest {
 
         User result = userService.findById(2L);
 
-        assertThat(result.getAccount()).isEqualTo(account);
+        assertThat(result.account()).isEqualTo(account);
     }
 
     @Disabled
@@ -60,7 +60,7 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.password()).isEqualTo(newPassword);
     }
 
     @Disabled
@@ -78,6 +78,6 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.password()).isNotEqualTo(newPassword);
     }
 }

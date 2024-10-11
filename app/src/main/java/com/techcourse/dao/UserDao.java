@@ -25,12 +25,12 @@ public class UserDao {
 
     public void insert(User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.account(), user.password(), user.email());
     }
 
     public void update(User user) {
         String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.account(), user.password(), user.email(), user.id());
     }
 
     public List<User> findAll() {

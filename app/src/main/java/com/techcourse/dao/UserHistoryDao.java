@@ -16,12 +16,12 @@ public class UserHistoryDao {
 
         jdbcTemplate.update(
                 sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreatedBy()
+                userHistory.userId(),
+                userHistory.account(),
+                userHistory.password(),
+                userHistory.email(),
+                userHistory.createdAt(),
+                userHistory.createdBy()
         );
     }
 }

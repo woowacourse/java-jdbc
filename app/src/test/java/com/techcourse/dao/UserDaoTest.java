@@ -47,7 +47,7 @@ class UserDaoTest {
 
         assertAll(
                 () -> assertThat(user).isPresent(),
-                () -> assertThat(user.get().getAccount()).isEqualTo("gugu")
+                () -> assertThat(user.get().account()).isEqualTo("gugu")
         );
     }
 
@@ -67,7 +67,7 @@ class UserDaoTest {
 
         assertAll(
                 () -> assertThat(user).isPresent(),
-                () -> assertThat(user.get().getAccount()).isEqualTo("gugu")
+                () -> assertThat(user.get().account()).isEqualTo("gugu")
         );
     }
 
@@ -90,7 +90,7 @@ class UserDaoTest {
         final var actual = userDao.findById(2L)
                 .orElseThrow();
 
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.account()).isEqualTo(account);
     }
 
     @DisplayName("유저 정보를 업데이트 한다.")
@@ -99,12 +99,13 @@ class UserDaoTest {
         final var newPassword = "password99";
         final var user = userDao.findById(1L)
                 .orElseThrow();
-        user.changePassword(newPassword);
 
-        userDao.update(user);
+        User newUser = user.changePassword(newPassword);
+
+        userDao.update(newUser);
         final var actual = userDao.findById(1L)
                 .orElseThrow();
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.password()).isEqualTo(newPassword);
     }
 }
