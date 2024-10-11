@@ -28,11 +28,15 @@ public class TransactionManager {
             consumer.accept(connection);
             connection.commit();
         } catch (SQLException | DataAccessException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
+            rollback(connection);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
         }
     }
 }
