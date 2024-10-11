@@ -47,7 +47,7 @@ public class JdbcTemplate {
     private <T> T executeQuery(String sql, QueryExecution<PreparedStatement, T> query, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            parameterBinder.bindParameters(preparedStatement, args);
+            parameterBinder.bindAllParameters(preparedStatement, args);
             return query.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("쿼리 실행 도중 에러가 발생했습니다.", e);
