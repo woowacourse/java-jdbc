@@ -36,12 +36,17 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... bind) {
         final LineCallback<Integer> callback = (connection, query) -> {
             final PreparedStatement statement = connection.prepareStatement(query);
-            for (int i = 1; i <= bind.length; i++) {
-                statement.setObject(i, bind[i - 1]);
-            }
+            bindParams(bind, statement);
             return statement.executeUpdate();
         };
         queryTemplate(sql, callback);
+    }
+
+
+    private void bindParams(final Object[] bind, final PreparedStatement statement) throws SQLException {
+        for (int i = 1; i <= bind.length; i++) {
+            statement.setObject(i, bind[i - 1]);
+        }
     }
 
     public <T> T queryForObject(final String sql,
@@ -49,12 +54,14 @@ public class JdbcTemplate {
                                 final Object... bind) {
         final LineCallback<ResultSet> callback = (connection, query) -> {
             final PreparedStatement statement = connection.prepareStatement(query);
-            for (int i = 1; i <= bind.length; i++) {
-                statement.setObject(i, bind[i - 1]);
-            }
+            bindParams(bind, statement);
             return statement.executeQuery();
         };
-        return queryTemplate(sql, callback, rowMapStrategy).getFirst();
+        final List<T> queryResult = queryTemplate(sql, callback, rowMapStrategy);
+        if (queryResult.size() != 1) {
+            throw new DataAccessException("한개 이상의 값을 불러왔습니다.");
+        }
+        return queryResult.getFirst();
     }
 
     public <T> List<T> query(final String sql, final RowMapStrategy<T> rowMapStrategy) {
@@ -71,7 +78,7 @@ public class JdbcTemplate {
             return callback.callback(connection, sql);
         } catch (final SQLException exception) {
             log.warn("SQL 쿼리 중 에외가 발생했습니다. : {}", exception.getMessage());
-            throw new IllegalStateException("SQL 쿼리 중 예외가 발생했습니다.");
+            throw new DataAccessException("SQL 쿼리 중 예외가 발생했습니다.");
         }
     }
 
