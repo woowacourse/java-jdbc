@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final int UNIQUE_SIZE = 1;
+    private static final int SINGLE = 1;
 
     private final DataSource dataSource;
 
@@ -24,52 +24,76 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParams(ps, params);
-            ps.executeUpdate();
+    public int update(String sql, Object... parameters) {
+        return update(sql, getDefaultPreparedStatementSetter(parameters));
+    }
+
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, PreparedStatement::executeUpdate, preparedStatementSetter);
+    }
+
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] parameters) {
+        return new DefaultPreparedStatementSetter(parameters);
+    }
+
+    private <T> T execute(
+            String sql,
+            PreparedStatementCallback<T> callback,
+            PreparedStatementSetter preparedStatementSetter
+    ) {
+        log.debug("query : {}", sql);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void setParams(PreparedStatement ps, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            ps.setObject(i + 1, params[i]);
-        }
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = queryForList(sql, rowMapper, params);
-        validateResultUniqueness(results);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
+        validateSingleResult(results);
         return results.getFirst();
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParams(ps, params);
-            ResultSet rs = ps.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    public <T> List<T> queryForList(
+            String sql,
+            RowMapper<T> rowMapper,
+            PreparedStatementSetter preparedStatementSetter
+    ) {
+        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper), preparedStatementSetter);
+    }
+
+    private <T> void validateSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(SINGLE);
+        }
+        if (results.size() > SINGLE) {
+            throw new IncorrectResultSizeDataAccessException(SINGLE, results.size());
         }
     }
 
-    private <T> void validateResultUniqueness(List<T> results) {
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(UNIQUE_SIZE);
+    private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return getResults(resultSet, rowMapper);
         }
-        if (results.size() > UNIQUE_SIZE) {
-            throw new IncorrectResultSizeDataAccessException(UNIQUE_SIZE, results.size());
+    }
+
+    private <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
         }
+        return results;
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 }
