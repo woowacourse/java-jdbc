@@ -56,4 +56,17 @@ public class UserHistory {
     public String getCreateBy() {
         return createBy;
     }
+
+    @Override
+    public String toString() {
+        return "UserHistory{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", account='" + account + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                ", createdAt=" + createdAt +
+                ", createBy='" + createBy + '\'' +
+                '}';
+    }
 }
