@@ -8,6 +8,10 @@ import java.util.function.Function;
 
 public class DaoMethodExecutor {
 
+    private DaoMethodExecutor() {
+
+    }
+
     public static void executeConsumerInTx(Connection connection, Consumer<Connection> consumer) {
         try {
             connection.setAutoCommit(false);
