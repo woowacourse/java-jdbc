@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.transaction.TransactionProxy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -32,7 +31,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = createUserService(userDao, userHistoryDao);
+        UserService userService = UserServiceImpl.createWithTransaction(userDao, userHistoryDao);
 
         String newPassword = "qqqqq";
         String createBy = "gugu";
@@ -47,7 +46,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = createUserService(userDao, userHistoryDao);
+        UserService userService = UserServiceImpl.createWithTransaction(userDao, userHistoryDao);
 
         String newPassword = "newPassword";
         String createBy = "gugu";
@@ -58,10 +57,5 @@ class UserServiceTest {
         User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-    }
-
-    private static UserService createUserService(UserDao userDao, UserHistoryDao userHistoryDao) {
-        UserService userService = new UserServiceImpl(userDao, userHistoryDao);
-        return TransactionProxy.createProxy(userService, UserService.class, DataSourceConfig.getInstance());
     }
 }

@@ -15,7 +15,7 @@ public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserServiceImpl(UserDao userDao, UserHistoryDao userHistoryDao) {
+    private UserServiceImpl(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -23,9 +23,12 @@ public class UserServiceImpl implements UserService {
     public static UserService createWithTransaction(DataSource dataSource) {
         UserDao userDao = new UserDao(dataSource);
         UserHistoryDao userHistoryDao = new UserHistoryDao(dataSource);
-        UserService userService = new UserServiceImpl(userDao, userHistoryDao);
+        return createWithTransaction(userDao, userHistoryDao);
+    }
 
-        return TransactionProxy.createProxy(userService, UserService.class, dataSource);
+    public static UserService createWithTransaction(UserDao userDao, UserHistoryDao userHistoryDao) {
+        UserService userService = new UserServiceImpl(userDao, userHistoryDao);
+        return TransactionProxy.createProxy(userService, UserService.class, DataSourceConfig.getInstance());
     }
 
     public static UserService getInstance() {
