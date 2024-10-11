@@ -35,7 +35,7 @@ class JdbcTemplateTest {
     void insert() {
         // given
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         // when
         jdbcTemplate.update(insertSql, arguments);
@@ -58,7 +58,7 @@ class JdbcTemplateTest {
     void queryForObject() {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         jdbcTemplate.update(sql, arguments);
 
@@ -80,14 +80,14 @@ class JdbcTemplateTest {
     void queryForObjectMultipleResults() {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         jdbcTemplate.update(sql, arguments);
         jdbcTemplate.update(sql, arguments);
 
         // when & then
         String sql2 = "select id, account, password, email from users where account = ?";
-        
+
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql2, this::mapRow, "ddang"))
                 .isInstanceOf(JdbcException.class)
                 .hasMessage("multiple rows found.");
@@ -98,7 +98,7 @@ class JdbcTemplateTest {
     void queryWithCondition() {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         jdbcTemplate.update(sql, arguments);
         jdbcTemplate.update(sql, arguments);
@@ -117,7 +117,7 @@ class JdbcTemplateTest {
     void queryForAllRows() {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         jdbcTemplate.update(sql, arguments);
         jdbcTemplate.update(sql, arguments);
@@ -136,7 +136,7 @@ class JdbcTemplateTest {
     void update() {
         // given
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
-        String[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
 
         jdbcTemplate.update(insertSql, arguments);
 
