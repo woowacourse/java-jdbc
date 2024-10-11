@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.DaoMethodExecutor;
+import com.interface21.jdbc.core.ConnectionExecutor;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -21,7 +21,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DaoMethodExecutor.consumeTransactional(getConnection(), connection -> {
+        ConnectionExecutor.executeTransactional(getConnection(), connection -> {
             final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
@@ -38,10 +38,10 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        DaoMethodExecutor.consume(getConnection(), connection -> userDao.insert(connection, user));
+        ConnectionExecutor.execute(getConnection(), connection -> userDao.insert(connection, user));
     }
 
     public User findById(final long id) {
-        return DaoMethodExecutor.execute(getConnection(), connection -> userDao.findById(connection, id));
+        return ConnectionExecutor.apply(getConnection(), connection -> userDao.findById(connection, id));
     }
 }

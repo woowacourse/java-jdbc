@@ -6,13 +6,13 @@ import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DaoMethodExecutor {
+public class ConnectionExecutor {
 
-    private DaoMethodExecutor() {
+    private ConnectionExecutor() {
 
     }
 
-    public static void consumeTransactional(Connection connection, Consumer<Connection> consumer) {
+    public static void executeTransactional(Connection connection, Consumer<Connection> consumer) {
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
@@ -46,7 +46,7 @@ public class DaoMethodExecutor {
         }
     }
 
-    public static void consume(Connection connection, Consumer<Connection> consumer) {
+    public static void execute(Connection connection, Consumer<Connection> consumer) {
         try (connection) {
             consumer.accept(connection);
         } catch (SQLException e) {
@@ -54,7 +54,7 @@ public class DaoMethodExecutor {
         }
     }
 
-    public static <T> T execute(Connection connection, Function<Connection, T> function) {
+    public static <T> T apply(Connection connection, Function<Connection, T> function) {
         try (connection) {
             return function.apply(connection);
         } catch (SQLException e) {

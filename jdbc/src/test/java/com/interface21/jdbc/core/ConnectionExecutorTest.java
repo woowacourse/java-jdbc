@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class DaoMethodExecutorTest {
+class ConnectionExecutorTest {
 
     private Connection connection;
 
@@ -25,12 +25,12 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Consumer를 하나의 트랜잭션 안에서 처리한다.")
     @Test
-    void consumeTransactional() throws SQLException {
+    void executeTransactional() throws SQLException {
         // given
         List<Integer> list = new ArrayList<>();
 
         // when
-        DaoMethodExecutor.consumeTransactional(connection, conn -> addZero(connection, list));
+        ConnectionExecutor.executeTransactional(connection, conn -> addZero(connection, list));
 
         // then
         assertThat(list).contains(0);
@@ -42,10 +42,10 @@ class DaoMethodExecutorTest {
 
     @DisplayName("예외가 발생하면 롤백한다.")
     @Test
-    void consumeTransactional_rollback() throws SQLException {
+    void executeTransactional_rollback() throws SQLException {
         // when
         assertThatThrownBy(
-                () -> DaoMethodExecutor.consumeTransactional(connection, conn -> throwException(connection)))
+                () -> ConnectionExecutor.executeTransactional(connection, conn -> throwException(connection)))
                 .isInstanceOf(DataAccessException.class);
 
         // then
@@ -57,12 +57,12 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Consumer를 처리하고 커넥션을 닫는다.")
     @Test
-    void consume() throws SQLException {
+    void execute() throws SQLException {
         // given
         List<Integer> list = new ArrayList<>();
 
         // when
-        DaoMethodExecutor.consume(connection, conn -> addZero(connection, list));
+        ConnectionExecutor.execute(connection, conn -> addZero(connection, list));
 
         // then
         assertThat(list).contains(0);
@@ -71,9 +71,9 @@ class DaoMethodExecutorTest {
 
     @DisplayName("입력된 Function을 처리하고 커넥션을 닫는다.")
     @Test
-    void execute() throws SQLException {
+    void apply() throws SQLException {
         // when
-        int value = DaoMethodExecutor.execute(connection, this::getZero);
+        int value = ConnectionExecutor.apply(connection, this::getZero);
 
         // then
         assertThat(value).isEqualTo(0);
