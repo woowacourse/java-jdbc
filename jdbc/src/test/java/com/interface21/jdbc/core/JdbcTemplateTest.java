@@ -16,7 +16,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ class JdbcTemplateTest {
         resultSet = mock(ResultSet.class);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        jdbcTemplate = new JdbcTemplate(mock(DataSource.class));
+        jdbcTemplate = new JdbcTemplate();
     }
 
     @DisplayName("입력된 쿼리에 따라 업데이트를 수행한다.")

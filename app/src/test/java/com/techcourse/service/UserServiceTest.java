@@ -23,7 +23,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() throws SQLException {
         DataSource dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcTemplate = new JdbcTemplate();
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);

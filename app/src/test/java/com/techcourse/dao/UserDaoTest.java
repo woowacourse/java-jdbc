@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -21,7 +22,7 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         DataSource dataSource = DataSourceConfig.getInstance();
         connection = dataSource.getConnection();
-        userDao = new UserDao(dataSource);
+        userDao = new UserDao(new JdbcTemplate());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(connection, user);
     }
