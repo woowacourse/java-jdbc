@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
     private static final int INIT_ROW_NUMBER = 0;
     private static final int REQUIRED_DATA_SIZE = 1;
+    public static final String DATABASE_CONNECTION_ERROR = "데이터베이스 연결에 실패했습니다. : %s";
 
     private final DataSource dataSource;
 
@@ -35,7 +37,7 @@ public class JdbcTemplate {
             return rows;
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new DataConnectionException(e);
+            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
         }
     }
 
@@ -48,7 +50,7 @@ public class JdbcTemplate {
             return extractData(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
-            throw new DataConnectionException(e);
+            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
         }
     }
 
