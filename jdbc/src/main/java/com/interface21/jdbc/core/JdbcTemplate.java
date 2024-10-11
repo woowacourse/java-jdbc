@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private Connection getConnection() {
+    public Connection getConnection() {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -40,37 +40,6 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection connection = getConnection();
-        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-        ResultSet resultSet = execute(preparedStatement, args);
-
-        try (connection; preparedStatement; resultSet) {
-            return extractResults(rowMapper, resultSet);
-        } catch (SQLException e) {
-            log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
-        }
-    }
-
-    private <T> List<T> extractResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
-        }
-        return results;
-    }
-
-    private ResultSet execute(PreparedStatement preparedStatement, Object... args) {
-        try {
-            PreparedStatementSetter.setValue(preparedStatement, args);
-            return preparedStatement.executeQuery();
-        } catch (SQLException e) {
-            log.info("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException(preparedStatement + "을 실행하던 중 오류가 발생했습니다.");
-        }
-    }
-
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
 
@@ -85,11 +54,54 @@ public class JdbcTemplate {
         return results.size() != 1;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+        ResultSet resultSet = execute(preparedStatement, args);
+
+        try (connection; preparedStatement; resultSet) {
+            return extractResults(rowMapper, resultSet);
+        } catch (SQLException e) {
+            log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        }
+    }
+
+    private ResultSet execute(PreparedStatement preparedStatement, Object... args) {
+        try {
+            PreparedStatementSetter.setValue(preparedStatement, args);
+            return preparedStatement.executeQuery();
+        } catch (SQLException e) {
+            log.info("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(preparedStatement + "을 실행하던 중 오류가 발생했습니다.");
+        }
+    }
+
+    private <T> List<T> extractResults(RowMapper<T> rowMapper, ResultSet resultSet) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+        }
+        return results;
+    }
+
     public int update(String sql, Object... args) {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
         try (connection; preparedStatement) {
+            PreparedStatementSetter.setValue(preparedStatement, args);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
+            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        }
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
+
+        try (preparedStatement) {
             PreparedStatementSetter.setValue(preparedStatement, args);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
