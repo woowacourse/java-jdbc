@@ -5,7 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import com.techcourse.support.jdbc.ConnectionProvider;
+import com.techcourse.support.jdbc.ConnectionSynchronizeManager;
 
 public class UserService {
 
@@ -18,15 +18,17 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        ConnectionProvider.getConnection();
+        ConnectionSynchronizeManager.getConnection();
         return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        Connection conn = ConnectionProvider.getConnection();
+        Connection conn = ConnectionSynchronizeManager.getConnection();
         conn.setAutoCommit(false);
         try {
             userDao.insert(user);
+
+            conn.commit();
         } catch (Exception e) {
             conn.rollback();
             throw e;
@@ -34,13 +36,15 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = ConnectionProvider.getConnection();
+        Connection conn = ConnectionSynchronizeManager.getConnection();
         conn.setAutoCommit(false);
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
+
+            conn.commit();
         } catch (Exception e) {
             conn.rollback();
             throw e;

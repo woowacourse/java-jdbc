@@ -7,7 +7,7 @@ import com.techcourse.config.DataSourceConfig;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class ConnectionProvider {
+public class ConnectionSynchronizeManager {
 
     public static Connection getConnection() {
         try {

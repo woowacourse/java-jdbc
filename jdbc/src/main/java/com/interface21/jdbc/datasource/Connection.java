@@ -51,6 +51,14 @@ public class Connection {
         }
     }
 
+    public void close() {
+        try {
+            this.connection.close();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public java.sql.Connection getConnection() {
         return connection;
     }

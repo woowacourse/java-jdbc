@@ -29,7 +29,7 @@ public class JdbcTemplate {
         Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
-        try (conn; pstmt) {
+        try (pstmt) {
             setPreparedStatementArgs(sql, args, pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -41,7 +41,7 @@ public class JdbcTemplate {
         Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
-        try (conn; pstmt) {
+        try (pstmt) {
             setPreparedStatementArgs(sql, args, pstmt);
             return executeQuery(rowMapper, pstmt);
         } catch (SQLException e) {
@@ -54,7 +54,7 @@ public class JdbcTemplate {
         Connection conn = getConnection();
         final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
-        try (conn; pstmt) {
+        try (pstmt) {
             setPreparedStatementArgs(sql, args, pstmt);
             List<T> result = executeQuery(rowMapper, pstmt);
             return requiredSingleResult(result);
@@ -108,7 +108,12 @@ public class JdbcTemplate {
 
     private Connection getConnection() {
         try {
-            return ConnectionContext.conn.get().getConnection();
+            com.interface21.jdbc.datasource.Connection conn = ConnectionContext.conn.get();
+            if(conn.isClosed()) {
+                ConnectionContext.conn.remove();
+                throw new NullPointerException();
+            }
+            return conn.getConnection();
         } catch (NullPointerException nullPointerException) {
             try {
                 Connection conn = dataSource.getConnection();
