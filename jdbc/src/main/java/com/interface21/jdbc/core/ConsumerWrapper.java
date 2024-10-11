@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ public final class ConsumerWrapper {
                 consumer.accept(i);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new DataAccessException(e);
             }
         };
     }
