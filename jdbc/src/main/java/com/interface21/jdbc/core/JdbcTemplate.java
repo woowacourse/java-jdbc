@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.CannotQueryException;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,15 +22,24 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+        return update(connection, sql, preparedStatementSetter);
+    }
+
+    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             int rowCount = preparedStatement.executeUpdate();
             log.debug("query : {}, rowCount : {}", sql, rowCount);
             return rowCount;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotQueryException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -42,7 +51,7 @@ public class JdbcTemplate {
             return getObject(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error("SQL error during queryForObject: {}", e.getMessage(), e);
-            throw new CannotQueryException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -58,7 +67,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotQueryException(e);
+            throw new DataAccessException(e);
         }
 
         return result;
