@@ -20,7 +20,7 @@ import java.sql.Statement;
 
 /**
  * pooling을 사용한 경우와 사용하지 않은 경우 트래픽이 얼마나 차이나는지 확인해보자.
- *
+ * <p>
  * network bandwidth capture
  * 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자.
  * $ sudo iftop -i lo0 -nf "host localhost"
@@ -60,6 +60,7 @@ class PoolingVsNoPoolingTest {
         container.stop();
     }
 
+    //8s
     @Test
     void noPoling() throws SQLException {
         final var dataSource = createMysqlDataSource();
@@ -72,6 +73,7 @@ class PoolingVsNoPoolingTest {
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
 
+    //2s
     @Test
     void pooling() throws SQLException {
         final var config = new HikariConfig();
