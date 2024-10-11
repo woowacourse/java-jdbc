@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
@@ -42,20 +43,41 @@ class UserDaoTest {
     @DisplayName("아이디로 유저 정보를 조회한다.")
     @Test
     void findById() {
-        final var user = userDao.findById(1L)
-                .orElseThrow();
+        final var user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertAll(
+                () -> assertThat(user).isPresent(),
+                () -> assertThat(user.get().getAccount()).isEqualTo("gugu")
+        );
+    }
+
+    @DisplayName("아이디로 유저 정보를 조회시 데이터가 없다면 비어있다.")
+    @Test
+    void findByIdEmpty() {
+        final var user = userDao.findById(2L);
+
+        assertThat(user).isEmpty();
     }
 
     @DisplayName("계정으로 유저 정보를 조회한다.")
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account)
-                .orElseThrow();
+        final var user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(user).isPresent(),
+                () -> assertThat(user.get().getAccount()).isEqualTo("gugu")
+        );
+    }
+
+    @DisplayName("계정으로 유저 정보를 조회시 데이터가 없다면 비어있다.")
+    @Test
+    void findByAccountEmpty() {
+        final var account = "gumayushi";
+        final var user = userDao.findByAccount(account);
+
+        assertThat(user).isEmpty();
     }
 
     @DisplayName("유저를 추가한다.")
