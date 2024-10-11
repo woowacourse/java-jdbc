@@ -38,6 +38,7 @@ class UserHistoryDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
     }
 
+    @DisplayName("사용자에 대한 기록을 저장한다.")
     @Test
     void log() {
         // given
