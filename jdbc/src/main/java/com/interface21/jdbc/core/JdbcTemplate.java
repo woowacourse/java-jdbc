@@ -38,7 +38,7 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    private <R> R execute(String sql, StatementExecutor<R> executor, Object... parameters) {
+    private <T> T execute(String sql, StatementExecutor<T> executor, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
 
