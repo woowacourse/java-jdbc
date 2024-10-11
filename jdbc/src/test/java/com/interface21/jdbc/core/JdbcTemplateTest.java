@@ -17,7 +17,6 @@ import static org.mockito.Mockito.*;
 
 class JdbcTemplateTest {
 
-
     private JdbcTemplate jdbcTemplate;
     private DataSource dataSource;
     private Connection connection;
