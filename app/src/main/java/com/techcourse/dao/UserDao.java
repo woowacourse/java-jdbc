@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
+
     private final RowMapper<User> userRowMapper = (resultSet, rowNum) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
