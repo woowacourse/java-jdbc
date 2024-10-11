@@ -12,8 +12,6 @@ import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.sample.Person;
 import java.sql.Connection;
-import java.sql.JDBCType;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,19 +32,16 @@ class JdbcTemplateTest {
     private ResultSet resultSet;
     private PreparedStatement preparedStatement;
     private Connection connection;
-    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
         preparedStatement = mock(PreparedStatement.class);
         connection = mock(Connection.class);
-        dataSource = mock(DataSource.class);
         resultSet = mock(ResultSet.class);
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate(mock(DataSource.class));
     }
 
     @DisplayName("입력된 쿼리에 따라 업데이트를 수행한다.")
@@ -56,10 +51,9 @@ class JdbcTemplateTest {
         String sql = "insert into people (name, age) values (?, ?)";
 
         // when
-        int updated = jdbcTemplate.update(sql, "name", 15);
+        int updated = jdbcTemplate.update(connection, sql, "name", 15);
 
         // then
-        verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).setObject(1, "name");
         verify(preparedStatement).setObject(2, 15);
@@ -78,10 +72,9 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25);
 
         // when
-        Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1);
+        Person person = jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 1);
 
         // then
-        verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
         verify(resultSet, times(2)).next();
@@ -96,9 +89,8 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 3))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 3))
                 .isInstanceOf(EmptyResultDataAccessException.class);
-        verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
         verify(resultSet).next();
@@ -115,9 +107,8 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 25))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 25))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
-        verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
         verify(resultSet, times(3)).next();
@@ -134,10 +125,9 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when
-        List<Person> people = jdbcTemplate.queryForList(sql, ROW_MAPPER);
+        List<Person> people = jdbcTemplate.queryForList(connection, sql, ROW_MAPPER);
 
         // then
-        verify(dataSource).getConnection();
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
         verify(resultSet, times(3)).next();

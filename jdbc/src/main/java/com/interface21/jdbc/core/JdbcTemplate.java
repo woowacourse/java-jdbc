@@ -24,12 +24,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... parameters) {
-        return update(sql, getDefaultPreparedStatementSetter(parameters));
+    public int update(Connection connection, String sql, Object... parameters) {
+        return update(connection, sql, getDefaultPreparedStatementSetter(parameters));
     }
 
-    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        return execute(sql, PreparedStatement::executeUpdate, preparedStatementSetter);
+    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, preparedStatementSetter);
     }
 
     private PreparedStatementSetter getDefaultPreparedStatementSetter(Object[] parameters) {
@@ -37,13 +37,13 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(
+            Connection connection,
             String sql,
             PreparedStatementCallback<T> callback,
             PreparedStatementSetter preparedStatementSetter
     ) {
         log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             return callback.execute(preparedStatement);
         } catch (SQLException e) {
@@ -52,22 +52,30 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForObject(connection, sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
+    public <T> T queryForObject(
+            Connection connection,
+            String sql,
+            RowMapper<T> rowMapper,
+            PreparedStatementSetter preparedStatementSetter
+    ) {
+        List<T> results = queryForList(connection, sql, rowMapper, preparedStatementSetter);
         validateSingleResult(results);
         return results.getFirst();
     }
 
     public <T> List<T> queryForList(
+            Connection connection,
             String sql,
             RowMapper<T> rowMapper,
             PreparedStatementSetter preparedStatementSetter
     ) {
-        return execute(sql, preparedStatement -> executeQuery(preparedStatement, rowMapper), preparedStatementSetter);
+        return execute(connection, sql,
+                preparedStatement -> executeQuery(preparedStatement, rowMapper),
+                preparedStatementSetter);
     }
 
     private <T> void validateSingleResult(List<T> results) {
@@ -93,7 +101,7 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return queryForList(sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
+    public <T> List<T> queryForList(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return queryForList(connection, sql, rowMapper, getDefaultPreparedStatementSetter(parameters));
     }
 }
