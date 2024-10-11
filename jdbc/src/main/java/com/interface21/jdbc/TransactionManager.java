@@ -27,7 +27,7 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
+        } catch (SQLException e) {
             rollback(connection);
         }
     }
@@ -35,8 +35,8 @@ public class TransactionManager {
     private void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
