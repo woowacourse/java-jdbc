@@ -1,15 +1,11 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.Connection;
-import com.interface21.jdbc.datasource.ConnectionContext;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.SQLException;
-import javax.sql.DataSource;
+import com.techcourse.support.jdbc.ConnectionProvider;
 
 public class UserService {
 
@@ -22,12 +18,12 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        getConnection();
+        ConnectionProvider.getConnection();
         return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        Connection conn = getConnection();
+        Connection conn = ConnectionProvider.getConnection();
         conn.setAutoCommit(false);
         try {
             userDao.insert(user);
@@ -38,7 +34,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = getConnection();
+        Connection conn = ConnectionProvider.getConnection();
         conn.setAutoCommit(false);
         try {
             final var user = findById(id);
@@ -48,30 +44,6 @@ public class UserService {
         } catch (Exception e) {
             conn.rollback();
             throw e;
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            Connection conn = ConnectionContext.conn.get();
-            if(conn.isClosed()) {
-                ConnectionContext.conn.remove();
-                throw new NullPointerException();
-            }
-            return conn;
-        } catch (NullPointerException nullPointerException) {
-            return createNewConnection();
-        }
-    }
-
-    private Connection createNewConnection() {
-        try {
-            DataSource dataSource = DataSourceConfig.getInstance();
-            Connection conn = new Connection(dataSource.getConnection());
-            ConnectionContext.conn.set(conn);
-            return conn;
-        } catch (SQLException sqlException) {
-            throw new DataAccessException(sqlException);
         }
     }
 }
