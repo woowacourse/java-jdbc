@@ -18,11 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
  * FirstUserService 클래스의 메서드를 실행할 때 첫 번째 트랜잭션이 생성된다.
  * SecondUserService 클래스의 메서드를 실행할 때 두 번째 트랜잭션이 어떻게 되는지 관찰해보자.
  *
- * 스프링에서는 데이터베이스가 제공하는 트랜잭션을 물리 트랜잭션, 자체적으로 관리하는 트랜잭션을 논리 트랜잭션이라 한다.
- * 물리 트랜잭션에는 여러 논리 트랜잭션이 매핑될 수 있다.
- * 물리 트랜잭션은 매핑된 모든 논리 트랜잭션이 커밋되어야만 커밋된다.
- * 논리트랜잭션이 하나라도 롤백되면 물리 트랜잭션이 롤백된다.
- *
  * https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#tx-propagation
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -38,6 +33,7 @@ class Stage2Test {
 
     @AfterEach
     void tearDown() {
+        log.info("teardown");
         userRepository.deleteAll();
     }
 
@@ -46,6 +42,7 @@ class Stage2Test {
      * 왜 그런 결과가 나왔을까?
      * 내부에서 수행되는 saveSecondTransactionWithRequired 메서드에는 @Transactional(propagation = Propagation.REQUIRED) 옵션이 붙어있다.
      * 이 옵션은 현재 스코프 혹은 상위 스코프에 물리 트랜잭션이 없는 경우 새 물리 트랜잭션을 시작하고, 있는 경우 그 물리 트랜잭션에 참여하는 옵션이다.
+     * 논리 트랜잭션은 각 메서드마다 생긴다.
      * 상위 스코프 트랜잭션의 격리레벨, 타임아웃 설정, 읽기전용 플래그를 따라간다.
      * saveFirstTransactionWithRequired 메서드에 의해 트랜잭션이 시작되므로 saveSecondTransactionWithRequired 은 이 트랜잭션에 참여한다.
      */
@@ -99,7 +96,8 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * 주석인 경우 FirstUserService.saveFirstTransactionWithSupports() 내부에서 호출한 SecondUserService.saveSecondTransactionWithSupports() 에 의해 트랜잭션이 생성된다.
-     * 그리고 그 트랜잭션은 활성화되지 않는다. 즉, 트랜잭션이 적용되지 않은 상태로 실행된다. => 물리 1개 논리 1개
+     * 그리고 그 트랜잭션은 활성화되지 않는다. 즉, 트랜잭션이 적용되지 않은 상태로 실행된다. => 물리 0개 논리 1개
+     *
      * 반면, 주석이 아닌 경우 FirstUserService.saveFirstTransactionWithSupports()에 의해 트랜잭션이 생성되고 이것이 적용된다. => 물리 1개 논리 2개
      *
      * 즉, 상위 스코프에 활성화된 트랜잭션이 존재하는 경우 이에 참여하고, 없는 경우 비활성화된 트랜잭션이 생성되고 트랜잭션이 활성화되지 않은 상태로 실행된다.
@@ -110,8 +108,8 @@ class Stage2Test {
         Set<String> actual = firstUserService.saveFirstTransactionWithSupports();
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
@@ -127,23 +125,22 @@ class Stage2Test {
         Set<String> actual = firstUserService.saveFirstTransactionWithMandatory();
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 2개
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 1개
+     * 논리적 트랜잭션은 2개 동작한다.
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 1개
-     *
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 0개
+     * 논리적 트랜잭션은 1개 동작한다.
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      *
      * 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 개념을 직접 서술한 문서를 찾지 못했다...
-     * 다만, 여러 학습 테스트를 통해 다음과 같은 사실을 추론할 수 있었다.
-     * 1. 물리 트랜잭션에는 적어도 1개 이상의 논리 트랜잭션이 매핑된다.
-     * 2. 트랜잭션 어노테이션이 있으면 무조건 물리 트랜잭션은 생성된다.
-     * 3. 스프링에는 트랜잭션의 활성화 개념이 있다. 트랜잭션이 활성화되어있지 않으면, 예외가 발생해도 롤백되지 않는다.
-     * 4. 스프링 공식 문서에서 트랜잭션 전파 옵션 서술에서 트랜잭션을 사용하지 않는다는 말은, 논리 트랜잭션이 활성화되지 않는다는 말이다. 항상 논리 트랜잭션과 이것이 매핑될 물리 트랜잭션이 생기긴 한다.
+     * 물리적 트랜잭션은 데이터베이스가 관리하는 트랜잭션(setAutocommit(false) 하면 1개 생성된다.)
+     * 논리적 트랜잭션은 스프링이 관리하는 트랜잭션
+     *
      */
     @Test
     void testNotSupported() {
@@ -151,8 +148,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
@@ -181,15 +178,20 @@ class Stage2Test {
      * 트랜잭션을 사용하지 않는다는 옵션이다. 상위 스코프에 활성화된 트랜잭션이 적용중이라면 예외가 발생한다.
      * 즉, 상위 스코프 트랜잭션이 Propagation.SUPPORTS 로 지정되어있고, 상위의 상위 트랜잭션이 없는 경우 예외가 발생하지 않는다.
      *
-     * 물리 트랜잭션은 1개가 존재한다. 다만, 그 물리 트랜잭션에 매핑된 논리 트랜잭션이 활성화되지 않는 것이다.
+     * 주석 처리 한 경우 물리 트랜잭션은 0개가 존재한다. 논리 트랜잭션은 비활성화 된 상태로 1개 존재한다.
+     *
+     * 주석을 해제한 경우 물리 트랜잭션은 1개 존재한다. 논리 트랜잭션은 1개 존재한다. 하위 스코프에서 예외가 발생하고 이를 처리하지 않으므로 트랜잭션이 롤백된다.
+     *
      */
     @Test
     void testNever() {
+//        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNever());
+//        assertThat(firstUserService.findAll()).hasSize(0);
         final var actual = firstUserService.saveFirstTransactionWithNever();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
