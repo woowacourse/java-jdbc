@@ -34,8 +34,9 @@ public class JdbcTemplate {
         return execute(sql, args, statement -> {
             log.info("select query : {}", sql);
             final ResultSet resultSet = statement.executeQuery();
-            final List<T> data = PreparedStatementUtils.extractData(resultSet, rowMapper);
-            return result(data);
+            SingleDataExtractor singleDataExtractor = new SingleDataExtractor();
+            return singleDataExtractor.extract(resultSet, rowMapper)
+                    .getFirst();
         });
     }
 
@@ -43,7 +44,8 @@ public class JdbcTemplate {
         return execute(sql, args, statement -> {
             final ResultSet resultSet = statement.executeQuery();
             log.info("select query : {}", sql);
-            return PreparedStatementUtils.extractData(resultSet, rowMapper);
+            MultiDataExtractor multiDataExtractor = new MultiDataExtractor();
+            return multiDataExtractor.extract(resultSet, rowMapper);
         });
     }
 
@@ -56,15 +58,5 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
-    }
-
-    private <T> T result(final List<T> data) throws SQLException {
-        if (data.isEmpty()) {
-            throw new SQLException("sql 결과 데이터가 존재하지 않습니다.");
-        }
-        if (data.size() > 1) {
-            throw new SQLException("sql 결과 데이터가 2개 이상 존재합니다.");
-        }
-        return data.getFirst();
     }
 }
