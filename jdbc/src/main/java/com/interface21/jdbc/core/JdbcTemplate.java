@@ -36,18 +36,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
-            parameterSetter.setValues(pstmt);
-            ResultSet resultSet = pstmt.executeQuery();
-
-            return mapResults(rowMapper, resultSet);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql, pstmt -> mapResults(rowMapper, pstmt.executeQuery()), args);
     }
 
     private <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
@@ -64,13 +53,17 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            PreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
-            statementSetter.setValues(pstmt);
+            PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
+            parameterSetter.setValues(pstmt);
 
-            return pstmt.executeUpdate();
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
