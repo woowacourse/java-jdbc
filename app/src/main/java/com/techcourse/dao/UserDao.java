@@ -16,7 +16,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> userRowMapper = rs -> {
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> {
         if (rs.next()) {
             return new User(
                     rs.getLong("id"),
@@ -28,10 +28,10 @@ public class UserDao {
         return null;
     };
 
-    private final RowMapper<List<User>> usersRowMapper = rs -> {
+    private static final RowMapper<List<User>> USERS_ROW_MAPPER = rs -> {
         final List<User> users = new LinkedList<>();
         while (rs.next()) {
-            users.add(userRowMapper.mapRow(rs));
+            users.add(USER_ROW_MAPPER.mapRow(rs));
         }
         return users;
     };
@@ -49,14 +49,14 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.query(usersRowMapper, SELECT_ALL_QUERY);
+        return jdbcTemplate.query(USERS_ROW_MAPPER, SELECT_ALL_QUERY);
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.query(userRowMapper, SELECT_BY_ID_QUERY, id);
+        return jdbcTemplate.query(USER_ROW_MAPPER, SELECT_BY_ID_QUERY, id);
     }
 
     public User findByAccount(final String account) {
-        return jdbcTemplate.query(userRowMapper, SELECT_BY_ACCOUNT_QUERY, account);
+        return jdbcTemplate.query(USER_ROW_MAPPER, SELECT_BY_ACCOUNT_QUERY, account);
     }
 }
