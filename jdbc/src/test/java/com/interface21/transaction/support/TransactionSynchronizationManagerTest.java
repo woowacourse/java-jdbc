@@ -17,8 +17,7 @@ class TransactionSynchronizationManagerTest {
     @Test
     void getResourceFail() {
         DataSource dataSource = mock(DataSource.class);
-        assertThatThrownBy(() -> TransactionSynchronizationManager.getResource(dataSource))
-                .isInstanceOf(NoSuchElementException.class);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @DisplayName("현재 스레드에 binding된 datasource를 반환한다")
@@ -44,8 +43,7 @@ class TransactionSynchronizationManagerTest {
 
         assertAll(
                 () -> assertThat(actualConnection).isEqualTo(mockConnection),
-                () -> assertThatThrownBy(() -> TransactionSynchronizationManager.getResource(dataSource))
-                        .isInstanceOf(NoSuchElementException.class)
+                () -> assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull()
         );
     }
 }

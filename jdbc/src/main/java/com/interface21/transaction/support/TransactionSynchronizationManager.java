@@ -14,11 +14,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(DataSource key) {
-        Connection connection = getThreadResource().get(key);
-        if(connection == null) {
-            throw new NoSuchElementException("cannot find connection for key " + key);
-        }
-        return connection;
+        return getThreadResource().get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
