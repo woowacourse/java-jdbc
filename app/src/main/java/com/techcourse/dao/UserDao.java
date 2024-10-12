@@ -24,13 +24,13 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.excute(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail());
         log.debug("query : {}", sql);
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.excute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.execute(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         log.debug("query : {}", sql);
     }
 

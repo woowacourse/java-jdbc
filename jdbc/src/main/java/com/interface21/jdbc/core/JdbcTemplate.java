@@ -25,7 +25,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatment(pstmt, param);
+            setParamToStatement(pstmt, param);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapResultByColumn(rs);
@@ -37,21 +37,11 @@ public class JdbcTemplate {
         }
     }
 
-    private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
-        List<Object> results = new ArrayList<>();
-        while (rs.next()) {
-            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                results.add(rs.getObject(i + 1));
-            }
-        }
-        return results;
-    }
-
     public List<List<Object>> queryList(String sql, Object... param) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatment(pstmt, param);
+            setParamToStatement(pstmt, param);
 
             List<List<Object>> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -67,11 +57,11 @@ public class JdbcTemplate {
         }
     }
 
-    public void excute(String sql, Object... param) {
+    public void execute(String sql, Object... param) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatment(pstmt, param);
+            setParamToStatement(pstmt, param);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -80,9 +70,19 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParamToStatment(PreparedStatement pstmt, Object[] param) throws SQLException {
+    private void setParamToStatement(PreparedStatement pstmt, Object[] param) throws SQLException {
         for (int i = 0; i < param.length; i++) {
             pstmt.setObject(i + 1, param[i]);
         }
+    }
+
+    private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
+        List<Object> results = new ArrayList<>();
+        while (rs.next()) {
+            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+                results.add(rs.getObject(i + 1));
+            }
+        }
+        return results;
     }
 }
