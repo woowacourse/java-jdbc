@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -69,10 +68,10 @@ public class JdbcTemplate {
     }
 
     private PreparedStatementSetter setParameter(final Object... params) {
-        final AtomicInteger index = new AtomicInteger(1);
         return ps -> {
+            int index = 1;
             for (final Object param : params) {
-                ps.setObject(index.getAndIncrement(), param);
+                ps.setObject(index++, param);
             }
         };
     }
