@@ -15,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-class DefaultResultSetExtractorTest {
+class RowMapperResultSetExtractorTest {
 
     @Mock
     private ResultSet resultSet;
@@ -29,10 +29,10 @@ class DefaultResultSetExtractorTest {
     @Test
     void extractResults() throws SQLException {
         RowMapper<String> USER_ROW_MAPPER = resultSet -> "kaki";
-        DefaultResultSetExtractor<String> defaultResultSetExtractor = new DefaultResultSetExtractor<>(USER_ROW_MAPPER);
+        RowMapperResultSetExtractor<String> rowMapperResultSetExtractor = new RowMapperResultSetExtractor<>(USER_ROW_MAPPER);
         when(resultSet.next()).thenReturn(true, false);
 
-        List<String> results = defaultResultSetExtractor.extractResults(resultSet);
+        List<String> results = rowMapperResultSetExtractor.extractResults(resultSet);
 
         assertAll(
                 () -> assertThat(results).hasSize(1),
