@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -43,7 +42,7 @@ class JdbcTemplateTest {
         void notSingleResultTest() throws SQLException {
             ResultSet resultSet = mock(ResultSet.class);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
-            when(resultSet.getRow()).thenReturn(2);
+            when(resultSet.next()).thenReturn(true).thenReturn(true);
 
             assertThatThrownBy(() -> jdbcTemplate.getResult("query", (rs, rowNum) -> new Object()))
                     .isInstanceOf(NotSingleResultException.class);
