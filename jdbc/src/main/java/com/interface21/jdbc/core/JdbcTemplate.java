@@ -37,8 +37,8 @@ public class JdbcTemplate {
                 return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (SQLException e) {
-            throw new IllegalArgumentException(e);
+        } catch (final SQLException e) {
+            throw new SqlExecutionException(e.getMessage());
         }
     }
 
@@ -53,7 +53,7 @@ public class JdbcTemplate {
             }
             return values;
         } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
+            throw new SqlExecutionException(e.getMessage());
         }
     }
 
@@ -63,7 +63,7 @@ public class JdbcTemplate {
             pss.setValue(ps);
             return executor.executor(ps);
         } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
+            throw new SqlExecutionException(e.getMessage());
         }
     }
 
