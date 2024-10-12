@@ -24,19 +24,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement psmt = conn.prepareStatement(sql)
-        ) {
-            pss.setValue(psmt);
-            ResultSet rs = psmt.executeQuery();
-
-            return getResultsFromResultSet(rowMapper, rs);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         try (PreparedStatement psmt = conn.prepareStatement(sql)) {
             pss.setValue(psmt);
@@ -48,12 +35,20 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, rowMapper, createArgumentPreparedStatementSetter(args));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        try (Connection conn = dataSource.getConnection()) {
+            return query(conn, sql, rowMapper, pss);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
         return query(conn, sql, rowMapper, createArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, createArgumentPreparedStatementSetter(args));
     }
 
     private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
