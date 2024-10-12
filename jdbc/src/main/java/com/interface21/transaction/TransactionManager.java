@@ -19,7 +19,7 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T transaction(Function<Connection, T> function) {
+    public <T> T executeTransaction(Function<Connection, T> function) {
         try (Connection connection = dataSource.getConnection()) {
             return executeTransaction(function, connection);
         } catch (SQLException e) {
@@ -28,7 +28,7 @@ public class TransactionManager {
         }
     }
 
-    public void transaction(Consumer<Connection> function) {
+    public void executeTransaction(Consumer<Connection> function) {
         try (Connection connection = dataSource.getConnection()) {
             executeTransaction(function, connection);
         } catch (SQLException e) {

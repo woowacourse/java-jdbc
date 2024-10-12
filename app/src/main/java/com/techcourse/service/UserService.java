@@ -20,19 +20,19 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return transactionManager.transaction(connection -> {
+        return transactionManager.executeTransaction(connection -> {
             return userDao.findById(connection, id);
         });
     }
 
     public void insert(final User user) {
-        transactionManager.transaction(connection -> {
+        transactionManager.executeTransaction(connection -> {
             userDao.insert(connection, user);
         });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.transaction(connection -> {
+        transactionManager.executeTransaction(connection -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);

@@ -33,10 +33,10 @@ class TransactionManagerTest {
 
     @Test
     @DisplayName("Function 을 이용한 트랜잭션을 성공적으로 수행한다.")
-    void successfulTransaction() throws SQLException {
+    void executeTransactionWithFunction() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        String result = transactionManager.transaction(conn -> "Success");
+        String result = transactionManager.executeTransaction(conn -> "Success");
 
         assertThat(result).isEqualTo("Success");
         verify(connection).setAutoCommit(false);
@@ -46,10 +46,10 @@ class TransactionManagerTest {
 
     @Test
     @DisplayName("Function 을 이용한 트랜잭션 중 예외가 발생하면 롤백한다.")
-    void transactionRollbackOnException() throws SQLException {
+    void executeTransactionWithFunctionRollback() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        assertThatThrownBy(() -> transactionManager.transaction((Function<Connection, Object>) conn -> {
+        assertThatThrownBy(() -> transactionManager.executeTransaction((Function<Connection, Object>) conn -> {
             throw new RuntimeException("Test exception");
         })).isInstanceOf(DataAccessException.class);
 
@@ -60,10 +60,10 @@ class TransactionManagerTest {
 
     @Test
     @DisplayName("Consumer를 이용한 트랜잭션을 성공적으로 수행한다.")
-    void successfulConsumerTransaction() throws SQLException {
+    void executeTransactionWithConsumer() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        transactionManager.transaction(conn -> {
+        transactionManager.executeTransaction(conn -> {
             // do something
         });
 
@@ -74,10 +74,10 @@ class TransactionManagerTest {
 
     @Test
     @DisplayName("Consumer 트랜잭션 중 예외가 발생하면 롤백한다.")
-    void consumerTransactionRollbackOnException() throws SQLException {
+    void executeTransactionWithConsumerRollback() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        assertThatThrownBy(() -> transactionManager.transaction((Consumer<Connection>) conn -> {
+        assertThatThrownBy(() -> transactionManager.executeTransaction((Consumer<Connection>) conn -> {
             throw new RuntimeException("Test exception");
         })).isInstanceOf(DataAccessException.class);
 
@@ -91,7 +91,7 @@ class TransactionManagerTest {
     void handleSQLException() throws SQLException {
         when(dataSource.getConnection()).thenThrow(new SQLException("Database connection failed"));
 
-        assertThatThrownBy(() -> transactionManager.transaction(conn -> "Test"))
+        assertThatThrownBy(() -> transactionManager.executeTransaction(conn -> "Test"))
                 .isInstanceOf(DataAccessException.class);
     }
 }
