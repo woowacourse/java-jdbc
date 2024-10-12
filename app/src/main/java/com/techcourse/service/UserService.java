@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.execute(connection -> {
+        transactionManager.runInTransaction(connection -> {
             final var user = userDao.findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, newPassword, id);

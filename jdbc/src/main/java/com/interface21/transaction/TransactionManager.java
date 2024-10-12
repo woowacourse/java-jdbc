@@ -15,22 +15,22 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(Function<Connection, T> function) {
+    public <T> T runInTransaction(Function<Connection, T> function) {
         try (Connection connection = dataSource.getConnection()) {
-            return start(function, connection);
+            return doInTransaction(function, connection);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
     }
 
-    public void execute(Consumer<Connection> consumer) {
-        execute(connection -> {
+    public void runInTransaction(Consumer<Connection> consumer) {
+        runInTransaction(connection -> {
             consumer.accept(connection);
             return null;
         });
     }
 
-    private <T> T start(Function<Connection, T> function, Connection connection) throws SQLException {
+    private <T> T doInTransaction(Function<Connection, T> function, Connection connection) throws SQLException {
         try {
             connection.setAutoCommit(false);
             T result = function.apply(connection);

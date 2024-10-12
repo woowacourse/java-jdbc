@@ -48,7 +48,7 @@ class TransactionManagerTest {
         void executeSuccessWithReturnType() {
             Function<Connection, String> functionResult = connection -> "kaki";
 
-            String result = transactionManager.execute(functionResult);
+            String result = transactionManager.runInTransaction(functionResult);
 
             assertAll(
                     () -> assertThat(result).isEqualTo("kaki"),
@@ -65,7 +65,7 @@ class TransactionManagerTest {
             boolean[] consumerResults = {false, false};
             Consumer<Connection> consumer = connection -> consumerResults[0] = true;
 
-            transactionManager.execute(consumer);
+            transactionManager.runInTransaction(consumer);
 
             assertAll(
                     () -> assertThat(consumerResults).containsExactly(true, false),
@@ -88,7 +88,7 @@ class TransactionManagerTest {
                 throw new IllegalArgumentException();
             };
 
-            assertThatThrownBy(() -> transactionManager.execute(functionResult))
+            assertThatThrownBy(() -> transactionManager.runInTransaction(functionResult))
                     .isInstanceOf(DataAccessException.class);
 
             assertAll(
@@ -106,7 +106,7 @@ class TransactionManagerTest {
                 throw new IllegalArgumentException();
             };
 
-            assertThatThrownBy(() -> transactionManager.execute(consumer))
+            assertThatThrownBy(() -> transactionManager.runInTransaction(consumer))
                     .isInstanceOf(DataAccessException.class);
 
             assertAll(
