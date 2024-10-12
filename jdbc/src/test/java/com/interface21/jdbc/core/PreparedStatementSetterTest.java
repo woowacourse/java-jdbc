@@ -41,4 +41,16 @@ class PreparedStatementSetterTest {
         // then
         Mockito.verifyNoMoreInteractions(pstmt);
     }
+
+    @Test
+    void 파라미터가_null일_걍우_아무_값도_설정하지_않음() throws SQLException {
+        // given
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+
+        // when
+        PreparedStatementSetter.setParameters(pstmt, null);
+
+        // then
+        Mockito.verifyNoMoreInteractions(pstmt);
+    }
 }

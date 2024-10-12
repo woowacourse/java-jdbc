@@ -6,6 +6,10 @@ import java.sql.SQLException;
 public class PreparedStatementSetter {
 
     public static void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
+        if (params == null) {
+            return;
+        }
+
         for (int index = 0; index < params.length; index++) {
             int sqlParamIndex = index + 1;
             pstmt.setObject(sqlParamIndex, params[index]);
