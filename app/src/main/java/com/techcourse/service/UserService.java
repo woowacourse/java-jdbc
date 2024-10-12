@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import javax.sql.DataSource;
+import com.interface21.transaction.support.JdbcTransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -9,10 +11,16 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final JdbcTransactionManager txManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(
+            final UserDao userDao,
+            final UserHistoryDao userHistoryDao,
+            final DataSource dataSource
+    ) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.txManager = new JdbcTransactionManager(dataSource);
     }
 
     public User findById(final long id) {
