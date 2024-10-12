@@ -44,9 +44,9 @@ class JdbcTemplateTest {
 
     @DisplayName("JdbcTemplate이 query와 parameters로 executeUpdate를 실행할 수 있다.")
     @Test
-    void testUpdate() throws SQLException {
+    void testUpdate() {
         // given
-        final var query = "update test_table set test_attribute1 = ?, test_attribute2 = ?, test_attribute3 = ?";
+        final String query = "update test_table set test_attribute1 = ?, test_attribute2 = ?, test_attribute3 = ?";
 
         // when
         jdbcTemplate.update(query, "test_value1", "test_value2", "test_value3");
@@ -72,7 +72,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("test_attribute2")).thenReturn("test_value2");
         when(resultSet.getString("test_attribute3")).thenReturn("test_value3");
 
-        final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
+        final String query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
         Optional<TestEntity> optionalResult = jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, TEST_ID);
@@ -97,7 +97,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
+        final String query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when
         Optional<TestEntity> optionalResult = jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, TEST_ID);
@@ -114,7 +114,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, false);
 
-        final var query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
+        final String query = "select id, test_attribute1, test_attribute2, test_attribute3 from test_table where id = ?";
 
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(query, this::mapTestEntityFromResultSet, TEST_ID))

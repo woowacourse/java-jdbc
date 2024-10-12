@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.interface21.jdbc.exception.DatabaseException;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.exception.UnexpectedResultSizeException;
 
 public class JdbcTemplate {
@@ -30,14 +30,26 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            executeUpdate(conn, sql, pstmtSetter);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void update(final Connection conn, final String sql, Object... params) {
+        executeUpdate(conn, sql, new ArgumentPreparedStatementSetter(params));
+    }
+
+    public void executeUpdate(final Connection conn, final String sql, final PreparedStatementSetter pstmtSetter) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DatabaseException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -66,7 +78,7 @@ public class JdbcTemplate {
             return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DatabaseException(e);
+            throw new DataAccessException(e);
         }
     }
 
