@@ -44,8 +44,8 @@ public class UserDao {
     }
 
     public void update(final Connection connection, final User user) {
-        final String sql = "UPDATE users SET password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getEmail(), user.getId());
+        final String sql = "UPDATE users SET password = ? WHERE id = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
