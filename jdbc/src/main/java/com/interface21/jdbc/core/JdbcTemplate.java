@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 
 public class JdbcTemplate {
@@ -17,24 +16,21 @@ public class JdbcTemplate {
         this.queryExecutor = new QueryExecutor(dataSource);
     }
 
-    public <T> List<T> queryForList(Function<ResultSet, T> mapper, String sql, Object... args) {
+    public <T> List<T> query(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
         return queryExecutor.executeFunction(preparedStatement -> {
-            ResultSet rs = preparedStatement.executeQuery();
             List<T> result = new LinkedList<>();
+            ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
-                result.add(mapper.apply(rs));
+                result.add(mapper.mapRow(rs));
             }
             return result;
         }, sql, args);
     }
 
-    public <T> T queryForObject(Function<ResultSet, T> mapper, String sql, Object... args) {
+    public <T> T queryForObject(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
         return queryExecutor.executeFunction(preparedStatement -> {
             ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                return mapper.apply(rs);
-            }
-            return null;
+            return mapper.mapRow(rs);
         }, sql, args);
     }
 

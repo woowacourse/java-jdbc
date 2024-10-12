@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -42,7 +43,7 @@ class JdbcTemplateTest {
         String selectQuery = "select * from food where name = ?";
         jdbcTemplate.command(insertQuery, "떡볶이", 8000);
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.query(this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(8000);
     }
@@ -56,7 +57,7 @@ class JdbcTemplateTest {
         jdbcTemplate.command(insertQuery, "떡볶이", 8000);
         jdbcTemplate.command(updateQuery, 10000, "떡볶이");
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.query(this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(10000);
     }
@@ -70,7 +71,7 @@ class JdbcTemplateTest {
         jdbcTemplate.command(insertQuery, "떡볶이", 8000);
         jdbcTemplate.command(deleteQuery, "떡볶이");
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.query(this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food).isNull();
     }
@@ -82,7 +83,7 @@ class JdbcTemplateTest {
         String selectQuery = "select * from food where name = ?";
         jdbcTemplate.command(insertQuery, "떡볶이", 8000);
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.query(this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(8000);
     }
@@ -95,7 +96,7 @@ class JdbcTemplateTest {
         jdbcTemplate.command(insertQuery, "달콤 떡볶이", 8000);
         jdbcTemplate.command(insertQuery, "매콤 떡볶이", 9000);
 
-        List<Food> foods = jdbcTemplate.queryForList(this::mapToObject, selectQuery);
+        List<Food> foods = jdbcTemplate.query(this::mapToObjects, selectQuery);
 
         assertThat(foods).hasSize(2);
         assertThat(foods).extracting("name").contains("달콤 떡볶이", "매콤 떡볶이");
@@ -103,10 +104,28 @@ class JdbcTemplateTest {
 
     private Food mapToObject(ResultSet rs) {
         try {
-            return new Food(
-                    rs.getString("name"),
-                    rs.getInt("cost")
-            );
+            if (rs.next()) {
+                return new Food(
+                        rs.getString("name"),
+                        rs.getInt("cost")
+                );
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private List<Food> mapToObjects(ResultSet rs) {
+        try {
+            List<Food> foods = new ArrayList<>();
+            while (rs.next()) {
+                foods.add(new Food(
+                        rs.getString("name"),
+                        rs.getInt("cost")
+                ));
+            }
+            return foods;
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
