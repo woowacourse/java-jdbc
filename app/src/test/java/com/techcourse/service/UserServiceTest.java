@@ -1,20 +1,19 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -58,6 +57,21 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
+        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void testChangePasswordMethodTerminatedWhenFindByIdFailed() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao);
+
+        final var newPassword = "qwer";
+        final var createBy = "gugu";
+        // ID가 0인 User는 존재하지 않기 때문에 예외가 발생해야 한다.
+        assertThatThrownBy(() -> userService.changePassword(0L, newPassword, createBy))
+                .isInstanceOf(DataAccessException.class);
+
+        final var actual = userService.findById(1L);
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }
