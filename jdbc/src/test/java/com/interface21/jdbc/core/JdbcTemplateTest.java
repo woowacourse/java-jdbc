@@ -60,7 +60,7 @@ class JdbcTemplateTest {
         database.put(1L, new TestEntity("name"));
         database.put(2L, new TestEntity("otherName"));
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true).thenReturn(false);
         when(resultSet.getString(any())).thenReturn("name");
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
