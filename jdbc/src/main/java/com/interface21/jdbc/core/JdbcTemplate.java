@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,8 +27,9 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public final void update(Connection conn, String sql, Object... params) {
-        executeWithConn(conn, sql, PreparedStatement::executeUpdate, params);
+    public final void updateWithActiveConn(String sql, Object... params) {
+        Connection aliveConn = DataSourceUtils.getConnection(dataSource);
+        executeWithConn(aliveConn, sql, PreparedStatement::executeUpdate, params);
     }
 
     public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -88,9 +90,5 @@ public class JdbcTemplate {
             values.add(rowMapper.mapRow(rs));
         }
         return values;
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

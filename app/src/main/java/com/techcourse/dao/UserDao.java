@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 
 public interface UserDao {
 
@@ -16,6 +15,4 @@ public interface UserDao {
     Optional<User> findById(final Long id);
 
     Optional<User> findByAccount(final String account);
-
-    DataSource getDataSource();
 }
