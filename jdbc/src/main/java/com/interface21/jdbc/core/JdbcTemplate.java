@@ -95,7 +95,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void updateWithTx(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
+    public void update(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
         debugQuery(sql);
 
         Connection connection = transaction.getConnection();
