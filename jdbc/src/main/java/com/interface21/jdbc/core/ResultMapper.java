@@ -17,7 +17,15 @@ public class ResultMapper {
 		return Optional.empty();
 	}
 
-	public <T> List<T> getResults(ResultSet resultSet, RowMapper<T> rowMapper) {
+	private <T> T getResult(ResultSet resultSet, RowMapper<T> rowMapper, int rowNum) {
+		try {
+			return rowMapper.mapRow(resultSet, rowNum);
+		} catch (SQLException e) {
+			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.", e);
+		}
+	}
+
+	public <T> List<T> getAllResult(ResultSet resultSet, RowMapper<T> rowMapper) {
 		int rowNum = FIRST_ROW;
 		List<T> results = new ArrayList<>();
 
@@ -32,14 +40,6 @@ public class ResultMapper {
 		try {
 			return resultSet.next();
 		} catch (Exception e) {
-			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.", e);
-		}
-	}
-
-	public <T> T getResult(ResultSet resultSet, RowMapper<T> rowMapper, int rowNum) {
-		try {
-			return rowMapper.mapRow(resultSet, rowNum);
-		} catch (SQLException e) {
 			throw new IllegalStateException("결과 매핑 과정에서 실패했습니다.", e);
 		}
 	}
