@@ -11,17 +11,17 @@ public class TransactionManager {
 
     private final ConnectionManager connectionManager;
 
-    public TransactionManager(DataSource dataSource) {
+    public TransactionManager(final DataSource dataSource) {
         this.connectionManager = new ConnectionManager(dataSource);
     }
 
-    public void manage(Consumer<Connection> businessLogic) {
+    public void manage(final Consumer<Connection> businessLogic) {
         connectionManager.manage(conn -> {
             execute(businessLogic, conn);
         });
     }
 
-    private void execute(Consumer<Connection> businessLogic, Connection conn) {
+    private void execute(final Consumer<Connection> businessLogic, final Connection conn) {
         try {
             conn.setAutoCommit(false);
             businessLogic.accept(conn);
@@ -32,13 +32,13 @@ public class TransactionManager {
         }
     }
 
-    public <T> T manage(Function<Connection, T> businessLogic) {
+    public <T> T manage(final Function<Connection, T> businessLogic) {
         return connectionManager.manage(conn -> {
             return execute(businessLogic, conn);
         });
     }
 
-    private <T> T execute(Function<Connection, T> businessLogic, Connection conn) {
+    private <T> T execute(final Function<Connection, T> businessLogic, final Connection conn) {
         try {
             conn.setAutoCommit(false);
             T result = businessLogic.apply(conn);
@@ -50,7 +50,7 @@ public class TransactionManager {
         }
     }
 
-    private void rollback(Connection conn) {
+    private void rollback(final Connection conn) {
         try {
             conn.rollback();
         } catch (SQLException e) {

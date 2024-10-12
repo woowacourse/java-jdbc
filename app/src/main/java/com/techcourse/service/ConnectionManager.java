@@ -11,11 +11,11 @@ public class ConnectionManager {
 
     private final DataSource dataSource;
 
-    public ConnectionManager(DataSource dataSource) {
+    public ConnectionManager(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void manage(Consumer<Connection> execution) {
+    public void manage(final Consumer<Connection> execution) {
         try (Connection conn = dataSource.getConnection()) {
             execution.accept(conn);
         } catch (SQLException e) {
@@ -23,7 +23,7 @@ public class ConnectionManager {
         }
     }
 
-    public <T> T manage(Function<Connection, T> execution) {
+    public <T> T manage(final Function<Connection, T> execution) {
         try (Connection conn = dataSource.getConnection()) {
             return execution.apply(conn);
         } catch (SQLException e) {
