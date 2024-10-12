@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.jdbc.ObjectMapper;
+import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.TestUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,12 +38,12 @@ class JdbcTemplateTest {
     void setup() throws SQLException {
         String truncate = "drop table if exists users;";
         String createTable = """
-                    create table users (
-                    id bigint auto_increment,
-                    account varchar(100) not null,
-                    password varchar(100) not null,
-                    email varchar(100) not null,
-                    primary key(id)
+                create table users (
+                id bigint auto_increment,
+                account varchar(100) not null,
+                password varchar(100) not null,
+                email varchar(100) not null,
+                primary key(id)
                 );
                 """;
         String initData = "insert into users (account, password, email) values ('gugu', '123', 'gugu@naver.com')";
@@ -54,14 +55,14 @@ class JdbcTemplateTest {
     void query() {
         // given
         String sql = "select id, account, password, email from users where id = ?";
-        long param = 1;
+        long id = 1L;
 
         // when
-        TestUser result = jdbcTemplate.query(objectMapper, sql, param);
+        TestUser result = jdbcTemplate.query(objectMapper, sql, pstmt -> pstmt.setObject(1, id));
 
         // then
         assertAll(
-                () -> assertThat(result.getId()).isEqualTo(1L),
+                () -> assertThat(result.getId()).isEqualTo(id),
                 () -> assertThat(result.getAccount()).isEqualTo("gugu"),
                 () -> assertThat(result.getPassword()).isEqualTo("123"),
                 () -> assertThat(result.getEmail()).isEqualTo("gugu@naver.com")
@@ -77,7 +78,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         // when
-        List<TestUser> results = jdbcTemplate.queryList(objectMapper, sql);
+        List<TestUser> results = jdbcTemplate.queryList(objectMapper, sql, pstmt -> {});
 
         // then
         assertAll(
@@ -98,7 +99,13 @@ class JdbcTemplateTest {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         // when
-        jdbcTemplate.execute(sql, "kirby", "111", "kirby@naver.com", 1L);
+        PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setObject(1, "kirby");
+            pstmt.setObject(2, "111");
+            pstmt.setObject(3, "kirby@naver.com");
+            pstmt.setObject(4, 1L);
+        };
+        jdbcTemplate.execute(sql, preparedStatementSetter);
 
         // then
         preparedStatement = connection.prepareStatement("select account, password, email from users where id = 1");
