@@ -18,82 +18,71 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+
     }
 
     public List<Object> query(String sql, Object... param) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < param.length; i++) {
-                pstmt.setObject(i + 1, param[i]);
-            }
-            rs = pstmt.executeQuery();
 
-            List<Object> results = new ArrayList<>();
-            while (rs.next()) {
-                for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                    results.add(rs.getObject(i + 1));
-                }
+            setParamToStatment(pstmt, param);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapResultByColumn(rs);
             }
-            log.debug("query : {}", sql);
-            return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
+    private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
+        List<Object> results = new ArrayList<>();
+        while (rs.next()) {
+            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+                results.add(rs.getObject(i + 1));
+            }
+        }
+        return results;
+    }
+
     public List<List<Object>> queryList(String sql, Object... param) {
-        ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < param.length; i++) {
-                pstmt.setObject(i + 1, param[i]);
-            }
-            rs = pstmt.executeQuery();
 
-            log.debug("query : {}", sql);
+            setParamToStatment(pstmt, param);
 
             List<List<Object>> results = new ArrayList<>();
-            while (rs.next()) {
-                List<Object> result = new ArrayList<>();
-                for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                    result.add(rs.getObject(i + 1));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(mapResultByColumn(rs));
                 }
-                results.add(result);
             }
             return results;
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
     public void excute(String sql, Object... param) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < param.length; i++) {
-                pstmt.setObject(i + 1, param[i]);
-            }
+
+            setParamToStatment(pstmt, param);
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParamToStatment(PreparedStatement pstmt, Object[] param) throws SQLException {
+        for (int i = 0; i < param.length; i++) {
+            pstmt.setObject(i + 1, param[i]);
         }
     }
 }
