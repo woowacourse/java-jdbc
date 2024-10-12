@@ -65,7 +65,7 @@ class TransactionManagerTest {
     @DisplayName("오류가 발생하지 않는 consumer의 경우 commit된다")
     @Test
     void transactionConsumerSuccess() throws SQLException {
-        Consumer<Connection> validConsumer = mock(Consumer.class);
+        Consumer<Connection> validConsumer = (connection) -> {};
 
         transactionManager.transaction(validConsumer);
 
