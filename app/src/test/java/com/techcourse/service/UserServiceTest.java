@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.transaction.TransactionManager;
 import com.interface21.jdbc.transaction.TransactionProxy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -18,14 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
 
-    private TransactionManager transactionManager;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.transactionManager = new TransactionManager();
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), transactionManager);
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DataSource dataSource = DataSourceConfig.getInstance();
@@ -40,8 +37,7 @@ class UserServiceTest {
         UserService userService = TransactionProxy.createProxy(
                 new UserServiceImpl(userDao, userHistoryDao),
                 UserService.class,
-                DataSourceConfig.getInstance(),
-                transactionManager
+                DataSourceConfig.getInstance()
         );
 
         String newPassword = "qqqqq";
@@ -61,8 +57,7 @@ class UserServiceTest {
         UserService userService = TransactionProxy.createProxy(
                 userServiceImpl,
                 UserService.class,
-                DataSourceConfig.getInstance(),
-                transactionManager
+                DataSourceConfig.getInstance()
         );
 
         String newPassword = "newPassword";

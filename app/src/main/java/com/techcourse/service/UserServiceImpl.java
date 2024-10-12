@@ -2,7 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.jdbc.transaction.TransactionProxy;
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.config.JdbcConfig;
+import com.techcourse.config.JdbcTemplateConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -12,12 +12,11 @@ public class UserServiceImpl implements UserService {
 
     private static final UserService INSTANCE = TransactionProxy.createProxy(
             new UserServiceImpl(
-                    new UserDao(JdbcConfig.getJdbcTemplate()),
-                    new UserHistoryDao(JdbcConfig.getJdbcTemplate())
+                    new UserDao(JdbcTemplateConfig.getInstance()),
+                    new UserHistoryDao(JdbcTemplateConfig.getInstance())
             ),
             UserService.class,
-            DataSourceConfig.getInstance(),
-            JdbcConfig.getTransactionManager()
+            DataSourceConfig.getInstance()
     );
 
     private final UserDao userDao;
