@@ -45,6 +45,7 @@ public class TxUserService implements UserService {
     }
 
     private <T> T executeInTransaction(Supplier<T> callback) {
+        log.debug("-- 트랜잭션 시작");
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
@@ -55,6 +56,7 @@ public class TxUserService implements UserService {
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
+            log.debug("-- 트랜잭션 종료");
         }
     }
 
