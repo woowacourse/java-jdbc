@@ -40,12 +40,10 @@ public class UserService {
             userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+            ConnectionFunctionWrapper.accept(connection, Connection::rollback);
             throw new DataAccessException(e);
+        } finally {
+            ConnectionFunctionWrapper.accept(connection, Connection::close);
         }
     }
 }
