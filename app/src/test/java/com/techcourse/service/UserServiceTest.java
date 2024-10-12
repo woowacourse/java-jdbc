@@ -15,6 +15,9 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserServiceTest {
+    private static final Long USER_ID = 1L;
+    private static final String NEW_PASSWORD = "qqqqq";
+    private static final String CREATED_BY = "gugu";
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -34,13 +37,11 @@ class UserServiceTest {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final UserService userService = new UserService(userDao, userHistoryDao);
 
-        final String newPassword = "qqqqq";
-        final String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY);
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.findById(USER_ID);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo(NEW_PASSWORD);
     }
 
     @Test
@@ -49,14 +50,12 @@ class UserServiceTest {
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final UserService userService = new UserService(userDao, userHistoryDao);
 
-        final String newPassword = "newPassword";
-        final String createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY));
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.findById(USER_ID);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isNotEqualTo(NEW_PASSWORD);
     }
 }
