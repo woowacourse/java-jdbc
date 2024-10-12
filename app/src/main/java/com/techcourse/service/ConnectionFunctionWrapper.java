@@ -8,7 +8,6 @@ import java.sql.SQLException;
 public class ConnectionFunctionWrapper {
 
     private ConnectionFunctionWrapper() {
-
     }
 
     public static void accept(Connection connection, ConnectionConsumer function) {
