@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -34,6 +36,17 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account=?, password=?, email=? where id=?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) throws SQLException {
+        final var sql = "update users set account=?, password=?, email=? where id=?";
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+            preparedStatement.executeUpdate();
+        }
     }
 
     public List<User> findAll() {
