@@ -35,17 +35,15 @@ public class JdbcTemplate {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T execute(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return (T) executeQuery(sql, rs -> getResult(rs, rowMapper), parameters);
+        return executeQuery(sql, rs -> getResult(rs, rowMapper), parameters);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> List<T> executeList(String sql, RowMapper<T> rowMapper, Object... parameters){
-        return (List<T>) executeQuery(sql, rs -> getResults(rs, rowMapper), parameters);
+        return executeQuery(sql, rs -> getResults(rs, rowMapper), parameters);
     }
 
-    private Object executeQuery(String sql, Function<ResultSet, ?> func , Object... parameters) {
+    private <T> T executeQuery(String sql, Function<ResultSet, T> func , Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = executeQuery(pstmt, parameters)) {
