@@ -24,10 +24,4 @@ public class UserHistoryDao {
 
         jdbcTemplate.update(query, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreatedBy());
     }
-
-    public void log(final Connection conn, final UserHistory userHistory) {
-        final String query = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-
-        jdbcTemplate.update(conn, query, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreatedBy());
-    }
 }
