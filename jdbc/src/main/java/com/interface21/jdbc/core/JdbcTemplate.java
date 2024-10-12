@@ -56,9 +56,16 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... arguments) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
+        try (Connection connection = dataSource.getConnection()) {
+            updateWithConnection(connection, sql, arguments);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // 변경을 최소화하기 위해 외부에서 Connection을 주입받는 메서드 생성
+    public void updateWithConnection(final Connection connection, final String sql, final Object... arguments) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             statementSetter.setValues(preparedStatement, arguments);
 
