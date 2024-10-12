@@ -26,6 +26,10 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public final void update(Connection conn, String sql, Object... params) {
+        executeWithConn(conn, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -43,8 +47,17 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return executeWithConn(conn, sql, executor, params);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeWithConn(Connection conn, String sql, PreparedStatementExecutor<T> executor,
+                                  Object... params) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParams(pstmt, params);
@@ -75,5 +88,9 @@ public class JdbcTemplate {
             values.add(rowMapper.mapRow(rs));
         }
         return values;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
