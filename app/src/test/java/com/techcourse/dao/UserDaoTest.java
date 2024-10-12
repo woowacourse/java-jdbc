@@ -44,7 +44,8 @@ class UserDaoTest {
 
     @Test
     void findByAccount() throws SQLException {
-        final var account = "gugu";
+        userDao.insert(dataSource.getConnection(),new User("cloud", "password", "cloud@email.com"));
+        final var account = "cloud";
         final var user = userDao.findByAccount(dataSource.getConnection(), account);
 
         assertThat(user.getAccount()).isEqualTo(account);
