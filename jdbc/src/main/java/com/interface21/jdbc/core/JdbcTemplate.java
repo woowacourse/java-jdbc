@@ -51,7 +51,7 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final Object[] args, final QueryExecutor<T> executor) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setArguments(args, statement);
+            QueryExecutor.setArguments(args, statement);
             log.info("query : {}", sql);
             return executor.execute(statement);
         } catch (SQLException e) {
@@ -62,19 +62,12 @@ public class JdbcTemplate {
 
     private <T> T execute(final Connection connection, final String sql, final Object[] args, final QueryExecutor<T> executor) {
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setArguments(args, statement);
+            QueryExecutor.setArguments(args, statement);
             log.info("query : {}", sql);
             return executor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setArguments(final Object[] args, final PreparedStatement statement) throws SQLException {
-        int index = 1;
-        for (final Object arg : args) {
-            statement.setObject(index++, arg);
         }
     }
 }
