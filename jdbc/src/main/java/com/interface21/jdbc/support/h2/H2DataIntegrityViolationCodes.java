@@ -1,5 +1,6 @@
 package com.interface21.jdbc.support.h2;
 
+import java.sql.SQLException;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DataIntegrityViolationException;
@@ -12,7 +13,7 @@ class H2DataIntegrityViolationCodes extends AbstractErrorCodes {
     }
 
     @Override
-    public Class<? extends DataAccessException> translateTargetClass() {
-        return DataIntegrityViolationException.class;
+    public DataAccessException translate(SQLException sqlException) {
+        return new DataIntegrityViolationException(sqlException);
     }
 }
