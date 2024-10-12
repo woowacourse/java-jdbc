@@ -35,7 +35,6 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
     }
 
     private ParameterSetter getParameterSetter(Object parameter) {
-        System.out.println(parameter.getClass());
         ParameterSetter setter = parameterSetters.get(parameter.getClass());
         if(setter == null) {
             setter = DEFAULT_SETTER;
