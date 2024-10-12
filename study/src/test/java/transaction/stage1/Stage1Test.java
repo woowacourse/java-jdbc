@@ -1,7 +1,14 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -12,13 +19,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
@@ -58,14 +58,18 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
-    void dirtyReading() throws SQLException {
-        setUp(createH2DataSource());
+    void dirtyReading() throws SQLException { // DirtyRead: 작업이 완료되지 않았는데도 다른 트랜잭션에서 볼 수 있는 현상
+        // testcontainer로 docker를 실행해서 mysql에 연결한다.
+        final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+                .withLogConsumer(new Slf4jLogConsumer(log));
+        mysql.start();
+        setUp(createMySQLDataSource(mysql));
 
         // db에 새로운 연결(사용자A)을 받아와서
         final var connection = dataSource.getConnection();
@@ -81,7 +85,21 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // 커밋 안된 데이터도 볼 수 있어서 DirtyRead 발생 O
+            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED; // 커밋한 데이터만 보기 때문에 DirtyRead 발생 X
+            // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // 자신의 트랜잭션 번호보다 작은 트랜잭션 번호에서 커밋한 것만 보기 때문에 DirtyRead 발생 X
+            // final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // 모든 읽기 쓰기는 끝날 때까지 락 걸리고 접근 안되기 때문에 DirtyRead 발생 X (맞나...이 부분 잘모르겠음)
+
+            /*
+            READ_UNCOMMITTED: 커밋되지 않은 데이터에도 접근할 수 있는 격리수준
+                    -> DirtyRead: 작업이 완료되지 않았는데도 다른 트랜잭션에서 볼 수 있는 현상 발생함
+            READ_COMMITTED: 커밋된 데이터에만 접근할 수 있는 격리수준
+                    -> NoneRepeatableRead: 같은 트랜잭션 내에서 같은 행을 반복해서 읽었을 떄 결과 달라지는 현상 발생함
+            REPEATABLE_READ: 동일한 행을 여러번 읽어도 항상 같은 결과 보장하는 격리수준
+                    -> PhantomRead: 같은 트랜잭션 내에서 같은 쿼리를 반복 실행할 때 다른 트랜잭션에 의해 데이터 행이 삽입되거나 삭제되는 현상
+                            -> MySQL은 검색조건범위에 해당하는 모든 인덱스행에 잠금을 걸어서 삽입 막기에 PhantomRead 현상 발생 안함
+            SERIALIZABLE: 한 트랜잭션에서 읽고 쓰는 레코드를 다른 트랜잭션에서는 절대 접근할 수 없는 격리수준 (모든 읽기/쓰기에 잠금을 걺)
+            */
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,13 +129,13 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
-    void noneRepeatable() throws SQLException {
+    void noneRepeatable() throws SQLException { // NonRepeatableRead : 같은 트랜잭션 내에서 같은 행을 반복해서 읽었을 때 다른 트랜잭션이 그행을 수정하거나 삭제하여 결과가 달라지는 현상
         setUp(createH2DataSource());
 
         // 테스트 전에 필요한 데이터를 추가한다.
@@ -130,7 +148,10 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // 다른 트랜잭션에서 변경하는 것에 실시간으로 영향 받기 때문에 NonRepeatable 발생 O
+        // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED; // 트랜잭션 안끝났는데 다른 트랜잭션이 중간에 커밋하면 그 영향 받기 때문에 NonRepeatable 발생 O
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // 자신의 트랜잭션 번호보다 작은 트랜잭션 번호에서 커밋한 것만 보기 때문에 NonRepeatable X
+        // final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -143,12 +164,16 @@ class Stage1Test {
             // 사용자B가 새로 연결하여
             final var subConnection = dataSource.getConnection();
 
+            // 트랜잭션을 시작한다.
+            subConnection.setAutoCommit(false);
+
             // 사용자A가 조회한 gugu 객체를 사용자B가 다시 조회했다.
             final var anotherUser = userDao.findByAccount(subConnection, "gugu");
 
             // ❗사용자B가 gugu 객체의 비밀번호를 변경했다.(subConnection은 auto commit 상태)
             anotherUser.changePassword("qqqq");
             userDao.update(subConnection, anotherUser);
+            subConnection.commit(); // 만일 여기서 rollback() 한다면 READ_UNCOMMITED, READ_COMMITED 둘다 NonRepeatable 발생 안함
         })).start();
 
         sleep(0.5);
@@ -173,13 +198,13 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | + (update 할 때만 발생)
+     * Serializable     | -
      */
     @Test
-    void phantomReading() throws SQLException {
+    void phantomReading() throws SQLException { // PhantomRead: 같은 트랜잭션 내에서 같은 쿼리를 반복 실행할 때 다른 트랜잭션에 의해 데이터 행이 삽입되거나 삭제되는 현상
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
@@ -197,7 +222,10 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // 다른 트랜잭션에서 변경하는 것에 실시간으로 영향 받기 때문에 PhantomRead 발생 O
+        // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED; // 트랜잭션 안끝났는데 다른 트랜잭션이 중간에 커밋하면 그 영향 받기 때문에 PhantomRead 발생 O
+        // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // 자신의 트랜잭션 번호보다 작은 트랜잭션 번호에서 커밋한 것만 보더라도 삽입, 삭제는 감지 못해 PhantomRead 발생 O
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // 모든 읽기 쓰기는 끝날 때까지 락 걸리고 접근 안되기 때문에 PhantomRead 발생 X
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -215,6 +243,8 @@ class Stage1Test {
             // 새로운 user 객체를 저장했다.
             // id는 2로 저장된다.
             userDao.insert(subConnection, new User("bird", "password", "bird@woowahan.com"));
+            // 존재하는 레코드 범위 밖이니까 추가되어야 할 거 같은데 왜 repeatable read에서 추가 안될까
+            // MySQL은 Multi Version Concurrency Control 을 사용하는데, 이로 인해
 
             subConnection.commit();
         })).start();
@@ -239,7 +269,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
