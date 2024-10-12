@@ -1,7 +1,14 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -12,13 +19,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
@@ -193,23 +193,23 @@ class Stage1Test {
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
 
         // db에 새로운 연결(사용자A)을 받아와서
-        final var connection = dataSource.getConnection();
+        Connection connection = dataSource.getConnection();
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
+        int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
 
         // 사용자A가 id로 범위를 조회했다.
-        userDao.findGreaterThan(connection, 1);
+        List<User> expected = userDao.findGreaterThan(connection, 1);
 
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
-            final var subConnection = dataSource.getConnection();
+            Connection subConnection = dataSource.getConnection();
 
             // 트랜잭션 시작
             subConnection.setAutoCommit(false);
@@ -228,12 +228,12 @@ class Stage1Test {
         userDao.updatePasswordGreaterThan(connection, "qqqq", 1);
 
         // 사용자A가 다시 id로 범위를 조회했다.
-        final var actual = userDao.findGreaterThan(connection, 1);
+        List<User> actual = userDao.findGreaterThan(connection, 1);
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
-        assertThat(actual).hasSize(1);
+        assertThat(actual).hasSize(expected.size());
 
         connection.rollback();
         mysql.close();
