@@ -34,6 +34,8 @@ public class JdbcTransaction {
             connection.rollback();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            release();
         }
     }
 
