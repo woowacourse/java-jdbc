@@ -41,11 +41,7 @@ class UserDaoTest {
         User result = user.get();
 
         //then
-        assertAll(
-                () -> assertThat(user).isPresent(),
-                () -> assertThat(result.getAccount()).isEqualTo("gugu")
-        );
-
+        assertThat(result.getAccount()).isEqualTo("gugu");
     }
 
     @Test
@@ -57,10 +53,8 @@ class UserDaoTest {
         Optional<User> user = userDao.findByAccount(account);
         User result = user.get();
 
-        assertAll(
-                () -> assertThat(user).isPresent(),
-                () -> assertThat(result.getAccount()).isEqualTo(account)
-        );
+        //then
+        assertThat(result.getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -75,10 +69,7 @@ class UserDaoTest {
         User result = actual.get();
 
         //then
-        assertAll(
-                () -> assertThat(actual).isPresent(),
-                () -> assertThat(result.getAccount()).isEqualTo(account)
-        );
+        assertThat(result.getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -95,9 +86,7 @@ class UserDaoTest {
         Optional<User> actual = userDao.findById(1L);
         User changedUser = actual.get();
 
-        assertAll(
-                () -> assertThat(actual).isPresent(),
-                () -> assertThat(changedUser.getPassword()).isEqualTo(newPassword)
-        );
+        //then
+        assertThat(changedUser.getPassword()).isEqualTo(newPassword);
     }
 }
