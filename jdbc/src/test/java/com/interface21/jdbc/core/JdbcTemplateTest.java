@@ -51,7 +51,8 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(DataAccessException.class)
-                .isThrownBy(() -> jdbcTemplate.update("update error", preparedStatementSetter));
+                .isThrownBy(() -> jdbcTemplate.update("update error", preparedStatementSetter))
+                .withCause(sqlException);
 
         // then
         verify(connection).close();
@@ -138,7 +139,8 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(DataAccessException.class)
-                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper));
+                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper))
+                .withCause(sqlException);
 
         // then
         verify(connection).close();
@@ -161,7 +163,8 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper));
+                .isThrownBy(() -> jdbcTemplate.query("select error", preparedStatementSetter, mapper))
+                .withCause(sqlException);
 
         // then
         verify(connection).close();
@@ -245,7 +248,8 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper));
+                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper))
+                .withCause(sqlException);
 
         // then
         verify(connection).close();
@@ -268,7 +272,8 @@ class JdbcTemplateTest {
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper));
+                .isThrownBy(() -> jdbcTemplate.queryForObject("select error", preparedStatementSetter, mapper))
+                .withCause(sqlException);
 
         // then
         verify(connection).close();
