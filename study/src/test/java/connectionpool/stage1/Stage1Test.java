@@ -3,6 +3,7 @@ package connectionpool.stage1;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.h2.jdbcx.JdbcConnectionPool;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -60,16 +61,7 @@ class Stage1Test {
      */
     @Test
     void testHikariCP() {
-        final var hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(H2_URL);
-        hikariConfig.setUsername(USER);
-        hikariConfig.setPassword(PASSWORD);
-        hikariConfig.setMaximumPoolSize(5);
-        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
-        hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
-        hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-
-        final var dataSource = new HikariDataSource(hikariConfig);
+        final var dataSource = getHikariDataSource();
         final var properties = dataSource.getDataSourceProperties();
 
         assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);
@@ -78,5 +70,28 @@ class Stage1Test {
         assertThat(properties.getProperty("prepStmtCacheSqlLimit")).isEqualTo("2048");
 
         dataSource.close();
+    }
+
+    @NotNull
+    private static HikariDataSource getHikariDataSource() {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(H2_URL);
+        hikariConfig.setUsername(USER);
+        hikariConfig.setPassword(PASSWORD);
+        hikariConfig.setMaximumPoolSize(5);
+        // connections = (core_count * 2) + effective_spindle_count
+        // effective_spindle_count : Cache된 데이터일수록 낮아짐(HDD Spindle 말하는 내용일듯)
+        // SSD에서는 effective_spindle_count에 대한 분석은 없음... 일단 0이라 가정
+        // pool size = Tn * (Cm - 1) + 1
+        // Tn : Number of Threads, Cm : Maximum Number of Simultaneous Connections held by a single thread
+
+        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        //반복적으로 사용하는 sql에 대해 PreparedStatement의 캐싱을 활성화한다. default = false
+        hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        //최대 캐싱 PreparedStatement의 개수, default = 25, 권장 250~500
+        hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        //캐싱할 PreparedStatement의 SQL 최대 길이, default = 256, 권장 2048 (ORM의 경우 길어질 수 있음)
+
+        return new HikariDataSource(hikariConfig);
     }
 }

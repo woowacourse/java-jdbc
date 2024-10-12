@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.jdbc.exception.JdbcQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,6 +65,23 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("executeUpdate 시 SQLException이 발생한다면 JdbcQueryException을 발생한다.")
+    void should_throw_JdbcQueryException_when_executeUpdate_SQLException_thrown() throws SQLException {
+        // given
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        DataSource wrongDataSource = mock(DataSource.class);
+        Connection wrongConnection = mock(Connection.class);
+        when(wrongDataSource.getConnection()).thenReturn(wrongConnection);
+        when(wrongConnection.prepareStatement(anyString())).thenThrow(SQLException.class);
+        JdbcTemplate wrongJdbcTemplate = new JdbcTemplate(wrongDataSource);
+
+        // when & then
+        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql, "account", "password", "asdf@gmail.com"))
+                .isInstanceOf(JdbcQueryException.class);
+    }
+
+    @Test
     @DisplayName("query 시 조회된 데이터가 있으면 List로 반환한다.")
     void should_return_List_when_query_multiple_data_found() throws SQLException {
         // given
@@ -97,6 +116,23 @@ class JdbcTemplateTest {
 
         // then
         assertThat(testUsers).isEmpty();
+    }
+
+    @Test
+    @DisplayName("query 시 SQLException이 발생한다면 JdbcQueryException을 발생한다.")
+    void should_throw_JdbcQueryException_when_query_SQLException_thrown() throws SQLException {
+        // given
+        String sql = "select * from users";
+
+        DataSource wrongDataSource = mock(DataSource.class);
+        Connection wrongConnection = mock(Connection.class);
+        when(wrongDataSource.getConnection()).thenReturn(wrongConnection);
+        when(wrongConnection.prepareStatement(anyString())).thenThrow(SQLException.class);
+        JdbcTemplate wrongJdbcTemplate = new JdbcTemplate(wrongDataSource);
+
+        // when & then
+        assertThatThrownBy(() -> wrongJdbcTemplate.executeUpdate(sql))
+                .isInstanceOf(JdbcQueryException.class);
     }
 
     @Test

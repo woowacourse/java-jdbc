@@ -38,8 +38,8 @@ public class UserDao {
 
     public int update(final User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getPassword(),
-                user.getId());
+        int rowCount = jdbcTemplate.executeUpdate(sql,
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         log.debug("update 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }

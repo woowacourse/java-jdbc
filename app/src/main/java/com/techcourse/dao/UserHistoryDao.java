@@ -28,8 +28,7 @@ public class UserHistoryDao {
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+                userHistory.getCreateBy());
         log.debug("insert 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }

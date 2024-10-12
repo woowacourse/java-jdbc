@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.JdbcQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,47 +23,46 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(String sql, Object... values) {
+    public int executeUpdate(String sql, Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return execute(sql, argumentPreparedStatementSetter, PreparedStatement::executeUpdate);
+    }
+
+    private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter, Callback<T> callback) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setQueryParameter(preparedStatement, values);
-            return preparedStatement.executeUpdate();
+            preparedStatementSetter.setValues(preparedStatement);
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcQueryException("execute 메서드 실패 : " + e.getMessage(), e);
         }
     }
 
-    private void setQueryParameter(PreparedStatement statement, Object... values) throws SQLException {
-        for (int i = 0; i < values.length; i++) {
-            statement.setObject(i + 1, values[i]);
-        }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return execute(sql, argumentPreparedStatementSetter, preparedStatement -> query(preparedStatement, rowMapper));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setQueryParameter(preparedStatement, values);
-            ResultSet rs = preparedStatement.executeQuery();
-            return collectResultSet(rs, rowMapper, sql);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    private <T> List<T> query(PreparedStatement preparedStatement, RowMapper<T> rowMapper)
+            throws SQLException {
+        ResultSet rs = preparedStatement.executeQuery();
+        return collectResultSet(rs, rowMapper);
     }
 
-    private <T> List<T> collectResultSet(ResultSet resultSet, RowMapper<T> rowMapper, String sql) throws SQLException {
+    private <T> List<T> collectResultSet(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
         List<T> resultSets = new ArrayList<>();
-        log.debug("query : {}", sql);
         while (resultSet.next()) {
             resultSets.add(rowMapper.mapRow(resultSet));
         }
         return resultSets;
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        List<T> resultSets = query(sql, rowMapper, values);
+    public <T> Optional<T> queryForObject(String sql,
+                                          RowMapper<T> rowMapper,
+                                          Object... args) {
+        List<T> resultSets = query(sql, rowMapper, args);
         try {
             return Optional.ofNullable(resultSets.getFirst());
         } catch (NoSuchElementException e) {
