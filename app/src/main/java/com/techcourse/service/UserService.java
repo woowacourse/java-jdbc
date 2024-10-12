@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.ConnectionManager;
 import com.interface21.jdbc.datasource.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -16,7 +17,7 @@ public class UserService {
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
+        this.transactionManager = new TransactionManager(new ConnectionManager(DataSourceConfig.getInstance()));
     }
 
     public User findById(final long id) {

@@ -15,17 +15,7 @@ public class DataAccessWrapper {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             return function.apply(pstmt);
         } catch (Exception exception) {
-            rollback(connection);
             throw new DataAccessException(exception);
-        }
-    }
-
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-            connection.setAutoCommit(true);
-        } catch (SQLException sqlException) {
-            throw new DataAccessException(sqlException);
         }
     }
 }
