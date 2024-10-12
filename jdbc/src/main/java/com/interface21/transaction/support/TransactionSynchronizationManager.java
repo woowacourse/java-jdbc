@@ -27,7 +27,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection unbindResource(DataSource key) {
         Connection connection = getThreadResource().remove(key);
-        if(connection != null) {
+        if(connection == null) {
             throw new NoSuchElementException("cannot unbind connection for key " + key);
         }
         return connection;
