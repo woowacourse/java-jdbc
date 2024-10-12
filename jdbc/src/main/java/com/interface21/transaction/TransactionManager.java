@@ -28,9 +28,9 @@ public class TransactionManager {
         }
     }
 
-    public void executeTransaction(Consumer<Connection> function) {
+    public void executeTransaction(Consumer<Connection> consumer) {
         try (Connection connection = dataSource.getConnection()) {
-            executeTransaction(function, connection);
+            executeTransaction(consumer, connection);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
