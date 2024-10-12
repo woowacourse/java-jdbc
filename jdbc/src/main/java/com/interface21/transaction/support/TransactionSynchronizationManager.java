@@ -3,6 +3,7 @@ package com.interface21.transaction.support;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
@@ -13,7 +14,11 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(DataSource key) {
-        return getThreadResource().get(key);
+        Connection connection = getThreadResource().get(key);
+        if(connection == null) {
+            throw new NoSuchElementException("cannot find connection for key " + key);
+        }
+        return connection;
     }
 
     public static void bindResource(DataSource key, Connection value) {
@@ -21,7 +26,11 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection unbindResource(DataSource key) {
-        return getThreadResource().remove(key);
+        Connection connection = getThreadResource().remove(key);
+        if(connection != null) {
+            throw new NoSuchElementException("cannot unbind connection for key " + key);
+        }
+        return connection;
     }
 
     private static Map<DataSource, Connection> getThreadResource() {
