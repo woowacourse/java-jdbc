@@ -31,10 +31,10 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final Connection connection = getConnection(DataSourceConfig.getInstance());
+        final var user = findById(id);
 
         try (connection) {
             connection.setAutoCommit(false);
-            final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
