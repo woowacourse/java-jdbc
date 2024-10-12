@@ -28,6 +28,7 @@ public class JdbcTransactionTemplate {
         }
     }
 
+    @FunctionalInterface
     interface ConnectionConsumerWrapper {
         void accept(Connection connection) throws SQLException;
     }
