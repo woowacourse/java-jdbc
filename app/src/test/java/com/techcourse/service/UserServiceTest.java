@@ -45,7 +45,7 @@ class UserServiceTest {
     void testChangePassword() {
         // given
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final UserService userService = new AppUserService(userDao, userHistoryDao);
 
         // when
         userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY);
@@ -61,7 +61,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // given
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService);
 
         // when
         assertThrows(TransactionFailedException.class,

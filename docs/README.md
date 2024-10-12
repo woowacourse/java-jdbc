@@ -12,6 +12,6 @@
   - [X] 람다 사용
   - [X] PreparedStatementSetter 인터페이스 구현 및 적용
 - [X] Transaction 적용하기
-- [ ] Transaction synchronization 적용하기
+- [X] Transaction synchronization 적용하기
   - [X] Transaction Synchronization 적용하기
-  - [ ] 트랜잭션 서비스 추상화하기
+  - [X] 트랜잭션 서비스 추상화하기
