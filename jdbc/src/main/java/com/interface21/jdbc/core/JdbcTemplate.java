@@ -34,13 +34,18 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(PreparedStatementCreator creator) {
-        try (PreparedStatement preparedStatement = getPreparedStatement(creator);) {
-            preparedStatement.executeUpdate();
+    public <R> R connect(PreparedStatementCreator creator, Executor<PreparedStatement, R> executor) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
+    }
+
+    public void update(PreparedStatementCreator creator) {
+        connect(creator, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -52,40 +57,28 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(PreparedStatementCreator creator, RowMapper<T> rowMapper) {
-        try (PreparedStatement preparedStatement = getPreparedStatement(creator);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        return connect(creator, preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery(); // todo close resultSet
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (PreparedStatement preparedStatement = getPreparedStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        return connect(connection -> connection.prepareStatement(sql),
+                preparedStatement -> {
+                    ResultSet resultSet = preparedStatement.executeQuery(); // todo close resultSet
+                    List<T> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        results.add(rowMapper.mapRow(resultSet));
+                    }
+                    return results;
+                });
     }
 
-    private PreparedStatement getPreparedStatement(String sql) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        return connection.prepareStatement(sql);
-    }
-
-    private PreparedStatement getPreparedStatement(PreparedStatementCreator creator) throws SQLException {
-        Connection connection = dataSource.getConnection();
-        return creator.createPreparedStatement(connection);
+    private interface Executor<T, R> {
+        R execute(T t) throws SQLException;
     }
 }
