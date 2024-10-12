@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.LinkedList;
+import java.util.List;
 import javax.sql.DataSource;
 
 public class JdbcTemplate {
@@ -14,7 +16,18 @@ public class JdbcTemplate {
         this.queryExecutor = new QueryExecutor(dataSource);
     }
 
-    public <T> T query(RowMapper<T> mapper, String sql, Object... args) {
+    public <T> List<T> query(RowMapper<T> mapper, String sql, Object... args) {
+        return queryExecutor.executeFunction(preparedStatement -> {
+            List<T> result = new LinkedList<>();
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                result.add(mapper.mapRow(rs));
+            }
+            return result;
+        }, sql, args);
+    }
+
+    public <T> T queryForObject(RowMapper<T> mapper, String sql, Object... args) {
         return queryExecutor.executeFunction(preparedStatement -> {
             ResultSet rs = preparedStatement.executeQuery();
             return mapper.mapRow(rs);
