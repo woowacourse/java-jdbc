@@ -7,8 +7,8 @@ import com.techcourse.domain.UserHistory;
 
 public class AppUserService implements UserService {
 
-    private UserDao userDao;
-    private UserHistoryDao userHistoryDao;
+    private final UserDao userDao;
+    private final UserHistoryDao userHistoryDao;
 
     public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
