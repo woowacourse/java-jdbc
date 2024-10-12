@@ -89,6 +89,7 @@ public class UserService {
     private void close(Connection conn) {
         if (conn != null) {
             try {
+                conn.setAutoCommit(true);
                 conn.close();
             } catch (SQLException e) {
                 throw new DataAccessException("데이터베이스와 연결을 종료하는 과정에서 오류가 발생했습니다.", e);
