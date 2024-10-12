@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -36,6 +37,7 @@ class JdbcTemplateTest {
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(any())).willReturn(preparedStatement);
+        given(connection.prepareStatement(any(), anyInt())).willReturn(preparedStatement);
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -54,6 +56,7 @@ class JdbcTemplateTest {
         String account = "reviewer";
         String password = "atto";
         String email = "WTC6th@com";
+
 
         jdbcTemplate.update(sql, account, password, email);
 

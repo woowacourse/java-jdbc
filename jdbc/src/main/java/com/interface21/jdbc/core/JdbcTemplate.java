@@ -39,14 +39,14 @@ public class JdbcTemplate {
      * @param objects 쿼리에 사용할 파라미터 값
      */
     public void update(String query, Object... objects) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(pstmt, objects);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
-        }
+        handleQuery(
+                query,
+                pstmt -> {
+                    pstmt.executeUpdate();
+                    return null;
+                },
+                objects
+        );
     }
 
     /**
@@ -57,28 +57,18 @@ public class JdbcTemplate {
      * @param objects   쿼리에 사용할 파라미터 값
      */
     public void update(String query, GeneratedKeyHolder keyHolder, Object... objects) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(pstmt, objects);
-            int resultCount = pstmt.executeUpdate();
-
-            if (resultCount != 1) {
-                throw new DataAccessException("데이터 삽입 과정에서 문제가 발생하였습니다.");
-            }
-            addKeyHolder(keyHolder, pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
-        }
-    }
-
-    private void addKeyHolder(GeneratedKeyHolder keyHolder, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-            if (generatedKeys.next()) {
-                long id = generatedKeys.getLong(1);
-                keyHolder.addKey(id);
-            }
-        }
+        handleQuery(
+                query,
+                pstmt -> {
+                    int resultCount = pstmt.executeUpdate();
+                    if (resultCount != 1) {
+                        throw new DataAccessException("데이터 삽입 과정에서 문제가 발생하였습니다.");
+                    }
+                    addKeyHolder(keyHolder, pstmt);
+                    return null;
+                },
+                objects
+        );
     }
 
     /**
@@ -91,26 +81,21 @@ public class JdbcTemplate {
      * @throws DataNotFoundException 데이터가 존재하지 않는 경우 예외가 발생
      */
     public <T> T queryForObject(String query, RowMapper<T> mapper, Object... objects) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(pstmt, objects);
-            ResultSet resultSet = pstmt.executeQuery();
-
-            if (!resultSet.next()) {
-                throw new DataNotFoundException("데이터가 존재하지 않습니다.");
-            }
-
-            T result = mapper.map(resultSet);
-
-            if (resultSet.next()) {
-                throw new DataSizeNotMatchedException("의도한 데이터와 쿼리 결과의 개수가 일치하지 않습니다.");
-
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
-        }
+        return handleQuery(
+                query,
+                pstmt -> {
+                    ResultSet resultSet = pstmt.executeQuery();
+                    if (!resultSet.next()) {
+                        throw new DataNotFoundException("데이터가 존재하지 않습니다.");
+                    }
+                    T result = mapper.map(resultSet);
+                    if (resultSet.next()) {
+                        throw new DataSizeNotMatchedException("의도한 데이터와 쿼리 결과의 개수가 일치하지 않습니다.");
+                    }
+                    return result;
+                },
+                objects
+        );
     }
 
     /**
@@ -122,16 +107,38 @@ public class JdbcTemplate {
      * @return mapper로 매핑이 완료된 객체
      */
     public <T> List<T> queryForList(String query, RowMapper<T> mapper, Object... objects) {
+        return handleQuery(
+                query,
+                pstmt -> {
+                    ResultSet resultSet = pstmt.executeQuery();
+                    List<T> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        results.add(mapper.map(resultSet));
+                    }
+                    return results;
+                },
+                objects
+        );
+    }
+
+    private void addKeyHolder(GeneratedKeyHolder keyHolder, PreparedStatement pstmt) throws SQLException {
+        ResultSet generatedKeys = pstmt.getGeneratedKeys();
+        if (generatedKeys.next()) {
+            long id = generatedKeys.getLong(1);
+            keyHolder.addKey(id);
+        }
+    }
+
+    private <T> T handleQuery(
+            String query,
+            PreparedStatementExecutor<T> preparedStatementExecutor,
+            Object... objects
+    ) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             log.debug("query : {}", query);
             STATEMENT_SETTER.setValues(pstmt, objects);
-            ResultSet resultSet = pstmt.executeQuery();
-            List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(mapper.map(resultSet));
-            }
-            return results;
+            return preparedStatementExecutor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
