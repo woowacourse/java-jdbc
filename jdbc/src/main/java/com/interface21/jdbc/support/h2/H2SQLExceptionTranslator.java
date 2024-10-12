@@ -14,14 +14,14 @@ public class H2SQLExceptionTranslator {
     private final H2BadGrammarsErrorCodes badGrammarsErrorCodes;
     private final H2DataIntegrityViolationCodes dataIntegrityViolationCodes;
     private final H2DuplicateKeyErrorCodes duplicateKeyErrorCodes;
-    private final List<Integer> dataAccessResourceFailureCodes;
+    private final H2DataAccessResourceFailureCodes dataAccessResourceFailureCodes;
     private final List<Integer> cannotAcquireLockCodes;
 
     public H2SQLExceptionTranslator() {
         this.badGrammarsErrorCodes = new H2BadGrammarsErrorCodes();
         this.dataIntegrityViolationCodes = new H2DataIntegrityViolationCodes();
         this.duplicateKeyErrorCodes = new H2DuplicateKeyErrorCodes();
-        this.dataAccessResourceFailureCodes = List.of(90046, 90100, 90117, 90121, 90126);
+        this.dataAccessResourceFailureCodes = new H2DataAccessResourceFailureCodes();
         this.cannotAcquireLockCodes = List.of(50200);
     }
 
