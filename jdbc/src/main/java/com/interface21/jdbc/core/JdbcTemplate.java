@@ -23,7 +23,7 @@ public class JdbcTemplate {
     }
 
     public <T> T query(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(pstmt);
@@ -42,7 +42,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryList(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(pstmt);
@@ -62,7 +62,7 @@ public class JdbcTemplate {
     }
 
     public void execute(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(pstmt);
@@ -72,5 +72,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private Connection getDataSource() throws SQLException {
+        return dataSource.getConnection();
     }
 }
