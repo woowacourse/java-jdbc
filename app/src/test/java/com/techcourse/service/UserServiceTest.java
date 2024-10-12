@@ -65,10 +65,10 @@ class UserServiceTest {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
-        final var newPassword = "qqqqq";
+        final var newPassword = "qwer";
         final var createBy = "gugu";
-        // ID가 2인 User는 존재하지 않기 때문에 예외가 발생해야 한다.
-        assertThatThrownBy(() -> userService.changePassword(2L, newPassword, createBy))
+        // ID가 0인 User는 존재하지 않기 때문에 예외가 발생해야 한다.
+        assertThatThrownBy(() -> userService.changePassword(0L, newPassword, createBy))
                 .isInstanceOf(DataAccessException.class);
 
         final var actual = userService.findById(1L);
