@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLTransactionRollbackException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,28 +29,33 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter) {
+        executeWithExternalConnection(sql, connection, preparedStatementSetter, (preparedStatement) -> {
+            preparedStatement.executeUpdate();
+            return null;
+        });
+    }
+
     private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
                           PreparedStatementStrategy<T> strategy) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
             preparedStatementSetter.setValues(preparedStatement);
-            return executeTransaction(strategy, preparedStatement, connection);
+            return strategy.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T executeTransaction(PreparedStatementStrategy<T> strategy, PreparedStatement preparedStatement,
-                                     Connection connection) throws SQLException {
-        try {
-            connection.setAutoCommit(false);
-            T result = strategy.execute(preparedStatement);
-            connection.commit();
-            return result;
+    private <T> T executeWithExternalConnection(String sql, Connection connection,
+                                                PreparedStatementSetter preparedStatementSetter,
+                                                PreparedStatementStrategy<T> strategy) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return strategy.execute(preparedStatement);
         } catch (SQLException e) {
-            connection.rollback();
-            throw new SQLTransactionRollbackException(e);
+            throw new DataAccessException(e);
         }
     }
 
