@@ -44,11 +44,11 @@ public class UserDao {
                 update 
                     users 
                 set
-                    account = '%s',
-                    password = '%s', 
-                    email = '%s'
+                    account = ?,
+                    password = ?, 
+                    email = ?
                 where 
-                    id = %d
+                    id = ?
                 """;
 
         jdbcTemplate.update(sql, new PreparedStatementSetter() {
@@ -60,7 +60,6 @@ public class UserDao {
                 ps.setLong(4, user.getId());
             }
         });
-        jdbcTemplate.update(sql);
     }
 
     public List<User> findAll() {
