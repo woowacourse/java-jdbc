@@ -1,8 +1,8 @@
 package com.techcourse.service;
 
 import javax.sql.DataSource;
-import com.interface21.transaction.support.JdbcTransaction;
 import com.interface21.transaction.support.JdbcTransactionManager;
+import com.interface21.transaction.support.JdbcTransactionTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -12,7 +12,7 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final JdbcTransactionManager txManager;
+    private final JdbcTransactionTemplate jdbcTransactionTemplate;
 
     public UserService(
             final UserDao userDao,
@@ -21,7 +21,7 @@ public class UserService {
     ) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.txManager = new JdbcTransactionManager(dataSource);
+        this.jdbcTransactionTemplate = new JdbcTransactionTemplate(new JdbcTransactionManager(dataSource));
     }
 
     public User findById(final long id) {
@@ -33,27 +33,11 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var transaction = txManager.getTransaction();
-        transaction.begin();
-        try {
-            changePassword(id, newPassword, createBy, transaction);
-        } catch (Exception e) {
-            transaction.rollback();
-            throw e;
-        }
-
-        transaction.commit();
-    }
-
-    private void changePassword(
-            final long id,
-            final String newPassword,
-            final String createBy,
-            final JdbcTransaction transaction
-    ) {
-        final var user = userDao.findById(id, transaction);
-        user.changePassword(newPassword);
-        userDao.update(user, transaction);
-        userHistoryDao.log(new UserHistory(user, createBy), transaction);
+        jdbcTransactionTemplate.execute((transaction -> {
+            final var user = userDao.findById(id, transaction);
+            user.changePassword(newPassword);
+            userDao.update(user, transaction);
+            userHistoryDao.log(new UserHistory(user, createBy), transaction);
+        }));
     }
 }
