@@ -64,7 +64,6 @@ class TransactionManagerTest {
         when(connection.getAutoCommit()).thenReturn(true);
 
         transactionManager.executeTransaction(conn -> {
-            // do something
         });
 
         verify(connection).setAutoCommit(false);
