@@ -22,13 +22,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
+    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            preparedStatementSetter.setValues(pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
                 if (rs.next()) {
                     return objectMapper.mapToObject(rs);
                 }
@@ -41,18 +39,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryList(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
+    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            preparedStatementSetter.setValues(pstmt);
-
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
                 while (rs.next()) {
                     results.add(objectMapper.mapToObject(rs));
-                }
-            }
+                }}
             return results;
 
         } catch (SQLException e) {
@@ -76,5 +71,11 @@ public class JdbcTemplate {
 
     private Connection getDataSource() throws SQLException {
         return dataSource.getConnection();
+    }
+
+    private ResultSet executeQuery(PreparedStatementSetter preparedStatementSetter, PreparedStatement pstmt)
+            throws SQLException {
+        preparedStatementSetter.setValues(pstmt);
+        return pstmt.executeQuery();
     }
 }
