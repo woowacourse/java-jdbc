@@ -19,10 +19,10 @@ class JdbcTemplateTest {
     private static JdbcTemplate jdbcTemplate;
     private static Connection connection;
     private final ObjectMapper<TestUser> objectMapper = (rs) -> new TestUser(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4)
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
     );
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
