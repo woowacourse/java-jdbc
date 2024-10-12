@@ -57,7 +57,6 @@ class JdbcTemplateTest {
         String password = "atto";
         String email = "WTC6th@com";
 
-
         jdbcTemplate.update(sql, account, password, email);
 
         assertAll(
