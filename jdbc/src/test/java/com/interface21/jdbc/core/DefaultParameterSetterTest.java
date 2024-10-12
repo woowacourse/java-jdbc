@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
@@ -20,9 +21,10 @@ class DefaultParameterSetterTest {
         preparedStatement = mock(PreparedStatement.class);
     }
 
+    @DisplayName("인자를 받아 preparedStatement의 파라미터를 세팅한다.")
     @Test
     void setParameters() throws SQLException {
-        Object[] args = {1, "kaki", "1234", "kaki@email.com"};
+        Object[] args = {1, "kaki", "1234", true};
         DefaultParameterSetter setter = new DefaultParameterSetter(args);
 
         setter.setParameters(preparedStatement);
@@ -31,7 +33,7 @@ class DefaultParameterSetterTest {
                 () -> verify(preparedStatement).setObject(1, 1),
                 () -> verify(preparedStatement).setObject(2, "kaki"),
                 () -> verify(preparedStatement).setObject(3, "1234"),
-                () -> verify(preparedStatement).setObject(4, "kaki@email.com")
+                () -> verify(preparedStatement).setObject(4, true)
         );
     }
 }
