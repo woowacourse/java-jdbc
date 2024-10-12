@@ -27,7 +27,7 @@ public class TransactionManager {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             rollback(connection);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -40,7 +40,7 @@ public class TransactionManager {
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             rollback(connection);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
