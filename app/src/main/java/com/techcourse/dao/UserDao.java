@@ -30,11 +30,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        final String sql = "update users set password=? where id=?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
-    }
-
     public void update(final User user, final Connection connection) {
         final String sql = "update users set password=? where id=?";
         jdbcTemplate.update(sql, connection, user.getPassword(), user.getId());
