@@ -43,16 +43,19 @@ public class UserService {
     private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy, final Connection conn) throws SQLException {
         conn.setAutoCommit(false);
         try {
-            final User user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-
+            changePasswordInTransaction(id, newPassword, createBy, conn);
             conn.commit();
         } catch (DataAccessException e) {
             handleRollback(conn);
             throw new DataAccessException("Transaction failed and rolled back", e);
         }
+    }
+
+    private void changePasswordInTransaction(long id, String newPassword, String createBy, Connection conn) {
+        final User user = findById(id);
+        user.changePassword(newPassword);
+        userDao.update(conn, user);
+        userHistoryDao.log(conn, new UserHistory(user, createBy));
     }
 
     private void handleRollback(Connection conn) {
