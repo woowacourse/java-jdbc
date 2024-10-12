@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -12,8 +11,8 @@ public class ConnectionManager {
 
     private final DataSource dataSource;
 
-    public ConnectionManager() {
-        this.dataSource = DataSourceConfig.getInstance();
+    public ConnectionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public void manage(Consumer<Connection> execution) {

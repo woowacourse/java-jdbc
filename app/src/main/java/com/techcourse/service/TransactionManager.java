@@ -5,13 +5,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.sql.DataSource;
 
 public class TransactionManager {
 
     private final ConnectionManager connectionManager;
 
-    public TransactionManager() {
-        this.connectionManager = new ConnectionManager();
+    public TransactionManager(DataSource dataSource) {
+        this.connectionManager = new ConnectionManager(dataSource);
     }
 
     public void manage(Consumer<Connection> businessLogic) {
