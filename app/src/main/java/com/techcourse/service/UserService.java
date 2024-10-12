@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import javax.sql.DataSource;
+import com.interface21.transaction.support.JdbcTransaction;
 import com.interface21.transaction.support.JdbcTransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -32,9 +33,18 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        JdbcTransaction transaction = txManager.getTransaction();
+        transaction.begin();
+        try {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+        } catch (Exception e) {
+            transaction.rollback();
+            throw e;
+        }
+
+        transaction.commit();
     }
 }
