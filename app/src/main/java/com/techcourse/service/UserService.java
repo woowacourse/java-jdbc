@@ -29,7 +29,7 @@ public class UserService {
 
     public void changePassword(long id, String newPassword, String createBy) {
         transactionTemplate.executeTransactional(connection -> {
-            final var user = findById(id);
+            User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
