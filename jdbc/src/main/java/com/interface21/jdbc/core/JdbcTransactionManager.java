@@ -22,14 +22,22 @@ public class JdbcTransactionManager {
         }
     }
 
-    private void executeInTransaction(Consumer<Connection> consumer, Connection connection) throws SQLException {
+    private void executeInTransaction(Consumer<Connection> consumer, Connection connection) {
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
         } catch (SQLException e) {
-            connection.rollback();
+            rollbackInTransaction(connection);
             throw new DataAccessException("Transaction failed and was rolled back", e);
+        }
+    }
+
+    private void rollbackInTransaction(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException("Roll back failed", e);
         }
     }
 }
