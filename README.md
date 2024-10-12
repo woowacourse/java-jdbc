@@ -37,3 +37,9 @@
 - [ ]  InMemoryDB → DAO로 교체
 - [x]  클라이언트 중복 코드 JdbcTemplate 프레임 워크로 추상화
 - [x]  JdbcTemplate 이용하도록 개선
+
+### STEP2 - 기능 요구 사항
+
+**Refactor**
+
+- [x] 중복된 Jdbc 로직 템플릿 콜백 메서드 패턴으로 리팩터링
