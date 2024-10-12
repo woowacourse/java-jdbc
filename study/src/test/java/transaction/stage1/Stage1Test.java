@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |          +           |      +
+ * Read Committed   |      -      |          +           |      +
+ * Repeatable Read  |      -      |          -           |      +
+ * Serializable     |      -      |          -           |      -
  */
 class Stage1Test {
 
@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |   +
+     * Read Committed   |   -
+     * Repeatable Read  |   -
+     * Serializable     |   -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +81,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |       +
+     * Read Committed   |       +
+     * Repeatable Read  |       -
+     * Serializable     |       -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +130,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -154,7 +154,7 @@ class Stage1Test {
         sleep(0.5);
 
         // 사용자A가 다시 gugu 객체를 조회했다.
-        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다.
+        // 사용자B는 패스워드를 변경하고 아직 커밋하지 않았다. -> 커밋 되었다.
         final var actual = userDao.findByAccount(connection, "gugu");
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
@@ -173,10 +173,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted |       +
+     * Read Committed   |       +
+     * Repeatable Read  |       +
+     * Serializable     |       -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -197,13 +197,13 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
 
         // 사용자A가 id로 범위를 조회했다.
-        userDao.findGreaterThan(connection, 1);
+        userDao.findGreaterThanOrEqualTo(connection, 1);
 
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
@@ -223,10 +223,10 @@ class Stage1Test {
 
         // MySQL에서 팬텀 읽기를 시연하려면 update를 실행해야 한다.
         // http://stackoverflow.com/questions/42794425/unable-to-produce-a-phantom-read/42796969#42796969
-        userDao.updatePasswordGreaterThan(connection, "qqqq", 1);
+        userDao.updatePasswordGreaterThan(connection, "qqqq", 1);// 쓰기, 읽기 락 걸림
 
         // 사용자A가 다시 id로 범위를 조회했다.
-        final var actual = userDao.findGreaterThan(connection, 1);
+        final var actual = userDao.findGreaterThanOrEqualTo(connection, 1); // 테이블 조회
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
@@ -239,7 +239,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
