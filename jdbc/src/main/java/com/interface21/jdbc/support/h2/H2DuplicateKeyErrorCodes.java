@@ -1,18 +1,11 @@
 package com.interface21.jdbc.support.h2;
 
 import java.util.List;
-import com.interface21.jdbc.support.ErrorCodes;
+import com.interface21.jdbc.support.AbstractErrorCodes;
 
-class H2DuplicateKeyErrorCodes implements ErrorCodes {
-
-    private final List<Integer> codes;
+class H2DuplicateKeyErrorCodes extends AbstractErrorCodes {
 
     public H2DuplicateKeyErrorCodes() {
-        this.codes = List.of(23001, 23505);
-    }
-
-    @Override
-    public boolean contains(int code) {
-        return false;
+        super(List.of(23001, 23505));
     }
 }
