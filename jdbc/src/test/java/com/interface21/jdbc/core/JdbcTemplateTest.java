@@ -49,7 +49,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate();
     }
 
     @Nested
@@ -65,6 +65,7 @@ class JdbcTemplateTest {
 
             // when
             List<User> users = jdbcTemplate.query(
+                    connection,
                     "select * from users where age = ?",
                     ROW_MAPPER,
                     18
@@ -88,6 +89,7 @@ class JdbcTemplateTest {
 
             // when
             List<User> users = jdbcTemplate.query(
+                    connection,
                     "select * from users",
                     ROW_MAPPER
             );
@@ -114,6 +116,7 @@ class JdbcTemplateTest {
 
             // when
             User user = jdbcTemplate.queryForObject(
+                    connection,
                     "select * from users where id = ?",
                     ROW_MAPPER,
                     1
@@ -135,6 +138,7 @@ class JdbcTemplateTest {
 
             // when
             User user = jdbcTemplate.queryForObject(
+                    connection,
                     "select * from users where id = 1",
                     ROW_MAPPER
             );
@@ -154,7 +158,8 @@ class JdbcTemplateTest {
             when(resultSet.getString("name")).thenReturn("user 1", "user 2");
 
             // when & then
-            assertThatThrownBy(() -> jdbcTemplate.queryForObject("select * from users where id = ?", ROW_MAPPER, 1))
+            assertThatThrownBy(
+                    () -> jdbcTemplate.queryForObject(connection, "select * from users where id = ?", ROW_MAPPER, 1))
                     .isInstanceOf(IncorrectResultSizeException.class)
                     .hasMessage("Expected: 1, but actual: 2");
         }
@@ -169,6 +174,7 @@ class JdbcTemplateTest {
 
         // when
         jdbcTemplate.update(
+                connection,
                 "insert into users (account, password, email) values (?, ?, ?)",
                 "account",
                 "password",
