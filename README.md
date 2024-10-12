@@ -43,4 +43,4 @@
 
 ## 3단계 - Transaction 적용하기
 
-- [ ] 동일한 트랜잭션을 사용할 수 있도록 Dao 메서드가 같은 Connection을 공유한다.
+- [x] 동일한 트랜잭션을 사용할 수 있도록 Dao 메서드가 같은 Connection을 공유한다.
