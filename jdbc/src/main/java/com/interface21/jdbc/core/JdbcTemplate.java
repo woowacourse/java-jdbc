@@ -31,6 +31,11 @@ public class JdbcTemplate {
         return Optional.ofNullable(result).orElse(0);
     }
 
+    public int update(String sql, Connection connection, Object... args) {
+        Integer result = execute(sql, PreparedStatement::executeUpdate, connection, args);
+        return Optional.ofNullable(result).orElse(0);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, statement -> {
             List<T> results = new ArrayList<>();
@@ -58,17 +63,27 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, SqlExecutor<T> executor, Object... args) {
+        try (Connection connection = dataSource.getConnection();) {
+            return execute(sql, executor, connection, args);
+        } catch (SQLException e) {
+            throw sqlExceptionTranslator.translate("execute", sql, e);
+        }
+    }
+
+    private <T> T execute(String sql, SqlExecutor<T> executor, Connection connection, Object... args) {
         log.debug("query : {}", sql);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            assignArgsToStatement(args, statement);
             return executor.execute(statement);
         } catch (SQLException e) {
             throw sqlExceptionTranslator.translate("execute", sql, e);
+        }
+    }
+
+    private void assignArgsToStatement(Object[] args, PreparedStatement statement) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + 1, args[i]);
         }
     }
 }
