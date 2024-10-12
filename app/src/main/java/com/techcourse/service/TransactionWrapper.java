@@ -20,10 +20,10 @@ public class TransactionWrapper {
             logic.execute(connection);
             connection.commit();
         } catch (SQLException e) {
-            ConnectionFunctionWrapper.accept(connection, Connection::rollback);
+            ConnectionConsumerWrapper.accept(connection, Connection::rollback);
             throw new DataAccessException(e);
         } finally {
-            ConnectionFunctionWrapper.accept(connection, Connection::close);
+            ConnectionConsumerWrapper.accept(connection, Connection::close);
         }
     }
 }

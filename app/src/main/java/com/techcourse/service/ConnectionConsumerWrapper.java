@@ -5,15 +5,15 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class ConnectionFunctionWrapper {
+public class ConnectionConsumerWrapper {
 
-    private ConnectionFunctionWrapper() {
+    private ConnectionConsumerWrapper() {
     }
 
-    public static void accept(Connection connection, ConnectionConsumer function) {
+    public static void accept(Connection connection, ConnectionConsumer consumer) {
         try {
             if(connection != null) {
-                function.accept(connection);
+                consumer.accept(connection);
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
