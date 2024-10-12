@@ -16,29 +16,37 @@ public class TransactionManager {
 
     public void manage(Consumer<Connection> businessLogic) {
         connectionManager.manage(conn -> {
-            try {
-                conn.setAutoCommit(false);
-                businessLogic.accept(conn);
-                conn.commit();
-            } catch (SQLException e) {
-                rollback(conn);
-                throw new DataAccessException(e);
-            }
+            execute(businessLogic, conn);
         });
+    }
+
+    private void execute(Consumer<Connection> businessLogic, Connection conn) {
+        try {
+            conn.setAutoCommit(false);
+            businessLogic.accept(conn);
+            conn.commit();
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new DataAccessException(e);
+        }
     }
 
     public <T> T manage(Function<Connection, T> businessLogic) {
         return connectionManager.manage(conn -> {
-            try {
-                conn.setAutoCommit(false);
-                T result = businessLogic.apply(conn);
-                conn.commit();
-                return result;
-            } catch (SQLException e) {
-                rollback(conn);
-                throw new DataAccessException(e);
-            }
+            return execute(businessLogic, conn);
         });
+    }
+
+    private <T> T execute(Function<Connection, T> businessLogic, Connection conn) {
+        try {
+            conn.setAutoCommit(false);
+            T result = businessLogic.apply(conn);
+            conn.commit();
+            return result;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new DataAccessException(e);
+        }
     }
 
     private void rollback(Connection conn) {
