@@ -8,8 +8,12 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -40,18 +44,29 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException exception) {
-                throw new DataAccessException("Failed to rollback transaction.", exception);
-            }
+            log.error(e.getMessage(), e);
+            rollback(connection);
             throw new DataAccessException("Failed to commit transaction.", e);
         } finally {
-            try {
-                connection.close();
-            } catch (SQLException exception) {
-                throw new DataAccessException("Failed to close connection.", exception);
-            }
+            close(connection);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to rollback transaction.", e);
+        }
+    }
+
+    private void close(Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to close connection.", e);
         }
     }
 }
