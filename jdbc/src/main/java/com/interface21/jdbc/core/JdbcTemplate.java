@@ -17,12 +17,12 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final PrepareStatementSetter STATEMENT_SETTER = (preparedStatement, objects) -> {
+    private static final PrepareStatementSetter STATEMENT_SETTER = (pstmt, objects) -> {
         if (objects == null) {
             return;
         }
         for (int index = 0; index < objects.length; index++) {
-            preparedStatement.setObject(index + 1, objects[index]);
+            pstmt.setObject(index + 1, objects[index]);
         }
     };
 
@@ -40,10 +40,10 @@ public class JdbcTemplate {
      */
     public void update(String query, Object... objects) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(preparedStatement, objects);
-            preparedStatement.executeUpdate();
+            STATEMENT_SETTER.setValues(pstmt, objects);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
@@ -58,22 +58,22 @@ public class JdbcTemplate {
      */
     public void update(String query, GeneratedKeyHolder keyHolder, Object... objects) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(preparedStatement, objects);
-            int resultCount = preparedStatement.executeUpdate();
+            STATEMENT_SETTER.setValues(pstmt, objects);
+            int resultCount = pstmt.executeUpdate();
 
             if (resultCount != 1) {
                 throw new DataAccessException("데이터 삽입 과정에서 문제가 발생하였습니다.");
             }
-            addKeyHolder(keyHolder, preparedStatement);
+            addKeyHolder(keyHolder, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
     }
 
-    private void addKeyHolder(GeneratedKeyHolder keyHolder, PreparedStatement preparedStatement) throws SQLException {
-        try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+    private void addKeyHolder(GeneratedKeyHolder keyHolder, PreparedStatement pstmt) throws SQLException {
+        try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
             if (generatedKeys.next()) {
                 long id = generatedKeys.getLong(1);
                 keyHolder.addKey(id);
@@ -91,11 +91,11 @@ public class JdbcTemplate {
      * @throws DataNotFoundException 데이터가 존재하지 않는 경우 예외가 발생
      */
     public <T> T queryForObject(String query, RowMapper<T> mapper, Object... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(preparedStatement, objects);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            STATEMENT_SETTER.setValues(pstmt, objects);
+            ResultSet resultSet = pstmt.executeQuery();
 
             if (!resultSet.next()) {
                 throw new DataNotFoundException("데이터가 존재하지 않습니다.");
@@ -122,11 +122,11 @@ public class JdbcTemplate {
      * @return mapper로 매핑이 완료된 객체
      */
     public <T> List<T> queryForList(String query, RowMapper<T> mapper, Object... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             log.debug("query : {}", query);
-            STATEMENT_SETTER.setValues(preparedStatement, objects);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            STATEMENT_SETTER.setValues(pstmt, objects);
+            ResultSet resultSet = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(mapper.map(resultSet));
