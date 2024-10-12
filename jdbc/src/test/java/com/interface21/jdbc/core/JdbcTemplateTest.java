@@ -44,7 +44,7 @@ class JdbcTemplateTest {
 
     @DisplayName("JdbcTemplate이 query와 parameters로 executeUpdate를 실행할 수 있다.")
     @Test
-    void testUpdate() throws SQLException {
+    void testUpdate() {
         // given
         final String query = "update test_table set test_attribute1 = ?, test_attribute2 = ?, test_attribute3 = ?";
 
