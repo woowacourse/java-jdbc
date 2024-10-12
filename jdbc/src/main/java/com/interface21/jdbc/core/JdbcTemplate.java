@@ -37,6 +37,16 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter){
+        log.debug("query : {}", sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            executeUpdate(preparedStatement, preparedStatementSetter);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private void executeUpdate(PreparedStatement preparedStatement, PreparedStatementSetter preparedStatementSetter) throws SQLException {
         preparedStatementSetter.setColumns(preparedStatement);
         preparedStatement.executeUpdate();
