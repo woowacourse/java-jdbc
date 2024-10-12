@@ -10,48 +10,44 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class DataAccessWrapperTest {
 
-    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
 
     @BeforeEach
     public void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
 
-        when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
     }
 
     @DisplayName("에러가 발생할 경우 DataAccessException으로 전환된다.")
     @Test
     void throwDataAccessException_When_ExceptionIsOccurred() {
-        DataAccessWrapper accessWrapper = new DataAccessWrapper(dataSource);
+        DataAccessWrapper accessWrapper = new DataAccessWrapper();
 
-        ThrowingBiFunction<Connection, PreparedStatement, Void, Exception> biFunction = (connection, pstmt) -> {
+        ThrowingFunction<PreparedStatement, Void, Exception> function = (pstmt) -> {
             throw new Exception("throw exception");
         };
 
-        assertThatThrownBy(() -> accessWrapper.apply(biFunction, "dummySql"))
+        assertThatThrownBy(() -> accessWrapper.apply(connection, "dummySql", function))
                 .isInstanceOf(DataAccessException.class);
     }
 
     @DisplayName("bifunction의 결과값을 전달한다")
     @Test
     void returnValueOfFunctionResult() {
-        DataAccessWrapper accessWrapper = new DataAccessWrapper(dataSource);
+        DataAccessWrapper accessWrapper = new DataAccessWrapper();
         Object dummy = new Object();
 
-        ThrowingBiFunction<Connection, PreparedStatement, Object, Exception> biFunction = (connection, pstmt) -> dummy;
+        ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
 
-        assertThat(accessWrapper.apply(biFunction, "dummySql")).isEqualTo(dummy);
+        assertThat(accessWrapper.apply(connection, "dummySql", function)).isEqualTo(dummy);
     }
 }
