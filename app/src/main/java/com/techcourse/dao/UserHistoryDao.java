@@ -9,6 +9,16 @@ import org.slf4j.LoggerFactory;
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
+    private static final String SQL_INSERT = """
+            insert into user_history (
+                user_id,
+                account,
+                password,
+                email,
+                created_at,
+                created_by)
+            values (?, ?, ?, ?, ?, ?)
+            """;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -18,16 +28,7 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory, Connection connection) {
         jdbcTemplate.update(
-                """
-                        insert into user_history (
-                            user_id,
-                            account,
-                            password,
-                            email,
-                            created_at,
-                            created_by)
-                        values (?, ?, ?, ?, ?, ?)
-                        """,
+                SQL_INSERT,
                 connection,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
