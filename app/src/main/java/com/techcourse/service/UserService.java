@@ -46,6 +46,9 @@ public class UserService {
         } catch (SQLException e) {
             log.error(e.getMessage());
             throw new DataAccessException(e);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 }
