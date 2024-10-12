@@ -83,8 +83,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection()
-        ) {
+        try (Connection conn = dataSource.getConnection()) {
             return update(conn, sql, pss);
         } catch (SQLException e) {
             throw new RuntimeException(e);
