@@ -30,7 +30,7 @@ public class UserService {
         transactionManager.execute(connection -> {
             final var user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
+            userDao.update(connection, newPassword, id);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
         });
     }
