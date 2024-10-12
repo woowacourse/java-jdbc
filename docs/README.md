@@ -1,6 +1,6 @@
 ## 기능 요구사항 명세
 
-- [ ] JDBC 라이브러리 구현하기
+- [X] JDBC 라이브러리 구현하기
   - [X] `UserDao` 구현
   - [X] `JdbcTemplate` 구현
   - [X] `JdbcTemplate`으로 `UserDao` 리팩토링
@@ -13,3 +13,5 @@
   - [X] PreparedStatementSetter 인터페이스 구현 및 적용
 - [X] Transaction 적용하기
 - [ ] Transaction synchronization 적용하기
+  - [X] Transaction Synchronization 적용하기
+  - [ ] 트랜잭션 서비스 추상화하기

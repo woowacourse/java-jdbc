@@ -6,7 +6,9 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.TransactionFailedException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -34,7 +36,10 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection conn = dataSource.getConnection()) {
+        try {
+            final Connection conn = DataSourceUtils.getConnection(dataSource);
+            conn.setAutoCommit(false);
+
             changePasswordWithTransaction(id, newPassword, createBy, conn);
         } catch (SQLException e) {
             throw new IllegalStateException("패스워드 변경 실패: 데이터베이스 연결 오류가 발생했습니다.", e);
@@ -42,13 +47,15 @@ public class UserService {
     }
 
     private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy, final Connection conn) throws SQLException {
-        conn.setAutoCommit(false);
         try {
             changePasswordInTransaction(id, newPassword, createBy, conn);
             conn.commit();
         } catch (DataAccessException e) {
             handleRollback(conn);
             throw new TransactionFailedException("트랜잭션 실패: 패스워드 변경 중 오류가 발생했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
