@@ -19,9 +19,9 @@ public class JdbcTemplate {
     }
 
     public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) throws DataAccessException {
-        try (final var preparedStatement = connection.prepareStatement(sql)) {
-            pss.setParameters(preparedStatement);
-            preparedStatement.executeUpdate();
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            pss.setParameters(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -32,9 +32,9 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
-        try (final var conn = dataSource.getConnection(); final var preparedStatement = conn.prepareStatement(sql)) {
-            pss.setParameters(preparedStatement);
-            preparedStatement.executeUpdate();
+        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+            pss.setParameters(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -72,16 +72,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
-        try (final var preparedStatement = connection.prepareStatement(sql)) {
-            pss.setParameters(preparedStatement);
-            return mapResultSetToObject(rm, preparedStatement);
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            pss.setParameters(pstmt);
+            return mapResultSetToObject(rm, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private <T> List<T> mapResultSetToObject(final RowMapper<T> rm, final PreparedStatement preparedStatement) {
-        try (final var rs = preparedStatement.executeQuery()) {
+    private <T> List<T> mapResultSetToObject(final RowMapper<T> rm, final PreparedStatement pstmt) {
+        try (final var rs = pstmt.executeQuery()) {
             final var list = new ArrayList<T>();
             while (rs.next()) {
                 list.add(rm.mapRow(rs));
@@ -97,9 +97,9 @@ public class JdbcTemplate {
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
-        return preparedStatement -> {
+        return pstmt -> {
             for (int i = 0; i < parameters.length; i++) {
-                preparedStatement.setObject(i + 1, parameters[i]);
+                pstmt.setObject(i + 1, parameters[i]);
             }
         };
     }
