@@ -50,9 +50,9 @@ public class JdbcTemplate {
 
             ResultSet resultSet = pstmt.executeQuery();
 
-            validateSingleResult(resultSet);
             if (resultSet.next()) {
                 T result = objectMapper.map(resultSet, resultSet.getRow());
+                validateNoRemainResult(resultSet);
                 return result;
             }
 
@@ -63,12 +63,10 @@ public class JdbcTemplate {
         }
     }
 
-    private void validateSingleResult(ResultSet resultSet) throws SQLException {
-        resultSet.last();
-        if (resultSet.getRow() > 1) {
+    private void validateNoRemainResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
             throw new NotSingleResultException();
         }
-        resultSet.beforeFirst();
     }
 
     public <T> List<T> getResults(String query, ObjectMapper<T> objectMapper, Object... parameters) {
