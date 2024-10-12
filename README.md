@@ -43,6 +43,6 @@
 
 ### 3단계 - Transaction 적용하기
 
-- [ ] 비밀번호를 바꾸고 이력을 남기는 도중에 에러가 발생하면 원래 비밀번호로 돌려놓기 (원자성 보장)
+- [x] 비밀번호를 바꾸고 이력을 남기는 도중에 에러가 발생하면 원래 비밀번호로 돌려놓기 (원자성 보장)
 - [x] UserServiceTest 클래스에서 @Disabled를 삭제하고 미션을 진행
-- [ ] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경
+- [x] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경

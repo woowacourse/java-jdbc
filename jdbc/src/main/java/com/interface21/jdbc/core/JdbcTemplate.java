@@ -36,7 +36,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> mapResults(rowMapper, pstmt.executeQuery()), args);
+        return execute(sql, pstmt -> mapResults(rowMapper, pstmt.executeQuery()), getConnection(), args);
     }
 
     private <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
@@ -53,12 +53,15 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, PreparedStatement::executeUpdate, getConnection(), args);
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public int update(String sql, Connection connection, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, connection, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Connection connection, Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
             parameterSetter.setValues(pstmt);
@@ -67,6 +70,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
