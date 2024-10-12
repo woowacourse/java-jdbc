@@ -12,7 +12,9 @@ public class ConnectionFunctionWrapper {
 
     public static void accept(Connection connection, ConnectionConsumer function) {
         try {
-            function.accept(connection);
+            if(connection != null) {
+                function.accept(connection);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
