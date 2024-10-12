@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.NonReadableResultSetException;
+import com.interface21.jdbc.exception.SQLQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,73 +20,65 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-
     }
 
-    public List<Object> query(String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
+    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql,
+                                PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatement(pstmt, param);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<Object> results = new ArrayList<>();
+            try (ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
                 if (rs.next()) {
-                    results = mapResultByColumn(rs);
+                    return objectMapper.mapToObject(rs);
                 }
-                return results;
+                throw new NonReadableResultSetException("Fail to read result set");
             }
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
-    public List<List<Object>> queryList(String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
+    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql,
+                             PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatement(pstmt, param);
-
-            List<List<Object>> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            try (ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
                 while (rs.next()) {
-                    results.add(mapResultByColumn(rs));
+                    results.add(objectMapper.mapToObject(rs));
                 }
             }
             return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
-    public void execute(String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
+    public void execute(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParamToStatement(pstmt, param);
+            preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
-    private void setParamToStatement(PreparedStatement pstmt, Object[] param) throws SQLException {
-        for (int i = 0; i < param.length; i++) {
-            pstmt.setObject(i + 1, param[i]);
-        }
+    private Connection getDataSource() throws SQLException {
+        return dataSource.getConnection();
     }
 
-    private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
-        List<Object> results = new ArrayList<>();
-        for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-            results.add(rs.getObject(i + 1));
-        }
-        return results;
+    private ResultSet executeQuery(PreparedStatementSetter preparedStatementSetter, PreparedStatement pstmt)
+            throws SQLException {
+        preparedStatementSetter.setValues(pstmt);
+        return pstmt.executeQuery();
     }
 }
