@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,15 +22,15 @@ import org.junit.jupiter.api.Test;
 class TransactionManagerTest {
 
     private TransactionManager transactionManager;
+    private DataSource mockDataSource;
     private Connection mockConnection;
 
     @BeforeEach
-    void setUp() {
-        ConnectionManager connectionManager = mock(ConnectionManager.class);
+    void setUp() throws SQLException {
+        mockDataSource = mock(DataSource.class);
         mockConnection = mock(Connection.class);
-        transactionManager = new TransactionManager(connectionManager);
-
-        doReturn(mockConnection).when(connectionManager).getConnection();
+        transactionManager = new TransactionManager(mockDataSource);
+        doReturn(mockConnection).when(mockDataSource).getConnection();
     }
 
     @DisplayName("오류가 발생하지 않는 function의 경우 commit된다")

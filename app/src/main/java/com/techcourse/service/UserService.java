@@ -17,7 +17,7 @@ public class UserService {
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = new TransactionManager(new ConnectionManager(DataSourceConfig.getInstance()));
+        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {

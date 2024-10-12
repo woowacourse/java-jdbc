@@ -5,20 +5,21 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionManager {
     private static final Logger logger = LoggerFactory.getLogger(TransactionManager.class);
 
-    private final ConnectionManager connectionManager;
+    private final DataSource dataSource;
 
-    public TransactionManager(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public <T> T transaction(Function<Connection, T> function) {
-        Connection connection = connectionManager.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (connection) {
             beginTransaction(connection);
             T result = function.apply(connection);
@@ -28,11 +29,13 @@ public class TransactionManager {
             logger.error(e.getMessage(), e);
             rollback(connection);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public void transaction(Consumer<Connection> consumer) {
-        Connection connection = connectionManager.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (connection) {
             beginTransaction(connection);
             consumer.accept(connection);
@@ -41,6 +44,8 @@ public class TransactionManager {
             logger.error(e.getMessage(), e);
             rollback(connection);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
