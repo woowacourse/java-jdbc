@@ -52,13 +52,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void query() {
+    void queryForObject() {
         // given
         String sql = "select id, account, password, email from users where id = ?";
         long id = 1L;
 
         // when
-        TestUser result = jdbcTemplate.query(objectMapper, sql, pstmt -> pstmt.setObject(1, id));
+        TestUser result = jdbcTemplate.queryForObject(objectMapper, sql, pstmt -> pstmt.setObject(1, id));
 
         // then
         assertAll(
@@ -70,7 +70,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryList() throws SQLException {
+    void queryForObjectList() throws SQLException {
         // given
         preparedStatement = connection.prepareStatement(
                 "insert into users (account, password, email) values ('gugu2', '1232', 'gugu2@naver.com')");
@@ -78,7 +78,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         // when
-        List<TestUser> results = jdbcTemplate.queryList(objectMapper, sql, pstmt -> {});
+        List<TestUser> results = jdbcTemplate.query(objectMapper, sql, pstmt -> {});
 
         // then
         assertAll(
