@@ -33,7 +33,7 @@ public class UserService {
             connection.setAutoCommit(false);
 
             final User passwordChanged = findById(id).changePassword(newPassword);
-            userDao.update(passwordChanged);
+            userDao.update(connection, passwordChanged);
             userHistoryDao.log(new UserHistory(passwordChanged, createBy));
 
             connection.commit();

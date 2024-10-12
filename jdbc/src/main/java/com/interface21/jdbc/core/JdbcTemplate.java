@@ -47,6 +47,18 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T execute(Connection connection, String sql, Object[] args, PreparedStatementCallback<T> callback) {
+        try (
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+        ) {
+            log.debug("Executing SQL: {}", sql);
+            setParameter(pstmt, args);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
         List<T> queryResult = query(sql, rowMapper, args);
         if (queryResult.size() > 1) {
@@ -56,6 +68,10 @@ public class JdbcTemplate {
             throw new EmptyResultDataAccessException(1);
         }
         return queryResult.getFirst();
+    }
+
+    public int update(final Connection connection, final String sql, Object... args) {
+        return execute(connection, sql, args, PreparedStatement::executeUpdate);
     }
 
     public int update(final String sql, Object... args) {
