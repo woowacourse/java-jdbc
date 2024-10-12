@@ -6,9 +6,9 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 
-public class MockUserHistoryDao extends UserHistoryDao {
+public class InMemoryUserHistoryDao extends UserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public InMemoryUserHistoryDao(final JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
