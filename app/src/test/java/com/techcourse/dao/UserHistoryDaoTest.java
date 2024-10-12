@@ -1,8 +1,5 @@
 package com.techcourse.dao;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -11,6 +8,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,7 +42,7 @@ class UserHistoryDaoTest {
 
         // then
         String sql = """
-                     SELECT id, user_id, account, password, email, created_at, created_by
+                     SELECT id, user_id, account, password, email, created_by
                      FROM user_history
                      WHERE user_id = """ + user.getId();
 
@@ -57,12 +55,6 @@ class UserHistoryDaoTest {
                 rs.getString("created_by")
         ));
 
-        assertAll(
-                () -> assertEquals(findUserHistory.getId(), userHistory.getUserId()),
-                () -> assertEquals(findUserHistory.getAccount(), userHistory.getAccount()),
-                () -> assertEquals(findUserHistory.getPassword(), userHistory.getPassword()),
-                () -> assertEquals(findUserHistory.getEmail(), userHistory.getEmail()),
-                () -> assertEquals(findUserHistory.getCreateBy(), userHistory.getCreateBy())
-        );
+        Assertions.assertThat(findUserHistory).isEqualTo(userHistory);
     }
 }

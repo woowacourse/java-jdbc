@@ -1,6 +1,7 @@
 package com.techcourse.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class UserHistory {
 
@@ -55,5 +56,24 @@ public class UserHistory {
 
     public String getCreateBy() {
         return createBy;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        UserHistory that = (UserHistory) object;
+        return userId == that.userId && Objects.equals(account, that.account) && Objects.equals(
+                password, that.password) && Objects.equals(email, that.email) && Objects.equals(
+                createBy, that.createBy);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, account, password, email, createBy);
     }
 }
