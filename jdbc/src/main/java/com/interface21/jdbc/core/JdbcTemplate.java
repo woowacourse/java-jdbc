@@ -23,6 +23,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        execute(connection, sql, args, PreparedStatement::executeUpdate);
+    }
+
     public void update(final String sql, final Object... args) {
         execute(sql, args, PreparedStatement::executeUpdate);
     }
@@ -47,6 +51,17 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final Object[] args, final QueryExecutor<T> executor) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setArguments(args, statement);
+            log.info("query : {}", sql);
+            return executor.execute(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final Object[] args, final QueryExecutor<T> executor) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setArguments(args, statement);
             log.info("query : {}", sql);
             return executor.execute(statement);
