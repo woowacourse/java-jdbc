@@ -18,11 +18,11 @@ public class UserDao {
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
-        this.userRowMapper = new UserRowMapper();
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.userRowMapper = new UserRowMapper();
     }
 
     public void insert(final User user) {
