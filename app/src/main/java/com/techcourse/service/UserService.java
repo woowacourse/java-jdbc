@@ -45,7 +45,7 @@ public class UserService {
         } catch (Exception e) {
             rollback(conn);
 
-            throw new DataAccessException(e);
+            throw new DataAccessException("비밀번호를 수정하던 중 예외가 발생했습니다: " + e);
         }
     }
 
@@ -53,7 +53,7 @@ public class UserService {
         try {
             return DataSourceConfig.getInstance().getConnection();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException("커넥션을 생성하던 중 예외가 발생했습니다: " + e);
         }
     }
 
@@ -61,7 +61,7 @@ public class UserService {
         try {
             conn.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException("롤백을 진행하던 중 예외가 발생했습니다: " + e);
         }
     }
 }
