@@ -53,7 +53,7 @@ public class UserService {
 
     private void rollbackTransaction(Connection connection) {
         SQLExceptionConsumer.execute(() -> {
-            connection.close();
+            connection.rollback();
             return null;
         }, "connection을 rollback하는데 실패했습니다.");
     }
