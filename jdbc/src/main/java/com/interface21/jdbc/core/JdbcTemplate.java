@@ -19,9 +19,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final Connection txConnection;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource, final Connection txConnection) {
         this.dataSource = dataSource;
+        this.txConnection = txConnection;
     }
 
     public void update(final String sql) {
@@ -30,7 +32,7 @@ public class JdbcTemplate {
             return statement.executeUpdate();
         };
 
-        queryTemplate(sql, callback);
+        queryTemplateWithTx(sql, callback);
     }
 
     public void update(final String sql, final Object... bind) {
@@ -39,9 +41,8 @@ public class JdbcTemplate {
             bindParams(bind, statement);
             return statement.executeUpdate();
         };
-        queryTemplate(sql, callback);
+        queryTemplateWithTx(sql, callback);
     }
-
 
     private void bindParams(final Object[] bind, final PreparedStatement statement) throws SQLException {
         for (int i = 1; i <= bind.length; i++) {
@@ -76,6 +77,15 @@ public class JdbcTemplate {
     public int queryTemplate(final String sql, final LineCallback<Integer> callback) {
         try (final Connection connection = dataSource.getConnection()) {
             return callback.callback(connection, sql);
+        } catch (final SQLException exception) {
+            log.warn("SQL 쿼리 중 에외가 발생했습니다. : {}", exception.getMessage());
+            throw new DataAccessException("SQL 쿼리 중 예외가 발생했습니다.");
+        }
+    }
+
+    private int queryTemplateWithTx(final String sql, final LineCallback<Integer> callback) {
+        try {
+            return callback.callback(txConnection, sql);
         } catch (final SQLException exception) {
             log.warn("SQL 쿼리 중 에외가 발생했습니다. : {}", exception.getMessage());
             throw new DataAccessException("SQL 쿼리 중 예외가 발생했습니다.");

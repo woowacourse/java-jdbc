@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapStrategy;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -21,7 +22,7 @@ public class UserHistoryDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource, DataSourceConfig.getTxConnection());
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {

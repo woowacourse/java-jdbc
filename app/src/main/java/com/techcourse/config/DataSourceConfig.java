@@ -1,18 +1,41 @@
 package com.techcourse.config;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Objects;
+
+import javax.sql.DataSource;
+
 import org.h2.jdbcx.JdbcDataSource;
 
-import java.util.Objects;
+import com.interface21.dao.DataAccessException;
 
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static final Connection txConnection;
+    private static DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    static {
+        INSTANCE = createJdbcDataSource();
+        try {
+            txConnection = INSTANCE.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException("고정 커넥션 생성 중 예외 발생");
+        }
+    }
+
+    private DataSourceConfig() {
+    }
+
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
         return INSTANCE;
+    }
+
+    public static Connection getTxConnection() {
+        return txConnection;
     }
 
     private static JdbcDataSource createJdbcDataSource() {
@@ -22,6 +45,4 @@ public class DataSourceConfig {
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
     }
-
-    private DataSourceConfig() {}
 }
