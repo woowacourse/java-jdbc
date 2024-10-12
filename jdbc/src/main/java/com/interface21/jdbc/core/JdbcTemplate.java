@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import com.interface21.jdbc.support.H2SQLExceptionTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,9 +15,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final H2SQLExceptionTranslator exceptionTranslator;
 
     public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.exceptionTranslator = new H2SQLExceptionTranslator();
     }
 
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
@@ -25,7 +28,7 @@ public class JdbcTemplate {
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         }
     }
 
@@ -52,7 +55,7 @@ public class JdbcTemplate {
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         }
     }
 
@@ -85,7 +88,8 @@ public class JdbcTemplate {
 
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
-        } catch (SQLException ignored) {
+        } catch (SQLException e) {
+            throw exceptionTranslator.translate(e);
         }
     }
 
