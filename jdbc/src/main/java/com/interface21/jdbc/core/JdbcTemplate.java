@@ -25,13 +25,12 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
         return execute(sql, args, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> queryResult = new ArrayList<>();
-                while (rs.next()) {
-                    queryResult.add(rowMapper.mapRow(rs));
-                }
-                return queryResult;
+            ResultSet rs = pstmt.executeQuery();
+            List<T> queryResult = new ArrayList<>();
+            while (rs.next()) {
+                queryResult.add(rowMapper.mapRow(rs));
             }
+            return queryResult;
         });
     }
 
@@ -65,11 +64,10 @@ public class JdbcTemplate {
 
     public int update(final String sql, GeneratedKeyHolder keyHolder, Object... args) {
         return execute(sql, args, pstmt -> {
+            ResultSet rs = pstmt.getGeneratedKeys();
             int affectedRows = pstmt.executeUpdate();
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    keyHolder.setKey(rs.getObject(1));
-                }
+            if (rs.next()) {
+                keyHolder.setKey(rs.getObject(1));
             }
             return affectedRows;
         });
