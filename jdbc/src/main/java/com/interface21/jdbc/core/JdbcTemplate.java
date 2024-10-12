@@ -34,12 +34,17 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = getPreparedStatement(conn, sql);
 
         try (conn; pstmt) {
-            pss.setValues(pstmt);
-            pstmt.executeUpdate();
+            executePreparedStatement(pss, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private void executePreparedStatement(final PreparedStatementSetter pss, final PreparedStatement pstmt)
+            throws SQLException {
+        pss.setValues(pstmt);
+        pstmt.executeUpdate();
     }
 
     public void update(final Connection conn, final String sql, final Object... parameters) throws DataAccessException {
@@ -50,8 +55,7 @@ public class JdbcTemplate {
         final PreparedStatement pstmt = getPreparedStatement(conn, sql);
 
         try (pstmt) {
-            pss.setValues(pstmt);
-            pstmt.executeUpdate();
+            executePreparedStatement(pss, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
