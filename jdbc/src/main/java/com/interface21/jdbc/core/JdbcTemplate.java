@@ -24,10 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement psmt = conn.prepareStatement(sql)
-        ) {
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        try (PreparedStatement psmt = conn.prepareStatement(sql)) {
             pss.setValue(psmt);
             ResultSet rs = psmt.executeQuery();
 
@@ -35,6 +33,18 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        try (Connection conn = dataSource.getConnection()) {
+            return query(conn, sql, rowMapper, pss);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, rowMapper, createArgumentPreparedStatementSetter(args));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -72,15 +82,34 @@ public class JdbcTemplate {
         return result.get(0);
     }
 
-    public int update(String sql, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement psmt = conn.prepareStatement(sql)
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> result = query(conn, sql, rowMapper, args);
+        if (result.size() != 1) {
+            throw new DataAccessException("조회하려는 데이터가 여러 개입니다.");
+        }
+        return result.get(0);
+    }
+
+    public int update(Connection conn, String sql, PreparedStatementSetter pss) {
+        try (PreparedStatement psmt = conn.prepareStatement(sql)
         ) {
             pss.setValue(psmt);
             return psmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
+        try (Connection conn = dataSource.getConnection()) {
+            return update(conn, sql, pss);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int update(Connection conn, String sql, Object... args) {
+        return update(conn, sql, createArgumentPreparedStatementSetter(args));
     }
 
     public int update(String sql, Object... args) {
