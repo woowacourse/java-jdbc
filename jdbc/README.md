@@ -20,6 +20,6 @@
 
 ## 3단계
 
-- [ ] UserServiceTest 테스트 통과
-- [ ] 트랜잭션 경계 설정
-    - [ ] userDao, userHistoryDao를 한 트랜잭션으로 묶기
+- [x] UserServiceTest 테스트 통과
+- [x] 트랜잭션 경계 설정
+    - [x] userDao, userHistoryDao를 한 트랜잭션으로 묶기
