@@ -99,7 +99,7 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
