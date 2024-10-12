@@ -1,5 +1,10 @@
 package com.techcourse.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import com.interface21.jdbc.core.exception.JdbcSQLException;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -21,14 +26,36 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            userDao.insert(connection, user);
+        } catch (SQLException e) {
+            throw new JdbcSQLException(e);
+        }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            setTransaction(connection, createBy, user);
+        } catch (SQLException e) {
+            throw new JdbcSQLException(e);
+        }
+    }
+
+    private void setTransaction(Connection connection, String createBy, User user) throws SQLException {
+        try {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
     }
 
     public User findByAccount(String account) {
