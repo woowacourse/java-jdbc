@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
