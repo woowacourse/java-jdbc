@@ -33,7 +33,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var conn = dataSource.getConnection()) {
+        try (final Connection conn = dataSource.getConnection()) {
             changePasswordWithTransaction(id, newPassword, createBy, conn);
         } catch (SQLException e) {
             throw new DataAccessException("Connection failed", e);
@@ -43,7 +43,7 @@ public class UserService {
     private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy, final Connection conn) throws SQLException {
         conn.setAutoCommit(false);
         try {
-            final var user = findById(id);
+            final User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));

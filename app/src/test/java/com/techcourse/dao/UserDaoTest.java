@@ -27,7 +27,7 @@ class UserDaoTest {
         final DataSource dataSource = DataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(dataSource);
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
