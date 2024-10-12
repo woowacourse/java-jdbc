@@ -1,8 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.CannotGetPreparedStatementException;
-import com.interface21.jdbc.CannotProcessPreparedStatementException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,7 +61,7 @@ public class JdbcTemplate {
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
             return processor.process(preparedStatement);
         } catch (SQLException e) {
-            throw new CannotProcessPreparedStatementException("Failed to process preparedStatement", e);
+            throw new DataAccessException("Failed to process preparedStatement", e);
         }
     }
 
