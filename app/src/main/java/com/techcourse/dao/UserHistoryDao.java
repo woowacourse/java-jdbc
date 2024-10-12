@@ -1,62 +1,43 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.UserHistory;
-import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapStrategy;
+import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
+    private static final RowMapStrategy<UserHistory> USER_HISTORY_ROW_MAP_STRATEGY = resultSet -> {
+        final long id = resultSet.getLong(1);
+        final long userId = resultSet.getLong(2);
+        final String findAccount = resultSet.getString(3);
+        final String password = resultSet.getString(4);
+        final String email = resultSet.getString(5);
+        final String createdBy = resultSet.getString(6);
+        return new UserHistory(id, userId, findAccount, password, email, createdBy);
+    };
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
+                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+    }
 
-            log.debug("query : {}", sql);
+    public UserHistory findById(final long id) {
+        final String sql = "SELECT id, user_id, account, password, email, created_at, created_by FROM user_history WHERE id = ?";
 
-            pstmt.setLong(1, userHistory.getUserId());
-            pstmt.setString(2, userHistory.getAccount());
-            pstmt.setString(3, userHistory.getPassword());
-            pstmt.setString(4, userHistory.getEmail());
-            pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+        return jdbcTemplate.queryForObject(sql, USER_HISTORY_ROW_MAP_STRATEGY, id);
     }
 }
