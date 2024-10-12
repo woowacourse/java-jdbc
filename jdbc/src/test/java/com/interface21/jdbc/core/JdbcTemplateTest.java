@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.interface21.jdbc.ObjectMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,6 +17,12 @@ class JdbcTemplateTest {
 
     private static JdbcTemplate jdbcTemplate;
     private static Connection connection;
+    private final ObjectMapper<TestUser> objectMapper = (rs) -> new TestUser(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4)
+    );
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
 
@@ -101,5 +108,36 @@ class JdbcTemplateTest {
                 () -> assertThat(resultSet.getObject(2)).isEqualTo("111"),
                 () -> assertThat(resultSet.getObject(3)).isEqualTo("kirby@naver.com")
         );
+    }
+
+    private class TestUser {
+
+        private Long id;
+        private String account;
+        private String password;
+        private String email;
+
+        public TestUser(long id, String account, String password, String email) {
+            this.id = id;
+            this.account = account;
+            this.password = password;
+            this.email = email;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getAccount() {
+            return account;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public String getEmail() {
+            return email;
+        }
     }
 }

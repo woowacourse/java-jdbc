@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.ObjectMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.ArrayList;
@@ -13,6 +14,12 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper<User> objectMapper = (rs) -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4)
+    );
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
