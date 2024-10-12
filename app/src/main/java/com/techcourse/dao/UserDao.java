@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapStrategy;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -22,7 +22,7 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource, DataSourceConfig.getTxConnection());
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -34,9 +34,19 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void insert(final Connection connection, final User user) {
+        final String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public void update(final User user) {
         final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -54,5 +64,11 @@ public class UserDao {
         final var sql = "SELECT id, account, password, email FROM users WHERE account = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAP_STRATEGY, account);
+    }
+
+    public void deleteAll() {
+        final var sql = "DELETE FROM users";
+
+        jdbcTemplate.update(sql);
     }
 }

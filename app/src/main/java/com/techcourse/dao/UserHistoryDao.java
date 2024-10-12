@@ -1,10 +1,11 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+
 import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapStrategy;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -22,7 +23,7 @@ public class UserHistoryDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource, DataSourceConfig.getTxConnection());
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
@@ -32,7 +33,16 @@ public class UserHistoryDao {
     public void log(final UserHistory userHistory) {
         final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
+        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+    }
+
+    public void log(final Connection connection, final UserHistory userHistory) {
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(connection, sql, userHistory.getUserId(), userHistory.getAccount(),
+                userHistory.getPassword(),
                 userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
     }
 

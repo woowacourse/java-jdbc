@@ -19,11 +19,9 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final Connection txConnection;
 
-    public JdbcTemplate(final DataSource dataSource, final Connection txConnection) {
+    public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.txConnection = txConnection;
     }
 
     public void update(final String sql) {
@@ -32,16 +30,25 @@ public class JdbcTemplate {
             return statement.executeUpdate();
         };
 
-        queryTemplateWithTx(sql, callback);
+        queryTemplate(sql, callback);
     }
 
     public void update(final String sql, final Object... bind) {
-        final LineCallback<Integer> callback = (connection, query) -> {
-            final PreparedStatement statement = connection.prepareStatement(query);
+        final LineCallback<Integer> callback = (con, query) -> {
+            final PreparedStatement statement = con.prepareStatement(query);
             bindParams(bind, statement);
             return statement.executeUpdate();
         };
-        queryTemplateWithTx(sql, callback);
+        queryTemplate(sql, callback);
+    }
+
+    public void update(final Connection connection, final String sql, final Object... bind) {
+        final LineCallback<Integer> callback = (con, query) -> {
+            final PreparedStatement statement = con.prepareStatement(query);
+            bindParams(bind, statement);
+            return statement.executeUpdate();
+        };
+        queryTemplateWithTx(connection, sql, callback);
     }
 
     private void bindParams(final Object[] bind, final PreparedStatement statement) throws SQLException {
@@ -83,9 +90,11 @@ public class JdbcTemplate {
         }
     }
 
-    private int queryTemplateWithTx(final String sql, final LineCallback<Integer> callback) {
+    public int queryTemplateWithTx(final Connection connection,
+                                   final String sql,
+                                   final LineCallback<Integer> callback) {
         try {
-            return callback.callback(txConnection, sql);
+            return callback.callback(connection, sql);
         } catch (final SQLException exception) {
             log.warn("SQL 쿼리 중 에외가 발생했습니다. : {}", exception.getMessage());
             throw new DataAccessException("SQL 쿼리 중 예외가 발생했습니다.");

@@ -1,14 +1,15 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.SQLException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.domain.User;
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserDaoTest {
 
@@ -39,10 +40,11 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final User expect = new User("fram", "password", "aa@aa.aa");
+        userDao.insert(expect);
+        final var actual = userDao.findByAccount("fram");
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(actual.getAccount()).isEqualTo(expect.getAccount());
     }
 
     @Test

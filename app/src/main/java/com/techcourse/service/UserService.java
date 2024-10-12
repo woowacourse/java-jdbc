@@ -31,13 +31,13 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
-            connection = DataSourceConfig.getTxConnection();
+            connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
 
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
         } catch (final Exception e) {
