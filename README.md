@@ -21,3 +21,6 @@
 ### 기능 구현 목록 정리
 - [x] UserDao 메서드 내용 채우고 테스트코드 통과
 - [x] 중복되는 코드 JDBC Template으로 리팩토링
+
+- [ ] 서비스 메서드에 트랜잭션 적용
+- [ ] UserServiceTest 확인
