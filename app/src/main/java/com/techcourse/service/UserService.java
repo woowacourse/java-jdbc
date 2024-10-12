@@ -34,6 +34,7 @@ public class UserService {
         try {
             connection.setAutoCommit(false);
             doChangePassword(id, newPassword, createBy, connection);
+            connection.commit();
         } catch (DataAccessException e) {
             connection.rollback();
             throw new DataAccessException(e);
