@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,44 +26,69 @@ public class JdbcTemplate {
         return dataSource;
     }
 
+    public void update(String sql, Object... params) {
+        update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql);
+            StatementParamSetter.setParams(ps, params);
+            return ps;
+        });
+    }
+
     public void update(PreparedStatementCreator creator) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
-            connection.setAutoCommit(false);
-            preparedStatement.executeUpdate();
-            connection.commit();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        connect(creator, PreparedStatement::executeUpdate);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return queryForObject(con -> {
+            PreparedStatement ps = con.prepareStatement(sql);
+            StatementParamSetter.setParams(ps, params);
+            return ps;
+        }, rowMapper);
     }
 
     public <T> T queryForObject(PreparedStatementCreator creator, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
-            ResultSet resultSet = preparedStatement.executeQuery();
+        Executor<ResultSet, T> resultMapper = (resultSet) -> {
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+        return connect(creator, preparedStatement -> getResult(preparedStatement, resultMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            ResultSet resultSet = preparedStatement.executeQuery();
+        Executor<ResultSet, List<T>> resultMapper = resultSet -> {
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
+        };
+        
+        return connect(connection -> connection.prepareStatement(sql),
+                preparedStatement -> getResult(preparedStatement, resultMapper));
+    }
+
+    private <R> R connect(PreparedStatementCreator creator, Executor<PreparedStatement, R> executor) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
+            return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
+    }
+
+    private <R> R getResult(PreparedStatement preparedStatement, Executor<ResultSet, R> executor) {
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            return executor.execute(resultSet);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private interface Executor<T, R> {
+        R execute(T t) throws SQLException;
     }
 }
