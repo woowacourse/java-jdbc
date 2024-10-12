@@ -8,10 +8,10 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-public class UserServiceImpl implements UserService {
+public class AppUserService implements UserService {
 
     private static final UserService INSTANCE = TransactionProxy.createProxy(
-            new UserServiceImpl(
+            new AppUserService(
                     new UserDao(JdbcTemplateConfig.getInstance()),
                     new UserHistoryDao(JdbcTemplateConfig.getInstance())
             ),
@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserServiceImpl(UserDao userDao, UserHistoryDao userHistoryDao) {
+    public AppUserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }

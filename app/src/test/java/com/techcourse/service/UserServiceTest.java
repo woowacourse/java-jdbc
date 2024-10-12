@@ -35,7 +35,7 @@ class UserServiceTest {
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         UserService userService = TransactionProxy.createProxy(
-                new UserServiceImpl(userDao, userHistoryDao),
+                new AppUserService(userDao, userHistoryDao),
                 UserService.class,
                 DataSourceConfig.getInstance()
         );
@@ -53,9 +53,9 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserServiceImpl userServiceImpl = new UserServiceImpl(userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
         UserService userService = TransactionProxy.createProxy(
-                userServiceImpl,
+                appUserService,
                 UserService.class,
                 DataSourceConfig.getInstance()
         );

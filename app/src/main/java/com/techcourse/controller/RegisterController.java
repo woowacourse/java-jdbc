@@ -2,7 +2,7 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import com.techcourse.service.UserService;
-import com.techcourse.service.UserServiceImpl;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JspView;
@@ -17,7 +17,7 @@ public class RegisterController {
     private final UserService userService;
 
     public RegisterController() {
-        this(UserServiceImpl.getInstance());
+        this(AppUserService.getInstance());
     }
 
     public RegisterController(UserService userService) {
