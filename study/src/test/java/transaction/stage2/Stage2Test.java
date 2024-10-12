@@ -40,8 +40,11 @@ class Stage2Test {
     /**
      * 생성된 트랜잭션이 몇 개인가? 1개
      * 왜 그런 결과가 나왔을까?
-     * Propagation.REQUIRED 트랜잭션 안에 Propagation.REQUIRED 가 있다.
-     * REQUIRED 특성상 첫번째 트랜잭션이 존재하기 때문에 두번째 트랜잭션은 첫번째 트랜잭션을 사용한다.
+     * 물리 트랜잭션 개수: 1개
+     * 논리 트랜잭션 개수: 2개
+     * 상태: Propagation.REQUIRED 트랜잭션 안에 Propagation.REQUIRED 가 있다.
+     * REQUIRED는 이미 트랜잭션이 존재하면 외부 (물리) 트랜잭션에 참여한다.
+     * 논리 트랜잭션은 Propagation.REQUIRED 세팅이 붙은 모든 메서드에서 생성된다.
      */
     @Test
     void testRequired() {
@@ -58,8 +61,10 @@ class Stage2Test {
     /**
      * 생성된 트랜잭션이 몇 개인가? 2개
      * 왜 그런 결과가 나왔을까?
-     * Propagation.REQUIRED 트랜잭션 안에 Propagation.REQUIRES_NEW 가 있다.
-     * REQUIRES_NEW 는 트랜잭션이 이미 존재해도 새로운 트랜잭션을 생성하기 때문에 총 2개가 생성된다.
+     * 물리 트랜잭션 개수: 2개
+     * 논리 트랜잭션 개수: ?개
+     * 상태: Propagation.REQUIRED 트랜잭션 안에 Propagation.REQUIRES_NEW 가 있다.
+     * REQUIRES_NEW 는 항상 새로운 물리적 트랜잭션을 사용한다.
      */
     @Test
     void testRequiredNew() {
@@ -76,10 +81,13 @@ class Stage2Test {
     /**
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
+     * 상태: REQUIRES 안에 REQUIRES_NEW 가 있다.
      * REQUIRES_NEW 때문에 두개의 트랜잭션이 생기는데,
      * 첫번째 트랜잭션 안에 있는 두번째 트랜잭션은 성공적으로 커밋된다.
      * 두번째 트랜잭션이 커밋된 뒤 첫번째 트랜잭션에서 에러가 발생하기 때문에 첫번째 트랜잭션은 롤백된다.
      * 그래서 결국 하나의 데이터만 저장된다.
+     * 하위 스코프에서 롤백이 발생하면 외부 트랜잭션에 영향을 미친다.
+     * 새로운 물리적 트랜잭션이 생성되어도 같은 스레드 안에서 실행되기 때문이다.
      */
     @Test
     void testRequiredNewWithRollback() {
@@ -142,6 +150,11 @@ class Stage2Test {
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     *
+     * 물리적 트랜잭션: 실제 db에 적용되는 트랜잭션. db에 대한 변경사항이 커밋 or 롤백되는 단위
+     * 논리적 트랜잭션: 프로그래밍 단위 트랜잭션. 하나의 물리적 트랜잭션에 여러개의 논리적 트랜잭션이 포함될 수 있음
+     * 하나의 논리 트랜잭션이 롤백되면 외부의 물리 트랜잭션이 롤백되며 다른 논리 트랜잭션도 롤백된다.
+     *
      * NOT_SUPPORTED
      * : 부모 트랜잭션이 존재할 경우, 부모 트랜잭션에서 동작하는 태스크는 트랜잭션이 적용되지만,
      *   NOT_SUPPORTED 설정이 된 트랜잭션 안에서는 동작하지 않는다.
