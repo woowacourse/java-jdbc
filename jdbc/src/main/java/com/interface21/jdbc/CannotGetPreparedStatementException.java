@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 public class CannotGetPreparedStatementException extends RuntimeException {
 
-    public CannotGetPreparedStatementException(String msg, SQLException ex) {
-        super(msg, ex);
+    public CannotGetPreparedStatementException(String message, SQLException exception) {
+        super(message, exception);
     }
 }
