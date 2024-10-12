@@ -51,7 +51,7 @@ public class UserService {
             final String createBy,
             final JdbcTransaction transaction
     ) {
-        final var user = findById(id);
+        final var user = userDao.findById(id, transaction);
         user.changePassword(newPassword);
         userDao.update(user, transaction);
         userHistoryDao.log(new UserHistory(user, createBy), transaction);

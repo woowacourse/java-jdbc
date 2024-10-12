@@ -68,6 +68,12 @@ public class UserDao {
         return jdbcTemplate.queryOne(sql, resultSetUserCallBack, id);
     }
 
+    public User findById(long id, JdbcTransaction transaction) {
+        String sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryOne(sql, resultSetUserCallBack, transaction, id);
+    }
+
     public User findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
 

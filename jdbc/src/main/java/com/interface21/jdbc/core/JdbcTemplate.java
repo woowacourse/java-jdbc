@@ -34,6 +34,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, JdbcTransaction transaction, Object... args) {
+        debugQuery(sql);
+
+        Connection conn = transaction.getConnection();
+        try (var pstmt = conn.prepareStatement(sql)) {
+            return executeQueryOne(pstmt, callBack, args);
+        } catch (SQLException e) {
+            throw exceptionTranslator.translate(e);
+        }
+    }
+
     private <T> T executeQueryOne(PreparedStatement pstmt, ResultSetCallBack<T> callBack, Object... args) throws SQLException {
         setArg(pstmt, args);
 
@@ -98,8 +109,8 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
         debugQuery(sql);
 
-        Connection connection = transaction.getConnection();
-        try (var pstmt = connection.prepareStatement(sql)) {
+        Connection conn = transaction.getConnection();
+        try (var pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
