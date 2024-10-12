@@ -33,13 +33,13 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        JdbcTransaction transaction = txManager.getTransaction();
+        final var transaction = txManager.getTransaction();
         transaction.begin();
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user, transaction);
-            userHistoryDao.log(new UserHistory(user, createBy));
+            userHistoryDao.log(new UserHistory(user, createBy), transaction);
         } catch (Exception e) {
             transaction.rollback();
             throw e;

@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.JdbcTransaction;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
@@ -12,7 +13,7 @@ public class MockUserHistoryDao extends UserHistoryDao {
     }
 
     @Override
-    public void log(final UserHistory userHistory) {
+    public void log(final UserHistory userHistory, JdbcTransaction transaction) {
         throw new DataAccessException();
     }
 }
