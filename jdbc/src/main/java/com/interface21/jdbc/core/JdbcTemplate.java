@@ -19,8 +19,7 @@ public class JdbcTemplate {
     public void update(String sql, Object... params) {
         sqlExecutor.execute(sql, preparedStatement -> {
             PreparedStatementParameterBinder.bindStatementParameters(preparedStatement, params);
-            preparedStatement.executeUpdate();
-            return null;
+            return preparedStatement.executeUpdate();
         });
     }
 
