@@ -35,7 +35,10 @@ class Stage2Test {
         final var hikariDataSource = (HikariDataSource) dataSource;
         final var hikariPool = getPool((HikariDataSource) dataSource);
 
-        // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
+        // TODO: 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
+        // 확인을 쉽게 하기 위해 sleep을 2초로 변경해 보았다.
+        // 5개를 초과하는 스레드는 대기했다가, 모든 스레드 작업이 끝나 커넥션 풀에서 나가면 (즉, 약 2초 후에) 그 때 acquire 한다.
+        // `After acquire` 라는 로그가 약 2초 단위로 5개씩 뜨는 것을 확인할 수 있다.
         final var threads = new Thread[20];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
@@ -63,7 +66,7 @@ class Stage2Test {
                 log.info("Before acquire ");
                 try (Connection ignored = dataSource.getConnection()) {
                     log.info("After acquire ");
-                    quietlySleep(500); // Thread.sleep(500)과 동일한 기능
+                    quietlySleep(2000); // Thread.sleep(500)과 동일한 기능
                 }
             } catch (Exception e) {
             }

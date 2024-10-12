@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.h2.jdbc.JdbcSQLSyntaxErrorException;
@@ -22,15 +21,33 @@ class JdbcTemplateTest {
     private DataSource dataSource;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         dataSource = TestDataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
-        createTable();
+
+        // CREATE TABLE
+        String sql = """
+                CREATE TABLE test_user
+                (
+                id      INT             NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                name    VARCHAR(255)    NOT NULL,
+                age     INT             NOT NULL
+                );
+                """;
+
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        }
     }
 
     @AfterEach
-    void tearDown() {
-        dropTable();
+    void tearDown() throws Exception {
+        // DROP TABLE
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement("DROP TABLE test_user;")) {
+            statement.executeUpdate();
+        }
     }
 
     @DisplayName("INSERT 쿼리 정상 실행")
@@ -94,7 +111,12 @@ class JdbcTemplateTest {
 
         // when
         List<TestUser> users = jdbcTemplate.queryForList(
-                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 19);
+                "SELECT id, name, age FROM test_user WHERE age=?",
+                resultSet -> new TestUser(
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getInt("age")
+                ), 19);
 
         // then
         assertThat(users).isEmpty();
@@ -109,39 +131,17 @@ class JdbcTemplateTest {
 
         // when
         List<TestUser> users = jdbcTemplate.queryForList(
-                "SELECT id, name, age FROM test_user WHERE age=?", TestUser.class, 20);
+                "SELECT id, name, age FROM test_user WHERE age=?",
+                resultSet -> new TestUser(
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getInt("age")
+                ), 20);
 
         // then
         assertThat(users).containsExactly(
                 new TestUser(1L, "John", 20),
                 new TestUser(2L, "Jake", 20)
         );
-    }
-
-    private void createTable() {
-        String sql = """
-                CREATE TABLE test_user
-                (
-                id      INT             NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                name    VARCHAR(255)    NOT NULL,
-                age     INT             NOT NULL
-                );
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void dropTable() {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement("DROP TABLE test_user;")) {
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
