@@ -1,13 +1,14 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,28 +41,31 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = userDao.getDataSource();
-        executeInTransaction(dataSource, conn -> {
+        executeInTransaction(dataSource, () -> {
             User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             return null;
         });
     }
 
-    private <T> T executeInTransaction(DataSource dataSource, Function<Connection, T> callback) {
-        try (Connection conn = dataSource.getConnection()) {
+    private <T> T executeInTransaction(DataSource dataSource, Supplier<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             conn.setAutoCommit(false);
             return execute(callback, conn);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    private <T> T execute(Function<Connection, T> callback, Connection conn) throws SQLException {
+    private <T> T execute(Supplier<T> callback, Connection conn) throws SQLException {
         try {
-            T result = callback.apply(conn);
+            T result = callback.get();
             conn.commit();
             return result;
         } catch (SQLException | DataAccessException e) {

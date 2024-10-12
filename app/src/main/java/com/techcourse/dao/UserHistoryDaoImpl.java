@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import javax.sql.DataSource;
@@ -20,7 +21,10 @@ public class UserHistoryDaoImpl implements UserHistoryDao {
     @Override
     public void log(final UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        DataSource dataSource = getDataSource();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         jdbcTemplate.update(
+                conn,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
@@ -32,17 +36,7 @@ public class UserHistoryDaoImpl implements UserHistoryDao {
     }
 
     @Override
-    public void log(Connection conn, UserHistory userHistory) {
-        String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(
-                conn,
-                sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+    public DataSource getDataSource() {
+        return jdbcTemplate.getDataSource();
     }
 }

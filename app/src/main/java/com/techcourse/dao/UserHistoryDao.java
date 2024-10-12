@@ -1,11 +1,11 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
+import javax.sql.DataSource;
 
 public interface UserHistoryDao {
 
     void log(final UserHistory userHistory);
 
-    void log(final Connection conn, final UserHistory userHistory);
+    DataSource getDataSource();
 }

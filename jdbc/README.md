@@ -44,7 +44,7 @@
 
 # 4. Transaction synchronization 적용
 
-- [ ] Transaction synchronization 적용
+- [x] Transaction synchronization 적용
     - Connection 객체를 가져오는 부분은 DataSourceUtils를 사용하도록 수정한다.
     - TransactionSynchronizationManager 클래스를 구현한다.
 

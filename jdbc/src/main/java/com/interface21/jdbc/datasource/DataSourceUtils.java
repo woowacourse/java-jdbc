@@ -28,6 +28,7 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        TransactionSynchronizationManager.unbindResource(dataSource);
         try {
             connection.close();
         } catch (SQLException ex) {

@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,12 +31,8 @@ public class UserDaoImpl implements UserDao {
     @Override
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
-    }
-
-    @Override
-    public void update(Connection conn, User user) {
-        String sql = "update users set password = ? where id = ?";
+        DataSource dataSource = getDataSource();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         jdbcTemplate.update(conn, sql, user.getPassword(), user.getId());
     }
 
