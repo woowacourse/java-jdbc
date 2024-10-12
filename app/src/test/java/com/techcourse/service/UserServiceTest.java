@@ -1,22 +1,21 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
 
-@Disabled
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.domain.User;
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
