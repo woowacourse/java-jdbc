@@ -1,6 +1,6 @@
 package com.techcourse.support.jdbc.init;
 
-import com.interface21.jdbc.DataAccessException;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.io.File;
 import java.io.IOException;
