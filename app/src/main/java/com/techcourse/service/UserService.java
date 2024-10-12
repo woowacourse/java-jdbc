@@ -15,12 +15,10 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -43,7 +41,7 @@ public class UserService {
     private void processInTransaction(final Consumer<Connection> consumer) {
         Connection connection = null;
         try  {
-            connection = dataSource.getConnection();
+            connection = userDao.getConnection();
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();

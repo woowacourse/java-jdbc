@@ -56,4 +56,8 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow(AccountNotExistException::new);
     }
+
+    public Connection getConnection() {
+        return jdbcTemplate.getConnection();
+    }
 }
