@@ -1,3 +1,6 @@
+DROP TABLE users IF EXISTS;
+DROP TABLE user_history IF EXISTS;
+
 create table if not exists users (
     id bigint auto_increment,
     account varchar(100) not null,
