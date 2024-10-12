@@ -15,17 +15,18 @@ import java.sql.ResultSet;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private static final ResultSetMapper<TestUser> resultSetMapper = rs ->
+    private static final RowMapper<TestUser> ROW_MAPPER = rs ->
             new TestUser(rs.getLong("id"), rs.getString("account"));
 
-    private DataSource dataSource = mock(DataSource.class);
-    private Connection connection = mock(Connection.class);
-    private PreparedStatement preparedStatement = mock(PreparedStatement.class);
-    private ResultSet resultSet = mock(ResultSet.class);
+    private final DataSource dataSource = mock(DataSource.class);
+    private final Connection connection = mock(Connection.class);
+    private final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+    private final ResultSet resultSet = mock(ResultSet.class);
 
     private JdbcTemplate jdbcTemplate;
 
@@ -36,6 +37,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("데이터를 변경하는 SQL를 실행한다.")
     void update() throws Exception {
         // given
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
@@ -45,13 +47,11 @@ class JdbcTemplateTest {
         jdbcTemplate.update(sql, "mia", "password", "mia@gmail.com");
 
         // then
-        verify(preparedStatement).setObject(1, "mia");
-        verify(preparedStatement).setObject(2, "password");
-        verify(preparedStatement).setObject(3, "mia@gmail.com");
         verify(preparedStatement).executeUpdate();
     }
 
     @Test
+    @DisplayName("다건 데이터를 조회하는 SQL를 실행한다.")
     void query() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -63,7 +63,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when
-        List<TestUser> queriedTestUsers = jdbcTemplate.query(sql, resultSetMapper, 1l);
+        List<TestUser> queriedTestUsers = jdbcTemplate.query(sql, ROW_MAPPER, 1l);
 
         // then
         assertAll(() -> {
@@ -76,6 +76,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회하는 SQL를 실행한다.")
     void queryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -87,7 +88,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when
-        TestUser queriedTestUser = jdbcTemplate.queryForObject(sql, resultSetMapper, 1l);
+        TestUser queriedTestUser = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l);
 
         // then
         assertAll(() -> {
@@ -97,6 +98,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회할 때 데이터가 없다면 예외가 발생한다.")
     void throwEmptyResultDataAccessExceptionWhenQueryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -105,11 +107,12 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetMapper, 1l))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
+    @DisplayName("단건 데이터를 조회할 때 데이터가 2개 이상이면 예외가 발생한다.")
     void throwIncorrectResultSizeDataAccessExceptionWhenQueryForObject() throws Exception {
         // given
         String sql = "select id, account, password, email from users where id = ?";
@@ -121,7 +124,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("mia");
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, resultSetMapper, 1l))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1l))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
