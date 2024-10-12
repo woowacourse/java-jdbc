@@ -2,20 +2,23 @@ package com.interface21.transaction.support;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
 
 public class JdbcTransaction {
 
     private final Connection connection;
+    private final H2SQLExceptionTranslator exceptionTranslator;
 
     public JdbcTransaction(Connection connection) {
         this.connection = connection;
+        this.exceptionTranslator = new H2SQLExceptionTranslator();
     }
 
     public void begin() {
         try {
             connection.setAutoCommit(false);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         }
     }
 
@@ -33,7 +36,7 @@ public class JdbcTransaction {
         try {
             connection.rollback();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         } finally {
             release();
         }
@@ -43,7 +46,7 @@ public class JdbcTransaction {
         try {
             connection.close();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         }
     }
 
