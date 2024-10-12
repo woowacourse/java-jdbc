@@ -1,9 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -15,6 +14,12 @@ public class UserDao {
     public static final String SELECT_BY_ACCOUNT_QUERY = "select * from users where account = ?";
 
     private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> userRowMapper = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -29,26 +34,14 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.queryForList(this::mapToUser, SELECT_ALL_QUERY);
+        return jdbcTemplate.queryForList(userRowMapper, SELECT_ALL_QUERY);
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.queryForObject(this::mapToUser, SELECT_BY_ID_QUERY, id);
+        return jdbcTemplate.queryForObject(userRowMapper, SELECT_BY_ID_QUERY, id);
     }
 
     public User findByAccount(final String account) {
-        return jdbcTemplate.queryForObject(this::mapToUser, SELECT_BY_ACCOUNT_QUERY, account);
-    }
-
-    private User mapToUser(ResultSet rs) {
-        try {
-            return new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email"));
-        } catch (SQLException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        return jdbcTemplate.queryForObject(userRowMapper, SELECT_BY_ACCOUNT_QUERY, account);
     }
 }
