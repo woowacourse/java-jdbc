@@ -3,6 +3,7 @@ package com.techcourse.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,11 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 
     @Test
