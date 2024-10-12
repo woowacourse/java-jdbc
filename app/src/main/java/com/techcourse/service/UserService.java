@@ -34,7 +34,10 @@ public class UserService {
 
         try {
             User user = findById(id);
-            updateUserPasswordAndLogHistory(connection, user, newPassword, createBy);
+            executeWithTransaction(() -> {
+                updateUserPasswordAndLogHistory(connection, user, newPassword, createBy);
+                return null;
+            });
             connection.commit();
         } catch (SQLException e) {
             rollbackTransaction(connection);
@@ -44,13 +47,11 @@ public class UserService {
     }
 
     private Connection getConnectionWithTransaction(DataSource dataSource) {
-        try {
+        return handleSQLException(() -> {
             Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             return connection;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     private void updateUserPasswordAndLogHistory(Connection connection, User user, String newPassword, String createBy) throws SQLException {
@@ -60,20 +61,33 @@ public class UserService {
     }
 
     private void rollbackTransaction(Connection connection) {
-        try {
+        handleSQLException(() -> {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException();
-        }
+            return null;
+        });
     }
 
     private void closeConnection(Connection connection) {
-        try {
+        handleSQLException(() -> {
             if (connection != null) {
                 connection.close();
             }
+            return null;
+        });
+    }
+
+    private <T> T handleSQLException(SQLFunction<T> function) {
+        try {
+            return function.apply();
         } catch (SQLException e) {
-            throw new DataAccessException();
+            throw new DataAccessException(e);
         }
+    }
+
+    private void executeWithTransaction(SQLFunction<Void> function) throws SQLException {
+        handleSQLException(() -> {
+            function.apply();
+            return null;
+        });
     }
 }
