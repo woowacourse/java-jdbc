@@ -33,14 +33,14 @@ class UserHistoryDaoTest {
         userHistoryDao.log(connection, userHistory);
 
         verify(jdbcTemplate).update(
-                eq(connection),
-                eq("insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)"),
-                eq(userHistory.getUserId()),
-                eq(userHistory.getAccount()),
-                eq(userHistory.getPassword()),
-                eq(userHistory.getEmail()),
-                eq(userHistory.getCreatedAt()),
-                eq(userHistory.getCreateBy())
+                connection,
+                "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
         );
     }
 }
