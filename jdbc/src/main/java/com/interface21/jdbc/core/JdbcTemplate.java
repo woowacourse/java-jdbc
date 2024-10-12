@@ -28,7 +28,11 @@ public class JdbcTemplate {
             setParamToStatement(pstmt, param);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                return mapResultByColumn(rs);
+                List<Object> results = new ArrayList<>();
+                if (rs.next()) {
+                    results = mapResultByColumn(rs);
+                }
+                return results;
             }
 
         } catch (SQLException e) {
@@ -78,10 +82,8 @@ public class JdbcTemplate {
 
     private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
         List<Object> results = new ArrayList<>();
-        while (rs.next()) {
-            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                results.add(rs.getObject(i + 1));
-            }
+        for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+            results.add(rs.getObject(i + 1));
         }
         return results;
     }
