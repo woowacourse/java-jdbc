@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,6 +23,17 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(Connection conn, String sql, Object... params){
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)){
+            PreparedStatementSetter pss = createPreparedStatementSetter(params);
+            pss.setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public void update(String sql, Object... params){
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)){
@@ -30,7 +42,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -46,7 +58,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> result = query(sql, rowMapper, params);
         if (result.isEmpty() || result.size() != SINGLE_SIZE) {
-            throw new RuntimeException("Unexpected number of rows returned: " + result.size());
+            throw new DataAccessException("Unexpected number of rows returned: " + result.size());
         }
         return result.get(0);
     }
@@ -61,7 +73,7 @@ public class JdbcTemplate {
             return createListResultFromResultSet(rowMapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
