@@ -72,6 +72,18 @@ public class JdbcTemplate {
         }
     }
 
+    public void execute(Connection conn, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(pstmt);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new SQLQueryException(e);
+        }
+    }
+
     private Connection getDataSource() throws SQLException {
         return dataSource.getConnection();
     }
