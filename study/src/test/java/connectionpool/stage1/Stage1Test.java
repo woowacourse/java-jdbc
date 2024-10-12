@@ -57,6 +57,13 @@ class Stage1Test {
      *
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
+     * // mysql은 250~500 size 추천
+     * // mysql은 cacheSql 2048추천
+     * // HiKari 공식문서: Many connection pools, including Apache DBCP, Vibur, c3p0 and others offer PreparedStatement caching. HikariCP does not. Why?
+     * // 테스트를 보면 지원하는 데..?
+     * // 아래의 설정은 HikariCP자체에서 지원하는 것이 아닌 JDBC드라이버의 설정이다. 말그대로 DataSource설정.
+     * // HikariCP는 연결풀을 지원하는 기술이고 연결풀 Layer에서 캐시를 지원하는 것은 비효율적이라는 뜻
+     * // JDBC드라이버 Layer에서 지원하니까 굳이 연결풀에서 안해도 된다.
      */
     @Test
     void testHikariCP() {
