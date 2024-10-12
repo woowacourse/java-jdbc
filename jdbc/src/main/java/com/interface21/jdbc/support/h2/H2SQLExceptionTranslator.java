@@ -1,7 +1,6 @@
 package com.interface21.jdbc.support.h2;
 
 import java.sql.SQLException;
-import java.util.List;
 import com.interface21.dao.BadGrammarException;
 import com.interface21.dao.CannotAcquireLockException;
 import com.interface21.dao.DataAccessException;
@@ -15,14 +14,14 @@ public class H2SQLExceptionTranslator {
     private final H2DataIntegrityViolationCodes dataIntegrityViolationCodes;
     private final H2DuplicateKeyErrorCodes duplicateKeyErrorCodes;
     private final H2DataAccessResourceFailureCodes dataAccessResourceFailureCodes;
-    private final List<Integer> cannotAcquireLockCodes;
+    private final H2CanNotAcquireLockCodes cannotAcquireLockCodes;
 
     public H2SQLExceptionTranslator() {
         this.badGrammarsErrorCodes = new H2BadGrammarsErrorCodes();
         this.dataIntegrityViolationCodes = new H2DataIntegrityViolationCodes();
         this.duplicateKeyErrorCodes = new H2DuplicateKeyErrorCodes();
         this.dataAccessResourceFailureCodes = new H2DataAccessResourceFailureCodes();
-        this.cannotAcquireLockCodes = List.of(50200);
+        this.cannotAcquireLockCodes = new H2CanNotAcquireLockCodes();
     }
 
     public DataAccessException translate(SQLException sqlException) {
