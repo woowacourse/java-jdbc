@@ -14,7 +14,7 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper<User> objectMapper = (rs) -> new User(
+    private final ObjectMapper<User> objectMapper = rs -> new User(
             rs.getLong(1),
             rs.getString(2),
             rs.getString(3),
@@ -61,26 +61,12 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        List<Object> result = jdbcTemplate.query(sql, id);
-
-        return new User(
-                (Long) result.get(0),
-                (String) result.get(1),
-                (String) result.get(2),
-                (String) result.get(3)
-        );
+        return jdbcTemplate.query(objectMapper, sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        List<Object> result = jdbcTemplate.query(sql, account);
-        return new User(
-                (Long) result.get(0),
-                (String) result.get(1),
-                (String) result.get(2),
-                (String) result.get(3)
-        );
+        return jdbcTemplate.query(objectMapper, sql, account);
     }
 }
 

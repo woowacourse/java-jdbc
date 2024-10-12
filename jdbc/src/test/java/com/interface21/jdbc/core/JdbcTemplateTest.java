@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.jdbc.ObjectMapper;
+import com.interface21.jdbc.TestUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,14 +57,14 @@ class JdbcTemplateTest {
         long param = 1;
 
         // when
-        List<Object> result = jdbcTemplate.query(sql, param);
+       TestUser result = jdbcTemplate.query(objectMapper, sql, param);
 
         // then
         assertAll(
-                () -> assertThat(result.get(0)).isEqualTo(1L),
-                () -> assertThat(result.get(1)).isEqualTo("gugu"),
-                () -> assertThat(result.get(2)).isEqualTo("123"),
-                () -> assertThat(result.get(3)).isEqualTo("gugu@naver.com")
+                () -> assertThat(result.getId()).isEqualTo(1L),
+                () -> assertThat(result.getAccount()).isEqualTo("gugu"),
+                () -> assertThat(result.getPassword()).isEqualTo("123"),
+                () -> assertThat(result.getEmail()).isEqualTo("gugu@naver.com")
         );
     }
 
@@ -108,36 +109,5 @@ class JdbcTemplateTest {
                 () -> assertThat(resultSet.getObject(2)).isEqualTo("111"),
                 () -> assertThat(resultSet.getObject(3)).isEqualTo("kirby@naver.com")
         );
-    }
-
-    private class TestUser {
-
-        private Long id;
-        private String account;
-        private String password;
-        private String email;
-
-        public TestUser(long id, String account, String password, String email) {
-            this.id = id;
-            this.account = account;
-            this.password = password;
-            this.email = email;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public String getAccount() {
-            return account;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public String getEmail() {
-            return email;
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.ObjectMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,18 +22,17 @@ public class JdbcTemplate {
 
     }
 
-    public List<Object> query(String sql, Object... param) {
+    public <T> T query(ObjectMapper<T> objectMapper, String sql, Object... param) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParamToStatement(pstmt, param);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<Object> results = new ArrayList<>();
                 if (rs.next()) {
-                    results = mapResultByColumn(rs);
+                    return objectMapper.mapToObject(rs);
                 }
-                return results;
+                throw new IllegalStateException("Fail to get result set"); //TODO: 예외 구체화
             }
 
         } catch (SQLException e) {
