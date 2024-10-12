@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -29,8 +30,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, (preparedStatement) ->
-        {
+        jdbcTemplate.update(sql, (preparedStatement) -> {
             preparedStatement.setObject(1, user.getAccount());
             preparedStatement.setObject(2, user.getPassword());
             preparedStatement.setObject(3, user.getEmail());
@@ -39,8 +39,7 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, (preparedStatement) ->
-        {
+        jdbcTemplate.update(sql, (preparedStatement) -> {
             preparedStatement.setObject(1, user.getAccount());
             preparedStatement.setObject(2, user.getPassword());
             preparedStatement.setObject(3, user.getEmail());
@@ -66,5 +65,15 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, (preparedStatement) -> {
             preparedStatement.setObject(1, account);
         }, USER_ROW_MAPPER);
+    }
+
+    public void update(Connection connection, User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, connection, (preparedStatement) -> {
+            preparedStatement.setObject(1, user.getAccount());
+            preparedStatement.setObject(2, user.getPassword());
+            preparedStatement.setObject(3, user.getEmail());
+            preparedStatement.setObject(4, user.getId());
+        });
     }
 }
