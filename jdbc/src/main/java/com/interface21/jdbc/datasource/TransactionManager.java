@@ -56,7 +56,6 @@ public class TransactionManager {
         if (transactionDepth.get() == null) {
             transactionDepth.set(new AtomicLong(0));
         }
-        System.out.println("depth = " + transactionDepth.get().get());
         return transactionDepth.get();
     }
 

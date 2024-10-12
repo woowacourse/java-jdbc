@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TestService;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -30,6 +31,19 @@ class TransactionManagerTest {
         mockConnection = mock(Connection.class);
         transactionManager = new TransactionManager(mockDataSource);
         doReturn(mockConnection).when(mockDataSource).getConnection();
+    }
+
+    @DisplayName("depth가 2인 transaction의 경우 commit되지 않고 기존 transaction이 전파된다")
+    @Test
+    void transactionPropagationIsRequired() {
+        TestService testService = new TestService(transactionManager);
+
+        testService.depthTwoValidMethod();
+
+        assertAll(
+                () -> verify(mockConnection, times(1)).commit(),
+                () -> verify(mockConnection, never()).rollback()
+        );
     }
 
     @DisplayName("오류가 발생하지 않는 Supplier의 경우 commit된다")
