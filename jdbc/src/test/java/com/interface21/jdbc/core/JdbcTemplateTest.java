@@ -36,7 +36,6 @@ class JdbcTemplateTest {
         resultSet = Mockito.mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
-        given(connection.prepareStatement(any())).willReturn(preparedStatement);
         given(connection.prepareStatement(any(), anyInt())).willReturn(preparedStatement);
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
