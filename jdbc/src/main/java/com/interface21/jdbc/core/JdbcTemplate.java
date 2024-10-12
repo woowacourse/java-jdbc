@@ -21,61 +21,104 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+
     public <T> T query(ObjectMapper<T> objectMapper, String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
-            setParamToStatement(pstmt, param);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return objectMapper.mapToObject(rs);
-                }
-                throw new IllegalStateException("Fail to get result set"); //TODO: 예외 구체화
+        try {
+            setStatement(conn, pstmt, sql, param);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return objectMapper.mapToObject(rs);
             }
+            throw new IllegalStateException("Fail to get result set"); //TODO: 예외 구체화
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            closeConnection(conn, pstmt, rs);
             throw new RuntimeException(e);
+
+        } finally {
+            closeConnection(conn, pstmt, rs);
         }
     }
 
     public <T> List<T> queryList(ObjectMapper<T> objectMapper, String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
-            setParamToStatement(pstmt, param);
-
+        try {
+            setStatement(conn, pstmt, sql, param);
+            rs = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    results.add(objectMapper.mapToObject(rs));
-                }
+            while (rs.next()) {
+                results.add(objectMapper.mapToObject(rs));
             }
             return results;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            closeConnection(conn, pstmt, rs);
             throw new RuntimeException(e);
+
+        } finally {
+            closeConnection(conn, pstmt, rs);
         }
     }
 
     public void execute(String sql, Object... param) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
-            setParamToStatement(pstmt, param);
+        try {
+            setStatement(conn, pstmt, sql, param);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            closeConnection(conn, pstmt, rs);
             throw new RuntimeException(e);
+        } finally {
+            closeConnection(conn, pstmt, rs);
         }
     }
 
-    private void setParamToStatement(PreparedStatement pstmt, Object[] param) throws SQLException {
+    private void setStatement(Connection conn, PreparedStatement pstmt, String sql, Object[] param) throws SQLException {
+        conn = dataSource.getConnection();
+        pstmt = conn.prepareStatement(sql);
+
         for (int i = 0; i < param.length; i++) {
             pstmt.setObject(i + 1, param[i]);
+        }
+    }
+
+    private void closeConnection(Connection conn, PreparedStatement pstmt, ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+                rs = null;
+            }
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            if (pstmt != null) {
+                pstmt.close();
+                pstmt = null;
+            }
+        } catch (SQLException ignored) {
+        }
+
+        try {
+            if (conn != null) {
+                conn.close();
+                conn = null;
+            }
+        } catch (SQLException ignored) {
         }
     }
 }
