@@ -20,8 +20,7 @@ public class TransactionManager {
     }
 
     public <T> T transaction(Supplier<T> supplier) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        getTransactionDepth().incrementAndGet();
+        Connection connection = getConnection();
         try {
             beginTransaction(connection);
             T result = supplier.get();
@@ -37,8 +36,7 @@ public class TransactionManager {
     }
 
     public void transaction(Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        getTransactionDepth().incrementAndGet();
+        Connection connection = getConnection();
         try {
             beginTransaction(connection);
             runnable.run();
@@ -50,6 +48,12 @@ public class TransactionManager {
         } finally {
             releaseConnection(connection);
         }
+    }
+
+    private Connection getConnection() {
+        DataSourceUtils.setTransactionActive(true);
+        getTransactionDepth().incrementAndGet();
+        return DataSourceUtils.getConnection(dataSource);
     }
 
     private AtomicLong getTransactionDepth() {

@@ -12,6 +12,7 @@ public abstract class TransactionSynchronizationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionSynchronizationManager.class);
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> transactionActive = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {
     }
@@ -35,5 +36,13 @@ public abstract class TransactionSynchronizationManager {
             resources.set(new HashMap<>());
         }
         return resources.get();
+    }
+
+    public static boolean isTransactionActive() {
+        return transactionActive.get();
+    }
+
+    public static void setTransactionActive(boolean active) {
+        transactionActive.set(active);
     }
 }

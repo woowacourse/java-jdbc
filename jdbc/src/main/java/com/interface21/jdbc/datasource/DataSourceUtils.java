@@ -13,6 +13,10 @@ public abstract class DataSourceUtils {
     }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
+        if (!TransactionSynchronizationManager.isTransactionActive()) {
+            return getConnectionFromDataSource(dataSource);
+        }
+
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection == null) {
             connection = bindConnection(dataSource);
@@ -22,13 +26,9 @@ public abstract class DataSourceUtils {
     }
 
     private static Connection bindConnection(DataSource dataSource) {
-        try {
-            Connection connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
-        }
+        Connection connection = getConnectionFromDataSource(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        return connection;
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
@@ -37,6 +37,22 @@ public abstract class DataSourceUtils {
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    public static void setTransactionActive(boolean active) {
+        TransactionSynchronizationManager.setTransactionActive(active);
+    }
+
+    public static boolean isTransactionActive() {
+        return TransactionSynchronizationManager.isTransactionActive();
+    }
+
+    private static Connection getConnectionFromDataSource(DataSource dataSource) {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException ex) {
+            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 }
