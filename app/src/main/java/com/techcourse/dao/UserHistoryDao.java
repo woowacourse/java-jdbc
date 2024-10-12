@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
-
     private final JdbcTemplate jdbcTemplate;
     private final UserHistoryRowMapper userHistoryRowMapper;
 
@@ -40,13 +38,13 @@ public class UserHistoryDao {
     }
 
     public List<UserHistory> findAll() {
-        final String sql = "select user_id, account, password, email, created_at, created_by from user_history";
+        final String sql = "select id, user_id, account, password, email, created_at, created_by from user_history";
 
         return jdbcTemplate.query(sql, userHistoryRowMapper);
     }
 
     public UserHistory findById(final Long userId) {
-        final String sql = "select user_id, account, password, email, created_at, created_by from user_history where user_id = ?";
+        final String sql = "select id, user_id, account, password, email, created_at, created_by from user_history where user_id = ?";
 
         return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, userId);
     }
