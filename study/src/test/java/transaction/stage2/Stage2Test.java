@@ -82,8 +82,6 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * -> supports는 이미 진행 중인 트랜잭션이 있을 때만 실행되고, 없으면 트랜잭션 없이 실행된다.
-     * 그래서 정의대로라면 주석이 있으면 1개, 없으면 0개의 트랜잭션이 생성될 것인데,
-     * 왜 주석을 했는데도 1개가 생성되는지는 모르겠다... help me 카피!
      */
     @Test
     void testSupports() {
@@ -115,8 +113,6 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
      * -> 주석이 있으면 2개, 주석이 없으면 1개
-     * not supported 는 트랜잭션 없이 동작하기 때문이다.
-     * (그런데 정의대로 한다면 주석이 있으면 1개, 없으면 0개 아닌가...? help me 카피!)
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      * -> 물리적 트랜잭션은 데이터베이스와 상호작용하며 커밋과 롤백이 실제로 이루어지는 트랜잭션
