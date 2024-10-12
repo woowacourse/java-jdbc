@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
-        jdbcTransactionManager.execute((connection) -> {
+        jdbcTransactionManager.execute(connection -> {
             User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
