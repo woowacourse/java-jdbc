@@ -34,7 +34,7 @@ public class UserService {
 
             final User passwordChanged = findById(id).changePassword(newPassword);
             userDao.update(connection, passwordChanged);
-            userHistoryDao.log(new UserHistory(passwordChanged, createBy));
+            userHistoryDao.log(connection, new UserHistory(passwordChanged, createBy));
 
             connection.commit();
         } catch (Exception e) {
