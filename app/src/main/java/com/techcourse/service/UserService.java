@@ -41,6 +41,7 @@ public class UserService {
                 connection.commit();
             }
             catch (SQLException e) {
+                connection.rollback();
                 throw new RuntimeException(e);
             }
         } catch (SQLException e) {
