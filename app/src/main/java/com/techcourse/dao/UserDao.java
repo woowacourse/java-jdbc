@@ -40,8 +40,8 @@ public class UserDao {
         jdbcTemplate.update(sql);
     }
 
-    public void update(final User user, Connection connection) {
-        var sql = """
+    public void update(final User user, final Connection connection) {
+        String sql = """
                 update 
                     users 
                 set
@@ -64,19 +64,19 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        var sql = "select id, account, password, email from users";
+        String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
-        var sql = "select id, account, password, email from users where account = ?";
+        String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }

@@ -21,8 +21,8 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory, Connection connection) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+    public void log(final UserHistory userHistory, final Connection connection) {
+        String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
                 sql,
