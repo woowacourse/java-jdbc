@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -25,12 +24,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            setParameter(pstmt, args);
+        return execute(sql, args, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> queryResult = new ArrayList<>();
                 while (rs.next()) {
@@ -38,6 +32,17 @@ public class JdbcTemplate {
                 }
                 return queryResult;
             }
+        });
+    }
+
+    private <T> T execute(String sql, Object[] args, PreparedStatementCallback<T> callback) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug("Executing SQL: {}", sql);
+            setParameter(pstmt, args);
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -55,25 +60,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            setParameter(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public int update(final String sql, GeneratedKeyHolder keyHolder, Object... args) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        ) {
-            log.debug("query : {}", sql);
-            setParameter(pstmt, args);
+        return execute(sql, args, pstmt -> {
             int affectedRows = pstmt.executeUpdate();
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -81,9 +72,7 @@ public class JdbcTemplate {
                 }
             }
             return affectedRows;
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        });
     }
 
     private void setParameter(PreparedStatement pstmt, Object[] args) throws SQLException {
