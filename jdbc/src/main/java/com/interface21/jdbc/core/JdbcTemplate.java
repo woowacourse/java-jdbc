@@ -59,6 +59,19 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T executeInsert(String sql, Object[] args, PreparedStatementCallback<T> callback) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+        ) {
+            log.debug("Executing SQL: {}", sql);
+            setParameter(pstmt, args);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, Object... args) {
         List<T> queryResult = query(sql, rowMapper, args);
         if (queryResult.size() > 1) {
@@ -79,9 +92,9 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, GeneratedKeyHolder keyHolder, Object... args) {
-        return execute(sql, args, pstmt -> {
-            ResultSet rs = pstmt.getGeneratedKeys();
+        return executeInsert(sql, args, pstmt -> {
             int affectedRows = pstmt.executeUpdate();
+            ResultSet rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
                 keyHolder.setKey(rs.getObject(1));
             }
