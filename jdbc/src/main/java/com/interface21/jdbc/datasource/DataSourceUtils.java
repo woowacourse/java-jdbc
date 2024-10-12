@@ -34,17 +34,10 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            unbindResource(dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
-        }
-    }
-
-    private static void unbindResource(DataSource dataSource) {
-        Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
-        if (connection == null) {
-            throw new CannotGetJdbcConnectionException("Failed to unbind JDBC Connection");
         }
     }
 }
