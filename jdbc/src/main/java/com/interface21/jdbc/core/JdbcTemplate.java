@@ -18,7 +18,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -26,11 +26,19 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public void write(Connection connection, String sql, Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> readAll(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> mapResultSetToList(rowMapper, pstmt), params);
     }
 
-    private static <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    public <T> List<T> readAll(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(connection, sql, pstmt -> mapResultSetToList(rowMapper, pstmt), params);
+    }
+
+    private <T> List<T> mapResultSetToList(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (ResultSet resultSet = pstmt.executeQuery()) {
             List<T> result = new ArrayList<>();
             while (resultSet.next()) {
@@ -54,9 +62,36 @@ public class JdbcTemplate {
         return result.getFirst();
     }
 
+    public <T> T read(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> result = readAll(connection, sql, rowMapper, params);
+        if (result.size() > 1) {
+            throw new ResultNotSingleException(result.size());
+        }
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
+    }
+
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            PreparedStatementSetter.setParameters(pstmt, params);
+            return executor.execute(pstmt);
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> executor, Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
