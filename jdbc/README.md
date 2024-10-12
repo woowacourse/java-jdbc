@@ -17,3 +17,9 @@
 ### Dao
 
 - [x] 가변인자를 사용해서 prepareStatement 생성
+
+## 3단계
+
+- [ ] UserServiceTest 테스트 통과
+- [ ] 트랜잭션 경계 설정
+    - [ ] userDao, userHistoryDao를 한 트랜잭션으로 묶기
