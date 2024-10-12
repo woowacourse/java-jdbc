@@ -30,15 +30,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, new DefaultParameterSetter(args), new DefaultResultSetExtractor<>(rowMapper));
+        return query(sql, new ArgumentsPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
-        return query(sql, parameterSetter, new DefaultResultSetExtractor<>(rowMapper));
+        return query(sql, parameterSetter, new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        return query(sql, new DefaultParameterSetter(args), resultExtractor);
+        return query(sql, new ArgumentsPreparedStatementSetter(args), resultExtractor);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -57,7 +57,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        List<T> results = query(sql, new DefaultParameterSetter(args), resultExtractor);
+        List<T> results = query(sql, new ArgumentsPreparedStatementSetter(args), resultExtractor);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
@@ -66,15 +66,29 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return update(sql, new DefaultParameterSetter(args));
+        return update(sql, new ArgumentsPreparedStatementSetter(args));
     }
 
-    private <T> T execute(String sql, StatementCallback<T> action, ParameterSetter parameterSetter) {
+    public int update(Connection connection, String sql, Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, new ArgumentsPreparedStatementSetter(args));
+    }
+
+    private <T> T execute(String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             parameterSetter.setParameters(pstmt);
-            return action.doInStatement(pstmt);
+            return callback.doInStatement(pstmt);
+        } catch (SQLException exception) {
+            log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
+            throw new DataAccessException("쿼리 실행 에러 발생", exception);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            parameterSetter.setParameters(pstmt);
+            return callback.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);

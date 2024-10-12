@@ -3,11 +3,11 @@ package com.interface21.jdbc.core;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class DefaultParameterSetter implements ParameterSetter {
+public class ArgumentsPreparedStatementSetter implements ParameterSetter {
 
     private final Object[] args;
 
-    public DefaultParameterSetter(Object... args) {
+    public ArgumentsPreparedStatementSetter(Object... args) {
         this.args = args;
     }
 
