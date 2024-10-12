@@ -19,7 +19,7 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private TransactionManager transactionManager;;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
