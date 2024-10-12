@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.interface21.dao.DataAccessException;
@@ -38,28 +39,34 @@ class UserServiceTest {
         jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 
+    @DisplayName("패스워드를 갱신할 수 있다.")
     @Test
     void testChangePassword() {
+        // given
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final UserService userService = new UserService(userDao, userHistoryDao);
 
+        // when
         userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY);
 
+        // then
         final User actual = userService.findById(USER_ID);
 
         assertThat(actual.getPassword()).isEqualTo(NEW_PASSWORD);
     }
 
+    @DisplayName("MockUserHistoryDao에서 예외가 발생하면, 롤백되면서 패스워드 갱신을 하지 않는다.")
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
+        // given
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final UserService userService = new UserService(userDao, userHistoryDao);
 
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+        // when
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY));
 
+        // then
         final User actual = userService.findById(USER_ID);
 
         assertThat(actual.getPassword()).isNotEqualTo(NEW_PASSWORD);
