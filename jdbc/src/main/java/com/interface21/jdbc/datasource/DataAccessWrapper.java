@@ -18,7 +18,7 @@ public class DataAccessWrapper {
             String sql,
             ThrowingFunction<PreparedStatement, T, Exception> function
     ) {
-        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             return function.apply(pstmt);
         } catch (Exception exception) {
