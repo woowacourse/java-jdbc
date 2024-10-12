@@ -36,15 +36,24 @@ public class UserService {
         final var transaction = txManager.getTransaction();
         transaction.begin();
         try {
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(user, transaction);
-            userHistoryDao.log(new UserHistory(user, createBy), transaction);
+            changePassword(id, newPassword, createBy, transaction);
         } catch (Exception e) {
             transaction.rollback();
             throw e;
         }
 
         transaction.commit();
+    }
+
+    private void changePassword(
+            final long id,
+            final String newPassword,
+            final String createBy,
+            final JdbcTransaction transaction
+    ) {
+        final var user = findById(id);
+        user.changePassword(newPassword);
+        userDao.update(user, transaction);
+        userHistoryDao.log(new UserHistory(user, createBy), transaction);
     }
 }
