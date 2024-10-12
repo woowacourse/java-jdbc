@@ -11,14 +11,14 @@ import com.interface21.dao.DuplicateKeyException;
 
 public class H2SQLExceptionTranslator {
 
-    private final List<Integer> badGrammarsErrorCodes;
+    private final H2BadGrammarsErrorCodes badGrammarsErrorCodes;
     private final List<Integer> dataIntegrityViolationCodes;
     private final List<Integer> duplicateKeyErrorCodes;
     private final List<Integer> dataAccessResourceFailureCodes;
     private final List<Integer> cannotAcquireLockCodes;
 
     public H2SQLExceptionTranslator() {
-        this.badGrammarsErrorCodes = List.of(42000, 42001, 42101, 42102, 42111, 42112, 42121, 42122, 42132);
+        this.badGrammarsErrorCodes = new H2BadGrammarsErrorCodes();
         this.dataIntegrityViolationCodes = List.of(22001, 22003, 22012, 22018, 22025, 23000, 23002, 23003, 23502, 23503, 23506, 23507, 23513);
         this.duplicateKeyErrorCodes = List.of(23001, 23505);
         this.dataAccessResourceFailureCodes = List.of(90046, 90100, 90117, 90121, 90126);
