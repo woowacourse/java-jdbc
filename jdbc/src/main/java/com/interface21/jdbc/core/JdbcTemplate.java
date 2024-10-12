@@ -50,7 +50,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, @Nullable PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, rowMapper, pss);
+        List<T> results = query(sql, pss, rowMapper);
         if (results.size() > 1) {
             throw new IncorrectResultSizeException(1, results.size());
         }
