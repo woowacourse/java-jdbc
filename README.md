@@ -18,7 +18,7 @@
     - [x] PreparedStatementSetter 인터페이스가 가변인자를 사용
     - [x] 람다를 적극적으로 활용해서 코드량을 줄여보자.
 
-- [ ] 1단계 피드백 반영
+- [x] 1단계 피드백 반영
     - [x] `queryForObject`가 `Optional`을 반환하도록 변경
     - [x] `queryForObject` 반환 로직에 예외 추가
     - [x] `JdbcTemplateTest` 변경
