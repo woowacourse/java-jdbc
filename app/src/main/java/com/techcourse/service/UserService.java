@@ -19,10 +19,6 @@ public class UserService {
         this.transactionManager = transactionManager;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
-
     public void insert(final User user) {
         transactionManager.doInTransaction(connection -> {
             userDao.insert(connection, user);
@@ -37,5 +33,9 @@ public class UserService {
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
         });
+    }
+
+    public User findById(final long id) {
+        return userDao.findById(id);
     }
 }

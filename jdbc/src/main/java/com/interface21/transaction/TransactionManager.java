@@ -7,7 +7,6 @@ import java.util.function.Function;
 public interface TransactionManager {
 
     <T> T doInTransaction(Function<Connection, T> action);
-
-
+    
     void doInTransaction(Consumer<Connection> action);
 }
