@@ -25,8 +25,7 @@ public class UserDao {
 
     public void insert(Connection connection, User user) {
         Query query = createQueryForInsert();
-        jdbcTemplate.queryForUpdate(connection, query.getSql(), user.getAccount(), user.getPassword(),
-                user.getEmail());
+        jdbcTemplate.queryForUpdate(connection, query.getSql(), user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(Connection connection, User user) {
