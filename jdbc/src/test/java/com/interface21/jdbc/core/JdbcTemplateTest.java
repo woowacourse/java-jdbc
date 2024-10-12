@@ -54,8 +54,7 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertEquals("expected", result),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close(),
-                () -> verify(this.connection).close()
+                () -> verify(this.pstmt).close()
         );
     }
 
@@ -71,8 +70,7 @@ class JdbcTemplateTest {
                         pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close(),
-                () -> verify(this.connection).close()
+                () -> verify(this.pstmt).close()
         );
     }
 
@@ -88,8 +86,7 @@ class JdbcTemplateTest {
                         pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close(),
-                () -> verify(this.connection).close()
+                () -> verify(this.pstmt).close()
         );
     }
 
@@ -109,8 +106,7 @@ class JdbcTemplateTest {
                 () -> assertEquals("value1", result.get(0)),
                 () -> assertEquals("value2", result.get(1)),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close(),
-                () -> verify(this.connection).close()
+                () -> verify(this.pstmt).close()
         );
     }
 
@@ -120,7 +116,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenReturn(1);
 
         String sql = "update users set column = ? where id = ?";
-        jdbcTemplate.update(sql, pstmt -> {
+        jdbcTemplate.update(connection, sql, pstmt -> {
             pstmt.setObject(1, "value");
             pstmt.setObject(2, 1);
         });
@@ -129,8 +125,7 @@ class JdbcTemplateTest {
                 () -> verify(pstmt, times(1)).executeUpdate(),
                 () -> verify(pstmt).setObject(1, "value"),
                 () -> verify(pstmt).setObject(2, 1),
-                () -> verify(this.pstmt).close(),
-                () -> verify(this.connection).close()
+                () -> verify(this.pstmt).close()
         );
     }
 }

@@ -49,8 +49,8 @@ public class JdbcTemplate {
         return result;
     }
 
-    public void update(String sql, PreparedStatementSetter pss) {
-        execute(sql, pstmt -> {
+    public void update(Connection connection, String sql, PreparedStatementSetter pss) {
+        execute(connection, sql, pstmt -> {
             pss.setObject(pstmt);
             return pstmt.executeUpdate();
         });
@@ -60,6 +60,14 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executor.execute(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void execute(Connection connection, String sql, PreparedStatementExecutor<T> executor) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            executor.execute(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
