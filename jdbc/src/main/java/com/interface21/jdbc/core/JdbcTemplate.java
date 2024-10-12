@@ -17,6 +17,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int SINGLE_ROW_SIZE = 1;
 
     private final DataSource dataSource;
 
@@ -24,12 +25,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.info("query : {}", sql);
 
-            setArguments(args, pstmt);
+            pstmtSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -37,18 +38,35 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        List<T> rows = query(sql, pstmtSetter, rowMapper);
+        return extractSingleRow(rows);
+    }
+
+    private <T> T extractSingleRow(List<T> rows) {
+        validateRowsSize(rows);
+        return rows.getFirst();
+    }
+
+    private <T> void validateRowsSize(List<T> rows) {
+        if (rows.isEmpty()) {
+            throw new EmptyResultDataAccessException("반환할 수 있는 결과가 존재하지 않습니다.");
+        }
+        if (rows.size() > SINGLE_ROW_SIZE) {
+            throw new IncorrectResultSizeDataAccessException("하나의 결과를 반환할 것을 기대했지만, 반환할 수 있는 결과가 많습니다.");
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return query(sql, pstmt -> {}, rowMapper);
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.info("query : {}", sql);
 
-            setArguments(args, pstmt);
+            pstmtSetter.setValues(pstmt);
             return extractMultiRows(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -69,39 +87,5 @@ public class JdbcTemplate {
             list.add(rowMapper.mapRow(rs, rs.getRow()));
         }
         return list;
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.info("query : {}", sql);
-
-            setArguments(args, pstmt);
-            return extractSingleRow(rowMapper, pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T extractSingleRow(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            return getRow(rowMapper, rs);
-        }
-    }
-
-    private <T> T getRow(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            T row = rowMapper.mapRow(rs, rs.getRow());
-            validateIncorrectResultSize(rs);
-            return row;
-        }
-        throw new EmptyResultDataAccessException("반환할 수 있는 결과가 존재하지 않습니다.");
-    }
-
-    private void validateIncorrectResultSize(ResultSet rs) throws SQLException {
-        if (rs.next()) {
-            throw new IncorrectResultSizeDataAccessException("하나의 결과를 반환할 것을 기대했지만, 반환할 수 있는 결과가 많습니다.");
-        }
     }
 }
