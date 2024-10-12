@@ -1,7 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.ObjectMapper;
-import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.exception.NonReadableResultSetException;
 import com.interface21.jdbc.exception.SQLQueryException;
 import java.sql.Connection;
@@ -24,7 +22,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
+    public <T> T queryForObject(ObjectMapper<T> objectMapper, String sql,
+                                PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -41,7 +40,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql, PreparedStatementSetter preparedStatementSetter) {
+    public <T> List<T> query(ObjectMapper<T> objectMapper, String sql,
+                             PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -49,7 +49,8 @@ public class JdbcTemplate {
             try (ResultSet rs = executeQuery(preparedStatementSetter, pstmt)) {
                 while (rs.next()) {
                     results.add(objectMapper.mapToObject(rs));
-                }}
+                }
+            }
             return results;
 
         } catch (SQLException e) {

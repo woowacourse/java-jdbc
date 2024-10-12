@@ -3,8 +3,6 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import com.interface21.jdbc.ObjectMapper;
-import com.interface21.jdbc.PreparedStatementSetter;
 import com.interface21.jdbc.TestUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -78,7 +76,8 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         // when
-        List<TestUser> results = jdbcTemplate.query(objectMapper, sql, pstmt -> {});
+        List<TestUser> results = jdbcTemplate.query(objectMapper, sql, pstmt -> {
+        });
 
         // then
         assertAll(

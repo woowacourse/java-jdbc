@@ -1,16 +1,15 @@
-package com.interface21.jdbc;
+package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+import com.interface21.jdbc.TestUser;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class ObjectMapperTest {
 
@@ -26,7 +25,7 @@ class ObjectMapperTest {
 
     @Test
     void mapToObject() throws SQLException {
-       // given
+        // given
         ObjectMapper<TestUser> objectMapper = (rs) -> new TestUser(
                 rs.getLong(1),
                 rs.getString(2),
