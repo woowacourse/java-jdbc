@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -15,11 +16,12 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private UserDao userDao;
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
-        DataSource dataSource = DataSourceConfig.getInstance();
+        dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate = new JdbcTemplate(dataSource);
 
@@ -68,12 +70,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException {
         final String newPassword = "password99";
         final User user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(dataSource.getConnection(), user);
 
         final User actual = userDao.findById(1L);
 
