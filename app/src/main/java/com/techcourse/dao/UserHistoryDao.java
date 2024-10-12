@@ -3,15 +3,9 @@ package com.techcourse.dao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-
 public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserHistoryDao(DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -25,7 +19,8 @@ public class UserHistoryDao {
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
-                userHistory.getCreatedAt()
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
         );
     }
 }

@@ -2,6 +2,7 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import com.techcourse.service.UserService;
+import com.techcourse.service.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JsonView;
@@ -20,7 +21,7 @@ public class UserController {
     private final UserService userService;
 
     public UserController() {
-        this(UserService.getInstance());
+        this(UserServiceImpl.getInstance());
     }
 
     public UserController(UserService userService) {

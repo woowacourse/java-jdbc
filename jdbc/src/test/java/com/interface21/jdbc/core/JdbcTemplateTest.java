@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import com.interface21.jdbc.exception.JdbcAccessException;
+import com.interface21.jdbc.transaction.TransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import javax.sql.DataSource;
@@ -32,7 +32,6 @@ class JdbcTemplateTest {
     @Mock
     private ResultSet resultSet;
 
-    @InjectMocks
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -40,6 +39,8 @@ class JdbcTemplateTest {
         MockitoAnnotations.openMocks(this);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+
+        this.jdbcTemplate = new JdbcTemplate(dataSource, new TransactionManager());
     }
 
     @DisplayName("UPDATE 쿼리를 실행한다.")
