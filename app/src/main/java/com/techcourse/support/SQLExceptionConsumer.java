@@ -4,7 +4,7 @@ import com.interface21.dao.DataAccessException;
 import java.sql.SQLException;
 
 public class SQLExceptionConsumer {
-    public static <R, T> R execute(CheckedExceptionExecutor<R, SQLException> exceptionExecutor, String errorMessage) {
+    public static <R> R execute(CheckedExceptionExecutor<R, SQLException> exceptionExecutor, String errorMessage) {
         try {
             return exceptionExecutor.execute();
         } catch (Exception e) {
