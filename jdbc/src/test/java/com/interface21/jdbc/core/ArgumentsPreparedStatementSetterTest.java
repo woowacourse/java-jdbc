@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-class AugumentsPreparedStatementSetterTest {
+class ArgumentsPreparedStatementSetterTest {
 
     @Mock
     private PreparedStatement preparedStatement;
@@ -25,7 +25,7 @@ class AugumentsPreparedStatementSetterTest {
     @Test
     void setParameters() throws SQLException {
         Object[] args = {1, "kaki", "1234", true};
-        AugumentsPreparedStatementSetter setter = new AugumentsPreparedStatementSetter(args);
+        ArgumentsPreparedStatementSetter setter = new ArgumentsPreparedStatementSetter(args);
 
         setter.setParameters(preparedStatement);
 

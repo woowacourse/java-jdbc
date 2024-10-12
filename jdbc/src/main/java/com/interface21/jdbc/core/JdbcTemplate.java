@@ -30,7 +30,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(sql, new AugumentsPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
+        return query(sql, new ArgumentsPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, ParameterSetter parameterSetter) {
@@ -38,7 +38,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        return query(sql, new AugumentsPreparedStatementSetter(args), resultExtractor);
+        return query(sql, new ArgumentsPreparedStatementSetter(args), resultExtractor);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -57,7 +57,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, ResultSetExtractor<T> resultExtractor, Object... args) {
-        List<T> results = query(sql, new AugumentsPreparedStatementSetter(args), resultExtractor);
+        List<T> results = query(sql, new ArgumentsPreparedStatementSetter(args), resultExtractor);
         return DataAccessUtils.nullableSingleResult(results);
     }
 
@@ -66,11 +66,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return update(sql, new AugumentsPreparedStatementSetter(args));
+        return update(sql, new ArgumentsPreparedStatementSetter(args));
     }
 
     public int update(Connection connection, String sql, Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, new AugumentsPreparedStatementSetter(args));
+        return execute(connection, sql, PreparedStatement::executeUpdate, new ArgumentsPreparedStatementSetter(args));
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
