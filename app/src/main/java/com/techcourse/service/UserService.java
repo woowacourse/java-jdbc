@@ -1,8 +1,14 @@
 package com.techcourse.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -30,11 +36,25 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        log.info("비밀번호 변경 요청 id = {}", user.getId());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection connection = getConnection(dataSource);
+        try{
+            connection.setAutoCommit(false);
+            User user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            connection.commit();
+        } catch (SQLException e){
+            throw new RuntimeException("비밀번호 변경중 오류가 발생했습니다.", e);
+        }
+    }
 
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+    private Connection getConnection(final DataSource dataSource) {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
