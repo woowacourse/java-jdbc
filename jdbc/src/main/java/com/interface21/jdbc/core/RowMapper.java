@@ -1,9 +1,9 @@
 package com.interface21.jdbc.core;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface RowMapper<T> {
+@FunctionalInterface
+public interface RowMapper<ResultSet, T> {
 
     T mapRow(ResultSet rs) throws SQLException;
 }

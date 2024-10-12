@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class UserDao {
@@ -15,7 +16,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private static final RowMapper<User> USER_ROW_MAPPER = rs -> {
+    private static final RowMapper<ResultSet, User> USER_ROW_MAPPER = rs -> {
         if (rs.next()) {
             return new User(
                     rs.getLong("id"),

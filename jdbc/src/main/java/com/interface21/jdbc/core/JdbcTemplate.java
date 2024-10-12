@@ -16,7 +16,7 @@ public class JdbcTemplate {
         this.queryExecutor = new QueryExecutor(dataSource);
     }
 
-    public <T> List<T> query(RowMapper<T> mapper, String sql, Object... args) {
+    public <T> List<T> query(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
         return queryExecutor.executeFunction(preparedStatement -> {
             List<T> result = new LinkedList<>();
             ResultSet rs = preparedStatement.executeQuery();
@@ -27,7 +27,7 @@ public class JdbcTemplate {
         }, sql, args);
     }
 
-    public <T> T queryForObject(RowMapper<T> mapper, String sql, Object... args) {
+    public <T> T queryForObject(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
         return queryExecutor.executeFunction(preparedStatement -> {
             ResultSet rs = preparedStatement.executeQuery();
             return mapper.mapRow(rs);
