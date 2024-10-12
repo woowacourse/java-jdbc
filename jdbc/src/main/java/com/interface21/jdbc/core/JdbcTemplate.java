@@ -19,11 +19,29 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(final Connection connection, final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try(Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(pstmt);
+            return mapResultSetToList(rowMapper, pstmt).getFirst();
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
