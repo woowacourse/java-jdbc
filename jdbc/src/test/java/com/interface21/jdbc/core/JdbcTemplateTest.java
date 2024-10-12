@@ -8,22 +8,25 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
-    private JdbcTemplate jdbcTemplate;
-    private Connection connection;
+    private static JdbcTemplate jdbcTemplate;
+    private static Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
 
+    @BeforeAll
+    static void setConnection() throws SQLException {
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        connection = DataSourceConfig.getInstance().getConnection();
+    }
+
     @BeforeEach
     void setup() throws SQLException {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        jdbcTemplate = new JdbcTemplate(dataSource);
-        connection = dataSource.getConnection();
         String truncate = "drop table if exists users;";
         String createTable = """
                     create table users (
