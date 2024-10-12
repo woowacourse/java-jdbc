@@ -62,7 +62,7 @@ public class UserService {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
 
-            User user = findById(id);
+            User user = userDao.findById(conn, id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
