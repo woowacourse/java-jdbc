@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.ObjectMapper;
 import com.interface21.jdbc.PreparedStatementSetter;
+import com.interface21.jdbc.exception.NonReadableResultSetException;
+import com.interface21.jdbc.exception.SQLQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,12 +32,12 @@ public class JdbcTemplate {
                 if (rs.next()) {
                     return objectMapper.mapToObject(rs);
                 }
-                throw new IllegalStateException("Fail to get result set"); //TODO: 예외 구체화
+                throw new NonReadableResultSetException("Fail to read result set");
             }
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
@@ -52,7 +54,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
@@ -65,7 +67,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new SQLQueryException(e);
         }
     }
 
