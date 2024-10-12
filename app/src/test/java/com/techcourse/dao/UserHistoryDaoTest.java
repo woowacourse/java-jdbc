@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class JdbcTemplateUserHistoryDaoTest {
+class UserHistoryDaoTest {
 
     private UserHistoryDao userHistoryDao;
     private JdbcTemplate jdbcTemplate;
@@ -20,7 +20,7 @@ class JdbcTemplateUserHistoryDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userHistoryDao = new JdbcTemplateUserHistoryDao(jdbcTemplate);
+        userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
 
     @DisplayName("log 메서드를 실행하면 아무런 예외가 발생하지 않는다.")

@@ -21,7 +21,7 @@ public class LoginController {
     public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
         return UserSession.getUserFrom(request.getSession())
                 .map(user -> {
-                    log.info("logged in {}", user.getAccount());
+                    log.info("logged in {}", user.account());
                     return redirect("/index.jsp");
                 })
                 .orElse(new ModelAndView(new JspView("/login.jsp")));
