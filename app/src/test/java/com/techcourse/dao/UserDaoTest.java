@@ -33,11 +33,10 @@ class UserDaoTest {
     @AfterEach
     void tearDown() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
-        jdbcTemplate.executeUpdate(connection,
-                """
-                        delete from users;
-                        alter table users alter column id restart with 1;
-                        """);
+        jdbcTemplate.executeUpdate(connection, """
+                delete from users;
+                alter table users alter column id restart with 1;
+                """);
     }
 
     @DisplayName("전체 조회")
