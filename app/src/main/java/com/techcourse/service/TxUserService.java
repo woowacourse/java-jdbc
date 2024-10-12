@@ -1,6 +1,6 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.datasource.TransactionManager;
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 

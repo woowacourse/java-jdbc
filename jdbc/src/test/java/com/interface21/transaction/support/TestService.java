@@ -1,7 +1,5 @@
 package com.interface21.transaction.support;
 
-import com.interface21.jdbc.datasource.TransactionManager;
-
 public class TestService {
 
     private final TransactionManager transactionManager;

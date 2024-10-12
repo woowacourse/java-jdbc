@@ -8,7 +8,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementResolver;
 import com.interface21.jdbc.datasource.DataAccessWrapper;
-import com.interface21.jdbc.datasource.TransactionManager;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;

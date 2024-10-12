@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.TestService;
+import com.interface21.transaction.support.TransactionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
