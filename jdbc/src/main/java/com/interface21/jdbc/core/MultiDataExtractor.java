@@ -5,11 +5,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MultiDataExtractor implements DataExtractor {
+public class MultiDataExtractor<T> implements DataExtractor<T, List<T>> {
 
     @Override
-    public <T> List<T> extract(final ResultSet resultSet, final RowMapper<T> rowMapper)
-            throws SQLException {
+    public List<T> extract(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         while (resultSet.next()) {
             results.add(rowMapper.mapRow(resultSet));

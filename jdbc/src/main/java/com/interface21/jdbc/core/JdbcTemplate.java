@@ -34,17 +34,14 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             final ResultSet resultSet = statement.executeQuery();
-            SingleDataExtractor singleDataExtractor = new SingleDataExtractor();
-            return singleDataExtractor.extract(resultSet, rowMapper)
-                    .getFirst();
+            return new SingleDataExtractor<T>().extract(resultSet, rowMapper);
         });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             final ResultSet resultSet = statement.executeQuery();
-            MultiDataExtractor multiDataExtractor = new MultiDataExtractor();
-            return multiDataExtractor.extract(resultSet, rowMapper);
+            return new MultiDataExtractor<T>().extract(resultSet, rowMapper);
         });
     }
 
