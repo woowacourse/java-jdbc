@@ -8,6 +8,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementResolver;
 import com.interface21.jdbc.datasource.DataAccessWrapper;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -15,6 +16,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,17 +24,17 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private Connection connection;
 
     @BeforeEach
     void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate(new DataAccessWrapper(), new PreparedStatementResolver());
+        this.jdbcTemplate = new JdbcTemplate(new DataAccessWrapper(DataSourceConfig.getInstance()), new PreparedStatementResolver());
         this.userDao = new UserDao(jdbcTemplate);
-        this.connection = DataSourceConfig.getInstance().getConnection();
+        DataSource dataSource = DataSourceConfig.getInstance();
+        TransactionSynchronizationManager.bindResource(dataSource, dataSource.getConnection());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
@@ -63,7 +65,6 @@ class UserServiceTest {
                 () -> userService.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L);
-
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }

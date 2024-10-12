@@ -1,17 +1,24 @@
 package com.interface21.jdbc.datasource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public class DataAccessWrapper {
 
+    private final DataSource dataSource;
+
+    public DataAccessWrapper(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public <T> T apply(
-            Connection connection,
             String sql,
             ThrowingFunction<PreparedStatement, T, Exception> function
     ) {
+        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             return function.apply(pstmt);
         } catch (Exception exception) {

@@ -14,10 +14,9 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(Connection connection, UserHistory userHistory) {
+    public void log(UserHistory userHistory) {
         Query query = createQueryForInsert();
         jdbcTemplate.queryForUpdate(
-                connection,
                 query.getSql(),
                 userHistory.getUserId(),
                 userHistory.getAccount(),
