@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import com.interface21.jdbc.exception.JdbcAccessException;
-import com.interface21.jdbc.transaction.TransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-        this.jdbcTemplate = new JdbcTemplate(dataSource, new TransactionManager());
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @DisplayName("UPDATE 쿼리를 실행한다.")
