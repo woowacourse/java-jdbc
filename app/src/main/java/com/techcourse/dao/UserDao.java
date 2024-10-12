@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataNotFoundException;
-import com.interface21.dao.DataSizeNotMatchedException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -43,7 +42,7 @@ public class UserDao {
         try {
             String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
             return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, id));
-        } catch (DataNotFoundException | DataSizeNotMatchedException e) {
+        } catch (DataNotFoundException e) {
             return Optional.empty();
         }
     }
@@ -52,7 +51,7 @@ public class UserDao {
         try {
             String sql = "SELECT id, account, password, email FROM users WHERE account=?";
             return Optional.of(jdbcTemplate.queryForObject(sql, ROW_MAPPER, account));
-        } catch (DataNotFoundException | DataSizeNotMatchedException e) {
+        } catch (DataNotFoundException e) {
             return Optional.empty();
         }
     }
