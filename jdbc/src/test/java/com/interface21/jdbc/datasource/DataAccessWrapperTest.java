@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
@@ -33,6 +36,30 @@ class DataAccessWrapperTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+    }
+
+    @DisplayName("트랜잭션이 열린 커넥션의 경우 connection을 닫지 않는다.")
+    @Test
+    void notCloseConnection_When_TransactionIsUnactive() throws SQLException {
+        Object dummy = new Object();
+        ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
+
+        TransactionSynchronizationManager.setTransactionActive(true);
+        accessWrapper.apply("dummySql", function);
+
+        verify(connection, never()).close();
+    }
+
+    @DisplayName("트랜잭션이 열리지 않은 커넥션의 경우 connection을 닫는다")
+    @Test
+    void closeConnection_When_TransactionIsUnactive() throws SQLException {
+        Object dummy = new Object();
+        ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
+
+        TransactionSynchronizationManager.setTransactionActive(false);
+        accessWrapper.apply("dummySql", function);
+
+        verify(connection, times(1)).close();
     }
 
     @DisplayName("에러가 발생할 경우 DataAccessException으로 전환된다.")

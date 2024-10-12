@@ -39,6 +39,9 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static boolean isTransactionActive() {
+        if (transactionActive.get() == null) {
+            transactionActive.set(false);
+        }
         return transactionActive.get();
     }
 
