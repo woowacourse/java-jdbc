@@ -15,25 +15,25 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(Function<Connection, T> action) {
+    public <T> T execute(Function<Connection, T> function) {
         try (Connection connection = dataSource.getConnection()) {
-            return start(action, connection);
+            return start(function, connection);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
     }
 
-    public void execute(Consumer<Connection> action) {
+    public void execute(Consumer<Connection> consumer) {
         execute(connection -> {
-            action.accept(connection);
+            consumer.accept(connection);
             return null;
         });
     }
 
-    private <T> T start(Function<Connection, T> action, Connection connection) throws SQLException {
+    private <T> T start(Function<Connection, T> function, Connection connection) throws SQLException {
         try {
             connection.setAutoCommit(false);
-            T result = action.apply(connection);
+            T result = function.apply(connection);
             connection.commit();
             return result;
         } catch (DataAccessException | SQLException exception) {

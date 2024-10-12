@@ -73,22 +73,22 @@ public class JdbcTemplate {
         return execute(connection, sql, PreparedStatement::executeUpdate, new DefaultParameterSetter(args));
     }
 
-    private <T> T execute(String sql, StatementCallback<T> action, ParameterSetter parameterSetter) {
+    private <T> T execute(String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             parameterSetter.setParameters(pstmt);
-            return action.doInStatement(pstmt);
+            return callback.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
         }
     }
 
-    private <T> T execute(Connection connection, String sql, StatementCallback<T> action, ParameterSetter parameterSetter) {
+    private <T> T execute(Connection connection, String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameterSetter.setParameters(pstmt);
-            return action.doInStatement(pstmt);
+            return callback.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
