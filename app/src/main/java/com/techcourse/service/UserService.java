@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.support.SQLExceptionConsumer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -29,19 +30,34 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        Connection connection = dataSource.getConnection();
+    public void changePassword(final long id, final String newPassword, final String createBy) {
+        Connection connection = SQLExceptionConsumer.execute(dataSource::getConnection, "connetion을 가져오는데 실패했습니다");
         try {
             connection.setAutoCommit(false);
             doChangePassword(id, newPassword, createBy, connection);
             connection.commit();
-        } catch (DataAccessException e) {
-            connection.rollback();
+        } catch (SQLException e) {
+            rollbackTransaction(connection);
             throw new DataAccessException(e);
         } finally {
-            connection.close();
+            closeConnection(connection);
         }
     }
+
+    private void closeConnection(Connection connection) {
+        SQLExceptionConsumer.execute(() -> {
+            connection.close();
+            return null;
+        }, "connection을 닫는데 실패했습니다.");
+    }
+
+    private void rollbackTransaction(Connection connection) {
+        SQLExceptionConsumer.execute(() -> {
+            connection.close();
+            return null;
+        }, "connection을 rollback하는데 실패했습니다.");
+    }
+
 
     private void doChangePassword(long id, String newPassword, String createBy, Connection connection) {
         User user = findById(id);
