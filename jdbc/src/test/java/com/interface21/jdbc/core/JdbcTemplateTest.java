@@ -49,7 +49,7 @@ class JdbcTemplateTest {
 
         String sql = "select * from users where id = ?";
         RowMapper<String> rowMapper = rs -> rs.getString("column");
-        String result = jdbcTemplate.queryForObject(connection, sql, rowMapper, pss -> pss.setLong(1, 1L));
+        String result = jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setLong(1, 1L));
 
         assertAll(
                 () -> assertEquals("expected", result),
@@ -65,7 +65,6 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                        connection,
                         "select * from users where id=?",
                         rs -> rs.getString("column"),
                         pss -> pss.setLong(1, 1L)
@@ -82,7 +81,6 @@ class JdbcTemplateTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                        connection,
                         "select * from users where id=?",
                         rs -> rs.getString("column"),
                         pss -> pss.setLong(1, 1L)
@@ -100,7 +98,7 @@ class JdbcTemplateTest {
 
         String sql = "select * from users";
         RowMapper<String> rowMapper = rs -> rs.getString("column");
-        List<String> result = jdbcTemplate.query(connection, sql, rowMapper, pss -> {
+        List<String> result = jdbcTemplate.query(sql, rowMapper, pss -> {
         });
 
         assertAll(

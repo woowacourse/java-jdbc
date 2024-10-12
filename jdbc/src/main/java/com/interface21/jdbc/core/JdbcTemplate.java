@@ -21,8 +21,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        List<T> result = query(connection, sql, rowMapper, pss);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        List<T> result = query(sql, rowMapper, pss);
         if (result.isEmpty()) {
             throw new DataAccessException("조회된 데이터가 없습니다.");
         }
@@ -32,8 +32,8 @@ public class JdbcTemplate {
         return result.getFirst();
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-        return execute(connection, sql, pstmt -> {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
             pss.setObject(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapResults(rs, rowMapper);
@@ -56,9 +56,18 @@ public class JdbcTemplate {
         });
     }
 
-    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> executor) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    private <T> T execute(String sql, PreparedStatementExecutor<T> executor) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executor.execute(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> void execute(Connection connection, String sql, PreparedStatementExecutor<T> executor) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            executor.execute(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

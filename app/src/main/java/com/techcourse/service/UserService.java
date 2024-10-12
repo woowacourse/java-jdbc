@@ -20,8 +20,8 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(Connection connection, long id) {
-        return userDao.findById(connection, id);
+    public User findById(long id) {
+        return userDao.findById(id);
     }
 
     public void insert(Connection connection, User user) {
@@ -33,7 +33,7 @@ public class UserService {
         Connection connection = getConnectionWithTransaction(dataSource);
 
         try {
-            User user = findById(connection, id);
+            User user = findById(id);
             updateUserPasswordAndLogHistory(connection, user, newPassword, createBy);
             connection.commit();
         } catch (SQLException e) {

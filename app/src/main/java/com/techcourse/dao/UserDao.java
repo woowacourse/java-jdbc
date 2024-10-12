@@ -49,19 +49,19 @@ public class UserDao {
         });
     }
 
-    public List<User> findAll(Connection connection) {
+    public List<User> findAll() {
         String sql = "select * from users";
-        return jdbcTemplate.query(connection, sql, rowMapper, pss -> {
+        return jdbcTemplate.query(sql, rowMapper, pss -> {
         });
     }
 
-    public User findById(Connection connection, Long id) {
+    public User findById(Long id) {
         String sql = "select * from users where id = ?";
-        return jdbcTemplate.queryForObject(connection, sql, rowMapper, pss -> pss.setLong(1, id));
+        return jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setLong(1, id));
     }
 
-    public User findByAccount(Connection connection, String account) {
+    public User findByAccount(String account) {
         String sql = "select * from users where account=?";
-        return jdbcTemplate.queryForObject(connection, sql, rowMapper, pss -> pss.setString(1, account));
+        return jdbcTemplate.queryForObject(sql, rowMapper, pss -> pss.setString(1, account));
     }
 }
