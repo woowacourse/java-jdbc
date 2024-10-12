@@ -37,8 +37,23 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        try (PreparedStatement psmt = conn.prepareStatement(sql)) {
+            pss.setValue(psmt);
+            ResultSet rs = psmt.executeQuery();
+
+            return getResultsFromResultSet(rowMapper, rs);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, rowMapper, createArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, rowMapper, createArgumentPreparedStatementSetter(args));
     }
 
     private PreparedStatementSetter createArgumentPreparedStatementSetter(Object... args) {
@@ -66,6 +81,14 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> result = query(sql, rowMapper, args);
+        if (result.size() != 1) {
+            throw new DataAccessException("조회하려는 데이터가 여러 개입니다.");
+        }
+        return result.get(0);
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> result = query(conn, sql, rowMapper, args);
         if (result.size() != 1) {
             throw new DataAccessException("조회하려는 데이터가 여러 개입니다.");
         }

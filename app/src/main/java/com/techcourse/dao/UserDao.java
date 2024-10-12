@@ -56,6 +56,13 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
+    public User findById(final Connection conn, final Long id) {
+        String sql = "select id, account, password, email from users where id = ?";
+        log.debug("query : {}", sql);
+
+        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
+    }
+
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         log.debug("query : {}", sql);
