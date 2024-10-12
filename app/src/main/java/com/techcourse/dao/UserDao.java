@@ -5,6 +5,7 @@ import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementCallBack;
 import com.interface21.jdbc.core.ResultSetCallBack;
+import com.interface21.transaction.support.JdbcTransaction;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -42,7 +43,7 @@ public class UserDao {
         jdbcTemplate.update(sql, callBack);
     }
 
-    public void update(User user) {
+    public void update(JdbcTransaction transaction, User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         PreparedStatementCallBack callBack = (pstmt) -> {
