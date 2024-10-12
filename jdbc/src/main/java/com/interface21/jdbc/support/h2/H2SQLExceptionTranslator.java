@@ -1,4 +1,4 @@
-package com.interface21.jdbc.support;
+package com.interface21.jdbc.support.h2;
 
 import java.sql.SQLException;
 import java.util.List;

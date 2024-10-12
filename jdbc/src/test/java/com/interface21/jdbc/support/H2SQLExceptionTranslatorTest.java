@@ -10,6 +10,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DataAccessResourceFailureException;
 import com.interface21.dao.DataIntegrityViolationException;
 import com.interface21.dao.DuplicateKeyException;
+import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

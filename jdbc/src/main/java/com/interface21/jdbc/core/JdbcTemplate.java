@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import com.interface21.jdbc.support.H2SQLExceptionTranslator;
+import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
 import com.interface21.transaction.support.JdbcTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
