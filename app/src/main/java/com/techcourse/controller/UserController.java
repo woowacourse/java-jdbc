@@ -9,6 +9,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDaoImpl;
 import com.techcourse.dao.UserHistoryDaoImpl;
 import com.techcourse.service.UserService;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class UserController {
     private final UserService userService;
 
     public UserController() {
-        userService = new UserService(
+        userService = new AppUserService(
                 new UserDaoImpl(DataSourceConfig.getInstance()),
                 new UserHistoryDaoImpl(DataSourceConfig.getInstance())
         );

@@ -11,6 +11,7 @@ import com.techcourse.dao.UserDaoImpl;
 import com.techcourse.dao.UserHistoryDaoImpl;
 import com.techcourse.domain.User;
 import com.techcourse.service.UserService;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -20,7 +21,7 @@ public class RegisterController {
     private final UserService userService;
 
     public RegisterController() {
-        userService = new UserService(
+        userService = new AppUserService(
                 new UserDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance())),
                 new UserHistoryDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance()))
         );
