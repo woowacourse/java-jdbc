@@ -1,20 +1,12 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ObjectMapper;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -27,7 +19,6 @@ public class UserDao {
             resultSet.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
-
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
