@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -18,37 +19,36 @@ public class UserDao {
             )
     );
 
-
-    public UserDao(final DataSource dataSource) {
+    public UserDao(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void save(User user) {
+    public void save(Connection connection, User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.write(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.write(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ?";
-        jdbcTemplate.write(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.write(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         String sql = "SELECT * FROM users";
-        return jdbcTemplate.readAll(sql, rowMapper);
+        return jdbcTemplate.readAll(connection, sql, rowMapper);
     }
 
-    public User findById(final Long id) {
+    public User findById(Connection connection, Long id) {
         String sql = "SELECT * FROM users where id = ?";
-        return jdbcTemplate.read(sql, rowMapper, id);
+        return jdbcTemplate.read(connection, sql, rowMapper, id);
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(Connection connection, String account) {
         String sql = "SELECT * FROM users WHERE account = ?";
-        return jdbcTemplate.read(sql, rowMapper, account);
+        return jdbcTemplate.read(connection, sql, rowMapper, account);
     }
 }
