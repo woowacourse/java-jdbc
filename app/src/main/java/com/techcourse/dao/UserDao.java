@@ -53,7 +53,7 @@ public class UserDao {
             pstmt.setLong(4, user.getId());
         };
 
-        jdbcTemplate.update(sql, callBack);
+        jdbcTemplate.updateWithTx(sql, callBack, transaction);
     }
 
     public List<User> findAll() {

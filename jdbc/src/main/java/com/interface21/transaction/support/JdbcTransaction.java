@@ -46,4 +46,8 @@ public class JdbcTransaction {
             throw new RuntimeException(e);
         }
     }
+
+    public Connection getConnection() {
+        return connection;
+    }
 }

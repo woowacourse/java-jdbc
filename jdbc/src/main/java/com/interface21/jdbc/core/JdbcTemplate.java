@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.interface21.jdbc.support.H2SQLExceptionTranslator;
+import com.interface21.transaction.support.JdbcTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +89,17 @@ public class JdbcTemplate {
         debugQuery(sql);
 
         try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+            executeUpdate(callBack, pstmt);
+        } catch (SQLException e) {
+            throw exceptionTranslator.translate(e);
+        }
+    }
+
+    public void updateWithTx(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
+        debugQuery(sql);
+
+        Connection connection = transaction.getConnection();
+        try (var pstmt = connection.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
