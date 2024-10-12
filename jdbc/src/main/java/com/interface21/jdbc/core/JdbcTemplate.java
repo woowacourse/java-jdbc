@@ -19,7 +19,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-
     }
 
     public <T> T query(ObjectMapper<T> objectMapper, String sql, Object... param) {
@@ -41,16 +40,16 @@ public class JdbcTemplate {
         }
     }
 
-    public List<List<Object>> queryList(String sql, Object... param) {
+    public <T> List<T> queryList(ObjectMapper<T> objectMapper, String sql, Object... param) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParamToStatement(pstmt, param);
 
-            List<List<Object>> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    results.add(mapResultByColumn(rs));
+                    results.add(objectMapper.mapToObject(rs));
                 }
             }
             return results;
@@ -78,13 +77,5 @@ public class JdbcTemplate {
         for (int i = 0; i < param.length; i++) {
             pstmt.setObject(i + 1, param[i]);
         }
-    }
-
-    private List<Object> mapResultByColumn(ResultSet rs) throws SQLException {
-        List<Object> results = new ArrayList<>();
-        for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-            results.add(rs.getObject(i + 1));
-        }
-        return results;
     }
 }

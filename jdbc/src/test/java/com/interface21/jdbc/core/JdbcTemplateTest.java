@@ -57,7 +57,7 @@ class JdbcTemplateTest {
         long param = 1;
 
         // when
-       TestUser result = jdbcTemplate.query(objectMapper, sql, param);
+        TestUser result = jdbcTemplate.query(objectMapper, sql, param);
 
         // then
         assertAll(
@@ -77,18 +77,18 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users";
 
         // when
-        List<List<Object>> results = jdbcTemplate.queryList(sql);
+        List<TestUser> results = jdbcTemplate.queryList(objectMapper, sql);
 
         // then
         assertAll(
-                () -> assertThat(results.get(0).get(0)).isEqualTo(1L),
-                () -> assertThat(results.get(0).get(1)).isEqualTo("gugu"),
-                () -> assertThat(results.get(0).get(2)).isEqualTo("123"),
-                () -> assertThat(results.get(0).get(3)).isEqualTo("gugu@naver.com"),
-                () -> assertThat(results.get(1).get(0)).isEqualTo(2L),
-                () -> assertThat(results.get(1).get(1)).isEqualTo("gugu2"),
-                () -> assertThat(results.get(1).get(2)).isEqualTo("1232"),
-                () -> assertThat(results.get(1).get(3)).isEqualTo("gugu2@naver.com")
+                () -> assertThat(results.get(0).getId()).isEqualTo(1L),
+                () -> assertThat(results.get(0).getAccount()).isEqualTo("gugu"),
+                () -> assertThat(results.get(0).getPassword()).isEqualTo("123"),
+                () -> assertThat(results.get(0).getEmail()).isEqualTo("gugu@naver.com"),
+                () -> assertThat(results.get(1).getId()).isEqualTo(2L),
+                () -> assertThat(results.get(1).getAccount()).isEqualTo("gugu2"),
+                () -> assertThat(results.get(1).getPassword()).isEqualTo("1232"),
+                () -> assertThat(results.get(1).getEmail()).isEqualTo("gugu2@naver.com")
         );
     }
 
