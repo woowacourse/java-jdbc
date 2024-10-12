@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.exception.TechCourseApplicationException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -38,11 +39,11 @@ public class UserService {
             connection.commit();
         } catch (Exception e) {
             try {
-                connection.rollback(); // try-catch로 한 번 더 감싸야 하지만 예시니까 생략
+                connection.rollback();
             } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+                throw new TechCourseApplicationException("데이터를 롤백하는 것에 실패했습니다", ex);
             }
-            throw new RuntimeException(e);
+            throw new TechCourseApplicationException("비밀번호를 변경하는 것에 실패했습니다", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.techcourse.config;
 
+import com.techcourse.exception.TechCourseApplicationException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -20,7 +21,7 @@ public class DataSourceConfig {
         try {
             return getInstance().getConnection();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new TechCourseApplicationException("DB 커넥션을 가져오는 것에 실패했습니다", e);
         }
     }
 
