@@ -129,8 +129,8 @@ public class FirstUserService {
     }
 
     private void logActualTransactionActive() {
-        final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
-        final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();   // 논리 트랜잭션명
+        final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();  // 물리 트랜잭션 실행 여부
         final var emoji = actualTransactionActive ? "✅" : "❌";
         log.info("\n{} is Actual Transaction Active : {} {}", currentTransactionName, emoji, actualTransactionActive);
     }
