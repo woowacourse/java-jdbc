@@ -10,6 +10,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.exception.TechCourseApplicationException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,7 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private User presavedUser;
 
     @BeforeEach
     void setUp() {
@@ -25,7 +27,12 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        presavedUser = userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        userDao.deleteAll();
     }
 
     @Test
@@ -35,9 +42,9 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(presavedUser.getId(), newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(presavedUser.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -52,9 +59,9 @@ class UserServiceTest {
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(TechCourseApplicationException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(presavedUser.getId(), newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(presavedUser.getId());
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
