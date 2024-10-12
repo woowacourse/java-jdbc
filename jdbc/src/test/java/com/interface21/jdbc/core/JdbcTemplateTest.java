@@ -39,7 +39,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate();
     }
 
     @Test
@@ -48,13 +48,11 @@ class JdbcTemplateTest {
         String sql = "SELECT * FROM users WHERE id = ?";
 
         // when
-        jdbcTemplate.update(sql, preparedStatementSetter);
+        jdbcTemplate.update(connection, sql, preparedStatementSetter);
 
         // then
         verify(preparedStatementSetter).setValues(preparedStatement);
         verify(preparedStatement).executeUpdate();
-        verify(connection).close();
-        verify(preparedStatement).close();
     }
 
     @Test
@@ -65,14 +63,12 @@ class JdbcTemplateTest {
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
-        jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
+        jdbcTemplate.queryForObject(connection, sql, preparedStatementSetter, rowMapper);
 
         // then
         verify(preparedStatement).executeQuery();
         verify(preparedStatementSetter).setValues(preparedStatement);
         verify(rowMapper).mapRow(resultSet);
-        verify(connection).close();
-        verify(preparedStatement).close();
     }
 
     @Test
@@ -84,10 +80,9 @@ class JdbcTemplateTest {
         doThrow(new SQLException()).when(preparedStatement).executeQuery();
 
         // then
-        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper))
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, preparedStatementSetter, rowMapper))
                 .isInstanceOf(DataAccessException.class);
     }
-
 
     @Test
     void queryForList() throws SQLException {
@@ -97,14 +92,12 @@ class JdbcTemplateTest {
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, false);
-        jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper);
+        jdbcTemplate.queryForList(connection, sql, preparedStatementSetter, rowMapper);
 
         // then
         verify(preparedStatement).executeQuery();
         verify(preparedStatementSetter).setValues(preparedStatement);
         verify(rowMapper, times(2)).mapRow(resultSet);
-        verify(connection).close();
-        verify(preparedStatement).close();
     }
 
     @Test
@@ -116,7 +109,7 @@ class JdbcTemplateTest {
         doThrow(new SQLException()).when(preparedStatement).executeQuery();
 
         // then
-        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper))
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForList(connection, sql, preparedStatementSetter, rowMapper))
                 .isInstanceOf(DataAccessException.class);
     }
 }

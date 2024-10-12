@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.DataAccessException;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,15 +10,11 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcTemplate() {
     }
 
-    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
@@ -28,17 +23,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        return executeQuery(sql, preparedStatementSetter, rowMapper).getFirst();
+    public <T> T queryForObject(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        return executeQuery(connection, sql, preparedStatementSetter, rowMapper).getFirst();
     }
 
-    public <T> List<T> queryForList(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        return executeQuery(sql, preparedStatementSetter, rowMapper);
+    public <T> List<T> queryForList(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        return executeQuery(connection, sql, preparedStatementSetter, rowMapper);
     }
 
-    private <T> List<T> executeQuery(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private <T> List<T> executeQuery(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
