@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 class UserDaoTest {
@@ -66,6 +68,20 @@ class UserDaoTest {
         user.changePassword(newPassword);
 
         userDao.update(user);
+
+        User actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void updateWithConnection() throws SQLException {
+        String newPassword = "password99";
+        User user = userDao.findById(1L);
+        user.changePassword(newPassword);
+        Connection connection = DataSourceConfig.getInstance().getConnection();
+
+        userDao.update(connection, user);
 
         User actual = userDao.findById(1L);
 
