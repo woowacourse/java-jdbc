@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.exception.TransactionFailedException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -63,7 +64,7 @@ class UserServiceTest {
         final UserService userService = new UserService(userDao, userHistoryDao);
 
         // when
-        assertThrows(DataAccessException.class,
+        assertThrows(TransactionFailedException.class,
                 () -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY));
 
         // then

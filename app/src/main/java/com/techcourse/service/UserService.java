@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.exception.TransactionFailedException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -36,7 +37,7 @@ public class UserService {
         try (final Connection conn = dataSource.getConnection()) {
             changePasswordWithTransaction(id, newPassword, createBy, conn);
         } catch (SQLException e) {
-            throw new DataAccessException("Connection failed", e);
+            throw new IllegalStateException("패스워드 변경 실패: 데이터베이스 연결 오류가 발생했습니다.", e);
         }
     }
 
@@ -47,7 +48,7 @@ public class UserService {
             conn.commit();
         } catch (DataAccessException e) {
             handleRollback(conn);
-            throw new DataAccessException("Transaction failed and rolled back", e);
+            throw new TransactionFailedException("트랜잭션 실패: 패스워드 변경 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -61,8 +62,8 @@ public class UserService {
     private void handleRollback(Connection conn) {
         try {
             conn.rollback();
-        } catch (SQLException rollbackException) {
-            throw new DataAccessException("Rollback Failed", rollbackException);
+        } catch (SQLException e) {
+            throw new TransactionFailedException("트랜잭션 실패: 롤백 중 오류가 발생했습니다.", e);
         }
     }
 }
