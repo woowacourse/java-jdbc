@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -39,7 +40,7 @@ public class UserDao {
         jdbcTemplate.update(sql);
     }
 
-    public void update(final User user) {
+    public void update(final User user, Connection connection) {
         var sql = """
                 update 
                     users 
@@ -59,7 +60,7 @@ public class UserDao {
                 ps.setString(3, user.getEmail());
                 ps.setLong(4, user.getId());
             }
-        });
+        }, connection);
     }
 
     public List<User> findAll() {

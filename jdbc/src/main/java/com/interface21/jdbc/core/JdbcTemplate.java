@@ -115,9 +115,9 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter, Connection connection) {
+        try (
+                PreparedStatement ps = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(ps);
             return ps.executeUpdate();
@@ -128,9 +128,8 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+    public int update(String sql, Connection connection, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             setValues(args.clone(), ps);
 
             return ps.executeUpdate();

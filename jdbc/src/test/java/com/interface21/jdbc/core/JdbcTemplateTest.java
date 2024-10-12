@@ -134,7 +134,7 @@ class JdbcTemplateTest {
                         ps.setString(2, "123");
                         ps.setString(3, "gugu@naver.com");
                     }
-                });
+                }, dataSource.getConnection());
 
         ResultSet resultSet = executeQuery("select count(*) from users");
         resultSet.next();
@@ -150,7 +150,7 @@ class JdbcTemplateTest {
         // given
         String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
         // when
-        jdbcTemplate.update(insertSql, "gugu", "1234", "gugu@naver.com");
+        jdbcTemplate.update(insertSql, dataSource.getConnection(), "gugu", "1234", "gugu@naver.com");
 
         ResultSet resultSet = executeQuery("select count(*) from users");
         resultSet.next();
@@ -176,7 +176,7 @@ class JdbcTemplateTest {
                         ps.setString(1, "updateGugu");
                         ps.setLong(2, 1);
                     }
-                });
+                }, dataSource.getConnection());
 
         ResultSet resultSet = executeQuery("select account from users where id = 1");
         resultSet.next();
@@ -194,7 +194,7 @@ class JdbcTemplateTest {
         String updateSql = " update users set account = ? where id = ? ";
 
         // when
-        jdbcTemplate.update(updateSql, "updateGugu", 1);
+        jdbcTemplate.update(updateSql, dataSource.getConnection(), "updateGugu", 1);
 
         ResultSet resultSet = executeQuery("select account from users where id = 1");
         resultSet.next();
