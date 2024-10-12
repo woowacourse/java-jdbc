@@ -36,7 +36,7 @@ public class TransactionManager {
             T result = function.apply(connection);
             connection.commit();
             return result;
-        } catch (DataAccessException | SQLException exception) {
+        } catch (Exception exception) {
             connection.rollback();
             throw new DataAccessException(exception);
         } finally {
