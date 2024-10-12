@@ -39,4 +39,8 @@
 - [x] 함수형 인터페이스를 활용하여 중복 try-catch를 제거한다.
     - [x] PreparedStatementCallback 함수형 인터페이스를 활용한다.
 - [x] 함수형 인터페이스를 활용하여 사용자가 직접 파라미터 설정을 할 수 있도록 메서드를 제공한다.
-    - [x] PreparedStatementSetter 함수형 인터페이스를 활용한다. 
+    - [x] PreparedStatementSetter 함수형 인터페이스를 활용한다.
+
+## 3단계 - Transaction 적용하기
+
+- [ ] 동일한 트랜잭션을 사용할 수 있도록 Dao 메서드가 같은 Connection을 공유한다.
