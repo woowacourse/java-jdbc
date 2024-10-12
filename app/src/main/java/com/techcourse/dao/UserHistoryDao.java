@@ -23,7 +23,7 @@ public class UserHistoryDao {
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
-                userHistory.getCreateBy());
+                userHistory.getCreatedBy());
     }
 
     public void log(final Connection connection, final UserHistory userHistory) throws SQLException {
@@ -34,7 +34,7 @@ public class UserHistoryDao {
             preparedStatement.setString(3, userHistory.getPassword());
             preparedStatement.setString(4, userHistory.getEmail());
             preparedStatement.setObject(5, userHistory.getCreatedAt());
-            preparedStatement.setString(6, userHistory.getCreateBy());
+            preparedStatement.setString(6, userHistory.getCreatedBy());
             preparedStatement.executeUpdate();
         }
     }
