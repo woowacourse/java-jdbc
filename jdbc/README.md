@@ -41,3 +41,13 @@
 - [x] User 비밀번호 변경 기능에 트랜잭션 적용
     - UserServiceTest에서 @Disabled 삭제하고 미션 진행
     - 한 트랜잭션으로 묶기 위해 동일한 Connection 객체를 사용하도록 변경
+
+# 4. Transaction synchronization 적용
+
+- [ ] Transaction synchronization 적용
+    - Connection 객체를 가져오는 부분은 DataSourceUtils를 사용하도록 수정한다.
+    - TransactionSynchronizationManager 클래스를 구현한다.
+
+- [ ] 트랜잭션 서비스 추상화
+    - 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리한다.
+    - UserServiceTest 클래스의 testTransactionRollback() 테스트를 수정하고 통과시킨다.
