@@ -43,7 +43,7 @@ public class UserDao {
         jdbcTemplate.update(sql, callBack);
     }
 
-    public void update(JdbcTransaction transaction, User user) {
+    public void update(User user, JdbcTransaction transaction) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         PreparedStatementCallBack callBack = (pstmt) -> {

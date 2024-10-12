@@ -38,7 +38,7 @@ public class UserService {
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(transaction, user);
+            userDao.update(user, transaction);
             userHistoryDao.log(new UserHistory(user, createBy));
         } catch (Exception e) {
             transaction.rollback();
