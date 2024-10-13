@@ -15,14 +15,13 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private DataSource dataSource;
-    private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
         dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
 
         jdbcTemplate.update("DELETE FROM users");
