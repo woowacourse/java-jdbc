@@ -1,37 +1,12 @@
 package com.techcourse.service;
 
-import com.interface21.transaction.TransactionManager;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 
-public class UserService {
+public interface UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
-    private final TransactionManager transactionManager;
+    User findById(final long id);
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionManager transactionManager) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-        this.transactionManager = transactionManager;
-    }
+    void save(final User user);
 
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
-
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.runInTransaction(() -> {
-            final var user = userDao.findById(id);
-            user.changePassword(newPassword);
-            userDao.update(newPassword, id);
-            userHistoryDao.log(new UserHistory(user, createBy));
-        });
-    }
+    void changePassword(final long id, final String newPassword, final String createdBy);
 }
