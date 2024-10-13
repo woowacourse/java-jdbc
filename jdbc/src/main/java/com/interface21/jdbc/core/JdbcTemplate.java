@@ -23,34 +23,33 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        execute(connection, sql, args, PreparedStatement::executeUpdate);
+    }
+
     public void update(final String sql, final Object... args) {
-        execute(sql, args, statement -> {
-            log.info("update query : {}", sql);
-            return statement.executeUpdate();
-        });
+        execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
-            log.info("select query : {}", sql);
             final ResultSet resultSet = statement.executeQuery();
-            final List<T> data = PreparedStatementUtils.extractData(resultSet, rowMapper);
-            return result(data);
+            return new SingleDataExtractor<T>().extract(resultSet, rowMapper);
         });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             final ResultSet resultSet = statement.executeQuery();
-            log.info("select query : {}", sql);
-            return PreparedStatementUtils.extractData(resultSet, rowMapper);
+            return new MultiDataExtractor<T>().extract(resultSet, rowMapper);
         });
     }
 
     private <T> T execute(final String sql, final Object[] args, final QueryExecutor<T> executor) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            PreparedStatementUtils.setParameter(statement, args);
+            QueryExecutor.setArguments(args, statement);
+            log.info("query : {}", sql);
             return executor.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -58,13 +57,14 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T result(final List<T> data) throws SQLException {
-        if (data.isEmpty()) {
-            throw new SQLException("sql 결과 데이터가 존재하지 않습니다.");
+    private <T> T execute(final Connection connection, final String sql, final Object[] args, final QueryExecutor<T> executor) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            QueryExecutor.setArguments(args, statement);
+            log.info("query : {}", sql);
+            return executor.execute(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
-        if (data.size() > 1) {
-            throw new SQLException("sql 결과 데이터가 2개 이상 존재합니다.");
-        }
-        return data.getFirst();
     }
 }
