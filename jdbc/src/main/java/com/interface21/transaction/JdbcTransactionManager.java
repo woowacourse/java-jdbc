@@ -15,7 +15,9 @@ public class JdbcTransactionManager implements TransactionManager {
 
     @Override
     public void doInTransaction(Consumer<Connection> action) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
 
             action.accept(connection);
@@ -23,7 +25,30 @@ public class JdbcTransactionManager implements TransactionManager {
             connection.commit();
             connection.setAutoCommit(true);
         } catch (Exception e) {
-            throw new DataAccessException("Transaction failed", e);
+            rollback(connection);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        if (connection != null) {
+            try {
+                connection.rollback();
+            } catch (Exception e) {
+                throw new DataAccessException("롤백에 실패했습니다.", e);
+            }
+        }
+    }
+
+    private void closeConnection(Connection connection) {
+        if (connection != null) {
+            try {
+                connection.setAutoCommit(true);
+                connection.close();
+            } catch (Exception e) {
+                throw new DataAccessException("커넥션 닫기에 실패했습니다.", e);
+            }
         }
     }
 }
