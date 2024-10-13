@@ -4,11 +4,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Function;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
 
-import static org.reflections.Reflections.log;
-
 public class TransactionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
     public static <T> T transactionBegin(DataSource dataSource, Function<Connection, T> function) {
         try (Connection connection = dataSource.getConnection()) {
