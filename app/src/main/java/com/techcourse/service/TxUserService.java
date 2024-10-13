@@ -3,7 +3,7 @@ package com.techcourse.service;
 import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.domain.User;
 
-public class TxUserService implements UserService{
+public class TxUserService implements UserService {
 
     private final UserService userService;
     private final TransactionManager transactionManager;
