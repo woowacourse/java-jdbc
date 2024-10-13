@@ -4,19 +4,17 @@ import java.util.Objects;
 
 public class User {
 
-    private Long id;
+    private final Long id;
     private final String account;
     private String password;
     private final String email;
 
-    public User(final long id, final String account, final String password, final String email) {
-        this.id = id;
-        this.account = account;
-        this.password = password;
-        this.email = email;
+    public User(final String account, final String password, final String email) {
+        this(null, account, password, email);
     }
 
-    public User(final String account, final String password, final String email) {
+    public User(final Long id, final String account, final String password, final String email) {
+        this.id = id;
         this.account = account;
         this.password = password;
         this.email = email;
