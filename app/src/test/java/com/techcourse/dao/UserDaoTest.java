@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -78,14 +80,15 @@ class UserDaoTest {
 
     @DisplayName("사용자의 정보를 변경한다.")
     @Test
-    void update() {
+    void update() throws SQLException {
         // given
         String newPassword = "password99";
         User user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
         // when
-        userDao.update(user);
+        Connection connection = DataSourceConfig.getInstance().getConnection();
+        userDao.update(connection, user);
 
         // then
         Optional<User> result = userDao.findById(1L);

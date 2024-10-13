@@ -18,12 +18,16 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public int update(String sql, Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -57,6 +61,19 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> pstmtExecutor, Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            PreparedStatementResolver.setParameters(pstmt, args);
+
+            return pstmtExecutor.apply(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
