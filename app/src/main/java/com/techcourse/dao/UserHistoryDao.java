@@ -35,6 +35,6 @@ public class UserHistoryDao {
             pstmt.setString(6, userHistory.getCreateBy());
 
         };
-        jdbcTemplate.execute(sql, preparedStatementSetter);
+        jdbcTemplate.update(sql, preparedStatementSetter);
     }
 }

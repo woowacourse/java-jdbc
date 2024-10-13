@@ -59,7 +59,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void execute(String sql, PreparedStatementSetter preparedStatementSetter) {
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -72,7 +72,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void execute(Connection conn, String sql, PreparedStatementSetter preparedStatementSetter) {
+    public void update(Connection conn, String sql, PreparedStatementSetter preparedStatementSetter) {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             preparedStatementSetter.setValues(pstmt);

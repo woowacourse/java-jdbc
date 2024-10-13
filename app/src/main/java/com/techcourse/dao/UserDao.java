@@ -38,6 +38,7 @@ public class UserDao {
             pstmt.setObject(3, user.getEmail());
         };
         jdbcTemplate.execute(sql, preparedStatementSetter);
+        jdbcTemplate.update(sql, preparedStatementSetter);
         log.debug("query : {}", sql);
     }
 
@@ -50,6 +51,7 @@ public class UserDao {
             pstmt.setObject(4, user.getId());
         };
         jdbcTemplate.execute(sql, preparedStatementSetter);
+        jdbcTemplate.update(sql, preparedStatementSetter);
         log.debug("query : {}", sql);
     }
 
@@ -62,13 +64,13 @@ public class UserDao {
             pstmt.setObject(4, user.getId());
         };
         jdbcTemplate.execute(connection, sql, preparedStatementSetter);
+        jdbcTemplate.update(connection, sql, preparedStatementSetter);
         log.debug("query : {}", sql);
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(objectMapper, sql, pstmt -> {
-        });
+        return jdbcTemplate.query(objectMapper, sql, pstmt -> {});
     }
 
     public User findById(final Long id) {
