@@ -5,8 +5,8 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -23,15 +23,20 @@ import com.interface21.jdbc.exception.TransactionExecutionException;
 
 class TransactionManagerTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private Consumer<Connection> consumer;
     private TransactionManager transactionManager;
 
     @BeforeEach
-    void setUp() {
-        this.transactionManager = new TransactionManager(mock(DataSource.class));
+    void setUp() throws SQLException {
+        this.dataSource = mock(DataSource.class);
         this.connection = mock(Connection.class);
         this.consumer = mock(Consumer.class);
+        this.transactionManager = new TransactionManager(dataSource);
+
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
     }
 
     @Test
@@ -43,10 +48,12 @@ class TransactionManagerTest {
         transactionManager.execute(consumer);
 
         //then
-        verify(connection, times(2)).setAutoCommit(false);
+        verify(connection).setAutoCommit(false);
         verify(consumer).accept(connection);
         verify(connection).commit();
         verify(connection, never()).rollback();
+        verify(connection).setAutoCommit(true);
+        verify(connection).close();
     }
 
     @Test
@@ -64,5 +71,7 @@ class TransactionManagerTest {
         verify(consumer).accept(connection);
         verify(connection, never()).commit();
         verify(connection, atLeastOnce()).rollback();
+        verify(connection).setAutoCommit(true);
+        verify(connection).close();
     }
 }
