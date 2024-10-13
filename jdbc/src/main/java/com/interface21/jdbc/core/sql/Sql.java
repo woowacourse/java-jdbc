@@ -80,12 +80,20 @@ public class Sql {
             final String parameterName,
             final Object parameterValue
     ) {
-        final String value = String.valueOf(parameterValue);
+        final String value = convertStringValue(parameterValue);
         if (parameterValue instanceof String) {
             return sql.replace(":" + parameterName, "'" + value + "'");
         }
 
         return sql.replace(":" + parameterName, value);
+    }
+
+    private String convertStringValue(final Object value) {
+        try {
+            return String.valueOf(value);
+        } catch (final Exception e) {
+            throw new IllegalArgumentException("문자열로 변활할 수 없는 파라미터입니다.");
+        }
     }
 
     private void validateParametersIsNull(final Map<String, Object> parameters) {
