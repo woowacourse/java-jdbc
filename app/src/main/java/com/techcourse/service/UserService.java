@@ -34,10 +34,10 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         jdbcTransactionTemplate.execute((transaction -> {
-            final var user = userDao.findById(id, transaction);
+            final var user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(user, transaction);
-            userHistoryDao.log(new UserHistory(user, createBy), transaction);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         }));
     }
 }
