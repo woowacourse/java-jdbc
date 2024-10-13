@@ -32,7 +32,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDaoImpl(jdbcTemplate);
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserServiceImpl(userDao, userHistoryDao);
         final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
@@ -49,7 +49,7 @@ class UserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         // 애플리케이션 서비스
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserServiceImpl(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
         final var userService = new TxUserService(appUserService);
 

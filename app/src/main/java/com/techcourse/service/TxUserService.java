@@ -5,31 +5,31 @@ import com.techcourse.support.jdbc.transaction.TransactionExecutorUtils;
 
 public class TxUserService implements UserService {
 
-    private final UserService userService;
+    private final AppUserService appUserService;
 
-    public TxUserService(UserService userService) {
-        this.userService = userService;
+    public TxUserService(AppUserService appUserService) {
+        this.appUserService = appUserService;
     }
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+        return appUserService.findById(id);
     }
 
     @Override
     public User findByAccount(final String account) {
-        return userService.findByAccount(account);
+        return appUserService.findByAccount(account);
     }
 
     @Override
     public void insert(final User user) {
-        userService.insert(user);
+        appUserService.insert(user);
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         TransactionExecutorUtils.executeInTransaction(
-                () -> userService.changePassword(id, newPassword, createBy)
+                () -> appUserService.changePassword(id, newPassword, createBy)
         );
     }
 }

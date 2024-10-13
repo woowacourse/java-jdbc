@@ -9,7 +9,7 @@ import com.interface21.webmvc.servlet.view.JsonView;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDaoImpl;
 import com.techcourse.dao.UserHistoryDaoImpl;
-import com.techcourse.service.AppUserService;
+import com.techcourse.service.AppUserServiceImpl;
 import com.techcourse.service.TxUserService;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ public class UserController {
 
     public UserController() {
         userService = new TxUserService(
-                new AppUserService(
+                new AppUserServiceImpl(
                         new UserDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance())),
                         new UserHistoryDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance()))
                 )
