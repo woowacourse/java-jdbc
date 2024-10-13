@@ -36,5 +36,16 @@ public class UserHistoryDao {
 
         };
         jdbcTemplate.update(sql, preparedStatementSetter);
+        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(
+                userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(), userHistory.getEmail(),
+                userHistory.getCreatedAt(), userHistory.getCreateBy());
+    }
+
+    private PreparedStatementSetter getPreparedStatementSetter(Object... params) {
+        return pstmt -> {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        };
     }
 }
