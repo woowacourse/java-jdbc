@@ -3,7 +3,7 @@ package com.interface21.jdbc.core;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SingleDataExtractor<T> implements DataExtractor<T, T> {
+class SingleDataExtractor<T> implements DataExtractor<T, T> {
 
     @Override
     public T extract(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {

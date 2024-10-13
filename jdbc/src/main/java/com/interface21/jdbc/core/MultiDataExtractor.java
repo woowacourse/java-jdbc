@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MultiDataExtractor<T> implements DataExtractor<T, List<T>> {
+class MultiDataExtractor<T> implements DataExtractor<T, List<T>> {
 
     @Override
     public List<T> extract(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
