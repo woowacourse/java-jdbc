@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import javax.sql.DataSource;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementCallBack;
+import com.interface21.transaction.support.JdbcTransaction;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -16,16 +18,18 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(UserHistory userHistory) {
+    public void log(UserHistory userHistory, JdbcTransaction transaction) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.update(sql, pstmt -> {
+        PreparedStatementCallBack callBack = pstmt -> {
             pstmt.setLong(1, userHistory.getUserId());
             pstmt.setString(2, userHistory.getAccount());
             pstmt.setString(3, userHistory.getPassword());
             pstmt.setString(4, userHistory.getEmail());
             pstmt.setObject(5, userHistory.getCreatedAt());
             pstmt.setString(6, userHistory.getCreateBy());
-        });
+        };
+
+        jdbcTemplate.update(sql, callBack, transaction);
     }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementCallBack;
 import com.interface21.jdbc.core.ResultSetCallBack;
+import com.interface21.transaction.support.JdbcTransaction;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -42,7 +43,7 @@ public class UserDao {
         jdbcTemplate.update(sql, callBack);
     }
 
-    public void update(User user) {
+    public void update(User user, JdbcTransaction transaction) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         PreparedStatementCallBack callBack = (pstmt) -> {
@@ -52,7 +53,7 @@ public class UserDao {
             pstmt.setLong(4, user.getId());
         };
 
-        jdbcTemplate.update(sql, callBack);
+        jdbcTemplate.update(sql, callBack, transaction);
     }
 
     public List<User> findAll() {
@@ -65,6 +66,12 @@ public class UserDao {
         String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryOne(sql, resultSetUserCallBack, id);
+    }
+
+    public User findById(long id, JdbcTransaction transaction) {
+        String sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryOne(sql, resultSetUserCallBack, transaction, id);
     }
 
     public User findByAccount(String account) {

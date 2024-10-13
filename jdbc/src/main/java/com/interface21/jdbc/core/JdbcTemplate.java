@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import com.interface21.jdbc.support.H2SQLExceptionTranslator;
+import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
+import com.interface21.transaction.support.JdbcTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,17 @@ public class JdbcTemplate {
         debugQuery(sql);
 
         try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            return executeQueryOne(pstmt, callBack, args);
+        } catch (SQLException e) {
+            throw exceptionTranslator.translate(e);
+        }
+    }
+
+    public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, JdbcTransaction transaction, Object... args) {
+        debugQuery(sql);
+
+        Connection conn = transaction.getConnection();
+        try (var pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
@@ -86,7 +99,18 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        try (var connection = dataSource.getConnection(); var pstmt = connection.prepareStatement(sql)) {
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            executeUpdate(callBack, pstmt);
+        } catch (SQLException e) {
+            throw exceptionTranslator.translate(e);
+        }
+    }
+
+    public void update(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
+        debugQuery(sql);
+
+        Connection conn = transaction.getConnection();
+        try (var pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
