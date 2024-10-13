@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.dao;
 
 import java.sql.Connection;
 import java.sql.SQLException;

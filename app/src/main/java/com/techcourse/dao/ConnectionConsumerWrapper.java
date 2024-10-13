@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.dao;
 
 
 import com.interface21.dao.DataAccessException;
