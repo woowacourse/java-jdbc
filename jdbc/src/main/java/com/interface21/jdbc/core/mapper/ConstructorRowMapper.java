@@ -59,25 +59,16 @@ public class ConstructorRowMapper<T> implements RowMapper<T> {
         final Field[] fields = clazz.getDeclaredFields();
         for (int i = 0; i < fields.length; i++) {
             final Field field = fields[i];
-            setFieldValue(resultSet, instance, field, i + 1);
+            setFieldValue(resultSet, instance, field);
         }
     }
 
     private void setFieldValue(
             final ResultSet resultSet,
             final T instance,
-            final Field field,
-            final int index
+            final Field field
     ) throws SQLException, IllegalAccessException {
-        final Class<?> fieldType = field.getType();
         field.setAccessible(true);
-        if (fieldType.isAssignableFrom(String.class)) {
-            final String value = resultSet.getString(index);
-            field.set(instance, value);
-            return;
-        }
-
-        final Long value = resultSet.getLong(index);
-        field.set(instance, value);
+        field.set(instance, resultSet.getObject(field.getName()));
     }
 }
