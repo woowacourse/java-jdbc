@@ -8,7 +8,6 @@ import java.util.Map;
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
-    ;
 
     private TransactionSynchronizationManager() {
     }
