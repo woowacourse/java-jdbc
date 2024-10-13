@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.List;
 
@@ -32,23 +33,23 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        jdbcTemplate.command(INSERT_QUERY, user.getAccount(), user.getPassword(), user.getEmail());
+    public void insert(final Connection connection, final User user) {
+        jdbcTemplate.command(connection, INSERT_QUERY, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        jdbcTemplate.command(UPDATE_QUERY, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.command(connection, UPDATE_QUERY, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        return jdbcTemplate.query(USER_ROW_MAPPER, SELECT_ALL_QUERY);
+    public List<User> findAll(final Connection connection) {
+        return jdbcTemplate.query(connection, USER_ROW_MAPPER, SELECT_ALL_QUERY);
     }
 
-    public User findById(final Long id) {
-        return jdbcTemplate.queryForObject(USER_ROW_MAPPER, SELECT_BY_ID_QUERY, id);
+    public User findById(final Connection connection, final Long id) {
+        return jdbcTemplate.queryForObject(connection, USER_ROW_MAPPER, SELECT_BY_ID_QUERY, id);
     }
 
-    public User findByAccount(final String account) {
-        return jdbcTemplate.queryForObject(USER_ROW_MAPPER, SELECT_BY_ACCOUNT_QUERY, account);
+    public User findByAccount(final Connection connection, final String account) {
+        return jdbcTemplate.queryForObject(connection, USER_ROW_MAPPER, SELECT_BY_ACCOUNT_QUERY, account);
     }
 }
