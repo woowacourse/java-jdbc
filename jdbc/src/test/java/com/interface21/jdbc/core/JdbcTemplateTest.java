@@ -6,10 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class JdbcTemplateTest {
 
-    private static RowMapper<User> ROW_MAPPER = rs ->
+    private static final RowMapper<User> ROW_MAPPER = rs ->
             new User(
                     rs.getLong("id"),
                     rs.getString("account")
@@ -29,6 +26,7 @@ class JdbcTemplateTest {
 
     private Connection connection;
     private PreparedStatement preparedStatement;
+    private ParameterMetaData parameterMetaData;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
@@ -37,19 +35,22 @@ class JdbcTemplateTest {
         DataSource dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
+        parameterMetaData = mock(ParameterMetaData.class);
         resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.getParameterMetaData()).thenReturn(parameterMetaData);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test
     @DisplayName("업데이트 쿼리 실행이 성공한다.")
-    void update() {
+    void update() throws SQLException {
         //given
         String sql = "update users set account = ? where id = ?";
+        when(parameterMetaData.getParameterCount()).thenReturn(2);
 
         //when
         jdbcTemplate.update(sql, "test-ash", 1L);
@@ -68,6 +69,8 @@ class JdbcTemplateTest {
     void update_fail() throws SQLException {
         //given
         String sql = "update users set account = ? where id = ?";
+        when(parameterMetaData.getParameterCount()).thenReturn(2);
+
         doThrow(new SQLException("에러 테스트")).when(preparedStatement).executeUpdate();
 
         //when, then
@@ -86,6 +89,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where id = ?";
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("account")).thenReturn("test-ash");
@@ -109,6 +113,7 @@ class JdbcTemplateTest {
         String sql = "select id, account, password, email from users where id = ?";
 
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(parameterMetaData.getParameterCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(false);
 
         //when
@@ -160,8 +165,8 @@ class JdbcTemplateTest {
     }
 
     static class User {
-        private Long id;
-        private String account;
+        private final Long id;
+        private final String account;
 
         public User(Long id, String account) {
             this.id = id;
