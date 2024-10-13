@@ -1,5 +1,7 @@
 package com.techcourse.service.transaction;
 
+import com.interface21.jdbc.DataAccessException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
@@ -53,15 +55,13 @@ class TransactionManagerTest {
 
     @Test
     void rollback() throws SQLException {
-        // given & when
-        transactionManager.transaction(new TransactionConsumer() {
-            @Override
-            public void execute(Connection connection) throws SQLException {
-                throw new SQLException("롤백 테스트");
-            }
-        });
+        // given & when & then
+        Assertions.assertThatThrownBy(() -> {
+            transactionManager.transaction((TransactionConsumer) connection -> {
+                        throw new SQLException("롤백 테스트");
+            });
+        }).isInstanceOf(DataAccessException.class);
 
-        // then
         verify(connection).rollback();
     }
 }
