@@ -27,6 +27,10 @@ public class JdbcTemplate {
         execute(sql, params, PreparedStatement::executeUpdate);
     }
 
+    public void executeQuery(Connection connection, String sql, Object... params) {
+        execute(connection, sql, params, PreparedStatement::executeUpdate);
+    }
+
     public <T> Optional<T> executeQueryForObject(String sql, ObjectMaker<T> maker, Object... params) {
         return execute(sql, params, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -70,6 +74,20 @@ public class JdbcTemplate {
             throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
         }
     }
+
+    private <T> T execute(Connection connection, String sql, Object[] params, PreparedStatementExecutor<T> executor) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            setParams(preparedStatement, params);
+            log.debug("query : {}", sql);
+
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
+        }
+    }
+
 
     private void setParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
         for (int index = 0; index < params.length; index++) {
