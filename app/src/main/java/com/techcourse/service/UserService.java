@@ -52,7 +52,7 @@ public class UserService {
             UserHistory userHistory = new UserHistory(user, createBy);
             userHistoryDao.log(connection, userHistory);
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             connection.rollback();
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
