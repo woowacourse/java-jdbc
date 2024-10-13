@@ -116,7 +116,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenReturn(1);
 
         String sql = "update users set column = ? where id = ?";
-        jdbcTemplate.update(connection, sql, pstmt -> {
+        jdbcTemplate.update(sql, pstmt -> {
             pstmt.setObject(1, "value");
             pstmt.setObject(2, 1);
         });

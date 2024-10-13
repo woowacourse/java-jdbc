@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,8 @@ public class JdbcTemplate {
         return result;
     }
 
-    public void update(Connection connection, String sql, PreparedStatementSetter pss) {
+    public void update(String sql, PreparedStatementSetter pss) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         execute(connection, sql, pstmt -> {
             pss.setObject(pstmt);
             return pstmt.executeUpdate();

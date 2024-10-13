@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -30,18 +29,18 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(Connection connection, User user) {
+    public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, pss -> {
+        jdbcTemplate.update(sql, pss -> {
             pss.setString(1, user.getAccount());
             pss.setString(2, user.getPassword());
             pss.setString(3, user.getEmail());
         });
     }
 
-    public void update(Connection connection, User user) {
+    public void update(User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.update(connection, sql, pss -> {
+        jdbcTemplate.update(sql, pss -> {
             pss.setString(1, user.getAccount());
             pss.setString(2, user.getPassword());
             pss.setString(3, user.getEmail());
