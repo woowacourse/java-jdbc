@@ -7,18 +7,15 @@ import java.sql.SQLException;
 
 public class TransactionManager {
 
-    private static final String TRANSACTION_FAIL_EXCEPTION = "트랜잭션 도중 실패했습니다.";
+    private static final String TRANSACTION_FAIL_EXCEPTION = "Transaction을 실행하던 도중 실패했습니다.";
 
     private TransactionManager() {
-
     }
 
     public static void start(Connection connection, Runnable runnable) {
         try {
             connection.setAutoCommit(false);
-
             runnable.run();
-
             connection.commit();
         } catch (SQLException | DataAccessException e) {
             rollback(connection);
@@ -27,12 +24,10 @@ public class TransactionManager {
     }
 
     private static void rollback(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION, e);
-            }
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION, e);
         }
     }
 }
