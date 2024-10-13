@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.annotation.Nullable;
@@ -9,6 +8,5 @@ import javax.annotation.Nullable;
 public interface PreparedStatementCallback<T> {
 
     @Nullable
-    T doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException;
-
+    T doInPreparedStatement(PreparedStatement ps) throws SQLException;
 }
