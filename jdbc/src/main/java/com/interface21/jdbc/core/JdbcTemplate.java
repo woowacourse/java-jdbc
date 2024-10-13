@@ -34,6 +34,12 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(String sql, Connection connection, Object... params) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        StatementParamSetter.setParams(preparedStatement, params);
+        preparedStatement.executeUpdate();
+    }
+
     public void update(PreparedStatementCreator creator) {
         connect(creator, PreparedStatement::executeUpdate);
     }
@@ -64,7 +70,7 @@ public class JdbcTemplate {
             }
             return results;
         };
-        
+
         return connect(connection -> connection.prepareStatement(sql),
                 preparedStatement -> getResult(preparedStatement, resultMapper));
     }

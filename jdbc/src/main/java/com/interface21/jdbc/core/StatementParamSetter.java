@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class StatementParamSetter {
 
+    private static final Setter DEFAULT_SETTER = (ps, index, param) -> ps.setObject(index.getAndIncrement(), param);
     private static final Map<Class<?>, Setter> SET_MAPPER = Map.of(
             String.class, (ps, index, param) -> ps.setString(index.getAndIncrement(), (String) param),
             Integer.class, (ps, index, param) -> ps.setInt(index.getAndIncrement(), (Integer) param),
@@ -26,7 +27,7 @@ public class StatementParamSetter {
     }
 
     private static void setParams(PreparedStatement ps, Object param, AtomicInteger index) throws SQLException {
-        Setter setter = SET_MAPPER.get(param.getClass());
+        Setter setter = SET_MAPPER.getOrDefault(param.getClass(), DEFAULT_SETTER);
         setter.accept(ps, index, param);
     }
 }
