@@ -2,6 +2,7 @@ package com.techcourse.support.jdbc.transaction;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -37,8 +38,16 @@ public class TransactionExecutorUtils {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            releaseConnection(conn, dataSource);
+            releaseConnAndSetAutoCommit(conn, dataSource);
             log.debug("-- 트랜잭션 종료");
+        }
+    }
+
+    public static void releaseActiveConn() {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection activeConn = TransactionSynchronizationManager.getResource(dataSource);
+        if (activeConn != null) {
+            DataSourceUtils.releaseConnection(activeConn, dataSource);
         }
     }
 
@@ -50,7 +59,7 @@ public class TransactionExecutorUtils {
         }
     }
 
-    private static void releaseConnection(Connection conn, DataSource dataSource) {
+    private static void releaseConnAndSetAutoCommit(Connection conn, DataSource dataSource) {
         DataSourceUtils.releaseConnection(conn, dataSource);
         try {
             conn.setAutoCommit(true);
