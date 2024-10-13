@@ -57,7 +57,6 @@ public class TransactionTemplate {
             try {
                 con.setAutoCommit(true);
                 DataSourceUtils.releaseConnection(con, datasource);
-                TransactionSynchronizationManager.unbindResource(datasource);
             } catch (Exception e) {
                 log.info("release error", e);
             }
