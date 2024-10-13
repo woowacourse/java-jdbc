@@ -31,25 +31,24 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
-            return query(conn, sql, rowMapper, new ArgumentPreparedStatementSetter(args));
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         List<T> results = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
             pss.setValues(ps);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
             }
+
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+
         return results;
     }
 
