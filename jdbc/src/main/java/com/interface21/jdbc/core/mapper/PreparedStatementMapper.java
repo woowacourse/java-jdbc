@@ -2,6 +2,7 @@ package com.interface21.jdbc.core.mapper;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.CannotReleaseJdbcResourceException;
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,12 +15,19 @@ public abstract class PreparedStatementMapper implements AutoCloseable {
 
     protected final PreparedStatement preparedStatement;
     protected final Object[] params;
+    protected JDBCType[] jdbcType;
 
     public PreparedStatementMapper(PreparedStatement preparedStatement, Object[] params) throws SQLException {
         this.preparedStatement = preparedStatement;
         this.params = params;
         checkConnection();
         setStatement();
+    }
+
+    public PreparedStatementMapper(PreparedStatement preparedStatement, Object[] params, JDBCType[] jdbcType) {
+        this.preparedStatement = preparedStatement;
+        this.params = params;
+        this.jdbcType = jdbcType;
     }
 
     protected abstract void setStatement() throws SQLException;

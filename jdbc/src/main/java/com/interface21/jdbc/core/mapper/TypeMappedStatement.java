@@ -4,14 +4,10 @@ import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public final class TypeMappedStatement extends ObjectMappedStatement {
+public final class TypeMappedStatement extends PreparedStatementMapper {
 
-    private final JDBCType[] jdbcType;
-
-    public TypeMappedStatement(PreparedStatement preparedStatement, Object[] params, JDBCType[] types)
-            throws SQLException {
-        super(preparedStatement, params);
-        this.jdbcType = types;
+    public TypeMappedStatement(PreparedStatement preparedStatement, Object[] params, JDBCType[] types) {
+        super(preparedStatement, params, types);
     }
 
     @Override
