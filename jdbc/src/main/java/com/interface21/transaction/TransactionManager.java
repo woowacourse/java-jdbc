@@ -14,12 +14,7 @@ public class TransactionManager {
     }
 
     public void transaction(Connection connection, Runnable runnable) {
-        try {
-            startTransaction(connection, runnable);
-        } catch (CannotGetJdbcConnectionException e) {
-            log.error(e.getMessage());
-            throw new CannotGetJdbcConnectionException(e.getMessage());
-        }
+        startTransaction(connection, runnable);
     }
 
     private void startTransaction(Connection connection, Runnable runnable) {
