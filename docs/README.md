@@ -8,3 +8,8 @@
 - [x] PreparedStatementSetter 에서 가변인자를 사용하도록 구현
 - [x] RowMapper 에서 제네릭을 사용하도록 재구성
 - [x] JdbcTemplate 에서 PreparedStatemetSetter를 사용하도록 리팩토링
+
+## 3단계 미션 요구사항
+
+- [x] UserServiceTest 클래스에서 @Disabled를 삭제하고 미션을 진행한다.
+- [x] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경하자.
