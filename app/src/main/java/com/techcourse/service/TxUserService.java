@@ -23,7 +23,7 @@ public class TxUserService implements UserService {
             connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
             return service.findById(id);
-        } catch (SQLException e) {
+        } catch (SQLException | RuntimeException e) {
             try {
                 if (connection != null) {
                     connection.rollback();
@@ -50,7 +50,7 @@ public class TxUserService implements UserService {
             connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
             service.insert(user);
-        } catch (SQLException e) {
+        } catch (SQLException | RuntimeException e) {
             try {
                 if (connection != null) {
                     connection.rollback();
@@ -78,7 +78,7 @@ public class TxUserService implements UserService {
             connection.setAutoCommit(false);
             service.changePassword(id, newPassword, createBy);
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
+        } catch (SQLException | RuntimeException e) {
             try {
                 if (connection != null) {
                     connection.rollback();
