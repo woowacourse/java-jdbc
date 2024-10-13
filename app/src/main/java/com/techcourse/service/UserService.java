@@ -45,9 +45,11 @@ public class UserService {
             transactionManager.commit(connection);
         } catch (SQLException e) {
             log.error(e.getMessage());
+            transactionManager.rollback(connection);
             throw new DataAccessException(e);
         } catch (Exception e) {
             log.error(e.getMessage());
+            transactionManager.rollback(connection);
             throw new RuntimeException(e);
         }
     }
