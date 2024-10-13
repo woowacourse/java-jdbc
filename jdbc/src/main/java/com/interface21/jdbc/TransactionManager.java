@@ -19,23 +19,22 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(Runnable consumer) {
+    public void execute(Runnable runnable) {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            consumer.run();
+            runnable.run();
             connection.commit();
         } catch (Exception e) {
             ConnectionConsumerWrapper.accept(connection, Connection::rollback);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            ConnectionConsumerWrapper.accept(connection, connection1 ->
-                DataSourceUtils.releaseConnection(connection1, dataSource));
+            ConnectionConsumerWrapper.accept(connection, releaseConnection());
         }
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    private ThrowingConnectionConsumer releaseConnection() {
+        return connection -> DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
