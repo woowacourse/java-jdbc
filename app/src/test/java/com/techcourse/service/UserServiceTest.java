@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.transaction.TransactionException;
+import com.interface21.jdbc.datasource.JdbcTransactionManager;
 import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -28,7 +28,7 @@ class UserServiceTest {
         DataSource dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
-        this.transactionTemplate = new TransactionTemplate(dataSource);
+        this.transactionTemplate = new TransactionTemplate(new JdbcTransactionManager(dataSource));
 
         DatabasePopulatorUtils.execute(dataSource);
         User user = new User("gugu", "password", "hkkang@woowahan.com");
