@@ -8,7 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
 
-public class TransactionManager {
+public final class TransactionManager {
+
+    private TransactionManager() {
+    }
 
     private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
