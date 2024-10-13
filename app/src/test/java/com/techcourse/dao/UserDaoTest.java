@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -11,15 +13,20 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import javax.sql.DataSource;
+
 class UserDaoTest {
 
     private UserDao userDao;
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, DataSourceUtils.getConnection(dataSource));
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -29,6 +36,7 @@ class UserDaoTest {
     void tearDown() {
         String truncateSql = "TRUNCATE TABLE users RESTART IDENTITY";
         jdbcTemplate.update(truncateSql);
+        DataSourceUtils.releaseConnection(TransactionSynchronizationManager.getResource(dataSource), dataSource);
     }
 
     @Test
