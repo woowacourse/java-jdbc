@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,10 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class UserDaoTest {
 
-    private static UserDao userDao;
+    private UserDao userDao;
 
-    @BeforeAll
-    static void setup() {
+    @BeforeEach
+    void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
@@ -36,25 +36,31 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        //when
-        Optional<User> user = userDao.findById(1L);
-        User result = user.get();
+        // when
+        Optional<User> optionalUser = userDao.findById(1L);
 
-        //then
-        assertThat(result.getAccount()).isEqualTo("gugu");
+        // then
+        assertAll(
+                () -> assertThat(optionalUser).isPresent(),
+                () -> assertThat(optionalUser.get().getAccount()).isEqualTo("gugu")
+        );
     }
 
     @Test
     void findByAccount() {
         //given
-        String account = "gugu";
+        User target = new User("ash", "password", "test@techcourse.com");
+        userDao.insert(target);
+        String account = target.getAccount();
 
         //when
-        Optional<User> user = userDao.findByAccount(account);
-        User result = user.get();
+        Optional<User> optionalUser = userDao.findByAccount(account);
 
         //then
-        assertThat(result.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(optionalUser).isPresent(),
+                () -> assertThat(optionalUser.get().getAccount()).isEqualTo(account)
+        );
     }
 
     @Test
@@ -65,11 +71,13 @@ class UserDaoTest {
 
         //when
         userDao.insert(user);
-        Optional<User> actual = userDao.findById(2L);
-        User result = actual.get();
+        Optional<User> optionalUser = userDao.findById(2L);
 
         //then
-        assertThat(result.getAccount()).isEqualTo(account);
+        assertAll(
+                () -> assertThat(optionalUser).isPresent(),
+                () -> assertThat(optionalUser.get().getAccount()).isEqualTo(account)
+        );
     }
 
     @Test
@@ -83,10 +91,12 @@ class UserDaoTest {
         initialUser.changePassword(newPassword);
         userDao.update(initialUser);
 
-        Optional<User> actual = userDao.findById(1L);
-        User changedUser = actual.get();
+        Optional<User> optionalUser = userDao.findById(1L);
 
         //then
-        assertThat(changedUser.getPassword()).isEqualTo(newPassword);
+        assertAll(
+                () -> assertThat(optionalUser).isPresent(),
+                () -> assertThat(optionalUser.get().getPassword()).isEqualTo(newPassword)
+        );
     }
 }
