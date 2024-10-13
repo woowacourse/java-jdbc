@@ -1,11 +1,12 @@
 package aop.stage2;
 
+import org.springframework.stereotype.Service;
+
 import aop.Transactional;
 import aop.domain.User;
 import aop.domain.UserHistory;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
-import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
@@ -30,7 +31,7 @@ public class UserService {
 
     @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final User user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));

@@ -3,8 +3,6 @@ package aop.stage1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.lang.reflect.Proxy;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -19,7 +17,6 @@ import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
-import aop.service.AppUserService;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -40,7 +37,7 @@ class Stage1Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -50,11 +47,11 @@ class Stage1Test {
         final ProxyFactoryBean proxyFactoryBean = setProxyFactoryBean(target);
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        final String newPassword = "qqqqq";
+        final String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -65,24 +62,24 @@ class Stage1Test {
         final ProxyFactoryBean proxyFactoryBean = setProxyFactoryBean(target);
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final String newPassword = "newPassword";
+        final String createBy = "gugu";
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 
     private ProxyFactoryBean setProxyFactoryBean(final Object target) {
-        final var proxyFactoryBean = new ProxyFactoryBean();
+        final ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(target);
 
         proxyFactoryBean.setProxyTargetClass(true);
 
-        final var pointcut = new TransactionPointcut();
-        final var advice = new TransactionAdvice(platformTransactionManager);
+        final TransactionPointcut pointcut = new TransactionPointcut();
+        final TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
         proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
 
         return proxyFactoryBean;

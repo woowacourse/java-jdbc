@@ -1,7 +1,6 @@
 package aop.stage0;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.springframework.transaction.PlatformTransactionManager;

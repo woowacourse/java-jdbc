@@ -1,12 +1,11 @@
 package aop.stage0;
 
-import aop.DataAccessException;
-import aop.StubUserHistoryDao;
-import aop.domain.User;
-import aop.repository.UserDao;
-import aop.repository.UserHistoryDao;
-import aop.service.AppUserService;
-import aop.service.UserService;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+
+import java.lang.reflect.Proxy;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -15,11 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-
-import java.lang.reflect.Proxy;
+import aop.DataAccessException;
+import aop.StubUserHistoryDao;
+import aop.domain.User;
+import aop.repository.UserDao;
+import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
+import aop.service.UserService;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class Stage0Test {
@@ -40,43 +41,43 @@ class Stage0Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        final User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService appUserService = new AppUserService(userDao, userHistoryDao);
         final UserService userService = (UserService) Proxy.newProxyInstance(
                 UserService.class.getClassLoader(),
                 new Class[]{UserService.class},
                 new TransactionHandler(appUserService, platformTransactionManager)
         );
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        final String newPassword = "qqqqq";
+        final String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        final UserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
         UserService userService = (UserService) Proxy.newProxyInstance(
                 UserService.class.getClassLoader(),
                 new Class[]{UserService.class},
                 new TransactionHandler(appUserService, platformTransactionManager)
         );
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final String newPassword = "newPassword";
+        final String createBy = "gugu";
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
