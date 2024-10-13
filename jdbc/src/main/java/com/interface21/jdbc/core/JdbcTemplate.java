@@ -84,14 +84,18 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> getResults(ResultSet rs, RowMapper<T> rowMapper) {
-        List<T> results = new ArrayList<>();
         try {
-            while (rs.next()) {
-                results.add(rowMapper.doMapping(rs));
-            }
-            return results;
+            return mapResults(rs, rowMapper);
         } catch (SQLException e) {
             throw new JdbcTemplateException(e);
         }
+    }
+
+    private static <T> List<T> mapResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.doMapping(rs));
+        }
+        return results;
     }
 }
