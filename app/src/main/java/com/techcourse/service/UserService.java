@@ -28,7 +28,7 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
 
@@ -40,10 +40,18 @@ public class UserService {
             userHistoryDao.log(new UserHistory(user, createBy), connection);
             connection.commit();
         } catch (Throwable e) {
-            connection.rollback();
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Failed to rollback", ex);
+            }
             throw new RuntimeException(e);
         } finally {
-            connection.close();
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
