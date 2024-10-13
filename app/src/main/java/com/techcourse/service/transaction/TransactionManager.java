@@ -43,10 +43,10 @@ public class TransactionManager {
             return result;
         } catch (SQLException exception) {
             rollback(connection);
+            throw new DataAccessException("트랜잭션이 실패했습니다.", exception);
         } finally {
             closeConnection(connection);
         }
-        return null;
     }
 
     private void rollback(Connection connection) {
