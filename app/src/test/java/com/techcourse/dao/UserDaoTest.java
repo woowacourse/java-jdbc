@@ -19,7 +19,9 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        if (userDao.findByAccount("gugu") == null) {
+            userDao.insert(user);
+        }
     }
 
     @Test
