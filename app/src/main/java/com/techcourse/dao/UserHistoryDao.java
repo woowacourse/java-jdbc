@@ -14,13 +14,17 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final var sql = getLoggingQuery();
         jdbcTemplate.update(sql, getUserHistoryPreparedStatementSetter(userHistory));
     }
 
     public void log(final Connection connection, final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql,connection, getUserHistoryPreparedStatementSetter(userHistory));
+        final var sql = getLoggingQuery();
+        jdbcTemplate.update(sql, connection, getUserHistoryPreparedStatementSetter(userHistory));
+    }
+
+    private String getLoggingQuery() {
+        return "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
     }
 
     private PreparedStatementSetter getUserHistoryPreparedStatementSetter(UserHistory userHistory) {
