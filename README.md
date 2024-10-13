@@ -33,3 +33,8 @@
 - [x] 트랜잭션 경계 설정하기
   - [x] UserDao, UserHistoryDao 커넥션 객체 사용하도록 수정
   - [x] UserService 에서 한 커넥션으로 관리하도록 수정
+
+## 4단계 - Transaction synchronization 적용하기
+
+- [ ] Transaction synchronization 적용
+- [ ] 트랜잭션 서비스 추상화
