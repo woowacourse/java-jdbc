@@ -26,10 +26,6 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public User findById(final Connection conn, final long id) {
-        return userDao.findById(conn, id);
-    }
-
     public void insert(final User user) {
         userDao.insert(user);
     }
@@ -40,10 +36,10 @@ public class UserService {
         try {
             conn.setAutoCommit(false);
 
-            User user = findById(conn, id);
+            User user = userDao.findByIdWithTransaction(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.updateWithTransaction(user);
+            userHistoryDao.logWithTransaction(new UserHistory(user, createBy));
 
             conn.commit();
         } catch (Exception e) {
