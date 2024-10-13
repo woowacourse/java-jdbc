@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -24,43 +25,31 @@ public class UserService {
     }
 
     public Optional<User> findById(final long id) {
-        try (Connection connection = dataSource.getConnection()) {
-            return userDao.findById(connection, id);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return userDao.findById(id);
     }
 
     public Optional<User> findByAccount(String account) {
-        try (Connection connection = dataSource.getConnection()) {
-            return userDao.findByAccount(connection, account);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return userDao.findByAccount(account);
     }
 
     public void insert(final User user) {
-        try (Connection connection = dataSource.getConnection()) {
-            userDao.insert(connection, user);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
-        Connection connection = dataSource.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
             User user = findById(id).orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
             throw new DataAccessException(e);
         } finally {
-            connection.close();
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }

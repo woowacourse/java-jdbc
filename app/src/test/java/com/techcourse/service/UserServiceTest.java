@@ -29,7 +29,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate();
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao();
         this.userService = new UserService(userDao, new UserHistoryDao());
 
@@ -38,16 +38,15 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.executeUpdate(connection,
-                """
-                        delete from users;
-                        alter table users alter column id restart with 1;
-                        """);
+        jdbcTemplate.executeUpdate("""
+                delete from users;
+                alter table users alter column id restart with 1;
+                """);
     }
 
     @DisplayName("성공: User 저장 후 id로 조회")
