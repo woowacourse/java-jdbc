@@ -12,6 +12,11 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
+    public static boolean isActive(DataSource key) {
+        Map<DataSource, Connection> localResources = getOrInitializeResources();
+        return localResources.containsKey(key);
+    }
+
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> localResources = getOrInitializeResources();
         return localResources.get(key);
