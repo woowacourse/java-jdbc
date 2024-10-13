@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.BeanPropertyRowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -31,12 +30,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection connection, final User user) {
-        String sql = "update users set account = ?, password = ?, email =? where id = ?";
-
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email =? where id = ?";
 
@@ -53,13 +46,6 @@ public class UserDao {
         String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
-                .orElseThrow(() -> new IllegalArgumentException("User가 존재하지 않습니다."));
-    }
-
-    public User findById(Connection connection, final Long id) {
-        String sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id)
                 .orElseThrow(() -> new IllegalArgumentException("User가 존재하지 않습니다."));
     }
 
