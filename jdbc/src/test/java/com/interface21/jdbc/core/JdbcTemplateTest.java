@@ -49,6 +49,20 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @DisplayName("주어진 connection을 이용하여 update 메서드를 실행하면 조작된 행 개수를 반환한다.")
+    @Test
+    void updateWithConnection() throws SQLException {
+        String sql = "UPDATE users SET account = ? WHERE id = ?";
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        int actual = jdbcTemplate.update(sql, connection, "mark", 1L);
+
+        assertEquals(1, actual);
+        verify(preparedStatement).setObject(1, "mark");
+        verify(preparedStatement).executeUpdate();
+    }
+
+
     @DisplayName("update 메서드를 실행하면 조작된 행 개수를 반환한다.")
     @Test
     void update() throws SQLException {

@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -23,7 +24,7 @@ public class UserDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -33,10 +34,16 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(Connection connection, User user) {
+        String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+
+        jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -45,13 +52,13 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public User findById(Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public User findByAccount(String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
