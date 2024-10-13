@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +31,14 @@ public class UserHistoryDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void log(UserHistory userHistory) {
+    public void log(Connection conn, UserHistory userHistory) {
         String sql = """
                 INSERT INTO user_history (user_id, account, password, email, created_at, created_by) 
                 values (?, ?, ?, ?, ?, ?)
                 """;
 
         jdbcTemplate.update(
+                conn,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
@@ -47,8 +49,8 @@ public class UserHistoryDao {
         );
     }
 
-    public UserHistory findById(Long id) {
+    public UserHistory findById(Connection conn, Long id) {
         String sql = "SELECT id, user_id, account, password, email, created_by FROM user_history WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, id);
+        return jdbcTemplate.queryForObject(conn, sql, userHistoryRowMapper, id);
     }
 }

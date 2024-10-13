@@ -26,27 +26,43 @@ public class JdbcTemplate {
     }
 
     public int update(String sql) {
-        return update(sql, new Object[EMPTY_SIZE]);
+        return executeWithoutConnection(conn -> update(conn, sql));
     }
 
     public int update(String sql, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int update(String sql, PreparedStatementSetter pss) {
-        return execute(sql, PreparedStatement::executeUpdate, pss);
-    }
-
-    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        return execute(sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), pss);
+        return executeWithoutConnection(conn -> update(conn, sql, args));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), args);
+        return executeWithoutConnection(conn -> query(conn, sql, rowMapper, args));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
+        return executeWithoutConnection(conn -> queryForObject(conn, sql, rowMapper, args));
+    }
+
+    public int update(Connection conn, String sql) {
+        return update(conn, sql, new Object[EMPTY_SIZE]);
+    }
+
+    public int update(Connection conn, String sql, Object... args) {
+        return execute(conn, sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public int update(Connection conn, String sql, PreparedStatementSetter pss) {
+        return execute(conn, sql, PreparedStatement::executeUpdate, pss);
+    }
+
+    public <T> List<T> query(Connection conn, String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(conn, sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), pss);
+    }
+
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(conn, sql, pstmt -> extractResults(rowMapper, pstmt.executeQuery()), args);
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(conn, sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new DataAccessException("찾으려는 값이 존재하지 않습니다.");
         }
@@ -56,10 +72,19 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> T executeWithoutConnection(ConnectionCallback<T> callback) {
+        try (Connection conn = dataSource.getConnection()) {
+            return callback.doInConnection(conn);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
 
+    private <T> T execute(
+            Connection conn, String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter setter
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setter.setValues(pstmt);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
@@ -68,10 +93,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
-
+    private <T> T execute(Connection conn, String sql, PreparedStatementCallback<T> callback, Object... args) {
+        try (PreparedStatement pstmt = createPreparedStatement(conn, sql, args)) {
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
