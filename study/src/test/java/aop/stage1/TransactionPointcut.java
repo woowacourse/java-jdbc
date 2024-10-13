@@ -14,6 +14,6 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return false;
+        return method.isAnnotationPresent(aop.Transactional.class);
     }
 }
