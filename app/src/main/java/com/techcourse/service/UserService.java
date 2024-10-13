@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -8,6 +10,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public class UserService {
 
@@ -32,8 +35,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = getConnection();
-        try (conn) {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             conn.setAutoCommit(false);
 
             User user = findById(conn, id);
@@ -46,14 +50,9 @@ public class UserService {
             rollback(conn);
 
             throw new DataAccessException("비밀번호를 수정하던 중 예외가 발생했습니다: " + e);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return DataSourceConfig.getInstance().getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException("커넥션을 생성하던 중 예외가 발생했습니다: " + e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
