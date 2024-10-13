@@ -19,28 +19,18 @@ public class TxUserService implements UserService {
     @Override
     public User findById(long id) {
         Connection connection = null;
+        User user = null;
         try {
             connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
-            return service.findById(id);
+            user = service.findById(id);
+            connection.commit();
         } catch (SQLException | RuntimeException e) {
-            try {
-                if (connection != null) {
-                    connection.rollback();
-                }
-            } catch (SQLException rollbackE) {
-                throw new DataAccessException(rollbackE);
-            }
-            throw new DataAccessException(e);
+            rollback(e, connection);
         } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException closeE) {
-                    throw new DataAccessException(closeE);
-                }
-            }
+            closeConnection(connection);
         }
+        return user;
     }
 
     @Override
@@ -50,23 +40,11 @@ public class TxUserService implements UserService {
             connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
             service.insert(user);
+            connection.commit();
         } catch (SQLException | RuntimeException e) {
-            try {
-                if (connection != null) {
-                    connection.rollback();
-                }
-            } catch (SQLException rollbackE) {
-                throw new DataAccessException(rollbackE);
-            }
-            throw new RuntimeException(e);
+            rollback(e, connection);
         } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException closeE) {
-                    throw new DataAccessException(closeE);
-                }
-            }
+            closeConnection(connection);
         }
     }
 
@@ -79,22 +57,32 @@ public class TxUserService implements UserService {
             service.changePassword(id, newPassword, createBy);
             connection.commit();
         } catch (SQLException | RuntimeException e) {
-            try {
-                if (connection != null) {
-                    connection.rollback();
-                }
-            } catch (SQLException rollbackE) {
-                throw new DataAccessException(rollbackE);
-            }
-            throw new DataAccessException(e);
+            rollback(e, connection);
         } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException closeE) {
-                    throw new DataAccessException(closeE);
-                }
-            }
+            closeConnection(connection);
+        }
+    }
+
+    private static void rollback(Exception e, Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackE) {
+            throw new DataAccessException(rollbackE);
+        }
+        throw new DataAccessException(e);
+    }
+
+    private static void closeConnection(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.close();
+        } catch (SQLException closeE) {
+            throw new DataAccessException(closeE);
         }
     }
 }
