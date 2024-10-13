@@ -48,8 +48,4 @@ class ResultSetExtractorTest {
 
         Assertions.assertThat(users).contains(user, user2, user3);
     }
-
-    @Test
-    void close2() {
-    }
 }
