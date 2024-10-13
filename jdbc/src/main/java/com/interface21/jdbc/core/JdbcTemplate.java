@@ -28,17 +28,10 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        return execute(sql, statement -> {
             preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
-        } finally {
-            if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
-        }
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -58,12 +51,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        return execute(sql, statement -> {
             preparedStatementSetter.setValues(statement);
             return queryForAll(statement, rowMapper);
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            return callback.doInStatement(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
+            throw new DataAccessException("Error executing SQL: " + sql, e);
         } finally {
             if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
                 DataSourceUtils.releaseConnection(connection, dataSource);
