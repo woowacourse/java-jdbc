@@ -34,16 +34,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForAll(User.class, sql);
+        return jdbcTemplate.query(User.class, sql);
     }
 
     public User findById(Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(User.class, sql, id);
+        return jdbcTemplate.queryOne(User.class, sql, id);
     }
 
     public User findByAccount(String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(User.class, sql, account);
+        return jdbcTemplate.queryOne(User.class, sql, account);
     }
 }
