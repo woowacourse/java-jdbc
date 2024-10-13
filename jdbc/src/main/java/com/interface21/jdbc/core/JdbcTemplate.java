@@ -26,10 +26,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQueryExecutor(QueryExecutor<T> queryExecutor, String sql, Object... parameters) {
-        try (
-                Connection connection = DataSourceUtils.getConnection(dataSource);
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)){
             log.debug("query : {}", sql);
             queryExecutor.setParameters(preparedStatement, parameters);
             return queryExecutor.execute(preparedStatement);
