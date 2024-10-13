@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.transaction.TransactionRollbackException;
+import com.interface21.jdbc.core.TransactionRollbackException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -47,6 +47,8 @@ public class UserService {
         } catch (SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
+        } finally {
+            close(connection);
         }
     }
 
@@ -59,6 +61,18 @@ public class UserService {
             connection.rollback();
         } catch (SQLException e) {
             throw new TransactionRollbackException(e);
+        }
+    }
+
+    private void close(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
