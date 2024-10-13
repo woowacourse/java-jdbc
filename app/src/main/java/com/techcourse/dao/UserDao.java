@@ -11,6 +11,13 @@ import java.util.List;
 
 public class UserDao {
 
+    private static final ExtractionRule<User> EXTRACT_RULE
+            = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
@@ -40,13 +47,7 @@ public class UserDao {
 
     public User findById(Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        ExtractionRule<User> rule = rs -> new User(
-                rs.getLong("id"),
-                rs.getString("name"),
-                rs.getString("account"),
-                rs.getString("email")
-        );
-        return jdbcTemplate.queryOne(rule, sql, id);
+        return jdbcTemplate.queryOne(EXTRACT_RULE, sql, id);
     }
 
     public User findByAccount(String account) {

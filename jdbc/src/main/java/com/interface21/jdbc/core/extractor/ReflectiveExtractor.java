@@ -3,10 +3,6 @@ package com.interface21.jdbc.core.extractor;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import javax.annotation.CheckReturnValue;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public final class ReflectiveExtractor<T> extends ResultSetExtractor<T> {
     private final Class<T> clazz;

@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
-@ParametersAreNonnullByDefault
 public abstract class ResultSetExtractor<T> implements AutoCloseable {
     protected final ResultSet resultSet;
 

@@ -2,7 +2,6 @@ package com.interface21.jdbc.core.extractor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public final class ManualExtractor<T> extends ResultSetExtractor<T> {

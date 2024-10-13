@@ -6,10 +6,8 @@ import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 
-@ParametersAreNonnullByDefault
 public abstract class PreparedStatementMapper implements AutoCloseable {
     protected static final int DB_INDEX_OFFSET = 1;
 
