@@ -22,6 +22,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(Connection connection, String sql, PreparedStatementSetter pss) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pss.setValues(pstmt);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public int update(String sql, Object... args) {
         return update(sql, new ArgumentPreparedStatementSetter(args));
     }
