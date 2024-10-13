@@ -27,12 +27,6 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if (connection == null) {
-            return;
-        }
-
-        if (isInTransaction(connection, dataSource)) return;
-
         try {
             connection.close();
             TransactionSynchronizationManager.unbindResource(dataSource);
@@ -41,7 +35,11 @@ public abstract class DataSourceUtils {
         }
     }
 
-    private static boolean isInTransaction(Connection connection, DataSource dataSource) {
+    public static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return false;
+        }
+
         Connection con = TransactionSynchronizationManager.getResource(dataSource);
 
         return connection.equals(con);

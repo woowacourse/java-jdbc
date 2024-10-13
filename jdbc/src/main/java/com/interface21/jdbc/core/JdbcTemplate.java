@@ -65,7 +65,9 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException("execute error", e);
         } finally {
-            DataSourceUtils.releaseConnection(con, dataSource);
+            if (!DataSourceUtils.isConnectionTransactional(con, dataSource)) {
+                DataSourceUtils.releaseConnection(con, dataSource);
+            }
         }
     }
 
