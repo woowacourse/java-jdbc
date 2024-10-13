@@ -41,7 +41,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-        jdbcTemplate.query(sql, TEST_ROW_MAPPER, "arg1", "arg2");
+        jdbcTemplate.query(connection, sql, TEST_ROW_MAPPER, "arg1", "arg2");
 
         assertAll(
                 () -> verify(preparedStatement).setObject(1, "arg1"),
@@ -57,7 +57,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(false);
 
-        jdbcTemplate.queryForObject(sql, TEST_ROW_MAPPER, "arg1", "arg2");
+        jdbcTemplate.queryForObject(connection, sql, TEST_ROW_MAPPER, "arg1", "arg2");
 
         assertAll(
                 () -> verify(preparedStatement).setObject(1, "arg1"),
@@ -73,7 +73,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_ROW_MAPPER, "arg1", "arg2"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, TEST_ROW_MAPPER, "arg1", "arg2"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("No result");
     }
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, TEST_ROW_MAPPER, "arg1", "arg2"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, TEST_ROW_MAPPER, "arg1", "arg2"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("Query returned more than one result.");
     }
@@ -97,7 +97,7 @@ class JdbcTemplateTest {
         final String sql = "update test set arg1 = ?, arg2 = ?";
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
 
-        jdbcTemplate.update(sql, "arg1", "arg2");
+        jdbcTemplate.update(connection, sql, "arg1", "arg2");
 
         assertAll(
                 () -> verify(preparedStatement).setObject(1, "arg1"),
@@ -116,7 +116,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt("arg1")).thenReturn(1);
         when(resultSet.getString("arg2")).thenReturn("arg2");
 
-        TestObject result = jdbcTemplate.queryForObject(sql,
+        TestObject result = jdbcTemplate.queryForObject(connection, sql,
                 (rs, rowNum) -> new TestObject(
                         rs.getInt("arg1"),
                         rs.getString("arg2")

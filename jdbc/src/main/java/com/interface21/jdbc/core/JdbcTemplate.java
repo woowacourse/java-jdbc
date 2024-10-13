@@ -27,9 +27,8 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getResults(resultSet, rowMapper);
@@ -47,9 +46,8 @@ public class JdbcTemplate {
         return results;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> RowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> RowMapper, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             setArguments(ps, args);
             ResultSet resultSet = ps.executeQuery();
             return getSingleResult(resultSet, RowMapper);
@@ -74,9 +72,8 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+    public int update(Connection connection, String sql, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             setArguments(ps, args);
             return ps.executeUpdate();
         } catch (final Exception e) {

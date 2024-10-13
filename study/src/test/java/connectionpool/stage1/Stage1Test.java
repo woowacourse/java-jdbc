@@ -1,13 +1,12 @@
 package connectionpool.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage1Test {
 
@@ -25,6 +24,8 @@ class Stage1Test {
      *
      * Connection Pooling and Statement Pooling
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
+     *
+     * 커넥션 풀
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
@@ -57,6 +58,21 @@ class Stage1Test {
      *
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
+     *
+     *  pool size = Tn x (Cm - 1) + 1
+     *  Tn : 최대 스레드 수
+     *  Cm : 단일 스레드가 보유할 수 있는 최대 동시 연결 수
+     *  만약에 쓰레드가 4대임
+     *  특정 작업을 하는데 최대 3개의 커넥션이 필요함
+     *  커넥션 풀에 12개의 커넥션이 있으면 좋지만 최소로 유지하려고 할때
+     *  만약 풀에 8개의 커넥션이 있다면? -> 각 쓰레드가 커넥션을 2개씩 점유해버리면 데드락에 걸려버림
+     *  만약 풀에 9개의 커넥션이 있다면? -> 각 쓰레드가 커넥션을 2개씩 점유해도 한 쓰레드는 남은 커넥션 하나를 사용할 수 있어 작업을 끝내고 커넥션을 반납함
+     *
+     * prepStmtCacheSize : MySQL 드라이버가 connection 당 캐시할 prepStmt 수를 설정합니다. 기본값은 보수적인 25개입니다. 250-500 사이로 설정하는 것이 좋습니다.
+     * prepStmtCacheSqlLimit : 드라이버가 캐시할 준비된 SQL 문의 최대 길이입니다. MySQL 기본값은 256입니다.
+     *                         경험상, 특히 Hibernate와 같은 ORM 프레임워크의 경우 이 기본값은 생성된 문 길이의 임계값보다 훨씬 낮습니다. 권장 설정은 2048입니다.
+     * cachePrepStmts : 캐시가 기본적으로 비활성화되어 있는 경우 위의 두 매개변수는 아무런 영향을 미치지 않습니다. 이 매개 변수를 true로 설정해야 합니다.
+     * useServerPrepStmts : 최신 버전의 MySQL은 서버 측 준비 문을 지원하므로 성능이 크게 향상될 수 있습니다. 이 속성을 true로 설정합니다.
      */
     @Test
     void testHikariCP() {
