@@ -19,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import com.interface21.jdbc.exception.SqlExecutionException;
+
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;

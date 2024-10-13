@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core;
+package com.interface21.jdbc.exception;
 
 public class SqlExecutionException extends RuntimeException {
 

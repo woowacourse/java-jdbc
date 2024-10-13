@@ -3,6 +3,11 @@ package com.interface21.jdbc.core;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.interface21.jdbc.exception.ConnectionCloseException;
+import com.interface21.jdbc.exception.SqlExecutionException;
+import com.interface21.jdbc.exception.TransactionExecutionException;
+import com.interface21.jdbc.exception.TransactionRollbackException;
+
 public class TransactionManager {
 
     private TransactionManager() {

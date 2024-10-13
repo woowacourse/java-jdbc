@@ -1,10 +1,6 @@
-package com.interface21.jdbc.core;
+package com.interface21.jdbc.exception;
 
 public class TransactionExecutionException extends RuntimeException {
-
-    public TransactionExecutionException(String message) {
-        super(message);
-    }
 
     public TransactionExecutionException(final String message, final Throwable cause) {
         super(message, cause);

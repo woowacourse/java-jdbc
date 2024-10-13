@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-import com.interface21.jdbc.core.SqlExecutionException;
+import com.interface21.jdbc.exception.SqlExecutionException;
 import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
