@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ObjectMapper;
+import com.interface21.jdbc.core.OrderedSetter;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -19,6 +21,7 @@ public class UserHistoryDao {
             resultSet.getString("password"),
             resultSet.getString("email"),
             resultSet.getString("created_by"));
+    private static final PreparedStatementSetter ORDERED_SETTER = new OrderedSetter();
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -27,7 +30,7 @@ public class UserHistoryDao {
     }
 
     public UserHistory findById(Connection connection, Long id) {
-        return jdbcTemplate.getResult(connection,"select * from user_history where id = ?",
+        return jdbcTemplate.getResult(connection, ORDERED_SETTER, "select * from user_history where id = ?",
                 HISTORY_OBJECT_MAPPER, id);
     }
 
@@ -35,7 +38,7 @@ public class UserHistoryDao {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values "
                 + "(?, ?, ?, ?, ?, ?)";
 
-        return jdbcTemplate.execute(connection,
+        return jdbcTemplate.execute(connection, ORDERED_SETTER,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),

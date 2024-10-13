@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +18,11 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public int execute(Connection connection, String query, Object... parameters) {
+    public int execute(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+            Object... parameters
+    ) {
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            setParameters(pstmt, parameters);
+            preparedStatementSetter.setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
 
@@ -33,10 +33,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T getResult(Connection connection, String query, ObjectMapper<T> objectMapper, Object... parameters) {
+    public <T> T getResult(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+            ObjectMapper<T> objectMapper, Object... parameters
+    ) {
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            setParameters(pstmt, parameters);
+            preparedStatementSetter.setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
 
@@ -61,9 +63,11 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> getResults(Connection connection, String query, ObjectMapper<T> objectMapper, Object... parameters) {
+    public <T> List<T> getResults(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+            ObjectMapper<T> objectMapper, Object... parameters
+    ) {
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            setParameters(pstmt, parameters);
+            preparedStatementSetter.setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
 
@@ -76,12 +80,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
-        for (int i = 1; i <= parameters.length; i++) {
-            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }
