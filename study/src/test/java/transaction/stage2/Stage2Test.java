@@ -140,9 +140,9 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? -> 2개
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? -> 1개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? -> 1개
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? -> 2개
      * <p>
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      * 물리 : 실제 데이터베이스의 트랜잭션과 상응하는 개념
@@ -162,13 +162,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         // 주석 해제
-        // transactions : [transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported, transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported]
+        // transactions : [transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported,
+        //                  transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported]
 
         // 주석
         // transactions : [transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported]
         assertThat(actual)
                 .hasSize(2)
-                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported", "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
