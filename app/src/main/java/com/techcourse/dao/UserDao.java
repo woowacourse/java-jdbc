@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.util.List;
@@ -36,11 +38,7 @@ public class UserDao {
 
     public void update(final User user) {
         String sql = "update users set account = ?, email = ?, password = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getEmail(), user.getPassword());
-    }
-
-    public void update(Connection connection, User user) {
-        String sql = "update users set account = ?, email = ?, password = ?";
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getEmail(), user.getPassword());
     }
 
