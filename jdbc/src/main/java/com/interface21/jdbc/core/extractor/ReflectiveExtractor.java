@@ -30,7 +30,7 @@ public final class ReflectiveExtractor<T> extends ResultSetExtractor<T> {
     private void injectValues(ResultSet resultSet, T instance) throws SQLException, IllegalAccessException {
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field declaredField : declaredFields) {
-            T value = resultSet.getObject(declaredField.getName(), clazz);
+            Object value = resultSet.getObject(declaredField.getName());
             declaredField.setAccessible(true);
             declaredField.set(instance, value);
         }
