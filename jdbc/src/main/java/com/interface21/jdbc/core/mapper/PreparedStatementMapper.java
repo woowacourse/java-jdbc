@@ -20,13 +20,7 @@ public abstract class PreparedStatementMapper implements AutoCloseable {
         setStatement();
     }
 
-    protected void setStatement() throws SQLException { //TODO: mapping strategy
-        for (int index = 0; index < params.length; index++) {
-            int databaseIndex = index + DB_INDEX_OFFSET;
-            Object value = params[index];
-            preparedStatement.setObject(databaseIndex, value);
-        }
-    }
+    protected abstract void setStatement() throws SQLException;
 
     private void checkConnection() throws SQLException {
         if (preparedStatement == null || preparedStatement.isClosed()) {
