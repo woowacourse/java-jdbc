@@ -256,7 +256,7 @@ class Stage2Test {
         log.info("transactions : {}", actual);
         assertThat(actual)
                 .hasSize(1)
-                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported가");
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
