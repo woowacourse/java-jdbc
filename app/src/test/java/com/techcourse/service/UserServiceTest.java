@@ -47,7 +47,6 @@ class UserServiceTest {
     }
 
     @Test
-    @Disabled
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);

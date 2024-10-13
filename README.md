@@ -22,7 +22,7 @@
 
 ### 3단계 - Transaction 적용하기
 
-- [ ] UserServiceTest에서 @Disabled 삭제
+- [x] UserServiceTest에서 @Disabled 삭제
 - [ ] changePassword() 메서드에 트랜잭션 적용해 원자성 보장
   - [ ] Connection 객체의 SetAutoCommit(false) 메서드 호출해 트랜잭션 시작
   - [ ] 비즈니스 로직 끝나면 트랜잭션 커밋 또는 롤백 실행
