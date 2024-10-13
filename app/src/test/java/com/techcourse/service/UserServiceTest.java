@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -20,11 +21,13 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
         jdbcTemplate = new JdbcTemplate(dataSource);
+        transactionManager = new TransactionManager(dataSource);
         DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -41,7 +44,7 @@ class UserServiceTest {
     @Test
     void findById() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
         String account = "daon";
         userDao.insert(new User(account, "1234", "test@test.com"));
 
@@ -54,7 +57,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
         String newPassword = "qqqqq";
         String createdBy = "gugu";
         userService.changePassword(1L, newPassword, createdBy);
@@ -69,7 +72,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         String newPassword = "newPassword";
         String createBy = "gugu";
