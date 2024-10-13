@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.interface21.jdbc.core.mock.FakeResultSet;
 import com.interface21.jdbc.core.mock.User;
 
-class RowMapperTest {
+class ConstructorRowMapperTest {
 
     @DisplayName("ResultSet을 입력하면 쿼리 조회 결과를 파싱해서 객체로 변환해 반환한다.")
     @Test
@@ -20,10 +20,10 @@ class RowMapperTest {
         final ResultSet resultSet = new FakeResultSet(List.of(List.of(
                 1L, "kelly", "kellyPw1234!", "kelly@email.com"
         )));
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final ConstructorRowMapper<User> constructorRowMapper = new ConstructorRowMapper<>(User.class);
 
         // When
-        final User user = rowMapper.mapping(resultSet);
+        final User user = constructorRowMapper.mapping(resultSet);
 
         // Then
         assertSoftly(softly -> {

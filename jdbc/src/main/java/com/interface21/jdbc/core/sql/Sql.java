@@ -20,7 +20,7 @@ public class Sql {
 
     private String bindingParameters(final String sql, final SqlParameterSource parameterSource) {
         validateParameterSourceIsNull(parameterSource);
-        final List<String> bindingParameterNames = parseBindingParameterNames();
+        final List<String> bindingParameterNames = parseBindingParameterNames(sql);
         String result = sql;
         for (final String bindingParameterName : bindingParameterNames) {
             final Object parameterValue = parameterSource.getParameter(bindingParameterName);
@@ -36,7 +36,7 @@ public class Sql {
 
     private String bindingParameters(final String sql, final Map<String, Object> parameters) {
         validateParametersIsNull(parameters);
-        final List<String> bindingParameterNames = parseBindingParameterNames();
+        final List<String> bindingParameterNames = parseBindingParameterNames(sql);
         String result = sql;
         for (final String bindingParameterName : bindingParameterNames) {
             final Object parameterValue = parameters.get(bindingParameterName);
@@ -63,10 +63,10 @@ public class Sql {
         }
     }
 
-    private List<String> parseBindingParameterNames() {
+    private List<String> parseBindingParameterNames(final String sql) {
         final String regex = ":([a-zA-Z_][a-zA-Z0-9_]*)";
         final Pattern pattern = Pattern.compile(regex);
-        final Matcher matcher = pattern.matcher(this.value);
+        final Matcher matcher = pattern.matcher(sql);
         final List<String> bindingParameterNames = new ArrayList<>();
         while (matcher.find()) {
             bindingParameterNames.add(matcher.group(FIRST_GROUP_INDEX));

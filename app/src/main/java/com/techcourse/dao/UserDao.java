@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.SqlParameterSource;
+import com.interface21.jdbc.core.mapper.ConstructorRowMapper;
 import com.interface21.jdbc.core.mapper.RowMapper;
 import com.techcourse.domain.User;
 
@@ -30,6 +31,10 @@ public class UserDao {
         jdbcTemplate.insert(baseQuery, sqlParameterSource);
     }
 
+    private ConstructorRowMapper<User> rowMapper() {
+        return new ConstructorRowMapper<>(User.class);
+    }
+
     public void update(final User user) {
         final String baseQuery = "UPDATE users SET account = :account, password = :password, email = :email WHERE id = :id";
         final Map<String, Object> parameters = Map.of(
@@ -43,14 +48,14 @@ public class UserDao {
 
     public List<User> findAll() {
         final String baseQuery = "SELECT * FROM users";
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
         return jdbcTemplate.query(baseQuery, Collections.emptyMap(), rowMapper);
     }
 
     public User findById(final Long id) {
         final String baseQuery = "SELECT id, account, password, email FROM users WHERE id = :id";
         final Map<String, Object> queryParameters = Map.of("id", id);
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
 
         return jdbcTemplate.queryForObject(baseQuery, queryParameters, rowMapper);
     }
@@ -58,7 +63,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final String baseQuery = "SELECT id, account, password, email FROM users WHERE account = :account";
         final Map<String, Object> queryParameters = Map.of("account", account);
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
 
         return jdbcTemplate.queryForObject(baseQuery, queryParameters, rowMapper);
     }
