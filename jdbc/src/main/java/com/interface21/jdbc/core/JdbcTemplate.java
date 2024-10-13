@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.LinkedList;
@@ -8,16 +9,14 @@ import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
-    private final DataSource dataSource;
     private final QueryExecutor queryExecutor;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.queryExecutor = new QueryExecutor(dataSource);
     }
 
-    public <T> List<T> query(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
-        return queryExecutor.executeFunction(preparedStatement -> {
+    public <T> List<T> query(Connection connection, RowMapper<ResultSet, T> mapper, String sql, Object... args) {
+        return queryExecutor.executeFunction(connection, preparedStatement -> {
             List<T> result = new LinkedList<>();
             ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
@@ -27,14 +26,14 @@ public class JdbcTemplate {
         }, sql, args);
     }
 
-    public <T> T queryForObject(RowMapper<ResultSet, T> mapper, String sql, Object... args) {
-        return queryExecutor.executeFunction(preparedStatement -> {
+    public <T> T queryForObject(Connection connection, RowMapper<ResultSet, T> mapper, String sql, Object... args) {
+        return queryExecutor.executeFunction(connection, preparedStatement -> {
             ResultSet rs = preparedStatement.executeQuery();
             return mapper.mapRow(rs);
         }, sql, args);
     }
 
-    public void command(String sql, Object... args) {
-        queryExecutor.executeConsumer(PreparedStatement::execute, sql, args);
+    public void command(Connection connection, String sql, Object... args) {
+        queryExecutor.executeConsumer(connection, PreparedStatement::execute, sql, args);
     }
 }
