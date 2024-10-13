@@ -1,13 +1,6 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import javax.sql.DataSource;
-
-import com.interface21.jdbc.exception.SqlExecutionException;
 import com.interface21.jdbc.core.TransactionManager;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -17,12 +10,13 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
+    private final TransactionManager transactionManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao,
+                       final TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.dataSource = DataSourceConfig.getInstance();
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
@@ -34,15 +28,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection connection = dataSource.getConnection()) {
-            TransactionManager.execute(connection, () -> {
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-            });
-        } catch (final SQLException e) {
-            throw new SqlExecutionException("비밀번호 변경에 실패하였습니다.", e);
-        }
+        //TODO 예외 캐치하기
+        transactionManager.execute(connection -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
     }
 }

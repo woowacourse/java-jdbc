@@ -10,6 +10,9 @@ import static org.mockito.Mockito.verify;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
+
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,12 +24,14 @@ import com.interface21.jdbc.exception.TransactionExecutionException;
 class TransactionManagerTest {
 
     private Connection connection;
-    private Runnable runnable;
+    private Consumer<Connection> consumer;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
+        this.transactionManager = new TransactionManager(mock(DataSource.class));
         this.connection = mock(Connection.class);
-        this.runnable = mock(Runnable.class);
+        this.consumer = mock(Consumer.class);
     }
 
     @Test
@@ -35,11 +40,11 @@ class TransactionManagerTest {
         //given
 
         //when
-        TransactionManager.execute(connection, runnable);
+        transactionManager.execute(consumer);
 
         //then
         verify(connection, times(2)).setAutoCommit(false);
-        verify(runnable).run();
+        verify(consumer).accept(connection);
         verify(connection).commit();
         verify(connection, never()).rollback();
     }
@@ -49,14 +54,14 @@ class TransactionManagerTest {
     void rollback() throws SQLException {
         //given
         doThrow(new SqlExecutionException("예외 발생"))
-                .when(runnable).run();
+                .when(consumer).accept(connection);
 
         //when
-        assertThatThrownBy(() -> TransactionManager.execute(connection, runnable))
+        assertThatThrownBy(() -> transactionManager.execute(consumer))
                 .isInstanceOf(TransactionExecutionException.class);
 
         //then
-        verify(runnable).run();
+        verify(consumer).accept(connection);
         verify(connection, never()).commit();
         verify(connection, atLeastOnce()).rollback();
     }

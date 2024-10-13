@@ -2,25 +2,33 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
+
+import javax.sql.DataSource;
 
 import com.interface21.jdbc.exception.ConnectionCloseException;
-import com.interface21.jdbc.exception.SqlExecutionException;
 import com.interface21.jdbc.exception.TransactionExecutionException;
 import com.interface21.jdbc.exception.TransactionRollbackException;
 
 public class TransactionManager {
 
-    private TransactionManager() {
+    private final DataSource dataSource;
+
+    public TransactionManager(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void execute(final Connection connection, final Runnable runnable) {
+    public void execute(final Consumer<Connection> consumer) {
+        Connection connection = null;
         boolean originalAutoCommit = true;
+
         try {
+            connection = dataSource.getConnection();
             originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            runnable.run();
+            consumer.accept(connection);
             connection.commit();
-        } catch (final SQLException | SqlExecutionException e) {
+        } catch (final Exception e) {
             rollback(connection);
             throw new TransactionExecutionException("트랜잭션 실행에 실패하였습니다.", e);
         } finally {
@@ -28,15 +36,17 @@ public class TransactionManager {
         }
     }
 
-    private static void rollback(final Connection connection) {
+    private void rollback(final Connection connection) {
         try {
-            connection.rollback();
+            if (connection != null) {
+                connection.rollback();
+            }
         } catch (final SQLException e) {
             throw new TransactionRollbackException("롤백에 실패하였습니다.", e);
         }
     }
 
-    private static void closeConnection(final Connection connection, final boolean originalAutoCommit) {
+    private void closeConnection(final Connection connection, final boolean originalAutoCommit) {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.setAutoCommit(originalAutoCommit);
