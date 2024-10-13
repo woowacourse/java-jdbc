@@ -7,33 +7,20 @@ import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> RESOURCES = ThreadLocal.withInitial(HashMap::new);
 
     private TransactionSynchronizationManager() {
     }
 
     public static Connection getResource(DataSource key) {
-        Map<DataSource, Connection> connections = resources.get();
-        if (connections != null && connections.containsKey(key)) {
-            return connections.get(key);
-        }
-        return null;
+        return RESOURCES.get().get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> connections = resources.get();
-        if (connections == null) {
-            connections = new HashMap<>();
-            resources.set(connections);
-        }
-        connections.put(key, value);
+        RESOURCES.get().put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        Map<DataSource, Connection> connections = resources.get();
-        if (connections != null && connections.containsKey(key)) {
-            return connections.remove(key);
-        }
-        return null;
+        return RESOURCES.get().remove(key);
     }
 }
