@@ -94,14 +94,6 @@ public class JdbcTemplate {
         return pstmt;
     }
 
-    public Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     @FunctionalInterface
     private interface JdbcRunner<T> {
 
