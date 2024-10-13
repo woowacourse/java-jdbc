@@ -5,6 +5,9 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.interface21.dao.DataAccessException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -12,6 +15,8 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -38,6 +43,7 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException | DataAccessException e) {
+            log.error(e.getMessage(), e);
             rollback(connection);
             throw new DataAccessException("트랜잭션 수행 중 예외가 발생해 트랜잭션을 rollback 합니다.", e);
         }
@@ -47,6 +53,7 @@ public class UserService {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException("Connection을 얻는데 실패했습니다.", e);
         }
     }
@@ -62,6 +69,7 @@ public class UserService {
         try {
             connection.rollback();
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException("rollback에 실패했습니다.", e);
         }
     }
