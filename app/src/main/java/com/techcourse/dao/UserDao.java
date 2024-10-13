@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.GeneratedKeyHolder;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -21,16 +22,13 @@ public class UserDao {
     });
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -41,6 +39,11 @@ public class UserDao {
 
         long id = (long) keyHolder.getKey();
         return new User(id, user);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getAccount(), user.getId());
     }
 
     public void update(final User user) {

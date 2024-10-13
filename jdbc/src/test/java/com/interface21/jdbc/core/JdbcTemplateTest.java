@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Assertions;
@@ -77,7 +78,7 @@ class JdbcTemplateTest {
                 () -> assertThat(keyHolder.getKey()).isEqualTo(100L)
         );
 
-        verify(connection).prepareStatement(sql);
+        verify(connection).prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         verify(preparedStatement).setObject(1, "mark");
         verify(preparedStatement).setObject(2, "mark@example.com");
         verify(preparedStatement).executeUpdate();
