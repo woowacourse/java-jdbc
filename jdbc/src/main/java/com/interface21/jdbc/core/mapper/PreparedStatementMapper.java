@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core.mapper;
 
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.CannotReleaseJdbcResourceException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +26,7 @@ public abstract class PreparedStatementMapper implements AutoCloseable {
 
     private void checkConnection() throws SQLException {
         if (preparedStatement == null || preparedStatement.isClosed()) {
-            throw new RuntimeException();
+            throw new CannotGetJdbcConnectionException("prepared statement is not available.");
         }
     }
 
