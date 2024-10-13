@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,19 +14,13 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public void update(Connection conn, String sql, Object... parameters) {
+        executeUpdate(conn, sql, parameters, PreparedStatement::executeUpdate);
     }
 
-    public void update(String sql, Object... parameters) {
-        executeUpdate(sql, parameters, PreparedStatement::executeUpdate);
-    }
-
-    private void executeUpdate(String sql, Object[] parameters, ConsumerWrapper<PreparedStatement> execution) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters)) {
+    private void executeUpdate(Connection conn, String sql, Object[] parameters,
+                               ConsumerWrapper<PreparedStatement> execution) {
+        try (PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters)) {
             log.debug("query : {}", sql);
             execution.accept(pstmt);
         } catch (SQLException e) {
@@ -36,17 +29,17 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return executeQuery(sql, parameters, rs -> getInstance(rowMapper, rs));
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(conn, sql, parameters, rs -> getInstance(rowMapper, rs));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return executeQuery(sql, parameters, rs -> getInstances(rowMapper, rs));
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return executeQuery(conn, sql, parameters, rs -> getInstances(rowMapper, rs));
     }
 
-    private <T> T executeQuery(String sql, Object[] parameters, FunctionWrapper<ResultSet, T> execution) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
+    private <T> T executeQuery(Connection conn, String sql, Object[] parameters,
+                               FunctionWrapper<ResultSet, T> execution) {
+        try (PreparedStatement pstmt = getPreparedStatement(conn, sql, parameters);
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
             return execution.apply(rs);

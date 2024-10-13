@@ -103,6 +103,8 @@ class PoolingVsNoPoolingTest {
                 }
             }
         }
+        // [Q] connection을 얻고 반환하는 로직이 직렬로 수행되기 때문에, MaxPoolSize는 위 테스트에서 중요한 요소가 아닌 것?
+        // [A] 아니다. 직렬로 수행되어도 pool 에서 커넥션을 할당하는 작업은 진행된다. 아마 로컬 환경이라 그럴 것.
     }
 
     private static MysqlDataSource createMysqlDataSource() throws SQLException {

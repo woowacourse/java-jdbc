@@ -17,12 +17,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class JdbcTemplateTest {
+class JdbcTemplateTest { // todo: mock 제거
 
     static final String INSERT_SQL = "insert into test_users (account) values (?)";
     static final String SELECT_ALL_SQL = "select id, account from test_users";
@@ -31,7 +30,6 @@ class JdbcTemplateTest {
             rs.getLong("id"),
             rs.getString("account"));
 
-    DataSource dataSource;
     Connection conn;
     ResultSet rs;
     PreparedStatement pstmt;
@@ -39,37 +37,24 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
 
-        when(dataSource.getConnection()).thenReturn(conn);
         when(conn.prepareStatement(anyString())).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(rs);
 
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
-    @DisplayName("데이터베이스 접근이 불가한 경우 예외가 발생한다.")
-    @Test
-    void should_throwException_when_cannotAccessDatabase() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenThrow(SQLException.class);
-
-        // when & then
-        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
-                .isInstanceOf(DataAccessException.class);
+        jdbcTemplate = new JdbcTemplate();
     }
 
     @DisplayName("해제된 connection에 대해 preparedStatement를 불러오려는 경우 예외가 발생한다.")
     @Test
-    void should_throwException_when_getPreparedStatementOfClosedConnetion() throws SQLException {
+    void should_throwException_when_getPreparedStatementOfClosedConnection() throws SQLException {
         // given
         when(conn.prepareStatement(anyString())).thenThrow(SQLException.class);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
+        assertThatThrownBy(() -> jdbcTemplate.update(conn, INSERT_SQL))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -80,7 +65,7 @@ class JdbcTemplateTest {
         doThrow(SQLException.class).when(pstmt).setObject(anyInt(), any(Object.class));
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(conn, SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -91,7 +76,7 @@ class JdbcTemplateTest {
         doThrow(SQLException.class).when(pstmt).executeUpdate();
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.update(SELECT_ALL_SQL))
+        assertThatThrownBy(() -> jdbcTemplate.update(conn, SELECT_ALL_SQL))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -99,7 +84,7 @@ class JdbcTemplateTest {
     @Test
     void should_setObjectAndExecute_when_executeInsertQuery() throws SQLException {
         // when
-        jdbcTemplate.update(INSERT_SQL, "ever");
+        jdbcTemplate.update(conn, INSERT_SQL, "ever");
 
         // then
         verify(pstmt).setObject(1, "ever");
@@ -115,7 +100,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenReturn("ever");
 
         // when
-        TestUser user = jdbcTemplate.queryForObject(SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L);
+        TestUser user = jdbcTemplate.queryForObject(conn, SELECT_BY_ID_SQL, TEST_USER_ROW_MAPPER, 1L);
 
         // then
         verify(pstmt).setObject(1, 1L);
@@ -128,15 +113,15 @@ class JdbcTemplateTest {
     @Test
     void executeQuery() throws SQLException {
         // given
-        jdbcTemplate.update(INSERT_SQL, "ever1");
-        jdbcTemplate.update(INSERT_SQL, "ever2");
+        jdbcTemplate.update(conn, INSERT_SQL, "ever1");
+        jdbcTemplate.update(conn, INSERT_SQL, "ever2");
 
         when(rs.next()).thenReturn(true)
                 .thenReturn(true)
                 .thenReturn(false);
 
         // when
-        List<TestUser> testUsers = jdbcTemplate.query(SELECT_ALL_SQL, TEST_USER_ROW_MAPPER);
+        List<TestUser> testUsers = jdbcTemplate.query(conn, SELECT_ALL_SQL, TEST_USER_ROW_MAPPER);
 
         // then
         verify(pstmt).executeQuery();

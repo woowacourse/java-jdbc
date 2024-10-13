@@ -32,7 +32,6 @@ class Stage2Test {
 
     @AfterEach
     void tearDown() {
-        System.out.println("클리어");
         userRepository.deleteAll();
     }
 
