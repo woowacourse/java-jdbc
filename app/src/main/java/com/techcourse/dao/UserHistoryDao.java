@@ -18,7 +18,7 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

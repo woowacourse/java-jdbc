@@ -23,7 +23,7 @@ public class TransactionManager {
         }
     }
 
-    private static void rollback(final Connection connection) {
+    private static void rollback(Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException e) {

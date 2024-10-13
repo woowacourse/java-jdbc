@@ -31,7 +31,7 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         String sql = """
                 INSERT INTO users (account, password, email)
                 VALUES (?,?,?)
@@ -47,7 +47,7 @@ public class UserDao {
         log.info("user insert successful");
     }
 
-    public void updateWithTransaction(Connection connection, final User user) {
+    public void updateWithTransaction(Connection connection, User user) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
 
         jdbcTemplate.update(connection, UPDATE_USER_QUERY, argumentPreparedStatementSetter);
@@ -74,7 +74,7 @@ public class UserDao {
         return users;
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(Long id) {
         String sql = """
                 SELECT id, account, password, email
                 FROM users
@@ -88,7 +88,7 @@ public class UserDao {
         return user;
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = """
                 SELECT id, account, password, email
                 FROM users
