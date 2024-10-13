@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.support.TestDomain;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,6 +63,9 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("망쵸");
         when(resultSet.getLong("age")).thenReturn(2L);
         when(mockedPreparedStatement.executeQuery()).thenReturn(resultSet);
+        ParameterMetaData mockedParameterMetaData = mock(ParameterMetaData.class);
+        when(mockedParameterMetaData.getParameterCount()).thenReturn(1);
+        when(mockedPreparedStatement.getParameterMetaData()).thenReturn(mockedParameterMetaData);
 
         // when
         String sql = "select * from person where age = ?";
@@ -82,6 +86,9 @@ class JdbcTemplateTest {
         when(resultSet.getObject("name")).thenReturn("망쵸");
         when(resultSet.getObject("age")).thenReturn(2L);
         when(mockedPreparedStatement.executeQuery()).thenReturn(resultSet);
+        ParameterMetaData mockedParameterMetaData = mock(ParameterMetaData.class);
+        when(mockedParameterMetaData.getParameterCount()).thenReturn(1);
+        when(mockedPreparedStatement.getParameterMetaData()).thenReturn(mockedParameterMetaData);
 
         // when
         String sql = "select * from person where age = ?";
