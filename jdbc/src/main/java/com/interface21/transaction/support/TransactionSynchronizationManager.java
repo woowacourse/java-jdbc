@@ -13,10 +13,9 @@ public final class TransactionSynchronizationManager {
 
     private TransactionSynchronizationManager() {}
 
-    public static Connection getTransactionStartedResource(DataSource key) {
+    public static void bindAndStartTransaction(DataSource key) {
         Connection connection = getResource(key);
-        startTransaction(connection);
-        return connection;
+        execute(() -> connection.setAutoCommit(false));
     }
 
     private static void startTransaction(Connection connection){

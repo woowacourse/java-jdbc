@@ -30,7 +30,7 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        TransactionSynchronizationManager.getTransactionStartedResource(dataSource);
+        TransactionSynchronizationManager.bindAndStartTransaction(dataSource);
         try {
             appUserService.changePassword(id, newPassword, createBy);
         }catch (Exception e) {
