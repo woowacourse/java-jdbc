@@ -1,5 +1,6 @@
 package com.interface21.transaction.support;
 
+import java.util.HashMap;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.Map;
@@ -7,6 +8,10 @@ import java.util.Map;
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+
+    static {
+        resources.set(new HashMap<>());
+    }
 
     private TransactionSynchronizationManager() {}
 

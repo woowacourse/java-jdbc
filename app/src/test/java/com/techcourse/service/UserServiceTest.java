@@ -17,14 +17,15 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(jdbcTemplate);
+        dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(dataSource);
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -33,7 +34,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(dataSource);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
