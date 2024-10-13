@@ -14,6 +14,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +34,11 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY");
     }
 
     @Test

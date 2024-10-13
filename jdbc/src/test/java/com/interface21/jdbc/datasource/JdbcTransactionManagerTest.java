@@ -11,9 +11,11 @@ import static org.mockito.Mockito.when;
 import com.interface21.transaction.PlatformTransactionManager;
 import com.interface21.transaction.TransactionException;
 import com.interface21.transaction.support.TransactionHolder;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +31,11 @@ class JdbcTransactionManagerTest {
         this.connection = mock(Connection.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.clear();
     }
 
     @Test
