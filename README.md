@@ -25,10 +25,10 @@
 
 ### 3단계 요구사항(트랜잭션)
 
-- [ ] `changePassword` 메서드의 원자성을 보장하기 위해 트랜잭션 적용
-    - [ ] `UserServiceTest`가 돌아가도록 로직 수정하기
-        - [ ] 트랜잭션 경계 설정
-        - [ ] userDao, userHistoryDao이 동일한 Connection 객체를 사용하도록 변경
+- [x] `changePassword` 메서드의 원자성을 보장하기 위해 트랜잭션 적용
+    - [x] `UserServiceTest`가 돌아가도록 로직 수정하기
+        - [x] 트랜잭션 경계 설정
+        - [x] userDao, userHistoryDao이 동일한 Connection 객체를 사용하도록 변경
 - [x] 2단계 피드백 반영
     - [x] `parameter` 개수 검증 로직 추가 후 터지던 `JdbcTemplate` 테스트 수정
 

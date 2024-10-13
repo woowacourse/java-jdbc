@@ -8,13 +8,13 @@ import java.sql.SQLException;
 
 public class SQLExceptionHandler {
 
-    private static Logger log = LoggerFactory.getLogger(SQLExceptionHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(SQLExceptionHandler.class);
 
     private SQLExceptionHandler() {
     }
 
     public static <T> T handleSQLException(SQLException e) {
         log.error(e.getMessage(), e);
-        throw new DataAccessException(e);
+        throw new DataAccessException(e.getMessage(), e);
     }
 }

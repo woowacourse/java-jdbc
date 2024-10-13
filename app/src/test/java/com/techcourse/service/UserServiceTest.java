@@ -11,10 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
 
+    private static final String ACCOUNT_GUGU = "gugu";
+    private static final String INITIAL_PASSWORD = "password";
+    private static final String NEW_PASSWORD = "newPassword";
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
@@ -24,38 +28,45 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User(ACCOUNT_GUGU, INITIAL_PASSWORD, "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        //given
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao);
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        //when
+        userService.changePassword(1L, NEW_PASSWORD, ACCOUNT_GUGU);
 
-        final var actual = userService.findById(1L).get();
+        User actual = userService.findById(1L).get();
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        //then
+        assertThat(actual.getPassword()).isEqualTo(NEW_PASSWORD);
     }
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        //given
+        UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+        long id = userDao.findAll()
+                .getLast()
+                .getId();
+
+        //when
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(id, NEW_PASSWORD, ACCOUNT_GUGU));
 
-        final var actual = userService.findById(1L).get();
+        User actual = userService.findById(id).get();
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        //then
+        assertAll(
+                () -> assertThat(actual.getPassword()).isEqualTo(INITIAL_PASSWORD),
+                () -> assertThat(actual.getPassword()).isNotEqualTo(NEW_PASSWORD)
+        );
     }
 }
