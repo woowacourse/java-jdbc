@@ -9,6 +9,8 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.AppUserService;
+import com.techcourse.service.TxUserService;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,11 +23,13 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = new UserService(
+    public UserController() {
+        this.userService = new TxUserService(
                 DataSourceConfig.getInstance(),
-                new UserDao(DataSourceConfig.getInstance()),
-                new UserHistoryDao(DataSourceConfig.getInstance())
+                new AppUserService(
+                        new UserDao(DataSourceConfig.getInstance()),
+                        new UserHistoryDao(DataSourceConfig.getInstance())
+                )
         );
     }
 
