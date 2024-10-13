@@ -36,7 +36,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> mapResults(rowMapper, pstmt.executeQuery()), getConnection(), args);
+        return execute(sql, pstmt -> mapResults(rowMapper, pstmt.executeQuery()), args);
     }
 
     private <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet resultSet) {
@@ -53,7 +53,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, getConnection(), args);
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public int update(String sql, Connection connection, Object... args) {
@@ -73,11 +73,17 @@ public class JdbcTemplate {
         }
     }
 
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
+            parameterSetter.setValues(pstmt);
+
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 }
