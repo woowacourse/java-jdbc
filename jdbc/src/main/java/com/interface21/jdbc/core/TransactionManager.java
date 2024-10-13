@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 
 import com.interface21.jdbc.exception.ConnectionCloseException;
 import com.interface21.jdbc.exception.TransactionExecutionException;
-import com.interface21.jdbc.exception.TransactionRollbackException;
 
 public class TransactionManager {
 
@@ -42,7 +41,7 @@ public class TransactionManager {
                 connection.rollback();
             }
         } catch (final SQLException e) {
-            throw new TransactionRollbackException("롤백에 실패하였습니다.", e);
+            throw new TransactionExecutionException("롤백에 실패하였습니다.", e);
         }
     }
 
