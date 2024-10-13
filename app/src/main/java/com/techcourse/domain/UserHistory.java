@@ -1,6 +1,7 @@
 package com.techcourse.domain;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class UserHistory {
 
@@ -53,5 +54,34 @@ public class UserHistory {
 
     public String getCreateBy() {
         return createBy;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof final UserHistory userHistory)) {
+            return false;
+        }
+        return Objects.equals(getId(), userHistory.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getId());
+    }
+
+    @Override
+    public String toString() {
+        return "UserHistory{" +
+               "id=" + id +
+               ", userId=" + userId +
+               ", account='" + account + '\'' +
+               ", password='" + password + '\'' +
+               ", email='" + email + '\'' +
+               ", createdAt=" + createdAt +
+               ", createBy='" + createBy + '\'' +
+               '}';
     }
 }
