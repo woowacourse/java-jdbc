@@ -46,6 +46,9 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void initTransactionActive() {
+        if (isTransactionActive()) {
+            throw new IllegalStateException("Cannot activate transaction - already active");
+        }
         isTransactionActive.set(Boolean.TRUE);
 
     }
