@@ -3,51 +3,38 @@ package com.interface21.transaction.support;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import com.interface21.transaction.TransactionException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.PlatformTransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class TransactionTemplateTest {
 
     private TransactionTemplate transactionTemplate;
-    private Connection connection;
+    private PlatformTransactionManager transactionManager;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
-        this.transactionTemplate = new TransactionTemplate(dataSource);
-        this.connection = mock(Connection.class);
-
-        when(dataSource.getConnection()).thenReturn(connection);
-    }
-
-    @AfterEach
-    void tearDown() throws SQLException {
-        verify(connection).close();
+    void setUp() {
+        this.transactionManager = mock(PlatformTransactionManager.class);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     @Test
     void 트랜잭션을_커밋한다() {
         // given
-        TransactionCallback<Long> action = connection -> 1L;
+        TransactionCallback<Long> action = () -> 1L;
 
         // when
-        Object result = transactionTemplate.execute(action);
+        Long result = transactionTemplate.execute(action);
 
         // then
         assertAll(
-                () -> verify(connection).commit(),
-                () -> verify(connection, never()).rollback(),
+                () -> verify(transactionManager).commit(any()),
+                () -> verify(transactionManager, never()).rollback(any()),
                 () -> assertThat(result).isEqualTo(1L)
         );
     }
@@ -55,7 +42,7 @@ class TransactionTemplateTest {
     @Test
     void 트랜잭션을_롤백한다() {
         // given
-        TransactionCallback<Void> action = connection -> {
+        TransactionCallback<Void> action = () -> {
             throw new IllegalArgumentException();
         };
 
@@ -63,34 +50,8 @@ class TransactionTemplateTest {
         assertAll(
                 () -> assertThatThrownBy(() -> transactionTemplate.execute(action))
                         .isExactlyInstanceOf(IllegalArgumentException.class),
-                () -> verify(connection).rollback(),
-                () -> verify(connection, never()).commit()
+                () -> verify(transactionManager).rollback(any()),
+                () -> verify(transactionManager, never()).commit(any())
         );
-    }
-
-    @Test
-    void 커밋_시_예외가_발생하면_TrasactionException_예외로_던진다() throws SQLException {
-        // given
-        TransactionCallback<Void> action = connection -> null;
-        doThrow(new SQLException()).when(connection).commit();
-
-        // when & then
-        assertThatThrownBy(() -> transactionTemplate.execute(action))
-                .isExactlyInstanceOf(TransactionException.class)
-                .hasMessage("JDBC commit failed");
-    }
-
-    @Test
-    void 롤백_시_예외가_발생하면_TrasactionException_예외로_던진다() throws SQLException {
-        // given
-        TransactionCallback<Void> action = connection -> {
-            throw new IllegalArgumentException();
-        };
-        doThrow(new SQLException()).when(connection).rollback();
-
-        // when & then
-        assertThatThrownBy(() -> transactionTemplate.execute(action))
-                .isExactlyInstanceOf(TransactionException.class)
-                .hasMessage("JDBC rollback failed");
     }
 }

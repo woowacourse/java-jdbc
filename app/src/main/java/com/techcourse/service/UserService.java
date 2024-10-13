@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(connection -> {
+        transactionTemplate.execute(() -> {
             User user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
