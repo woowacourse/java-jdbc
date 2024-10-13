@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Inject;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,19 +30,8 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        execute(connection, sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
-    }
-
     public void update(String sql, Object ... args) {
         update(sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public void update(Connection connection, String sql, Object ... args) {
-        update(connection, sql, new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, PreparedStatementSetter preparedStatementSetter) {
@@ -68,8 +58,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
