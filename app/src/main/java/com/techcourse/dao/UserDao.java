@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -27,6 +28,11 @@ public class UserDao {
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(Connection connection, User user) {
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

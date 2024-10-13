@@ -27,4 +27,13 @@ public class SqlExecutor {
             throw new DataAccessException(e);
         }
     }
+
+    public <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> executor) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 }
