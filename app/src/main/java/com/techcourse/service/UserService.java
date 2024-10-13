@@ -41,8 +41,8 @@ public class UserService {
 
         final User user = findById(id);
         user.changePassword(newPassword);
-        userDao.updateWithTransactional(connection, user);
-        userHistoryDao.createWithTransactional(connection, new UserHistory(user, createBy));
+        userDao.update(connection, user);
+        userHistoryDao.create(connection, new UserHistory(user, createBy));
 
         commitAndRollbackAutoCommit(connection, true);
     }

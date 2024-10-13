@@ -20,6 +20,8 @@ public class SecondUserService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public String saveSecondTransactionWithRequired() {
+        System.out.println("==================================SecondService==================================");
+        System.out.println("==================================SecondService: 저장 save 호출 직전==================================");
         userRepository.save(User.createTest());
         logActualTransactionActive();
         return TransactionSynchronizationManager.getCurrentTransactionName();
@@ -27,6 +29,8 @@ public class SecondUserService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String saveSecondTransactionWithRequiresNew() {
+        System.out.println("==================================SecondService==================================");
+        System.out.println("==================================SecondService: 저장 save 호출 직전==================================");
         userRepository.save(User.createTest());
         logActualTransactionActive();
         return TransactionSynchronizationManager.getCurrentTransactionName();

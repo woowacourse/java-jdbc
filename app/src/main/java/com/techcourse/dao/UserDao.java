@@ -42,7 +42,7 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void updateWithTransactional(final Connection connection, final User user) {
+    public void update(final Connection connection, final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         log.info("[UserDao] updateWithTransactional: {}", user.toString());
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
