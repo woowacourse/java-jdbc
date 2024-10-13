@@ -44,8 +44,10 @@ public class TxUserService implements UserService {
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             SQLExceptionUtil.handleSQLException(connection::rollback);
+            SQLExceptionUtil.handleSQLException(() -> connection.setAutoCommit(true));
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
