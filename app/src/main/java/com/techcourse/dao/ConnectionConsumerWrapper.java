@@ -4,6 +4,7 @@ package com.techcourse.dao;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class ConnectionConsumerWrapper {
 
@@ -12,7 +13,9 @@ public class ConnectionConsumerWrapper {
 
     public static void accept(Connection connection, ConnectionConsumer consumer) {
         try {
-            consumer.accept(connection);
+            if(!Objects.isNull(consumer)) {
+                consumer.accept(connection);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
