@@ -41,7 +41,9 @@ public class UserService {
 
             conn.commit();
         } catch (SQLException e) {
-            conn.rollback();
+            if (conn != null) {
+                conn.rollback();
+            }
             throw new DataAccessException(e);
         } finally {
             try {
