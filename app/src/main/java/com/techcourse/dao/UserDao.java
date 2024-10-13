@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -24,29 +25,29 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
+    public void insert(Connection connection, User user) {
+        jdbcTemplate.execute(connection, "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        jdbcTemplate.execute("update users set account = ?, password = ?, email = ? where id = ?",
+    public void update(Connection connection, final User user) {
+        jdbcTemplate.execute(connection, "update users set account = ?, password = ?, email = ? where id = ?",
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        return jdbcTemplate.getResults("select id, account, password, email from users",
+    public List<User> findAll(Connection connection) {
+        return jdbcTemplate.getResults(connection, "select id, account, password, email from users",
                 USER_OBJECT_MAPPER);
     }
 
-    public User findById(final Long id) {
-        return jdbcTemplate.getResult("select id, account, password, email from users where id = ?",
+    public User findById(Connection connection,  Long id) {
+        return jdbcTemplate.getResult(connection, "select id, account, password, email from users where id = ?",
                 USER_OBJECT_MAPPER,
                 id);
     }
 
-    public User findByAccount(final String account) {
-        return jdbcTemplate.getResult("select id, account, password, email from users where account = ?",
+    public User findByAccount(Connection connection,  String account) {
+        return jdbcTemplate.getResult(connection, "select id, account, password, email from users where account = ?",
                 USER_OBJECT_MAPPER,
                 account);
     }

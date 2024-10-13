@@ -20,15 +20,8 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public int execute(String query, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+    public int execute(Connection connection, String query, Object... parameters) {
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
@@ -40,10 +33,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T getResult(String query, ObjectMapper<T> objectMapper, Object... parameters) {
+    public <T> T getResult(Connection connection, String query, ObjectMapper<T> objectMapper, Object... parameters) {
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);
@@ -69,9 +61,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> getResults(String query, ObjectMapper<T> objectMapper, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+    public <T> List<T> getResults(Connection connection, String query, ObjectMapper<T> objectMapper, Object... parameters) {
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             setParameters(pstmt, parameters);
 
             log.debug("query : {}", query);

@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -18,15 +19,18 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate();
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        transactionManager.executeInTransaction(connection ->
+                userDao.insert(connection, user)
+        );
     }
 
     @Test

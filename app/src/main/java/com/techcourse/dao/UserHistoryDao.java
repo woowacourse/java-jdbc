@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,16 +26,17 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserHistory findById(Long id) {
-        return jdbcTemplate.getResult("select * from user_history where id = ?",
+    public UserHistory findById(Connection connection, Long id) {
+        return jdbcTemplate.getResult(connection,"select * from user_history where id = ?",
                 HISTORY_OBJECT_MAPPER, id);
     }
 
-    public void log(final UserHistory userHistory) {
+    public int log(Connection connection, UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values "
                 + "(?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.execute(sql,
+        return jdbcTemplate.execute(connection,
+                sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
