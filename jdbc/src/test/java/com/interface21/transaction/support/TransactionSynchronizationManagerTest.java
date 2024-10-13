@@ -1,6 +1,7 @@
 package com.interface21.transaction.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 
 import java.sql.Connection;
@@ -14,10 +15,14 @@ class TransactionSynchronizationManagerTest {
     @Test
     void getResourceSuccess() {
         DataSource dataSource = mock(DataSource.class);
-        TransactionSynchronizationManager.bindResource(dataSource, mock(Connection.class));
+        Connection connection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         Connection actual = TransactionSynchronizationManager.getResource(dataSource);
-        assertThat(actual).isNotNull();
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual).isSameAs(connection)
+        );
     }
 
     @DisplayName("리소스 반환 시, 등록된 DataSource가 없으면 null을 반한다.")
@@ -34,20 +39,28 @@ class TransactionSynchronizationManagerTest {
         Connection before = TransactionSynchronizationManager.getResource(dataSource);
         assertThat(before).isNull();
 
-        TransactionSynchronizationManager.bindResource(dataSource, mock(Connection.class));
+        Connection connection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         Connection after = TransactionSynchronizationManager.getResource(dataSource);
-        assertThat(after).isNotNull();
+        assertAll(
+                () -> assertThat(after).isNotNull(),
+                () -> assertThat(after).isSameAs(connection)
+        );
     }
 
     @DisplayName("리소스 제거 시, 등록된 DataSource가 있으면 리소스에서 제거한다.")
     @Test
     void unbindResourceSuccess() {
         DataSource dataSource = mock(DataSource.class);
-        TransactionSynchronizationManager.bindResource(dataSource, mock(Connection.class));
+        Connection connection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         Connection actual = TransactionSynchronizationManager.unbindResource(dataSource);
-        assertThat(actual).isNotNull();
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual).isSameAs(connection)
+        );
     }
 
     @DisplayName("리소스 제거 시, 등록된 DataSource가 없으면 null을 반환한다.")
