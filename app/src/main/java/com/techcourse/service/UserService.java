@@ -32,9 +32,8 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-        try {
-            connection = DataSourceConfig.getInstance().getConnection();
+        Connection connection = connect();
+        try (connection) {
             connection.setAutoCommit(false);
 
             final var user = findById(id);
@@ -47,8 +46,15 @@ public class UserService {
             log.error(e.getMessage(), e);
             rollback(connection);
             throw new DataAccessException("Failed to commit transaction.", e);
-        } finally {
-            close(connection);
+        }
+    }
+
+    private Connection connect() {
+        try {
+            return DataSourceConfig.getInstance().getConnection();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to connect.", e);
         }
     }
 
@@ -58,15 +64,6 @@ public class UserService {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("Failed to rollback transaction.", e);
-        }
-    }
-
-    private void close(Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("Failed to close connection.", e);
         }
     }
 }
