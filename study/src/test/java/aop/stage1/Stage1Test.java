@@ -1,5 +1,8 @@
 package aop.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
@@ -12,9 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -64,5 +64,10 @@ class Stage1Test {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T createTransactionProxy(T target, Class<?>... interfaces) {
+        return null;
     }
 }

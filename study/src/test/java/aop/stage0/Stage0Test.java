@@ -72,7 +72,7 @@ class Stage0Test {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T createTransactionProxy(final Object target, final Class<T> proxyInterface) {
+    private <T> T createTransactionProxy(Object target, Class<T> proxyInterface) {
         return (T) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[]{proxyInterface},
