@@ -7,14 +7,15 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -30,34 +31,46 @@ class UserServiceTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void tearDown() {
+        String truncateUsers = "TRUNCATE TABLE users RESTART IDENTITY";
+        String truncateUserHistory = "TRUNCATE TABLE user_history RESTART IDENTITY";
+        jdbcTemplate.update(truncateUsers);
+        jdbcTemplate.update(truncateUserHistory);
+    }
+
+    @DisplayName("사용자의 password를 변경한다.")
     @Test
     void testChangePassword() {
+        // given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        // when
+        userService.changePasswordWithTransaction(1L, newPassword, createBy);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        // then
+        assertThat(userService.findById(1L).getPassword()).isEqualTo(newPassword);
     }
 
+    @DisplayName("password를 변경하다가 예외가 발생하면, 트랜잭션이 롤백되어 변경이 취소된다.")
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
+        // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+
+        // when
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePasswordWithTransaction(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        // then
+        assertThat(userService.findById(1L).getPassword()).isNotEqualTo(newPassword);
     }
 }

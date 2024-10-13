@@ -18,6 +18,7 @@ public class JdbcTemplate {
 
     private static final int PARAMETER_INDEX_OFFSET = 1;
     private static final int EXPECTED_COUNT = 1;
+    private static final String SQL_EXCEPTION_MESSAGE = "쿼리를 실행하던 도중 예외가 발생했습니다. sql = %s";
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
@@ -35,7 +36,19 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(String.format(SQL_EXCEPTION_MESSAGE, sql), e);
+        }
+    }
+
+    public void update(Connection conn, String sql, Object... parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, parameters);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(String.format(SQL_EXCEPTION_MESSAGE, sql), e);
         }
     }
 
@@ -48,7 +61,7 @@ public class JdbcTemplate {
             return findResults(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(String.format(SQL_EXCEPTION_MESSAGE, sql), e);
         }
     }
 
@@ -61,7 +74,7 @@ public class JdbcTemplate {
             return getOnlyOneResult(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(String.format(SQL_EXCEPTION_MESSAGE, sql), e);
         }
     }
 
@@ -90,5 +103,9 @@ public class JdbcTemplate {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + PARAMETER_INDEX_OFFSET, parameters[i]);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
