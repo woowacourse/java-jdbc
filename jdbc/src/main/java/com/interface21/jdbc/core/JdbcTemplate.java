@@ -65,12 +65,4 @@ public class JdbcTemplate {
             throw new DataAccessException(e.getMessage(), e);
         }
     }
-
-    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return preparedStatementExecutor.execute(preparedStatement);
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
 }
