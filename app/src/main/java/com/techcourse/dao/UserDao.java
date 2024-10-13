@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -21,7 +22,7 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
+    public UserDao(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -29,16 +30,24 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public int insert(final User user) {
+    public int insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         int rowCount = jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
         log.debug("insert 성공한 row 개수 : {}", rowCount);
         return rowCount;
     }
 
-    public int update(final User user) {
+    public int update(User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
         int rowCount = jdbcTemplate.executeUpdate(sql,
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        log.debug("update 성공한 row 개수 : {}", rowCount);
+        return rowCount;
+    }
+
+    public int update(Connection connection, User user) {
+        String sql = "update users set account=?, password=?, email=? where id=?";
+        int rowCount = jdbcTemplate.executeUpdate(connection, sql,
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         log.debug("update 성공한 row 개수 : {}", rowCount);
         return rowCount;
@@ -51,7 +60,7 @@ public class UserDao {
         return result;
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         Optional<User> result = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
         result.ifPresentOrElse(
@@ -61,7 +70,7 @@ public class UserDao {
         return result;
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public Optional<User> findByAccount(String account) {
         String sql = "select id, account, password, email from users where account = ?";
         Optional<User> result = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
         result.ifPresentOrElse(

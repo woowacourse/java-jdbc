@@ -40,6 +40,22 @@ public class JdbcTemplate {
         }
     }
 
+    public int executeUpdate(Connection connection, String sql, Object... args) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return execute(connection, sql, argumentPreparedStatementSetter, PreparedStatement::executeUpdate);
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter, Callback<T> callback) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            preparedStatementSetter.setValues(preparedStatement);
+            return callback.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new JdbcQueryException("execute 메서드 실패 : " + e.getMessage(), e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
         return execute(sql, argumentPreparedStatementSetter, preparedStatement -> query(preparedStatement, rowMapper));
