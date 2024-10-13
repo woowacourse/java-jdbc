@@ -55,8 +55,11 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForList Executing SQL: {}", sql);
 
-        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
-        try {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql);
+             final ResultSet resultSet = ps.executeQuery()) {
+
+            setParameter(params).setValue(ps);
             final List<T> values = new ArrayList<>();
             while (resultSet.next()) {
                 values.add(rowMapper.mapRow(resultSet));
