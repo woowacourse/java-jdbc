@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.function.TriFunction;
 
+import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.mapper.RowMapper;
 import com.interface21.jdbc.core.sql.Sql;
 
@@ -35,7 +36,7 @@ public class JdbcTemplate {
             final String query = sql.getValue();
             statement.executeUpdate(query);
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e.getMessage(), e);
         }
     }
 
@@ -64,7 +65,7 @@ public class JdbcTemplate {
             final String query = sql.getValue();
             return stmt.executeQuery(query);
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e.getMessage(), e);
         }
     }
 
@@ -96,7 +97,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection(); final Statement stmt = conn.createStatement()) {
             callBack.accept(stmt, sql);
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e.getMessage(), e);
         }
     }
 
@@ -108,7 +109,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection(); final Statement stmt = conn.createStatement()) {
             return callBack.apply(stmt, sql, rowMapper);
         } catch (final SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e.getMessage(), e);
         }
     }
 }
