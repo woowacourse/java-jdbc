@@ -19,7 +19,7 @@ public class JdbcTemplate implements JdbcOperations {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected final DataSource dataSource;
+    private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -36,7 +36,7 @@ public class JdbcTemplate implements JdbcOperations {
         });
     }
 
-    protected <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
+    private <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.execute(pstmt);
         } catch (SQLException e) {
