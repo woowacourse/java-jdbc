@@ -26,6 +26,7 @@ public class JdbcTransactionManager implements TransactionManager {
             connection.setAutoCommit(true);
         } catch (Exception e) {
             rollback(connection);
+            throw new DataAccessException("트랜잭션에 실패했습니다.", e);
         } finally {
             closeConnection(connection);
         }
