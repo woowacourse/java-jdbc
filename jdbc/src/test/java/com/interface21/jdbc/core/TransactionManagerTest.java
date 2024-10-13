@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -47,7 +48,8 @@ class TransactionManagerTest {
                 .when(runnable).run();
 
         //when
-        TransactionManager.execute(connection, runnable);
+        assertThatThrownBy(() -> TransactionManager.execute(connection, runnable))
+                .isInstanceOf(TransactionExecutionException.class);
 
         //then
         verify(runnable).run();

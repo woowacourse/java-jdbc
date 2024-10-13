@@ -15,15 +15,27 @@ public class TransactionManager {
             connection.commit();
         } catch (final SQLException | SqlExecutionException e) {
             rollback(connection);
+            throw new TransactionExecutionException("트랜잭션 실행에 실패하였습니다.", e);
+        } finally {
+            closeConnection(connection);
         }
-        //TODO 커넥션 닫기 어케하지
     }
 
     private static void rollback(final Connection connection) {
         try {
             connection.rollback();
         } catch (final SQLException e) {
-            throw new TransactionRollbackException("롤백에 실패하였습니다.");
+            throw new TransactionRollbackException("롤백에 실패하였습니다.", e);
+        }
+    }
+
+    private static void closeConnection(final Connection connection) {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (final SQLException e) {
+            throw new ConnectionCloseException("커넥션이 닫혀있습니다.", e);
         }
     }
 }
