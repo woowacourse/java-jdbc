@@ -1,8 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
-import com.interface21.jdbc.CannotGetPreparedStatementException;
-import com.interface21.jdbc.JdbcDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +22,10 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... params) {
         process(sql, PreparedStatement::executeUpdate, params);
+    }
+
+    public void update(final String sql, final Connection connection, final Object... params) {
+        process(sql, connection, PreparedStatement::executeUpdate, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
@@ -59,6 +60,15 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
+            return processor.process(preparedStatement);
+        } catch (SQLException e) {
+            throw new JdbcDataAccessException("Failed to process preparedStatement", e);
+        }
+    }
+
+    private <T> T process(String sql, Connection connection, PreparedStatementProcessor<T> processor, Object[] params) {
+        log.debug("query : {}", sql);
+        try (PreparedStatement preparedStatement = getPreparedStatement(sql, connection, params)) {
             return processor.process(preparedStatement);
         } catch (SQLException e) {
             throw new JdbcDataAccessException("Failed to process preparedStatement", e);

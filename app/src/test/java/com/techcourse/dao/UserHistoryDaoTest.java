@@ -7,6 +7,8 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,10 +36,11 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void log() {
+    void log() throws SQLException {
         UserHistory userHistory = new UserHistory(1L, 1L, "gugu", "password", "email", "gugu");
 
-        userHistoryDao.log(userHistory);
+        Connection connection = DataSourceConfig.getInstance().getConnection();
+        userHistoryDao.log(userHistory,connection);
 
         List<UserHistory> result = jdbcTemplate.query(
                 "select * from user_history",
