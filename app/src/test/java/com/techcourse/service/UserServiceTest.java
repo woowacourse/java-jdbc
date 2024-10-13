@@ -32,7 +32,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -46,7 +47,8 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

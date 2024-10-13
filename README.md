@@ -35,3 +35,8 @@
 ## 3단계 - Transaction 적용하기
 
 - [x] 트랜잭션을 적용해 `changePassword()` 메서드의 원자성 보장
+
+## 4단계 - Transaction synchronization 적용하기
+
+- [x] Transaction synchronization 적용
+- [x] 인터페이스로 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
