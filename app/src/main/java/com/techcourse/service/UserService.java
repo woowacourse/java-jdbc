@@ -53,11 +53,11 @@ public class UserService {
             consumer.accept(connection);
 
             connection.commit();
-        } catch (SQLException e) {
-            handleException(connection, e);
-            throw new DataQueryException(e.getMessage(), e);
         } catch (Exception e) {
             handleException(connection, e);
+            if (e instanceof SQLException) {
+                throw new DataQueryException(e.getMessage(), e);
+            }
             throw new DataAccessException(e.getMessage(), e);
         }
     }
