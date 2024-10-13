@@ -1,35 +1,78 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.exception.DataQueryException;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id)
+    public User findById(Connection connection, long id) {
+        return userDao.findById(connection, id)
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
     }
 
-    public void insert(final User user) {
-        userDao.insert(user);
+    public void insert(User user) {
+        try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
+            userDao.insert(connection, user);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+    public void changePassword(long id, String newPassword, String createBy) {
+        doTransaction(connection -> {
+            User user = findById(connection, id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
+    }
+
+    private void doTransaction(Consumer<Connection> consumer) {
+        Connection connection = null;
+        try {
+            connection = DataSourceConfig.getInstance().getConnection();
+            connection.setAutoCommit(false);
+
+            consumer.accept(connection);
+
+            connection.commit();
+        } catch (Exception e) {
+            handleException(connection, e);
+            if (e instanceof SQLException) {
+                throw new DataQueryException(e.getMessage(), e);
+            }
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void handleException(Connection connection, Exception e) {
+        if (connection != null) {
+            handleRollBack(connection);
+        }
+    }
+
+    private void handleRollBack(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            throw new DataQueryException(rollbackEx.getMessage(), rollbackEx);
+        }
     }
 }

@@ -8,7 +8,7 @@ public class DataQueryException extends RuntimeException {
         super(message);
     }
 
-    public DataQueryException(String message, SQLException cause) {
+    public DataQueryException(String message, Exception cause) {
         super(message, cause);
     }
 }

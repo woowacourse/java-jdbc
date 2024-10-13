@@ -5,7 +5,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,36 +22,32 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(Connection connection, User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(Connection connection, User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
+    public List<User> findAll(Connection connection) {
         String sql = "select * from users";
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(connection, sql, userRowMapper);
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(Connection connection, Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(connection, sql, userRowMapper, id);
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public Optional<User> findByAccount(Connection connection, String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(connection, sql, userRowMapper, account);
     }
 }

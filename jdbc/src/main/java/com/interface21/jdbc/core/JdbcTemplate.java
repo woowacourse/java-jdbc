@@ -3,7 +3,6 @@ package com.interface21.jdbc.core;
 import com.interface21.jdbc.exception.DataQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,16 +15,14 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
     private final PreparedStatementSetter preparedStatementSetter;
 
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public JdbcTemplate() {
         this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
-        return Optional.ofNullable(executeQuery(sql,
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... values) {
+        return Optional.ofNullable(executeQuery(connection, sql,
                 resultSet -> mapSingleRow(rowMapper, resultSet),
                 values)
         );
@@ -38,8 +35,8 @@ public class JdbcTemplate {
         return null;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
-        return executeQuery(sql,
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... values) {
+        return executeQuery(connection, sql,
                 resultSet -> mapRows(rowMapper, resultSet),
                 values);
     }
@@ -52,8 +49,9 @@ public class JdbcTemplate {
         return result;
     }
 
-    private <T> T executeQuery(String sql, ResultSetExtractor<T> resultSetExtractor, Object... values) {
-        return execute(sql, (preparedStatement -> {
+    private <T> T executeQuery(Connection connection, String sql, ResultSetExtractor<T> resultSetExtractor,
+                               Object... values) {
+        return execute(connection, sql, (preparedStatement -> {
             preparedStatementSetter.setValues(values, preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -62,17 +60,16 @@ public class JdbcTemplate {
         }));
     }
 
-    public void update(String sql, Object... values) {
-        execute(sql, (preparedStatement -> {
+    public void update(Connection connection, String sql, Object... values) {
+        execute(connection, sql, (preparedStatement -> {
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(values, preparedStatement);
             return preparedStatement.executeUpdate();
         }));
     }
 
-    private <T> T execute(String sql, JdbcTemplateExecutor<T> jdbcTemplateExecutor) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+    private <T> T execute(Connection connection, String sql, JdbcTemplateExecutor<T> jdbcTemplateExecutor) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return jdbcTemplateExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
