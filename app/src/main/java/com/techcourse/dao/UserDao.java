@@ -1,8 +1,8 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -18,10 +18,6 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -34,6 +30,17 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account=?, password=?, email=? where id=?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) throws SQLException {
+        final var sql = "update users set account=?, password=?, email=? where id=?";
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+            preparedStatement.executeUpdate();
+        }
     }
 
     public List<User> findAll() {

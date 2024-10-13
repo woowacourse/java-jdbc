@@ -31,13 +31,21 @@ class Stage1Test {
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
-        try (final var connection = jdbcConnectionPool.getConnection()) {
-            assertThat(connection.isValid(1)).isTrue();
-            assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
-        }
+        getConnectionAndAssert(jdbcConnectionPool, 1, 10);      // max 10까지 성공, 11부터 실패
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
         jdbcConnectionPool.dispose();
+    }
+
+    private static void getConnectionAndAssert(JdbcConnectionPool jdbcConnectionPool, int count, int max) throws SQLException {
+        if (count > max) {
+            return;
+        }
+        try (final var connection3 = jdbcConnectionPool.getConnection()) {
+            assertThat(connection3.isValid(1)).isTrue();
+            assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(count);
+            getConnectionAndAssert(jdbcConnectionPool, count + 1, max);
+        }
     }
 
     /**
