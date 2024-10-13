@@ -21,10 +21,10 @@ public class UserController {
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        final String account = request.getParameter("account");
+        String account = request.getParameter("account");
         log.debug("user id : {}", account);
 
-        final ModelAndView modelAndView = new ModelAndView(new JsonView());
+        ModelAndView modelAndView = new ModelAndView(new JsonView());
         Optional<User> user = InMemoryUserRepository.findByAccount(account);
         if (user.isPresent()) {
             modelAndView.addObject("user", user.get());

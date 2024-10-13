@@ -17,7 +17,7 @@ public class RegisterController {
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public String save(HttpServletRequest request) {
-        final var user = new User(
+        User user = new User(
                 2,
                 request.getParameter("account"),
                 request.getParameter("password"),
