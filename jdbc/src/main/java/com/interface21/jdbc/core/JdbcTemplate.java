@@ -37,7 +37,18 @@ public class JdbcTemplate {
         }
     }
 
-    private void executeUpdate(PreparedStatement preparedStatement, PreparedStatementSetter preparedStatementSetter) throws SQLException {
+    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter) {
+        log.debug("query : {}", sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            executeUpdate(preparedStatement, preparedStatementSetter);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void executeUpdate(PreparedStatement preparedStatement, PreparedStatementSetter preparedStatementSetter)
+            throws SQLException {
         preparedStatementSetter.setColumns(preparedStatement);
         preparedStatement.executeUpdate();
     }
@@ -57,6 +68,20 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setColumns(preparedStatement);
+            List<T> records = executeQuery(rowMapper, preparedStatement);
+            validateDataSize(records);
+            return records.getFirst();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper,
+                                PreparedStatementSetter preparedStatementSetter) {
+        log.debug("query : {}", sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setColumns(preparedStatement);
             List<T> records = executeQuery(rowMapper, preparedStatement);
             validateDataSize(records);
