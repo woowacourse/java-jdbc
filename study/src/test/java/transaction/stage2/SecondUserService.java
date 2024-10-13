@@ -36,7 +36,12 @@ public class SecondUserService {
     public String saveSecondTransactionWithSupports() {
         userRepository.save(User.createTest());
         logActualTransactionActive();
-        return TransactionSynchronizationManager.getCurrentTransactionName();
+
+        final boolean synchronizationActive = TransactionSynchronizationManager.isSynchronizationActive();
+        final String currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
+        log.info("\n{} is Synchronization Active : {}", currentTransactionName, synchronizationActive);
+
+        return currentTransactionName;
     }
 
     @Transactional(propagation = Propagation.MANDATORY)

@@ -94,7 +94,7 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      */
-    @DisplayName("Propagation.SUPPORTS의 경우 기존에 생성된 중인 Transaction 이 있을 때만 참여하고 없다면 Transaction 없이 진행한다.")
+    @DisplayName("Propagation.SUPPORTS의 경우 기존에 생성된 Transaction이 있을 때만 참여하고 없다면 non-transactionally하게 진행한다.")
     @Test
     void testSupports() {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
