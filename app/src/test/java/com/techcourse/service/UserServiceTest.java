@@ -30,14 +30,14 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao);
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
