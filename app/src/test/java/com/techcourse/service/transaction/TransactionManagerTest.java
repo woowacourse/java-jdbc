@@ -14,7 +14,7 @@ class TransactionManagerTest {
 
     private DataSource dataSource;
     private Connection connection;
-    private TransactionExecutor transactionExecutor;
+    private TransactionConsumer transactionConsumer;
     private TransactionFunction transactionFunction;
     private TransactionManager transactionManager;
 
@@ -22,7 +22,7 @@ class TransactionManagerTest {
     void setUp() throws SQLException {
         this.dataSource = mock(DataSource.class);
         this.connection = mock(Connection.class);
-        this.transactionExecutor = mock(TransactionExecutor.class);
+        this.transactionConsumer = mock(TransactionConsumer.class);
         this.transactionFunction = mock(TransactionFunction.class);
         this.transactionManager = new TransactionManager(dataSource);
 
@@ -32,7 +32,7 @@ class TransactionManagerTest {
     @Test
     void transactionByTransactionExecutor() throws SQLException {
         // given & when
-        transactionManager.transaction(transactionExecutor);
+        transactionManager.transaction(transactionConsumer);
 
         // then
         verify(connection).setAutoCommit(false);
@@ -54,7 +54,7 @@ class TransactionManagerTest {
     @Test
     void rollback() throws SQLException {
         // given & when
-        transactionManager.transaction(new TransactionExecutor() {
+        transactionManager.transaction(new TransactionConsumer() {
             @Override
             public void execute(Connection connection) throws SQLException {
                 throw new SQLException("롤백 테스트");

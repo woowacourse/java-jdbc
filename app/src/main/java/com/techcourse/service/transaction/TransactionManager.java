@@ -4,6 +4,7 @@ import com.interface21.jdbc.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class TransactionManager {
 
@@ -13,24 +14,18 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void transaction(TransactionExecutor executor) {
-        Connection connection = null;
-
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-
-            executor.execute(connection);
-
-            connection.commit();
-        } catch (SQLException exception) {
-            rollback(connection);
-        } finally {
-            closeConnection(connection);
-        }
+    public void transaction(TransactionConsumer consumer) {
+        executeTransaction(connection -> {
+            consumer.execute(connection);
+            return Optional.empty();
+        });
     }
 
-    public <T>T transaction(TransactionFunction<T> function) {
+    public <T> T transaction(TransactionFunction<T> function) {
+        return executeTransaction(function);
+    }
+
+    private <T> T executeTransaction(TransactionFunction<T> function) {
         Connection connection = null;
 
         try {
