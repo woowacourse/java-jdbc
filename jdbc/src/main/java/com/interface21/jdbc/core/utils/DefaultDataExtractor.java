@@ -9,11 +9,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultResultSetDataExtractor<T> implements ResultSetDataExtractor<T> {
+public class DefaultDataExtractor<T> implements ResultSetDataExtractor<T> {
 
     private final RowMapper<T> rowMapper;
 
-    public DefaultResultSetDataExtractor(RowMapper<T> rowMapper) {
+    public DefaultDataExtractor(RowMapper<T> rowMapper) {
         this.rowMapper = rowMapper;
     }
 

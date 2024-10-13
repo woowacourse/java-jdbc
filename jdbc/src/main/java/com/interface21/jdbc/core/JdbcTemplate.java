@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
-import com.interface21.jdbc.core.utils.DefaultResultSetDataExtractor;
+import com.interface21.jdbc.core.utils.DefaultDataExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,11 +57,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return query(sql, createDefaultPreparedStatementSetter(parameters), new DefaultResultSetDataExtractor<>(rowMapper));
+        return query(sql, createDefaultPreparedStatementSetter(parameters), new DefaultDataExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
-        return query(sql, setter, new DefaultResultSetDataExtractor<>(rowMapper));
+        return query(sql, setter, new DefaultDataExtractor<>(rowMapper));
     }
 
     public <T> List<T> query(String sql, ResultSetDataExtractor<T> extractor, Object... parameters) {
