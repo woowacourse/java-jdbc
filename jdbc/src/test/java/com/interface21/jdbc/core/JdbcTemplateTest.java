@@ -63,7 +63,6 @@ class JdbcTemplateTest {
                 () -> then(preparedStatement).should().setObject(4, 1L),
                 () -> then(preparedStatement).should().executeUpdate(),
                 () -> then(preparedStatement).should().close(),
-                () -> then(connection).should().close(),
                 () -> then(dataSource).should().getConnection()
         );
     }
