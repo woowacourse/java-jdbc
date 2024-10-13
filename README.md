@@ -23,10 +23,10 @@
 ### 3단계 - Transaction 적용하기
 
 - [x] UserServiceTest에서 @Disabled 삭제
-- [ ] changePassword() 메서드에 트랜잭션 적용해 원자성 보장
-  - [ ] Connection 객체의 SetAutoCommit(false) 메서드 호출해 트랜잭션 시작
-  - [ ] 비즈니스 로직 끝나면 트랜잭션 커밋 또는 롤백 실행
-  - [ ] userDao와 userHistoryDao를 한 트랜잭션으로 묶기 위해 동일한 Connection 객체 사용하도록 변경
+- [x] changePassword() 메서드에 트랜잭션 적용해 원자성 보장
+  - [x] Connection 객체의 SetAutoCommit(false) 메서드 호출해 트랜잭션 시작
+  - [x] 비즈니스 로직 끝나면 트랜잭션 커밋 또는 롤백 실행
+  - [x] userDao와 userHistoryDao를 한 트랜잭션으로 묶기 위해 동일한 Connection 객체 사용하도록 변경
 
 ## JDBC 라이브러리 구현하기 가이드
 
