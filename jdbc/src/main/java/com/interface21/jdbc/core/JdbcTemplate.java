@@ -1,11 +1,13 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.extractor.ExtractionRule;
 import com.interface21.jdbc.core.extractor.ManualExtractor;
 import com.interface21.jdbc.core.mapper.ObjectMappedStatement;
 import com.interface21.jdbc.core.extractor.ResultSetExtractor;
 import com.interface21.jdbc.core.extractor.ReflectiveExtractor;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,13 +48,12 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        try {
-            log.info("update sql = {}", sql);
-            PreparedStatement preparedStatement = getPreparedStatement(sql);
-            ObjectMappedStatement objectMapper = new ObjectMappedStatement(preparedStatement, params);
+        log.info("update sql = {}", sql);
+        try (PreparedStatement preparedStatement = getPreparedStatement(sql);
+             ObjectMappedStatement objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
             return objectMapper.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -70,7 +71,7 @@ public class JdbcTemplate {
         try (resultSetExtractor) {
             return resultSetExtractor.extract();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -78,11 +79,13 @@ public class JdbcTemplate {
         try (ObjectMappedStatement statement = new ObjectMappedStatement(getPreparedStatement(sql), params)) {
             return statement.executeQuery();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
     private PreparedStatement getPreparedStatement(String sql) throws SQLException {
-        return dataSource.getConnection().prepareStatement(sql);
+        try (Connection connection = dataSource.getConnection()) {
+            return connection.prepareStatement(sql);
+        }
     }
 }
