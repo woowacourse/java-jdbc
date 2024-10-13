@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core.mapper;
 
+import com.interface21.jdbc.CannotReleaseJdbcResourceException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,7 +46,11 @@ public abstract class PreparedStatementMapper implements AutoCloseable {
     }
 
     @Override
-    public void close() throws SQLException {
-        preparedStatement.close();
+    public void close() {
+        try {
+            preparedStatement.close();
+        } catch (SQLException e) {
+            throw new CannotReleaseJdbcResourceException(e);
+        }
     }
 }

@@ -1,11 +1,10 @@
 package com.interface21.jdbc.core.extractor;
 
+import com.interface21.jdbc.CannotReleaseJdbcResourceException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -28,12 +27,14 @@ public abstract class ResultSetExtractor<T> implements AutoCloseable {
     }
 
     @Nullable
-    public T extractOne() throws SQLException {
-        throw new RuntimeException();
-    }
+    public abstract T extractOne() throws SQLException;
 
     @Override
-    public void close() throws SQLException {
-        resultSet.close();
+    public void close() {
+        try {
+            resultSet.close();
+        } catch (SQLException e) {
+            throw new CannotReleaseJdbcResourceException(e);
+        }
     }
 }
