@@ -12,8 +12,8 @@ public class TxUserService implements UserService {
 
     private final UserService service;
 
-    public TxUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.service = new AppUserService(userDao, userHistoryDao);
+    public TxUserService(final UserService userService) {
+        this.service = userService;
     }
 
     @Override
