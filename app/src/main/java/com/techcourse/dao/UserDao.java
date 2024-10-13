@@ -8,13 +8,11 @@ import java.util.List;
 
 public class UserDao {
 
-    public static final String INSERT_QUERY = "insert into users (account, password, email) values (?, ?, ?)";
-    public static final String UPDATE_QUERY = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-    public static final String SELECT_ALL_QUERY = "select * from users";
-    public static final String SELECT_BY_ID_QUERY = "select * from users where id = ?";
-    public static final String SELECT_BY_ACCOUNT_QUERY = "select * from users where account = ?";
-
-    private final JdbcTemplate jdbcTemplate;
+    private static final String INSERT_QUERY = "insert into users (account, password, email) values (?, ?, ?)";
+    private static final String UPDATE_QUERY = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+    private static final String SELECT_ALL_QUERY = "select * from users";
+    private static final String SELECT_BY_ID_QUERY = "select * from users where id = ?";
+    private static final String SELECT_BY_ACCOUNT_QUERY = "select * from users where account = ?";
 
     private static final RowMapper<ResultSet, User> USER_ROW_MAPPER = rs -> {
         if (rs.next()) {
@@ -27,6 +25,8 @@ public class UserDao {
         }
         return null;
     };
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
