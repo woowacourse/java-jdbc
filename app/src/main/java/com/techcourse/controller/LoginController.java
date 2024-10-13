@@ -9,7 +9,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.service.UserService;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
@@ -22,13 +22,13 @@ public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
-    private final UserService userService;
+    private final AppUserService userService;
 
     public LoginController() {
         DataSource dataSource = DataSourceConfig.getInstance();
         UserDao userDao = new UserDao(dataSource);
         UserHistoryDao userHistoryDao = new UserHistoryDao(dataSource);
-        this.userService = new UserService(userDao, userHistoryDao);
+        this.userService = new AppUserService(userDao, userHistoryDao);
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)

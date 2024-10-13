@@ -15,7 +15,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
@@ -29,7 +29,8 @@ class UserServiceTest {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        this.userService = new UserService(userDao, userHistoryDao, new TransactionManager(dataSource));
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        this.userService = new TxUserService(appUserService, new TransactionManager(dataSource));
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -51,7 +52,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        userService = new UserService(userDao, userHistoryDao, new TransactionManager(dataSource));
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = new TxUserService(appUserService, new TransactionManager(dataSource));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
