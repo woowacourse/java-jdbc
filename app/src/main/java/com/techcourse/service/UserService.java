@@ -30,7 +30,7 @@ public class UserService {
         this.dataSource = DataSourceConfig.getInstance();
     }
 
-    public User findById(Connection connection, long id) {
+    public User findByIdWithTransaction(Connection connection, long id) {
         return userDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
     }
@@ -59,10 +59,10 @@ public class UserService {
 
     private void changePassword(long id, String newPassword, String createBy, Connection connection) {
         TransactionManager.start(connection, () -> {
-            final var user = findById(connection, id);
+            final var user = findByIdWithTransaction(connection, id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.insert(connection, new UserHistory(user, createBy));
+            userDao.updateWithTransaction(connection, user);
+            userHistoryDao.insertWithTransaction(connection, new UserHistory(user, createBy));
         });
     }
 }

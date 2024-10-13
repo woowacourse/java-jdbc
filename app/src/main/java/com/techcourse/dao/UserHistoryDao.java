@@ -29,7 +29,7 @@ public class UserHistoryDao {
         log.info("userHistory 업데이트에 성공했습니다.");
     }
 
-    public void insert(Connection connection, UserHistory userHistory) {
+    public void insertWithTransaction(Connection connection, UserHistory userHistory) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserHistoryArgument(userHistory);
 
         jdbcTemplate.update(connection, INSERT_USER_HISTORY_QUERY, argumentPreparedStatementSetter);

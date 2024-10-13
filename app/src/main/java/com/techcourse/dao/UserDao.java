@@ -47,7 +47,7 @@ public class UserDao {
         log.info("user insert successful");
     }
 
-    public void update(Connection connection, final User user) {
+    public void updateWithTransaction(Connection connection, final User user) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
 
         jdbcTemplate.update(connection, UPDATE_USER_QUERY, argumentPreparedStatementSetter);
