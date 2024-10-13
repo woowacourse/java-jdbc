@@ -38,7 +38,7 @@ public class JdbcTemplate {
             }
             return null;
         } catch (final SQLException e) {
-            throw new SqlExecutionException(e.getMessage());
+            throw new SqlExecutionException(e.getMessage(), e);
         }
     }
 
@@ -53,7 +53,7 @@ public class JdbcTemplate {
             }
             return values;
         } catch (final SQLException e) {
-            throw new SqlExecutionException(e.getMessage());
+            throw new SqlExecutionException(e.getMessage(), e);
         }
     }
 
