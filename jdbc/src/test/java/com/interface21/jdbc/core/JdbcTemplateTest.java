@@ -48,7 +48,7 @@ class JdbcTemplateTest {
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        int result = jdbcTemplate.update(sql, args);
+        int result = jdbcTemplate.update(null, sql, args);
         assertThat(result).isEqualTo(1);
 
         verify(preparedStatement).setObject(1, "password");
@@ -69,7 +69,7 @@ class JdbcTemplateTest {
         when(rowMapper.mapRow(resultSet)).thenReturn(testUser1, testUser2);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        List<TestUser> results = jdbcTemplate.query(sql, rowMapper);
+        List<TestUser> results = jdbcTemplate.query(null, sql, rowMapper);
         assertAll(
                 () -> assertThat(results.size()).isEqualTo(2),
                 () -> assertThat(testUser1).isEqualTo(results.get(0)),
@@ -92,7 +92,7 @@ class JdbcTemplateTest {
         when(rowMapper.mapRow(resultSet)).thenReturn(testUser1);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        List<TestUser> results = jdbcTemplate.query(sql, new Object[]{1}, rowMapper);
+        List<TestUser> results = jdbcTemplate.query(null, sql, new Object[]{1}, rowMapper);
         assertAll(
                 () -> assertThat(results.size()).isEqualTo(1),
                 () -> assertThat(testUser1).isEqualTo(results.get(0))
@@ -116,7 +116,7 @@ class JdbcTemplateTest {
         when(rowMapper.mapRow(resultSet)).thenReturn(testUser);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        TestUser result = jdbcTemplate.queryForObject(sql, args, rowMapper);
+        TestUser result = jdbcTemplate.queryForObject(null, sql, args, rowMapper);
         assertThat(testUser).isEqualTo(result);
 
         verify(preparedStatement).setObject(1, 1);
@@ -134,7 +134,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, args, rowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(null, sql, args, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("단일 행 조회를 기대했지만, 조회된 행이 없습니다.");
 
@@ -153,7 +153,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, args, rowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(null, sql, args, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("단일 행 조회를 기대했지만, 여러 행이 조회되었습니다.");
 
