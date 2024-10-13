@@ -9,8 +9,12 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final DataSource dataSource;
     private final UserDao userDao;
@@ -84,6 +88,7 @@ public class UserService {
         try {
             connection.rollback();
         } catch (SQLException e) {
+            log.error("Rollback failed", e.getMessage());
             throw new DataAccessException(e);
         }
     }
