@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,23 +28,16 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection()) {
-            return update(connection, sql, preparedStatementSetter);
-        } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
-        }
-    }
-
-    public int update(Connection connection, String sql, Object... params) {
-        return update(connection, sql, new ArgumentPreparedStatementSetter(params));
-    }
-
-    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
+        } finally {
+            if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
@@ -64,12 +58,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(statement);
             return queryForAll(statement, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("Error insert sql: " + sql, e);
+        } finally {
+            if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 

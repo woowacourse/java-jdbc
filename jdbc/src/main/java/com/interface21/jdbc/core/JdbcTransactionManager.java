@@ -16,18 +16,18 @@ public class JdbcTransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(Consumer<Connection> consumer) {
+    public void execute(Runnable runnable) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            consumer.accept(connection);
+            runnable.run();
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollbackInTransaction(connection);
             throw new DataAccessException("Transaction failed and was rolled back", e);
         } finally {
+            setAutoCommit(connection);
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -36,6 +36,14 @@ public class JdbcTransactionManager {
             connection.rollback();
         } catch (SQLException e) {
             throw new DataAccessException("Roll back failed", e);
+        }
+    }
+
+    private void setAutoCommit(Connection connection) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DataAccessException("Fail to set auto commit to true", e);
         }
     }
 }
