@@ -10,14 +10,14 @@ public class TransactionManager {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
-    public TransactionManager() {
+    private TransactionManager() {
     }
 
-    public void transaction(Connection connection, Runnable runnable) {
+    public static void transaction(Connection connection, Runnable runnable) {
         startTransaction(connection, runnable);
     }
 
-    private void startTransaction(Connection connection, Runnable runnable) {
+    private static void startTransaction(Connection connection, Runnable runnable) {
         try {
             connection.setAutoCommit(false);
             runnable.run();
@@ -30,7 +30,7 @@ public class TransactionManager {
         }
     }
 
-    private void rollback(Connection connection) {
+    private static void rollback(Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException e) {

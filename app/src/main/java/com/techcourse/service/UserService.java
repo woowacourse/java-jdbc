@@ -13,12 +13,10 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final TransactionManager transactionManager;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = transactionManager;
     }
 
     public Optional<User> findById(long id) {
@@ -30,7 +28,7 @@ public class UserService {
     }
 
     public void changePassword(Connection connection, long id, String newPassword, String createBy) {
-        transactionManager.transaction(connection, () -> {
+        TransactionManager.transaction(connection, () -> {
             User user = findById(id).orElseThrow(NoSuchElementException::new);
             user.changePassword(newPassword);
             userDao.update(connection, user);

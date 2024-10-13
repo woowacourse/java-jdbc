@@ -18,20 +18,18 @@ class TransactionManagerTest {
 
     private Connection connection;
     private Runnable runnable;
-    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
         this.connection = mock(Connection.class);
         this.runnable = mock(Runnable.class);
-        this.transactionManager = new TransactionManager();
     }
 
     @Test
     @DisplayName("트랜잭션 중간에 예외가 발생하지 않으면 rollback 하지 않고 commit 한다.")
     void start_WhenSuccess() throws SQLException {
         // when
-        transactionManager.transaction(connection, runnable);
+        TransactionManager.transaction(connection, runnable);
 
         // then
         verify(connection).setAutoCommit(false);
@@ -48,7 +46,7 @@ class TransactionManagerTest {
                 .when(runnable).run();
 
         // when
-        assertThatThrownBy(() -> transactionManager.transaction(connection, runnable))
+        assertThatThrownBy(() -> TransactionManager.transaction(connection, runnable))
                 .isInstanceOf(CannotGetJdbcConnectionException.class);
 
         // then
