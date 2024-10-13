@@ -13,6 +13,20 @@ public final class TransactionSynchronizationManager {
 
     private TransactionSynchronizationManager() {}
 
+    public static Connection getTransactionStartedResource(DataSource key) {
+        Connection connection = getResource(key);
+        startTransaction(connection);
+        return connection;
+    }
+
+    private static void startTransaction(Connection connection){
+        try {
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> dataSourceConnectionMap = getDataSourceConnectionMap();
         Connection connection = dataSourceConnectionMap.get(key);
@@ -38,6 +52,33 @@ public final class TransactionSynchronizationManager {
             throw new DataAccessException(e);
         }
     }
+
+    public static void unbindAndCommit(DataSource key) {
+        Connection connection = unbindResource(key);
+        commit(connection);
+    }
+
+    private static void commit(Connection connection) {
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public static void unbindAndRollback(DataSource key) {
+        Connection connection = unbindResource(key);
+        rollback(connection);
+    }
+
+    private static void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
 
     private static Map<DataSource, Connection> getDataSourceConnectionMap() {
         Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
