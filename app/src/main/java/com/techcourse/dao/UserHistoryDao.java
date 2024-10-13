@@ -1,62 +1,53 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import com.techcourse.dao.mapper.UserHistoryRowMapper;
+import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.List;
+import javax.sql.DataSource;
 
 public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
-
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
+    private final UserHistoryRowMapper userHistoryRowMapper;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
+        this.userHistoryRowMapper = new UserHistoryRowMapper();
     }
 
-    public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+    public List<UserHistory> findAll() {
+        final String sql = "select id, user_id, account, password, email, created_at, created_by from user_history";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        return jdbcTemplate.query(sql, userHistoryRowMapper);
+    }
 
-            log.debug("query : {}", sql);
+    public UserHistory findById(final Long userId) {
+        final String sql = "select id, user_id, account, password, email, created_at, created_by from user_history where user_id = ?";
 
-            pstmt.setLong(1, userHistory.getUserId());
-            pstmt.setString(2, userHistory.getAccount());
-            pstmt.setString(3, userHistory.getPassword());
-            pstmt.setString(4, userHistory.getEmail());
-            pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
+        return jdbcTemplate.queryForObject(sql, userHistoryRowMapper, userId);
+    }
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+    public void log(Connection connection, UserHistory userHistory) {
+        insert(connection, userHistory);
+    }
+
+    private void insert(final Connection connection, final UserHistory userHistory) {
+        final String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.update(
+                connection,
+                sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
+        );
     }
 }
