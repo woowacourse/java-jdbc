@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import javax.sql.DataSource;
@@ -15,7 +14,7 @@ public class UserHistoryDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource, new PreparedStatementSetter()));
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {

@@ -18,9 +18,9 @@ public class JdbcTemplate {
     private final DataSource dataSource;
     private final PreparedStatementSetter statementSetter;
 
-    public JdbcTemplate(DataSource dataSource, PreparedStatementSetter statementSetter) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.statementSetter = statementSetter;
+        this.statementSetter = new PreparedStatementSetter();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {

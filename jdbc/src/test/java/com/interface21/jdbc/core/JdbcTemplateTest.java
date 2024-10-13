@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private DataSource dataSource = DataSourceConfig.getInstance();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, new PreparedStatementSetter());
+    private JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     @BeforeEach
     void setUp() {
