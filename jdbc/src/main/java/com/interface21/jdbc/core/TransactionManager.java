@@ -18,7 +18,7 @@ public class TransactionManager {
             runnable.run();
 
             connection.commit();
-        } catch (SQLException e) {
+        } catch (SQLException | DataAccessException e) {
             rollback(connection);
             throw new DataAccessException(e);
         }
