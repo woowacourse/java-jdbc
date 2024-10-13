@@ -51,5 +51,5 @@
 ## 3단계
 
 - [x] 비밀번호 변경 transaction 처리
-  - [x] jdbc: insert or updaet 문 connection 주입 받도록 수정
-  - [x] dao: insert or updaet 문 connection 주입 받도록 수정
+  - [x] jdbc: insert or update 문 connection 주입 받도록 수정
+  - [x] dao: insert or update 문 connection 주입 받도록 수정
