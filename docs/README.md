@@ -16,6 +16,6 @@
   - [X] Transaction Synchronization 적용하기
   - [X] 트랜잭션 서비스 추상화하기
 - [ ] AOP 적용하기
-  - [ ] JDK Proxy로 프록시 패턴 적용하기
+  - [X] JDK Proxy로 프록시 패턴 적용하기
   - [ ] ProxyFactoryBean 적용하기
   - [ ] 스프링 AOP에 추가하기
