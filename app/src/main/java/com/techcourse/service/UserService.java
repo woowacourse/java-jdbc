@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.service.transaction.TransactionManager;
 
 public class UserService {
 
@@ -21,14 +22,17 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        TransactionManager.runTransaction((connection) -> userDao.insert(connection, user));
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+
+        TransactionManager.runTransaction((connection) -> {
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
     }
 
     public User findByAccount(String account) {

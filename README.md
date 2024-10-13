@@ -47,3 +47,9 @@
   - [x] Connection, Statement, ResultSet 객체 사용 및 close 로직 리펙터링 (재사용되도록)
     - 익명 클래스 사용
     - try-with-resources
+
+## 3단계
+
+- [x] 비밀번호 변경 transaction 처리
+  - [x] jdbc: insert or update 문 connection 주입 받도록 수정
+  - [x] dao: insert or update 문 connection 주입 받도록 수정
