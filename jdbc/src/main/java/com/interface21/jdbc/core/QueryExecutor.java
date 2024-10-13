@@ -18,9 +18,8 @@ public class QueryExecutor {
         this.dataSource = dataSource;
     }
 
-    <T> T executeFunction(QueryFunction<PreparedStatement, T> function, String sql, Object... args) {
-        try (Connection conn = this.dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    <T> T executeFunction(Connection connection, QueryFunction<PreparedStatement, T> function, String sql, Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             this.setParameters(pstmt, args);
             return function.apply(pstmt);
@@ -29,9 +28,8 @@ public class QueryExecutor {
         }
     }
 
-    void executeConsumer(QueryConsumer<PreparedStatement> consumer, String sql, Object... args) {
-        try (Connection conn = this.dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    void executeConsumer(Connection connection, QueryConsumer<PreparedStatement> consumer, String sql, Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             this.setParameters(pstmt, args);
             consumer.accept(pstmt);

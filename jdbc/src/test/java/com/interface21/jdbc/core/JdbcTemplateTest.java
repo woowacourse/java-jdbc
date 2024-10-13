@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,10 +17,11 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private static JdbcTemplate jdbcTemplate;
+    private static JdbcDataSource jdbcDataSource;
 
     @BeforeAll
     public static void init() {
-        JdbcDataSource jdbcDataSource = new JdbcDataSource();
+        jdbcDataSource = new JdbcDataSource();
         jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
         jdbcDataSource.setUser("");
         jdbcDataSource.setPassword("");
@@ -28,22 +30,25 @@ class JdbcTemplateTest {
 
     @BeforeEach
     public void setUp() {
-        jdbcTemplate.command("create table food (name varchar(255), cost int)");
+        Connection connection = getConnection(jdbcDataSource);
+        jdbcTemplate.command(connection, "create table food (name varchar(255), cost int)");
     }
 
     @AfterEach
     public void tearDown() {
-        jdbcTemplate.command("drop table food");
+        Connection connection = getConnection(jdbcDataSource);
+        jdbcTemplate.command(connection, "drop table food");
     }
 
     @DisplayName("데이터 추가 테스트")
     @Test
     void insert() {
+        Connection connection = getConnection(jdbcDataSource);
         String insertQuery = "insert into food (name, cost) values (?, ?)";
         String selectQuery = "select * from food where name = ?";
-        jdbcTemplate.command(insertQuery, "떡볶이", 8000);
+        jdbcTemplate.command(connection, insertQuery, "떡볶이", 8000);
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.queryForObject(connection, this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(8000);
     }
@@ -51,13 +56,14 @@ class JdbcTemplateTest {
     @DisplayName("데이터 수정 테스트")
     @Test
     void update() {
+        Connection connection = getConnection(jdbcDataSource);
         String insertQuery = "insert into food (name, cost) values (?, ?)";
         String updateQuery = "update food set cost = ? where name = ?";
         String selectQuery = "select * from food where name = ?";
-        jdbcTemplate.command(insertQuery, "떡볶이", 8000);
-        jdbcTemplate.command(updateQuery, 10000, "떡볶이");
+        jdbcTemplate.command(connection, insertQuery, "떡볶이", 8000);
+        jdbcTemplate.command(connection, updateQuery, 10000, "떡볶이");
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.queryForObject(connection, this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(10000);
     }
@@ -65,13 +71,14 @@ class JdbcTemplateTest {
     @DisplayName("데이터 삭제 테스트")
     @Test
     void delete() {
+        Connection connection = getConnection(jdbcDataSource);
         String insertQuery = "insert into food (name, cost) values (?, ?)";
         String deleteQuery = "delete from food where name = ?";
         String selectQuery = "select * from food where name = ?";
-        jdbcTemplate.command(insertQuery, "떡볶이", 8000);
-        jdbcTemplate.command(deleteQuery, "떡볶이");
+        jdbcTemplate.command(connection, insertQuery, "떡볶이", 8000);
+        jdbcTemplate.command(connection, deleteQuery, "떡볶이");
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.queryForObject(connection, this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food).isNull();
     }
@@ -79,11 +86,12 @@ class JdbcTemplateTest {
     @DisplayName("데이터 조회 테스트 - 단건")
     @Test
     void selectSingle() {
+        Connection connection = getConnection(jdbcDataSource);
         String insertQuery = "insert into food (name, cost) values (?, ?)";
         String selectQuery = "select * from food where name = ?";
-        jdbcTemplate.command(insertQuery, "떡볶이", 8000);
+        jdbcTemplate.command(connection, insertQuery, "떡볶이", 8000);
 
-        Food food = jdbcTemplate.queryForObject(this::mapToObject, selectQuery, "떡볶이");
+        Food food = jdbcTemplate.queryForObject(connection, this::mapToObject, selectQuery, "떡볶이");
 
         assertThat(food.cost).isEqualTo(8000);
     }
@@ -91,15 +99,24 @@ class JdbcTemplateTest {
     @DisplayName("데이터 조회 테스트 - 목록")
     @Test
     void selectMulti() {
+        Connection connection = getConnection(jdbcDataSource);
         String insertQuery = "insert into food (name, cost) values (?, ?)";
         String selectQuery = "select * from food";
-        jdbcTemplate.command(insertQuery, "달콤 떡볶이", 8000);
-        jdbcTemplate.command(insertQuery, "매콤 떡볶이", 9000);
+        jdbcTemplate.command(connection, insertQuery, "달콤 떡볶이", 8000);
+        jdbcTemplate.command(connection, insertQuery, "매콤 떡볶이", 9000);
 
-        List<Food> foods = jdbcTemplate.queryForObject(this::mapToObjects, selectQuery);
+        List<Food> foods = jdbcTemplate.queryForObject(connection, this::mapToObjects, selectQuery);
 
         assertThat(foods).hasSize(2);
         assertThat(foods).extracting("name").contains("달콤 떡볶이", "매콤 떡볶이");
+    }
+
+    private Connection getConnection(JdbcDataSource jdbcDataSource) {
+        try {
+            return jdbcDataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     private Food mapToObject(ResultSet rs) {
