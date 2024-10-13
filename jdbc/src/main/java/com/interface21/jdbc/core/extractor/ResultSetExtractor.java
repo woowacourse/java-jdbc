@@ -27,7 +27,7 @@ public abstract class ResultSetExtractor<T> implements AutoCloseable {
     }
 
     @Nullable
-    public abstract T extractOne() throws SQLException;
+    protected abstract T extractOne() throws SQLException;
 
     @Override
     public void close() {
