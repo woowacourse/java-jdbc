@@ -10,10 +10,13 @@ public class User {
     private final String email;
 
     public User(final String account, final String password, final String email) {
-        this(null, account, password, email);
+        this.id = null;
+        this.account = account;
+        this.password = password;
+        this.email = email;
     }
 
-    public User(final Long id, final String account, final String password, final String email) {
+    public User(final long id, final String account, final String password, final String email) {
         this.id = id;
         this.account = account;
         this.password = password;
