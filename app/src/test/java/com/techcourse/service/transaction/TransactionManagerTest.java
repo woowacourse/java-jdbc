@@ -32,7 +32,7 @@ class TransactionManagerTest {
     }
 
     @Test
-    void transactionByTransactionExecutor() throws SQLException {
+    void transactionByTransactionConsumer() throws SQLException {
         // given & when
         transactionManager.transaction(transactionConsumer);
 
