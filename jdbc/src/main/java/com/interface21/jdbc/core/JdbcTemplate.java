@@ -47,14 +47,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
-        List<T> query = query(sql, rowMapper, args);
-        if (query.isEmpty()) {
-            throw new DataAccessException("결과가 존재하지 않습니다");
-        }
-        if (query.size() > 1) {
-            throw new DataAccessException("2개 이상의 결과가 조회되었습니다");
-        }
-        return query.getFirst();
+        return query(sql, new SingleResultSetExtractor<>(rowMapper), new ArgumentPreparedStatementSetter(args));
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
