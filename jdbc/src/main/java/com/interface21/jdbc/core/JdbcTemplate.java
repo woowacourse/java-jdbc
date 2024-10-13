@@ -21,6 +21,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(QueryConnectionHolder queryConnectionHolder, PreparedStatementSetter preparedStatementSetter) {
+        try {
+            PreparedStatement preparedStatement = queryConnectionHolder.getAsPreparedStatement();
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     public int update(String sql, PreparedStatementSetter psSetter) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
