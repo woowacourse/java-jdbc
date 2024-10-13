@@ -67,7 +67,7 @@ class UserServiceTest {
         assertThat(actual.password()).isEqualTo(newPassword);
     }
 
-    @DisplayName("트랜잭션이 도중 예외가 발생하면 데이터 변경이 롤백된다.")
+    @DisplayName("트랜잭션 도중 예외가 발생하면 데이터 변경이 롤백된다.")
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
