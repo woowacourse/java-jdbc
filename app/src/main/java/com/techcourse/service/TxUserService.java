@@ -40,9 +40,7 @@ public class TxUserService implements UserService {
         } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                throw new SQLExecuteException(e.getMessage(), e);
-            }
+            } catch (SQLException ex) {}
             throw new SQLExecuteException(e.getMessage(), e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
