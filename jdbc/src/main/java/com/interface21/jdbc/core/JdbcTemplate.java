@@ -28,6 +28,12 @@ public class JdbcTemplate {
         return executeQuery(sql, setParameter(params), PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... params) {
+        log.debug("update with transaction SQL: {}", sql);
+
+        return executeQuery(connection, sql, setParameter(params), PreparedStatement::executeUpdate);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForObject Executing SQL: {}", sql);
 
@@ -60,6 +66,16 @@ public class JdbcTemplate {
     private <T> T executeQuery(final String sql, final PreparedStatementSetter pss, final SqlExecutor<T> executor) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
+            pss.setValue(ps);
+            return executor.executor(ps);
+        } catch (final SQLException e) {
+            throw new SqlExecutionException(e.getMessage());
+        }
+    }
+
+    private <T> T executeQuery(final Connection conn, final String sql, final PreparedStatementSetter pss,
+                               final SqlExecutor<T> executor) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             pss.setValue(ps);
             return executor.executor(ps);
         } catch (final SQLException e) {

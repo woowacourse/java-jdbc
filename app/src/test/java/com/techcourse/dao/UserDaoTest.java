@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.SQLException;
+
 class UserDaoTest {
 
     private UserDao userDao;
@@ -55,12 +57,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        userDao.update(DataSourceConfig.getInstance().getConnection(), user);
 
         final var actual = userDao.findById(1L);
 
