@@ -29,20 +29,12 @@ public abstract class PreparedStatementMapper implements AutoCloseable {
         }
     }
 
-    public ResultSet executeQuery() {
-        try {
-            return preparedStatement.executeQuery();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public ResultSet executeQuery() throws SQLException {
+        return preparedStatement.executeQuery();
     }
 
-    public int executeUpdate() {
-        try {
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public int executeUpdate() throws SQLException {
+        return preparedStatement.executeUpdate();
     }
 
     @Override
