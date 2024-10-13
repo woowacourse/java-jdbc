@@ -1,7 +1,9 @@
 package com.interface21.jdbc.exception;
 
-public class QueryExecutionException extends RuntimeException {
-    public QueryExecutionException(final String message, final Throwable cause) {
-        super(message,cause);
+import java.sql.PreparedStatement;
+
+public class QueryExecutionException extends DatabaseAccessException {
+    public QueryExecutionException(final PreparedStatement pstmt, final Throwable cause) {
+        super(String.format("쿼리 실행중 실패 - 쿼리: [%s]. 에러: [%s]", pstmt.toString(), cause.getMessage()), cause);
     }
 }

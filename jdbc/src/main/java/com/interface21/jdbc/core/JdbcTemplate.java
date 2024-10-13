@@ -29,7 +29,7 @@ public class JdbcTemplate {
              final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             executeCommand(pstmt, params);
         } catch (final SQLException exception) {
-            throw new ConnectionFailException("연결을 실패했습니다", exception);
+            throw new ConnectionFailException(sql, exception);
         }
     }
 
@@ -39,7 +39,7 @@ public class JdbcTemplate {
             setStatementsWithPOJOType(pstmt, params);
             pstmt.executeUpdate();
         } catch (final SQLException exception) {
-            throw new QueryExecutionException("쿼리 실행중 예외가 발생했습니다", exception);
+            throw new QueryExecutionException(pstmt, exception);
         }
     }
 
@@ -70,7 +70,7 @@ public class JdbcTemplate {
             setStatementsWithPOJOType(pstmt, params);
             return pstmt.executeQuery();
         } catch (final SQLException exception) {
-            throw new QueryExecutionException("쿼리 실행중 예외가 발생했습니다", exception);
+            throw new QueryExecutionException(pstmt, exception);
         }
     }
 
