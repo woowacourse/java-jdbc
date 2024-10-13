@@ -1,10 +1,11 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.DataAccessException.RunAndThrowable;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import javax.sql.DataSource;
 
 public final class TransactionSynchronizationManager {
@@ -18,66 +19,33 @@ public final class TransactionSynchronizationManager {
         execute(() -> connection.setAutoCommit(false));
     }
 
-    private static void startTransaction(Connection connection){
-        try {
-            connection.setAutoCommit(false);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> dataSourceConnectionMap = getDataSourceConnectionMap();
         Connection connection = dataSourceConnectionMap.get(key);
-        if (connection == null || isClosed(connection)) {
-            bindResource(key, getConnection(key));
+        if (connection == null || executeAndReturn(connection::isClosed)) {
+            bindResource(key, executeAndReturn(key::getConnection));
             return getResource(key);
         }
         return connection;
     }
 
-    private static boolean isClosed(Connection connection){
-        try {
-            return connection.isClosed();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private static Connection getConnection(DataSource key){
-        try {
-            return key.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    private static <T> T executeAndReturn(Callable<T> callable) {
+        return DataAccessException.executeAndConvertException(callable);
     }
 
     public static void unbindAndCommit(DataSource key) {
         Connection connection = unbindResource(key);
-        commit(connection);
+        execute(connection::commit);
     }
 
-    private static void commit(Connection connection) {
-        try {
-            connection.commit();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    private static void execute(RunAndThrowable runAndThrowable) {
+        DataAccessException.executeAndConvertException(runAndThrowable);
     }
 
     public static void unbindAndRollback(DataSource key) {
         Connection connection = unbindResource(key);
-        rollback(connection);
+        execute(connection::rollback);
     }
-
-    private static void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
 
     private static Map<DataSource, Connection> getDataSourceConnectionMap() {
         Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
