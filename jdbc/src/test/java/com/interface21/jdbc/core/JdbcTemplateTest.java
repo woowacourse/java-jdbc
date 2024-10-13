@@ -11,11 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -31,16 +31,6 @@ class JdbcTemplateTest {
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
-
-    private void verifyQueryResourcesClosed() throws SQLException {
-        verify(resultSet).close();
-        verifyConnectionClosed();
-    }
-
-    private void verifyConnectionClosed() throws SQLException {
-        verify(preparedStatement).close();
-        verify(connection).close();
-    }
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -101,12 +91,13 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("test-ash");
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         //then
         assertAll(
-                () -> assertThat(user.id).isEqualTo(1L),
-                () -> assertThat(user.account).isEqualTo("test-ash"),
+                () -> assertThat(user).isPresent(),
+                () -> assertThat(user.get().id).isEqualTo(1L),
+                () -> assertThat(user.get().account).isEqualTo("test-ash"),
                 this::verifyQueryResourcesClosed
         );
     }
@@ -121,11 +112,11 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         //when
-        User user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
+        Optional<User> user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1L);
 
         //then
         assertAll(
-                () -> assertNull(user),
+                () -> assertThat(user).isNotPresent(),
                 this::verifyQueryResourcesClosed
         );
     }
@@ -151,6 +142,20 @@ class JdbcTemplateTest {
                 () -> verify(resultSet, times(3)).next(),
                 () -> verify(resultSet, times(2)).getLong("id"),
                 this::verifyQueryResourcesClosed
+        );
+    }
+
+    private void verifyQueryResourcesClosed() {
+        assertAll(
+                () -> verify(resultSet).close(),
+                this::verifyConnectionClosed
+        );
+    }
+
+    private void verifyConnectionClosed() {
+        assertAll(
+                () -> verify(preparedStatement).close(),
+                () -> verify(connection).close()
         );
     }
 

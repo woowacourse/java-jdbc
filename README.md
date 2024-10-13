@@ -9,6 +9,20 @@
     - [x] jdbcTemplate 클래스로 db 관련 로직 이관하기
         - [x] jdbcTemplate 테스트 코드 작성
 
+### 2단계 요구사항(리팩터링)
+
+- [x] 불필요한 메서드 제거
+    - [x] setParameters 메서드 인터페이스로 분리
+
+- [x] 라이브러리 확장
+    - [x] PreparedStatementSetter 인터페이스가 가변인자를 사용
+    - [x] 람다를 적극적으로 활용해서 코드량을 줄여보자.
+
+- [x] 1단계 피드백 반영
+    - [x] `queryForObject`가 `Optional`을 반환하도록 변경
+    - [x] `queryForObject` 반환 로직에 예외 추가
+    - [x] `JdbcTemplateTest` 변경
+
 ### 학습목표
 
 - JDBC 라이브러리를 구현하는 경험을 함으로써 중복을 제거하는 연습을 한다.
