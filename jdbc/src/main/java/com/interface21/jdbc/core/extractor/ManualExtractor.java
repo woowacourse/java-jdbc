@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ManualExtractor<T> extends ResultSetExtractor<T> {
+public final class ManualExtractor<T> extends ResultSetExtractor<T> {
     private final ExtractionRule<T> extractionRule;
 
     public ManualExtractor(ResultSet resultSet, ExtractionRule<T> extractionRule) {
