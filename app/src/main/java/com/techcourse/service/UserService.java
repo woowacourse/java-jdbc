@@ -1,11 +1,15 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.datasource.ConnectionExecutor;
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class UserService {
@@ -20,20 +24,33 @@ public class UserService {
         this.dataSource = DataSourceConfig.getInstance();
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        ConnectionExecutor.executeTransactional(dataSource, connection -> {
-            final var user = userDao.findById(connection, id);
+    public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
+        try {
+            final var user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-        });
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            connection.commit();
+        } catch (Exception e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     public void insert(final User user) {
-        ConnectionExecutor.execute(dataSource, connection -> userDao.insert(connection, user));
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        userDao.insert(user);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     public User findById(final long id) {
-        return ConnectionExecutor.apply(dataSource, connection -> userDao.findById(connection, id));
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        User user = userDao.findById(id);
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        return user;
     }
 }

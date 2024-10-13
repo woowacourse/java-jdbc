@@ -53,7 +53,7 @@ class JdbcTemplateTest {
         String sql = "insert into people (name, age) values (?, ?)";
 
         // when
-        int updated = jdbcTemplate.update(connection, sql, "name", 15);
+        int updated = jdbcTemplate.update(sql, "name", 15);
 
         // then
         verify(connection).prepareStatement(sql);
@@ -74,7 +74,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25);
 
         // when
-        Person person = jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 1);
+        Person person = jdbcTemplate.queryForObject(sql, ROW_MAPPER, 1);
 
         // then
         verify(connection).prepareStatement(sql);
@@ -91,7 +91,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 3))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 3))
                 .isInstanceOf(EmptyResultDataAccessException.class);
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
@@ -109,7 +109,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, ROW_MAPPER, 25))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, ROW_MAPPER, 25))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
         verify(connection).prepareStatement(sql);
         verify(preparedStatement).executeQuery();
@@ -127,7 +127,7 @@ class JdbcTemplateTest {
         when(resultSet.getInt(3)).thenReturn(25, 25);
 
         // when
-        List<Person> people = jdbcTemplate.queryForList(connection, sql, ROW_MAPPER);
+        List<Person> people = jdbcTemplate.queryForList(sql, ROW_MAPPER);
 
         // then
         verify(connection).prepareStatement(sql);
