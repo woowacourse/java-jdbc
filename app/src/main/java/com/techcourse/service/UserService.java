@@ -19,6 +19,7 @@ public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private static final String PASSWORD_ERROR_MESSAGE = "비밀번호를 수정하던 도중 에러가 발생했습니다";
+    private static final String USER_ID_NOT_EXIST_ERROR_MESSAGE = "%s id 의 유저를 찾지 못했습니다.";
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -30,14 +31,9 @@ public class UserService {
         this.dataSource = DataSourceConfig.getInstance();
     }
 
-    public User findByIdWithTransaction(Connection connection, long id) {
-        return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
-    }
-
     public User findById(long id) {
         return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new IllegalArgumentException(String.format(USER_ID_NOT_EXIST_ERROR_MESSAGE, id)));
     }
 
     public Optional<User> findByAccount(String account) {
@@ -59,7 +55,7 @@ public class UserService {
 
     private void changePassword(long id, String newPassword, String createBy, Connection connection) {
         TransactionManager.start(connection, () -> {
-            final var user = findByIdWithTransaction(connection, id);
+            final var user = findById(id);
             user.changePassword(newPassword);
             userDao.updateWithTransaction(connection, user);
             userHistoryDao.insertWithTransaction(connection, new UserHistory(user, createBy));
