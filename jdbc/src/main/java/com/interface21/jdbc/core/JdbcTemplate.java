@@ -34,6 +34,7 @@ public class JdbcTemplate {
 
     public <T> List<T> queryWithConnection(final Connection connection, final String sql,
                                            final RowMapper<T> rowMapper, final Object... arguments) {
+        validateConnection(connection);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             statementSetter.setValues(preparedStatement, arguments);
@@ -84,8 +85,8 @@ public class JdbcTemplate {
         }
     }
 
-    // 변경을 최소화하기 위해 외부에서 Connection을 주입받는 메서드 생성
     public void updateWithConnection(final Connection connection, final String sql, final Object... arguments) {
+        validateConnection(connection);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             statementSetter.setValues(preparedStatement, arguments);
@@ -94,6 +95,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException("An error occurred during the execution of the update query.", e);
+        }
+    }
+
+    private void validateConnection(final Connection connection) {
+        if (connection == null) {
+            throw new JdbcException("connection cannot be null.");
         }
     }
 }
