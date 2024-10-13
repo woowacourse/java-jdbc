@@ -36,7 +36,7 @@ public class TransactionManager {
         try {
             connection.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 }
