@@ -1,11 +1,11 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -23,72 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(String sql) {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-
-            return statement.executeUpdate(sql);
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-
-            ResultSet resultSet = statement.executeQuery(sql);
-            List<T> results = new ArrayList<>();
-
-            while (resultSet.next()) {
-                results.add(rowMapper.mapToObject(resultSet));
-            }
-            return results;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()));
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(ps);
-            ResultSet resultSet = ps.executeQuery();
-            List<T> results = new ArrayList<>();
-
-            while (resultSet.next()) {
-                results.add(rowMapper.mapToObject(resultSet));
-            }
-            return results;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()), pss);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            setValues(args.clone(), ps);
-
-            ResultSet resultSet = ps.executeQuery();
-            List<T> results = new ArrayList<>();
-
-            while (resultSet.next()) {
-                results.add(rowMapper.mapToObject(resultSet));
-            }
-            return results;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()), args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
@@ -99,8 +46,8 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, preparedStatementSetter, rowMapper);
+    public <T> T queryForObject(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        List<T> results = query(sql, pss, rowMapper);
         if (results.size() == 1) {
             return results.get(0);
         }
@@ -115,34 +62,73 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public int update(String sql, PreparedStatementSetter preparedStatementSetter, Connection connection) {
-        try (
-                PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(ps);
-            return ps.executeUpdate();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public int update(String sql, PreparedStatementSetter pss, Connection connection) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, pss);
     }
 
     public int update(String sql, Connection connection, Object... args) {
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            setValues(args.clone(), ps);
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
 
-            return ps.executeUpdate();
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pss) { //exectue가 4개 있는데 Connection이 내부로 들어와서 그렇습니다. 리팩토링과정에서 줄여보겠습니다.
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
 
+            pss.setValues(ps);
+            return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    private static void setValues(Object[] objects, PreparedStatement ps) throws SQLException {
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
+
+            return callback.doInPreparedStatement(ps);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback,
+                          PreparedStatementSetter pss) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            pss.setValues(ps);
+            return callback.doInPreparedStatement(ps);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback, Object... args) {
+        try (PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
+
+            return callback.doInPreparedStatement(ps);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private PreparedStatement createPreparedStatement(Connection connection, String sql, Object... args)
+            throws SQLException {
+        PreparedStatement ps = connection.prepareStatement(sql);
+        setValues(args.clone(), ps);
+        return ps;
+    }
+
+    private void setValues(Object[] objects, PreparedStatement ps) throws SQLException {
         for (int i = 1; i <= objects.length; i++) {
             ps.setObject(i, objects[i - 1]);
         }
+    }
+
+    private <T> List<T> extractResults(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapToObject(rs));
+        }
+        return results;
     }
 }
