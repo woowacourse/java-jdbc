@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,13 +30,21 @@ public class JdbcTemplate {
         );
     }
 
-    public void update(final Connection connection, String sql, final Object... args) {
-        execute(
-                connection,
-                sql,
-                PreparedStatement::executeUpdate,
-                args
-        );
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            setStatement(args, statement);
+            log.info("query : {}", sql);
+            return executor.execute(statement);
+        } catch (Exception e) {
+            throw new DataAccessException("SQL execution failed. : " + sql + " \nCause: " + e.getMessage());
+        }
+    }
+
+    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
+        }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -65,38 +74,5 @@ public class JdbcTemplate {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            setStatement(args, statement);
-            log.info("query : {}", sql);
-            return executor.execute(statement);
-        } catch (Exception e) {
-            throw new DataAccessException("SQL execution failed. : " + sql + " \nCause: " + e.getMessage());
-        }
-    }
-
-    private <T> T execute(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementExecutor<T> executor,
-            final Object... args
-    ) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            setStatement(args, statement);
-            log.info("query : {}", sql);
-            return executor.execute(statement);
-        } catch (Exception e) {
-            throw new DataAccessException("SQL execution failed. : " + sql + " \nCause: " + e.getMessage());
-        }
-    }
-
-    private void setStatement(Object[] args, PreparedStatement statement) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + PREPARED_STATEMENT_INDEX_OFFSET, args[i]);
-        }
     }
 }
