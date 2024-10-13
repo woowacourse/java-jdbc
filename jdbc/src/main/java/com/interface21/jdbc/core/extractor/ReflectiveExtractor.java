@@ -17,7 +17,6 @@ public final class ReflectiveExtractor<T> extends ResultSetExtractor<T> {
     }
 
     @Override
-    @CheckReturnValue
     public T extractOne() throws SQLException {
         try {
             T instance = clazz.getConstructor().newInstance();
