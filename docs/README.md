@@ -18,3 +18,8 @@
 - [x] 학습테스트 제출하기
 - [x] RowMapper 템플릿 콜백 패턴 적용하기
 - [x] KeyHolder 를 이용하는 메서드 생성하기 
+
+## 3단계 - Transaction 적용하기
+
+- [ ] `changePassword()` 내 커넥션을 공유하도록 변경하기 
+- [ ] 리팩토링 고민하기
