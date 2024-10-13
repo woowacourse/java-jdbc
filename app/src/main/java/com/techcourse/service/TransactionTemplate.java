@@ -6,9 +6,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class TransactionWrapper {
+public class TransactionTemplate {
 
-    private TransactionWrapper() {
+    private TransactionTemplate() {
     }
 
     public static void executeWithTransaction(ServiceLogic logic) {

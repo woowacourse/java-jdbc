@@ -24,7 +24,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TransactionWrapper.executeWithTransaction((connection) -> {
+        TransactionTemplate.executeWithTransaction((connection) -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
