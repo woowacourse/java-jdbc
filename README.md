@@ -31,3 +31,7 @@
 - [x] 제네릭 사용하도록 RowMapper 인터페이스 개선
 - [x] 가변인자를 사용해 PreparedStatementSetter 인터페이스 개선
 - [x] 람다로 코드량 줄이기
+
+## 3단계 - Transaction 적용하기
+
+- [x] 트랜잭션을 적용해 `changePassword()` 메서드의 원자성 보장
