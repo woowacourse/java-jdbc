@@ -21,8 +21,8 @@ class UserHistoryDaoTest {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
-        userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userHistoryDao = new UserHistoryDao(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @DisplayName("회원의 기록을 저장한다.")
