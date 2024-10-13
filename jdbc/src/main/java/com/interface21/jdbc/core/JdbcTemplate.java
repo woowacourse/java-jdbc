@@ -43,11 +43,6 @@ public class JdbcTemplate {
         return update(sql, new PreparedStatementArgumentsSetter(args));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> query = query(sql, rowMapper, args);
-        return query.isEmpty() ? null : query.getLast();
-    }
-
     public <T> List<T> query(String sql, PreparedStatementSetter psSetter, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -60,6 +55,11 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, new PreparedStatementArgumentsSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> query = query(sql, rowMapper, args);
+        return query.isEmpty() ? null : query.getLast();
     }
 
     private <T> List<T> retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
