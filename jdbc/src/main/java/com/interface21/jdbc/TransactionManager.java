@@ -2,9 +2,7 @@ package com.interface21.jdbc;
 
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Inject;
-import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
 
@@ -27,16 +25,10 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
-        }
-    }
-
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
+        } catch (Exception e) {
+            ConnectionConsumerWrapper.accept(connection, Connection::rollback);
+        } finally {
+            ConnectionConsumerWrapper.accept(connection, Connection::close);
         }
     }
 }
