@@ -12,9 +12,7 @@ public class ConnectionConsumerWrapper {
 
     public static void accept(Connection connection, ConnectionConsumer consumer) {
         try {
-            if(connection != null) {
-                consumer.accept(connection);
-            }
+            consumer.accept(connection);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }

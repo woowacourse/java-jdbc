@@ -17,6 +17,7 @@ public class TransactionTemplate {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
+            validateConnection(connection);
             connection.setAutoCommit(false);
             logic.execute(connection);
             connection.commit();
@@ -25,6 +26,12 @@ public class TransactionTemplate {
             throw new DataAccessException(e);
         } finally {
             ConnectionConsumerWrapper.accept(connection, Connection::close);
+        }
+    }
+
+    private static void validateConnection(Connection connection) throws SQLException {
+        if(connection == null){
+            throw new SQLException("Connection 존재하지 않습니다.");
         }
     }
 }
