@@ -2,7 +2,9 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -36,7 +38,8 @@ public class UserDao {
     public void update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         log.debug("query : {}", sql);
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        Connection connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

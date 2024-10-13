@@ -45,6 +45,15 @@ public class JdbcTemplate implements JdbcOperations {
         }
     }
 
+    private <T> T executeQuery(Connection connection, String sql, PreparedStatementCallBack<T> callBack) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            return callBack.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     private <T> List<T> executeAndGet(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         List<T> result = new ArrayList<>();
         try (ResultSet rs = pstmt.executeQuery()) {
@@ -93,6 +102,13 @@ public class JdbcTemplate implements JdbcOperations {
         });
     }
 
+    public void update(Connection connection, String sql, Object... values) throws DataAccessException {
+        executeQuery(connection, sql, (pstmt) -> {
+            bindValues(pstmt, values);
+            return pstmt.executeUpdate();
+        });
+    }
+
     public void execute(String sql) throws DataAccessException {
         executeQuery(sql, PreparedStatement::execute);
     }
@@ -104,5 +120,9 @@ public class JdbcTemplate implements JdbcOperations {
             log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
