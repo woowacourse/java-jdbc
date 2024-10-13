@@ -32,7 +32,7 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        PreparedStatementSetter preparedStatementSetter = setParamToPreparedStatementSetter(
+        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(
                 user.getAccount(), user.getPassword(), user.getEmail());
         jdbcTemplate.update(sql, preparedStatementSetter);
         log.debug("query : {}", sql);
@@ -40,16 +40,18 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        PreparedStatementSetter preparedStatementSetter = setParamToPreparedStatementSetter(
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
+        );
         jdbcTemplate.update(sql, preparedStatementSetter);
         log.debug("query : {}", sql);
     }
 
     public void update(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        PreparedStatementSetter preparedStatementSetter = setParamToPreparedStatementSetter(
-                user.getAccount(),  user.getPassword(), user.getEmail(), user.getId());
+        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(
+                user.getAccount(),  user.getPassword(), user.getEmail(), user.getId()
+        );
         jdbcTemplate.update(connection, sql, preparedStatementSetter);
         log.debug("query : {}", sql);
     }
@@ -69,7 +71,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(objectMapper, sql, pstmt -> pstmt.setObject(1, account));
     }
 
-    private PreparedStatementSetter setParamToPreparedStatementSetter(Object... params) {
+    private PreparedStatementSetter getPreparedStatementSetter(Object... params) {
         return pstmt -> {
             for (int i = 0; i < params.length; i++) {
                 pstmt.setObject(i + 1, params[i]);
