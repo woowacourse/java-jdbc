@@ -18,15 +18,6 @@ import org.junit.jupiter.api.Test;
 
 class PreparedStatementMapperTest {
 
-    @DisplayName("")
-    @Test
-    void setStatement() {
-    }
-
-    @Test
-    void executeQuery() {
-    }
-
     @DisplayName("pss가 null이거나 닫혀 있다면 예외가 발생한다.")
     @Test
     void pssNull() throws SQLException {
