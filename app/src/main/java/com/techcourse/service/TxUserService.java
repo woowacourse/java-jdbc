@@ -45,7 +45,7 @@ public class TxUserService implements UserService {
             runnable.run();
             connection.commit();
         } catch (SQLException e) {
-            SQLExceptionUtil.handleSQLException(() -> connection.rollback());
+            SQLExceptionUtil.handleSQLException(connection::rollback);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
