@@ -29,13 +29,12 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
+            ResultSet resultSet = statement.executeQuery();
+            List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
+            return results;
         }, params);
     }
 
@@ -45,7 +44,7 @@ public class JdbcTemplate {
         return DataAccessUtils.getNullableSingleResult(result);
     }
 
-    private  <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
         log.debug("Executing SQL execute: {}", sql);
 
         try (
