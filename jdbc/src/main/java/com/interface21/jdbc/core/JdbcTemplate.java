@@ -77,6 +77,19 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        log.debug("query : {}", sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setColumns(preparedStatement);
+            List<T> records = executeQuery(rowMapper, preparedStatement);
+            validateDataSize(records);
+            return records.getFirst();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement preparedStatement)
             throws SQLException {
         List<T> result = new ArrayList<>();
