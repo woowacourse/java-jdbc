@@ -46,7 +46,7 @@ class JdbcTemplateTest {
         // when
         when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
         when(preparedStatement.executeUpdate()).thenReturn(1);
-        int rowsAffected = jdbcTemplate.update(sql, account, password, email);
+        int rowsAffected = jdbcTemplate.update(connection, sql, account, password, email);
 
         // then
         assertEquals(1, rowsAffected);
@@ -55,7 +55,6 @@ class JdbcTemplateTest {
         verify(preparedStatement).setObject(3, email);
         verify(preparedStatement).executeUpdate();
         verify(preparedStatement).close();
-        verify(connection).close();
     }
 
     @Test
