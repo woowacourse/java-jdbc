@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core;
+package com.interface21.jdbc.datasource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.ConnectionExecutor;
+import com.interface21.jdbc.datasource.ConnectionExecutor;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;

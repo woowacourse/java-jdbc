@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core;
+package com.interface21.jdbc.datasource;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
