@@ -28,7 +28,7 @@ public class TransactionManager {
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             connection.rollback();
             throw e;
         } finally {
@@ -49,7 +49,7 @@ public class TransactionManager {
         try {
             connection.setAutoCommit(false);
             return function.apply(connection);
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             connection.rollback();
             throw e;
         } finally {
