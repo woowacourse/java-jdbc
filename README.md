@@ -37,4 +37,6 @@
 ## 4단계 - Transaction synchronization 적용하기
 
 - [ ] Transaction synchronization 적용
+  - [x] Service, DAO 에서 DataSourceUtils 를 통해 Connection 가져오도록 수정
+  - [ ] TransactionSynchronizationManager 정상 동작하도록 구현
 - [ ] 트랜잭션 서비스 추상화
