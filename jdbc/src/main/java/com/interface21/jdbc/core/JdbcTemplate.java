@@ -12,8 +12,7 @@ import com.interface21.dao.DataAccessException;
 
 public class JdbcTemplate {
 
-    private DataSource dataSource;
-
+    private final DataSource dataSource;
     private final ResultMapper resultMapper;
 
     public JdbcTemplate(final DataSource dataSource) {
