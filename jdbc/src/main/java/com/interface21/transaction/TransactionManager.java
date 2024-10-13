@@ -6,11 +6,15 @@ import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.interface21.dao.DataAccessException;
 
 public class TransactionManager {
 
     private static final TransactionManager INSTANCE = new TransactionManager();
+    private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
     private TransactionManager() {
     }
@@ -27,6 +31,7 @@ public class TransactionManager {
             consumer.accept(connection);
         } catch (Exception e) {
             rollback(connection);
+            log.info("로직 처리 중 에러가 발생했습니다. 롤백합니다.");
             throw new DataAccessException("로직 처리 중 에러가 발생했습니다. 롤백합니다.", e);
         }
 
