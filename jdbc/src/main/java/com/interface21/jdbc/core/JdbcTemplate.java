@@ -37,13 +37,15 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForObject Executing SQL: {}", sql);
 
-        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
-        try {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            setParameter(params).setValue(ps);
+            final ResultSet resultSet = ps.executeQuery();
             if (resultSet.next()) {
                 return rowMapper.mapRow(resultSet);
             }
             return null;
-        } catch (final SQLException e) {
+        } catch (SQLException e) {
             throw new SqlExecutionException(e.getMessage(), e);
         }
     }
