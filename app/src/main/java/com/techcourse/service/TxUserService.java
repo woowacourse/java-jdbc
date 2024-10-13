@@ -50,8 +50,11 @@ public class TxUserService implements UserService {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
-            return execute(callback, conn);
-        } catch (SQLException e) {
+            T result = callback.get();
+            conn.commit();
+            return result;
+        } catch (SQLException | DataAccessException e) {
+            rollback(conn);
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
@@ -60,17 +63,11 @@ public class TxUserService implements UserService {
         }
     }
 
-    private <T> T execute(Supplier<T> callback, Connection conn) throws SQLException {
+    private void rollback(Connection conn) {
         try {
-            T result = callback.get();
-            conn.commit();
-            return result;
-        } catch (SQLException | DataAccessException e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ignored) {
-            }
-            throw new DataAccessException(e);
+            conn.rollback();
+        } catch (SQLException ignored) {
+            log.error("rollback 실패", ignored);
         }
     }
 }
