@@ -35,25 +35,23 @@ public class JdbcTemplate {
 
     @Nullable
     public <T> T queryOne(Class<T> clazz, String sql, Object... params) {
-        List<T> result = query(clazz, sql, params);
-        validateResultLessOrEqualThanOne(result);
+        return doQueryOne(query(clazz, sql, params));
+    }
 
+
+    @Nullable
+    public <T> T queryOne(ExtractionRule<T> extractionRule, String sql, Object... params) {
+        return doQueryOne(query(extractionRule, sql, params));
+    }
+
+    private <T> T doQueryOne(List<T> result) {
+        validateResultLessOrEqualThanOne(result);
         return result.isEmpty() ? null : result.getFirst();
     }
 
     private <T> void validateResultLessOrEqualThanOne(List<T> result) {
         if (result.size() > 1) {
             throw new DataAccessException(MULTIPLE_DATA_ERROR);
-        }
-    }
-
-    public int update(String sql, Object... params) {
-        log.info("update sql = {}", sql);
-        try (PreparedStatement preparedStatement = getPreparedStatement(sql);
-             ObjectMappedStatement objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
-            return objectMapper.executeUpdate();
-        } catch (SQLException e) {
-            throw new JdbcException(e);
         }
     }
 
@@ -70,6 +68,16 @@ public class JdbcTemplate {
     private <T> List<T> doQuery(ResultSetExtractor<T> resultSetExtractor) {
         try (resultSetExtractor) {
             return resultSetExtractor.extract();
+        } catch (SQLException e) {
+            throw new JdbcException(e);
+        }
+    }
+
+    public int update(String sql, Object... params) {
+        log.info("update sql = {}", sql);
+        try (PreparedStatement preparedStatement = getPreparedStatement(sql);
+             ObjectMappedStatement objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
+            return objectMapper.executeUpdate();
         } catch (SQLException e) {
             throw new JdbcException(e);
         }

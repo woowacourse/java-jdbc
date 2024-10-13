@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.extractor.ExtractionRule;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -39,7 +40,13 @@ public class UserDao {
 
     public User findById(Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryOne(User.class, sql, id);
+        ExtractionRule<User> rule = rs -> new User(
+                rs.getLong("id"),
+                rs.getString("name"),
+                rs.getString("account"),
+                rs.getString("email")
+        );
+        return jdbcTemplate.queryOne(rule, sql, id);
     }
 
     public User findByAccount(String account) {
