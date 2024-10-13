@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -23,11 +22,9 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.dataSource = jdbcTemplate.getDataSource();
     }
 
     public void insert(final User user) {
@@ -42,12 +39,7 @@ public class UserDao {
 
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.update(
-                TransactionSynchronizationManager.getResource(dataSource),
-                sql,
-                user.getPassword(),
-                user.getId()
-        );
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
