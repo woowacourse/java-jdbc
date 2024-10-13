@@ -55,10 +55,9 @@ public class TxUserService implements UserService {
             return result;
         } catch (SQLException | DataAccessException e) {
             rollback(conn);
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            releaseConnection(conn, dataSource);
             log.debug("-- 트랜잭션 종료");
         }
     }
@@ -68,6 +67,14 @@ public class TxUserService implements UserService {
             conn.rollback();
         } catch (SQLException ignored) {
             log.error("rollback 실패", ignored);
+        }
+    }
+
+    private void releaseConnection(Connection conn, DataSource dataSource) {
+        DataSourceUtils.releaseConnection(conn, dataSource);
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException ignored) {
         }
     }
 }
