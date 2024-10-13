@@ -46,7 +46,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        final String sql = "update users set account = ?, password = ?, email = ? WHERE id = ?";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
@@ -57,16 +57,18 @@ public class UserDao {
     }
 
     public void update(Connection connection, User user) {
-        String sql = "update users set password = ? where id = ?";
+        String sql = "update users set account = ?, password = ?, email = ? WHERE id = ?";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> {
-            pstmt.setString(1, user.getPassword());
-            pstmt.setLong(2, user.getId());
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
         };
         jdbcTemplate.update(connection, sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {
-        final String sql = "SELECT id, account, password, email FROM users";
+        final String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
