@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -42,7 +43,7 @@ class JdbcTemplateTest {
         resultSet = mock(ResultSet.class);
         parameterMetaData = mock(ParameterMetaData.class);
 
-        when(dataSource.getConnection()).thenReturn(connection);
+        when(DataSourceUtils.getConnection(dataSource)).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
         when(preparedStatement.getParameterMetaData()).thenReturn(parameterMetaData);
 
@@ -70,7 +71,6 @@ class JdbcTemplateTest {
             inOrder.verify(preparedStatement).setObject(2, 1L);
             inOrder.verify(preparedStatement).executeUpdate();
             inOrder.verify(preparedStatement).close();
-            inOrder.verify(connection).close();
         }
 
         @DisplayName("업데이트 쿼리 실행 실패 시 예외를 발생한다.")
@@ -85,7 +85,6 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.executeUpdate(sql, "mia", 1L))
                     .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
-            verify(connection).close();
         }
     }
 
@@ -116,7 +115,6 @@ class JdbcTemplateTest {
             );
             verify(resultSet).close();
             verify(preparedStatement).close();
-            verify(connection).close();
         }
 
         @DisplayName("여러 결과 조회 실패 시 예외를 발생한다.")
@@ -130,7 +128,6 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.fetchResults(sql, JdbcTemplateTest.this::userResultMapper))
                     .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
-            verify(connection).close();
         }
     }
 
@@ -159,7 +156,6 @@ class JdbcTemplateTest {
             );
             verify(resultSet).close();
             verify(preparedStatement).close();
-            verify(connection).close();
         }
 
         @DisplayName("결과 리스트가 비어 있는 경우 예외를 발생한다.")
@@ -175,7 +171,6 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
                     .isInstanceOf(EmptyResultDataAccessException.class);
             verify(preparedStatement).close();
-            verify(connection).close();
         }
 
         @DisplayName("결과 리스트의 크기가 1보다 큰 경우 예외를 발생한다.")
@@ -191,7 +186,6 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
                     .isInstanceOf(IncorrectResultSizeDataAccessException.class);
             verify(preparedStatement).close();
-            verify(connection).close();
         }
 
         @DisplayName("단일 결과 조회 실패 시 예외를 발생한다.")
@@ -206,7 +200,6 @@ class JdbcTemplateTest {
             assertThatThrownBy(() -> jdbcTemplate.fetchResult(sql, JdbcTemplateTest.this::userResultMapper, 1L))
                     .isInstanceOf(DataAccessException.class);
             verify(preparedStatement).close();
-            verify(connection).close();
         }
     }
 
