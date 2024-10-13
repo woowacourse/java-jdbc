@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.exception.DataQueryException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -53,10 +54,17 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException e) {
-            if (connection != null) {
-                handleRollBack(connection);
-            }
+            handleException(connection, e);
             throw new DataQueryException(e.getMessage(), e);
+        } catch (Exception e) {
+            handleException(connection, e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void handleException(Connection connection, Exception e) {
+        if (connection != null) {
+            handleRollBack(connection);
         }
     }
 
