@@ -72,12 +72,6 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Connection connection, final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, id);
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, preparedStatementSetter);
-    }
-
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         final PreparedStatementSetter preparedStatementSetter = pstmt -> pstmt.setLong(1, id);

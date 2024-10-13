@@ -44,7 +44,7 @@ public class UserService {
     private void updatePassword(final long id, final String newPassword, final String createBy,
                            final Connection connection) {
         TransactionManager.start(connection, () -> {
-            final var user = userDao.findById(connection, id);
+            final var user = userDao.findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
