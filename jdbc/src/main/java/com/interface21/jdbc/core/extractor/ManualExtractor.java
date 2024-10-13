@@ -2,21 +2,20 @@ package com.interface21.jdbc.core.extractor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class ManualExtractor<T> extends ResultSetExtractor<T> {
-    private final Function<ResultSet, T> function;
+    private final ExtractionRule<T> extractionRule;
 
-    public ManualExtractor(ResultSet resultSet, Function<ResultSet, T> go) {
+    public ManualExtractor(ResultSet resultSet, ExtractionRule<T> extractionRule) {
         super(resultSet);
-        this.function = go;
+        this.extractionRule = extractionRule;
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public T extractOne() throws SQLException {
-        return this.function.apply(this.resultSet);
+        return extractionRule.apply(this.resultSet);
     }
 }
