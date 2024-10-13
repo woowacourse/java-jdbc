@@ -29,8 +29,19 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        execute(connection, sql, preparedStatement -> {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
+    }
+
     public void update(String sql, Object ... args) {
         update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public void update(Connection connection, String sql, Object ... args) {
+        update(connection, sql, new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, PreparedStatementSetter preparedStatementSetter) {
@@ -59,6 +70,14 @@ public class JdbcTemplate {
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return preparedStatementExecutor.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
