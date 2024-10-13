@@ -39,8 +39,8 @@ public class UserService {
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
-            } catch (SQLException e) {
-                connection.rollback(); // try-catch로 한 번 더 감싸야 하지만 예시니까 생략
+            } catch (Exception e) {
+                connection.rollback();
                 throw new RuntimeException(e);
             }
         } catch (SQLException e) {
