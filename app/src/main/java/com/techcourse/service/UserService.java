@@ -1,8 +1,6 @@
 package com.techcourse.service;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -22,7 +20,7 @@ public class UserService {
             UserHistoryDao userHistoryDao
     ) {
         this.datasource = datasource;
-        this.txTemplate = new TransactionTemplate();
+        this.txTemplate = new TransactionTemplate(datasource);
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -36,23 +34,13 @@ public class UserService {
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
-        Connection con = getConnection();
-
-        txTemplate.executeWithoutResult(con, () -> {
-            User user = userDao.findById(con, id);
+        txTemplate.executeWithoutResult(() -> {
+            User user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(con, user);
+            userDao.update(user);
 
             UserHistory userHistory = new UserHistory(user, createBy);
-            userHistoryDao.log(con, userHistory);
+            userHistoryDao.log(userHistory);
         });
-    }
-
-    private Connection getConnection() {
-        try {
-            return datasource.getConnection();
-        } catch (SQLException e) {
-            throw new IllegalStateException("db connection error", e);
-        }
     }
 }
