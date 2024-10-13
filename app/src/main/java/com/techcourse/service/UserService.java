@@ -7,7 +7,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class UserService {
@@ -30,28 +29,20 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            changePasswordAndLog(id, newPassword, createBy, connection);
             connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(ex);
-            }
+            connection.setAutoCommit(true);
+        } catch (Exception e) {
             throw new DataAccessException(e);
-        } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new DataAccessException(e);
-            }
         }
+    }
+
+    private void changePasswordAndLog(long id, String newPassword, String createBy, Connection connection) {
+        final var user = findById(id);
+        user.changePassword(newPassword);
+        userDao.update(connection, user);
+        userHistoryDao.log(connection, new UserHistory(user, createBy));
     }
 }
