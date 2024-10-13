@@ -30,11 +30,18 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            preparedStatementSetter.setValues(statement);
-            int rows = statement.executeUpdate();
+            int rows = executeUpdate(preparedStatementSetter, statement);
             connection.commit();
-
             return rows;
+        } catch (SQLException e) {
+            log.error("error : {}", e.getMessage(), e);
+            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
+        }
+    }
+
+    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            executeUpdate(preparedStatementSetter, statement);
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
             throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
@@ -61,6 +68,11 @@ public class JdbcTemplate {
 
     public DataSource getDataSource() {
         return dataSource;
+    }
+
+    private static int executeUpdate(PreparedStatementSetter preparedStatementSetter, PreparedStatement statement) throws SQLException {
+        preparedStatementSetter.setValues(statement);
+        return statement.executeUpdate();
     }
 
     private <T> List<T> extractData(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {

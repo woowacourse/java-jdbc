@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,11 @@ public class UserDao {
                     rs.getString("account"),
                     rs.getString("password"),
                     rs.getString("email"));
+    private static final String UPDATE_USER_QUERY = """
+            UPDATE users
+            SET `account` = ?, `password` = ?, `email` = ?
+            WHERE id = ?
+            """;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,21 +47,17 @@ public class UserDao {
         log.info("user insert successful");
     }
 
-    public void update(final User user) {
-        String sql = """
-                UPDATE users
-                SET `account` = ?, `password` = ?, `email` = ?
-                WHERE id = ?
-                """;
+    public void update(Connection connection, final User user) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
 
-        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
+        jdbcTemplate.update(connection, UPDATE_USER_QUERY, argumentPreparedStatementSetter);
+        log.info("user update successful");
+    }
 
-        jdbcTemplate.update(sql, argumentPreparedStatementSetter);
+    public void update(User user) {
+        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
+
+        jdbcTemplate.update(UPDATE_USER_QUERY, argumentPreparedStatementSetter);
         log.info("user update successful");
     }
 
@@ -98,5 +100,14 @@ public class UserDao {
         Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, argumentPreparedStatementSetter));
         log.info("user findByAccount successful");
         return user;
+    }
+
+    private ArgumentPreparedStatementSetter setUserArguments(User user) {
+        return new ArgumentPreparedStatementSetter(
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 }
