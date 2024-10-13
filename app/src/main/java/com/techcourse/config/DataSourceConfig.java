@@ -3,12 +3,13 @@ package com.techcourse.config;
 import org.h2.jdbcx.JdbcDataSource;
 
 import java.util.Objects;
+import javax.sql.DataSource;
 
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
