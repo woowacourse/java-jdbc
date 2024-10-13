@@ -14,7 +14,9 @@ public class TransactionManager {
     }
 
     public static void execute(final Connection connection, final Runnable runnable) {
+        boolean originalAutoCommit = true;
         try {
+            originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
@@ -22,7 +24,7 @@ public class TransactionManager {
             rollback(connection);
             throw new TransactionExecutionException("트랜잭션 실행에 실패하였습니다.", e);
         } finally {
-            closeConnection(connection);
+            closeConnection(connection, originalAutoCommit);
         }
     }
 
@@ -34,13 +36,14 @@ public class TransactionManager {
         }
     }
 
-    private static void closeConnection(final Connection connection) {
+    private static void closeConnection(final Connection connection, final boolean originalAutoCommit) {
         try {
             if (connection != null && !connection.isClosed()) {
+                connection.setAutoCommit(originalAutoCommit);
                 connection.close();
             }
         } catch (final SQLException e) {
-            throw new ConnectionCloseException("커넥션이 닫혀있습니다.", e);
+            throw new ConnectionCloseException("커넥션 종료에 실패하였습니다.", e);
         }
     }
 }
