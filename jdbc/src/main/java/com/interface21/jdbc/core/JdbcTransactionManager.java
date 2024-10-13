@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTransactionManager {
 
@@ -15,14 +17,7 @@ public class JdbcTransactionManager {
     }
 
     public void execute(Consumer<Connection> consumer) {
-        try (Connection connection = dataSource.getConnection()) {
-            executeInTransaction(consumer, connection);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to acquire or manage database connection", e);
-        }
-    }
-
-    private void executeInTransaction(Consumer<Connection> consumer, Connection connection) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
@@ -30,6 +25,9 @@ public class JdbcTransactionManager {
         } catch (SQLException e) {
             rollbackInTransaction(connection);
             throw new DataAccessException("Transaction failed and was rolled back", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
