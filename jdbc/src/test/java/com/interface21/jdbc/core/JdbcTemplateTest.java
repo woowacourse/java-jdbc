@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -105,6 +106,21 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).close(),
                 () -> verify(connection).close()
         );
+    }
+
+    @Test
+    void throwSqlExecutionException() throws SQLException {
+        // Given
+        final String typoSql = "SELETT id, name, FROM users";
+
+        when(preparedStatement.executeQuery()).thenThrow(new SQLException("문법 오류"));
+
+        final RowMapper<User> rowMapper = (final ResultSet rs) -> new User(rs.getInt("id"), rs.getString("name"));
+
+        // When && then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(typoSql, rowMapper, 1))
+                .isInstanceOf(SqlExecutionException.class)
+                .hasMessageContaining("문법 오류");
     }
 
     private record User(int id, String name) {

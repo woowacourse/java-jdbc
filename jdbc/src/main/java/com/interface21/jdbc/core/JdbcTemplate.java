@@ -25,54 +25,54 @@ public class JdbcTemplate {
     public int update(final String sql, final Object... params) {
         log.debug("update Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-            return preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
-        }
+        return executeQuery(sql, setParameter(params), PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForObject Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-            final ResultSet rs = preparedStatement.executeQuery();
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
+        try {
+            if (resultSet.next()) {
+                return rowMapper.mapRow(resultSet);
             }
             return null;
         } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
+            throw new SqlExecutionException(e.getMessage());
         }
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForList Executing SQL: {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setParameter(preparedStatement, params);
-
-            final ResultSet rs = preparedStatement.executeQuery();
+        final ResultSet resultSet = executeQuery(sql, setParameter(params), PreparedStatement::executeQuery);
+        try {
             final List<T> values = new ArrayList<>();
-            while (rs.next()) {
-                values.add(rowMapper.mapRow(rs));
+            while (resultSet.next()) {
+                values.add(rowMapper.mapRow(resultSet));
             }
             return values;
         } catch (final SQLException e) {
-            throw new IllegalArgumentException(e);
+            throw new SqlExecutionException(e.getMessage());
         }
     }
 
-    private void setParameter(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
-        int index = 1;
-        for (final Object param : params) {
-            preparedStatement.setObject(index++, param);
+    private <T> T executeQuery(final String sql, final PreparedStatementSetter pss, final SqlExecutor<T> executor) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            pss.setValue(ps);
+            return executor.executor(ps);
+        } catch (final SQLException e) {
+            throw new SqlExecutionException(e.getMessage());
         }
+    }
+
+    private PreparedStatementSetter setParameter(final Object... params) {
+        return ps -> {
+            int index = 1;
+            for (final Object param : params) {
+                ps.setObject(index++, param);
+            }
+        };
     }
 }
