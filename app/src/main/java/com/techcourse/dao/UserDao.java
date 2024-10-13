@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -39,16 +40,16 @@ public class UserDao {
         jdbcTemplate.update(sql);
     }
 
-    public void update(final User user) {
-        var sql = """
+    public void update(final User user, final Connection connection) {
+        String sql = """
                 update 
                     users 
                 set
-                    account = '%s',
-                    password = '%s', 
-                    email = '%s'
+                    account = ?,
+                    password = ?, 
+                    email = ?
                 where 
-                    id = %d
+                    id = ?
                 """;
 
         jdbcTemplate.update(sql, new PreparedStatementSetter() {
@@ -59,24 +60,23 @@ public class UserDao {
                 ps.setString(3, user.getEmail());
                 ps.setLong(4, user.getId());
             }
-        });
-        jdbcTemplate.update(sql);
+        }, connection);
     }
 
     public List<User> findAll() {
-        var sql = "select id, account, password, email from users";
+        String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, rowMapper);
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+    public User findById(final long id) {
+        String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
-        var sql = "select id, account, password, email from users where account = ?";
+        String sql = "select id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
