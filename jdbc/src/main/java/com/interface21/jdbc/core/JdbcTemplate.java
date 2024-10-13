@@ -21,21 +21,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(QueryConnectionHolder queryConnectionHolder, PreparedStatementSetter preparedStatementSetter) {
+    public int update(QueryConnectionHolder queryConnectionHolder, PreparedStatementSetter preparedStatementSetter) {
         try {
             PreparedStatement preparedStatement = queryConnectionHolder.getAsPreparedStatement();
             preparedStatementSetter.setValues(preparedStatement);
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException("Update 실패", e);
         }
     }
 
     public int update(String sql, PreparedStatementSetter psSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-            psSetter.setValues(ps);
-            return ps.executeUpdate();
+        try (Connection connection = dataSource.getConnection()) {
+             return update(new QueryConnectionHolder(connection, sql), psSetter);
         } catch (SQLException e) {
             throw new DataAccessException("Update 실패", e);
         }
