@@ -25,16 +25,32 @@ public class JdbcTemplate {
         execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
+    public void update(Connection connection, String sql, PreparedStatementSetter pss) {
+        execute(connection, sql, pss, PreparedStatement::executeUpdate);
+    }
+
     public void update(String sql, Object... args) {
         update(sql, createArgumentPreparedStatementSetter(args));
+    }
+
+    public void update(Connection connection, String sql, Object... args) {
+        update(connection, sql, createArgumentPreparedStatementSetter(args));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
         return execute(sql, pss, ps -> mapResultSet(rm, ps));
     }
 
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
+        return execute(connection, sql, pss, ps -> mapResultSet(rm, ps));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rm, Object... args) {
         return query(sql, rm, createArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rm, Object... args) {
+        return query(connection, sql, rm, createArgumentPreparedStatementSetter(args));
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
@@ -48,8 +64,23 @@ public class JdbcTemplate {
         return Optional.ofNullable(results.getFirst());
     }
 
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rm, PreparedStatementSetter pss) {
+        List<T> results = query(connection, sql, rm, pss);
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() > 1) {
+            throw new SQLExecuteException("조회된 레코드가 2건 이상입니다.");
+        }
+        return Optional.ofNullable(results.getFirst());
+    }
+
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rm, Object... args) {
         return queryForObject(sql, rm, createArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rm, Object... args) {
+        return queryForObject(connection, sql, rm, createArgumentPreparedStatementSetter(args));
     }
 
     private PreparedStatementSetter createArgumentPreparedStatementSetter(Object[] args) {
@@ -76,6 +107,18 @@ public class JdbcTemplate {
     private <T> T execute(String sql, PreparedStatementSetter pss, SqlExecutor<T> sqlExecutor) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            pss.setValues(ps);
+            return sqlExecutor.execute(ps);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new SQLExecuteException("SQL을 실행할 수 없습니다.", e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementSetter pss, SqlExecutor<T> sqlExecutor) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(ps);
