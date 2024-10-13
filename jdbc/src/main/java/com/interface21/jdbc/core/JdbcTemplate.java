@@ -37,7 +37,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter){
+    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter) {
         log.debug("query : {}", sql);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             executeUpdate(preparedStatement, preparedStatementSetter);
@@ -47,7 +47,8 @@ public class JdbcTemplate {
         }
     }
 
-    private void executeUpdate(PreparedStatement preparedStatement, PreparedStatementSetter preparedStatementSetter) throws SQLException {
+    private void executeUpdate(PreparedStatement preparedStatement, PreparedStatementSetter preparedStatementSetter)
+            throws SQLException {
         preparedStatementSetter.setColumns(preparedStatement);
         preparedStatement.executeUpdate();
     }
@@ -77,7 +78,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper,
+                                PreparedStatementSetter preparedStatementSetter) {
         log.debug("query : {}", sql);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setColumns(preparedStatement);

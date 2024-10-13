@@ -13,7 +13,7 @@ public class ConnectionConsumerWrapper {
 
     public static void accept(Connection connection, ConnectionConsumer consumer) {
         try {
-            if(!Objects.isNull(consumer)) {
+            if (!Objects.isNull(consumer)) {
                 consumer.accept(connection);
             }
         } catch (SQLException e) {
