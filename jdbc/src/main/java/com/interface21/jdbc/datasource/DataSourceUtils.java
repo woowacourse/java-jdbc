@@ -24,7 +24,7 @@ public abstract class DataSourceUtils {
 
         Connection connection = fetchConnection(dataSource);
         if (TransactionSynchronizationManager.isTransactionActive()) {
-            bindConnection(dataSource, connection);
+            TransactionSynchronizationManager.bindResource(dataSource, new ConnectionHolder(connection));
         }
         return connection;
     }
@@ -38,21 +38,13 @@ public abstract class DataSourceUtils {
         }
     }
 
-    private static void bindConnection(DataSource dataSource, Connection connection) {
-        try {
-            TransactionSynchronizationManager.bindResource(dataSource, new ConnectionHolder(connection));
-        } catch (IllegalStateException e) {
-            releaseConnection(connection, dataSource);
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
-        }
-    }
-
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        ConnectionHolder connectionHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(
-                dataSource);
+        ConnectionHolder connectionHolder =
+                (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
         if (connectionHolder != null && connectionHolder.equalsConnection(connection)) {
             return;
         }
+
         try {
             connection.close();
         } catch (SQLException ex) {
