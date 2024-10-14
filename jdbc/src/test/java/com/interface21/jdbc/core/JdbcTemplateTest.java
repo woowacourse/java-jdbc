@@ -39,7 +39,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-        jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test
@@ -48,7 +48,7 @@ class JdbcTemplateTest {
         String sql = "SELECT * FROM users WHERE id = ?";
 
         // when
-        jdbcTemplate.update(connection, sql, preparedStatementSetter);
+        jdbcTemplate.update(sql, preparedStatementSetter);
 
         // then
         verify(preparedStatementSetter).setValues(preparedStatement);
@@ -63,7 +63,7 @@ class JdbcTemplateTest {
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
-        jdbcTemplate.queryForObject(connection, sql, preparedStatementSetter, rowMapper);
+        jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper);
 
         // then
         verify(preparedStatement).executeQuery();
@@ -80,7 +80,7 @@ class JdbcTemplateTest {
         doThrow(new SQLException()).when(preparedStatement).executeQuery();
 
         // then
-        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, preparedStatementSetter, rowMapper))
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, preparedStatementSetter, rowMapper))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -92,7 +92,7 @@ class JdbcTemplateTest {
         // when
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, true, false);
-        jdbcTemplate.queryForList(connection, sql, preparedStatementSetter, rowMapper);
+        jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper);
 
         // then
         verify(preparedStatement).executeQuery();
@@ -109,7 +109,7 @@ class JdbcTemplateTest {
         doThrow(new SQLException()).when(preparedStatement).executeQuery();
 
         // then
-        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForList(connection, sql, preparedStatementSetter, rowMapper))
+        Assertions.assertThatThrownBy(() -> jdbcTemplate.queryForList(sql, preparedStatementSetter, rowMapper))
                 .isInstanceOf(DataAccessException.class);
     }
 }
