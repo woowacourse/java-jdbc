@@ -30,7 +30,6 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-
             TransactionSynchronizationManager.unbindResource(dataSource);
             if (connection != null) {
                 connection.close();

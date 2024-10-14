@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
@@ -54,7 +53,7 @@ public class TransactionManager {
         }
     }
 
-    private  <T> T getResultInTransaction(Connection connection, Supplier<T> supplier) throws SQLException {
+    private <T> T getResultInTransaction(Connection connection, Supplier<T> supplier) throws SQLException {
         try {
             connection.setAutoCommit(false);
             return supplier.get();

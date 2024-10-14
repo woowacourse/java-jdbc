@@ -18,10 +18,10 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class AppUserServiceTest {
+    private final TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setUp() {

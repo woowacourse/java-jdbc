@@ -60,7 +60,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(false);
 
             assertThatThrownBy(() -> transactionManager.getResultInTransaction(
-                    () ->  jdbcTemplate.getResult(preparedStatementSetter, "query",
+                    () -> jdbcTemplate.getResult(preparedStatementSetter, "query",
                             (rs, rowNum) -> new Object())))
                     .isInstanceOf(NoResultFoundException.class);
         }

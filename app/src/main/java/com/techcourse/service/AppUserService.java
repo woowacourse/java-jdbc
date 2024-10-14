@@ -1,7 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.core.TransactionManager;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;

@@ -8,15 +8,14 @@ import org.junit.jupiter.api.Test;
 import com.interface21.dao.NoResultFoundException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.TransactionManager;
-import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserDaoTest {
 
+    private final TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
     private UserDao userDao;
-    private TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setup() {
