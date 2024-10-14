@@ -64,9 +64,7 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException("Error executing SQL: " + sql, e);
         } finally {
-            if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            closeNotTransactionConnection(connection);
         }
     }
 
@@ -77,5 +75,11 @@ public class JdbcTemplate {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
+    }
+
+    private void closeNotTransactionConnection(Connection connection) {
+        if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 }
