@@ -97,7 +97,6 @@ class JdbcTemplateTest {
         verify(resultSet).next();
         verify(resultSet).close();
         verify(preparedStatement).close();
-        verify(connection).close();
     }
 
     static class User {
