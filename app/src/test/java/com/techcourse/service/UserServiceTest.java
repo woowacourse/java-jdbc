@@ -30,15 +30,13 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         User user = new User("gugu", "password", "hkkang@woowahan.com");
-        Connection connection = getConnection(dataSource);
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         UserService userService = new UserService(dataSource, userDao, userHistoryDao);
-
         String newPassword = "qqqqq";
         String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -63,13 +61,5 @@ class UserServiceTest {
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
-    }
-
-    private Connection getConnection(DataSource dataSource) {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

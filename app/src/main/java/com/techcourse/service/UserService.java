@@ -21,21 +21,11 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        try {
-            Connection connection = dataSource.getConnection();
-            return userDao.findById(connection, id);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        try {
-            Connection connection = dataSource.getConnection();
-            userDao.insert(connection, user);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
@@ -48,14 +38,14 @@ public class UserService {
 
     private void changePasswordWithTransaction(final long id, final String newPassword,
                                                final String createBy) throws SQLException {
-        Connection connection = dataSource.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         connection.setAutoCommit(false);
 
         try {
-            User user = userDao.findById(connection, id);
+            User user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (Throwable e) {
             connection.rollback();
