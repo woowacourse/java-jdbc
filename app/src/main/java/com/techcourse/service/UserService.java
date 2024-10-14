@@ -15,10 +15,14 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.dataSource = DataSourceConfig.getInstance();
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
+        this.dataSource = dataSource;
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+    }
+
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        this(userDao, userHistoryDao, DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {
@@ -31,16 +35,15 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
-        try(Connection connection = dataSource.getConnection()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
                 user.changePassword(newPassword);
-                userDao.update(user,connection);
+                userDao.update(user, connection);
                 userHistoryDao.log(new UserHistory(user, createBy), connection);
 
                 connection.commit();
-            }
-            catch (SQLException e) {
+            } catch (SQLException e) {
                 connection.rollback();
                 throw new RuntimeException(e);
             }
