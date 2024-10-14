@@ -92,7 +92,7 @@ class UserDaoTest {
 
         //when
         initialUser.changePassword(newPassword);
-        userDao.update(dataSource.getConnection(), initialUser);
+        userDao.update(initialUser);
 
         Optional<User> optionalUser = userDao.findById(1L);
 

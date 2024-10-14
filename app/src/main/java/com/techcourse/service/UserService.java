@@ -1,9 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -42,8 +40,8 @@ public class UserService {
 
         try {
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             try {
@@ -53,12 +51,7 @@ public class UserService {
             }
             throw new DataAccessException("트랜잭션 수행 실패", e);
         } finally {
-            try {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            } catch (CannotGetJdbcConnectionException e) {
-                throw new DataAccessException("Connection 해제 실패", e);
-            }
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(dataSource);
         }
     }
 }

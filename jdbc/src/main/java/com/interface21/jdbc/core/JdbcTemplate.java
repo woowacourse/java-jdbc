@@ -34,14 +34,6 @@ public class JdbcTemplate {
         update(sql, createDefaultPreparedStatementSetter(parameters));
     }
 
-    public void update(Connection connection, String sql, PreparedStatementSetter setter) {
-        executePreparedStatement(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
-    public void update(Connection connection, String sql, Object... parameters) {
-        update(connection, sql, createDefaultPreparedStatementSetter(parameters));
-    }
-
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
         List<T> result = query(sql, rowMapper, setter);
 
@@ -78,14 +70,7 @@ public class JdbcTemplate {
     }
 
     private <T> T executePreparedStatement(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
-        try (Connection conn = DataSourceUtils.getConnection(dataSource)) {
-            return executePreparedStatement(conn, sql, setter, callback);
-        } catch (SQLException e) {
-            return handleSQLException(e);
-        }
-    }
-
-    private <T> T executePreparedStatement(Connection conn, String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setParameters(preparedStatement);

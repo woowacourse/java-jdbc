@@ -34,7 +34,7 @@
 
 ### 4단계 요구사항(트랜잭션 동기화)
 
-- [ ] 트랜잭션 동기화(Transaction synchronization) 방식 사용
+- [x] 트랜잭션 동기화(Transaction synchronization) 방식 사용
     - [x] 서비스와 DAO에서 DataSourceUtils를 사용해 connection 설정
     - [x] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현
 - [ ] 트랜잭션 서비스 추상화
