@@ -2,10 +2,13 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 
 public class UserHistoryDao {
@@ -17,9 +20,11 @@ public class UserHistoryDao {
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
 
     public UserHistoryDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = DataSourceConfig.getInstance();
     }
 
     public void insert(UserHistory userHistory) {
@@ -29,7 +34,8 @@ public class UserHistoryDao {
         log.info("userHistory 업데이트에 성공했습니다.");
     }
 
-    public void insertWithTransaction(Connection connection, UserHistory userHistory) {
+    public void insertWithTransaction(UserHistory userHistory) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserHistoryArgument(userHistory);
 
         jdbcTemplate.update(connection, INSERT_USER_HISTORY_QUERY, argumentPreparedStatementSetter);

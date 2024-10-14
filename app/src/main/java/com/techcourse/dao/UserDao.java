@@ -3,10 +3,13 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
@@ -26,9 +29,11 @@ public class UserDao {
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = DataSourceConfig.getInstance();
     }
 
     public void insert(User user) {
@@ -47,7 +52,8 @@ public class UserDao {
         log.info("user insert successful");
     }
 
-    public void updateWithTransaction(Connection connection, User user) {
+    public void updateWithTransaction(User user) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
 
         jdbcTemplate.update(connection, UPDATE_USER_QUERY, argumentPreparedStatementSetter);
@@ -75,6 +81,7 @@ public class UserDao {
     }
 
     public Optional<User> findById(Long id) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         String sql = """
                 SELECT id, account, password, email
                 FROM users
@@ -83,7 +90,7 @@ public class UserDao {
 
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(id);
 
-        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, argumentPreparedStatementSetter));
+        Optional<User> user = Optional.ofNullable(jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, argumentPreparedStatementSetter));
         log.info("user findById successful");
         return user;
     }
