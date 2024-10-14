@@ -11,7 +11,6 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,24 +20,22 @@ class UserServiceTest {
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
     private TransactionManager transactionManager;
-    private Connection connection;
 
     @BeforeEach
     void setUp() throws SQLException {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
         this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
-        this.connection = DataSourceConfig.getInstance().getConnection();
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        final var userService = new AppUserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -53,7 +50,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new AlwaysThrowUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao, transactionManager);
+        final var userService = new TxUserService(appUserService, transactionManager);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

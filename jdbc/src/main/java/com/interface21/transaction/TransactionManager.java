@@ -1,6 +1,7 @@
 package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -20,7 +21,7 @@ public class TransactionManager {
     }
 
     public <T> T executeTransaction(Function<Connection, T> function) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             return executeTransaction(function, connection);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -29,7 +30,7 @@ public class TransactionManager {
     }
 
     public void executeTransaction(Consumer<Connection> consumer) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             executeTransaction(consumer, connection);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -63,5 +64,4 @@ public class TransactionManager {
             connection.setAutoCommit(true);
         }
     }
-
 }
