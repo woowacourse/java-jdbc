@@ -44,7 +44,7 @@ class UserServiceTest {
     @Test
     void findById() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        AppUserService userService = new AppUserService(userDao, userHistoryDao);
         String account = "daon";
         userDao.insert(new User(account, "1234", "test@test.com"));
 
@@ -57,7 +57,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        AppUserService userService = new AppUserService(userDao, userHistoryDao);
         String newPassword = "qqqqq";
         String createdBy = "gugu";
         userService.changePassword(1L, newPassword, createdBy);
@@ -72,13 +72,16 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        // 애플리케이션 서비스
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        UserService userService = new TxUserService(appUserService, transactionManager);
 
         String newPassword = "newPassword";
-        String createBy = "gugu";
+        String createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         User actual = userService.findById(1L);
 

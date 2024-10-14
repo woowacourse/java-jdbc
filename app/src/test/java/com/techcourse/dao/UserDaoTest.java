@@ -7,8 +7,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,23 +107,6 @@ class UserDaoTest {
 
         userDao.update(newUser);
         final var actual = userDao.findById(1L)
-                .orElseThrow();
-
-        assertThat(actual.password()).isEqualTo(newPassword);
-    }
-
-    @DisplayName("커넥션을 이용해서 유저 정보를 업데이트 한다.")
-    @Test
-    void updateWithConnection() throws SQLException {
-        Connection connection = dataSource.getConnection();
-        String newPassword = "password99";
-        User user = userDao.findById(1L)
-                .orElseThrow();
-
-        User newUser = user.changePassword(newPassword);
-
-        userDao.update(connection, newUser);
-        User actual = userDao.findById(1L)
                 .orElseThrow();
 
         assertThat(actual.password()).isEqualTo(newPassword);

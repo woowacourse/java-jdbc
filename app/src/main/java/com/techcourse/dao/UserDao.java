@@ -4,7 +4,6 @@ import com.interface21.dao.DataNotFoundException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,11 +31,6 @@ public class UserDao {
     public void update(User user) {
         String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=?";
         jdbcTemplate.update(sql, user.account(), user.password(), user.email(), user.id());
-    }
-
-    public void update(Connection conn, User user) {
-        String sql = "UPDATE users SET account=?, password=?, email=? WHERE id=?";
-        jdbcTemplate.update(conn, sql, user.account(), user.password(), user.email(), user.id());
     }
 
     public List<User> findAll() {

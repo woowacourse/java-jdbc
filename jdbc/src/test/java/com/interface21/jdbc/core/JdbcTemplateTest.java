@@ -23,7 +23,6 @@ import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
-    private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
@@ -31,7 +30,7 @@ class JdbcTemplateTest {
     @BeforeEach
     void setup() throws SQLException {
         DataSource dataSource = Mockito.mock(DataSource.class);
-        connection = Mockito.mock(Connection.class);
+        Connection connection = Mockito.mock(Connection.class);
         preparedStatement = Mockito.mock(PreparedStatement.class);
         resultSet = Mockito.mock(ResultSet.class);
 
@@ -41,11 +40,8 @@ class JdbcTemplateTest {
     }
 
     @AfterEach
-    void tearDown() {
-        assertAll(
-                () -> verify(connection).close(),
-                () -> verify(preparedStatement).close()
-        );
+    void tearDown() throws SQLException {
+        verify(preparedStatement).close();
     }
 
     @DisplayName("update시 전달받은 인자를 statement에 연결해준다.")
