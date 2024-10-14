@@ -69,11 +69,11 @@ public class JdbcTemplate {
             log.error("Error executing query: {}", e.getMessage(), e);
             throw new JdbcAccessException("Error executing query: " + sql, e);
         } finally {
-            closeConnection(isNewConnection, connection);
+            closeIfNecessary(isNewConnection, connection);
         }
     }
 
-    private void closeConnection(boolean isNewConnection, Connection connection) {
+    private void closeIfNecessary(boolean isNewConnection, Connection connection) {
         if (isNewConnection) {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
