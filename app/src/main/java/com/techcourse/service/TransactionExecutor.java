@@ -15,8 +15,6 @@ public class TransactionExecutor {
 			conn.commit();
 		} catch (Exception e) {
 			rollbackWithException(conn, e);
-		} finally {
-			closeConnection(conn);
 		}
 	}
 
@@ -26,8 +24,6 @@ public class TransactionExecutor {
 			return callable.call();
 		} catch (Exception e) {
 			throw new DataAccessException(e);
-		} finally {
-			closeConnection(conn);
 		}
 	}
 
@@ -38,13 +34,5 @@ public class TransactionExecutor {
 			throw new DataAccessException(rollbackException);
 		}
 		throw new DataAccessException(e);
-	}
-
-	private static void closeConnection(Connection conn) {
-		try {
-			conn.close();
-		} catch (SQLException e) {
-			throw new DataAccessException(e);
-		}
 	}
 }
