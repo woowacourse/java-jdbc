@@ -79,7 +79,8 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> action,
+                          final Object... args) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setPreparedStatementArgs(statement, args);
             return action.doInPreparedStatement(statement);
@@ -93,5 +94,9 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(FIRST_PARAMETER_INDEX + i, args[i]);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

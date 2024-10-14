@@ -5,7 +5,6 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 
 public class UserService {
 
@@ -29,14 +28,13 @@ public class UserService {
     }
 
     public void changePasswordWithTransaction(final long id, final String newPassword, final String createBy) {
-        transactionManager.performTransaction(connection -> changePassword(id, newPassword, createBy, connection));
+        transactionManager.performTransaction(connection -> changePassword(id, newPassword, createBy));
     }
 
-    private void changePassword(final long id, final String newPassword, final String createBy,
-                                final Connection connection) {
+    private void changePassword(final long id, final String newPassword, final String createBy) {
         final User user = getById(id);
         user.changePassword(newPassword);
-        userDao.update(user, connection);
-        userHistoryDao.log(new UserHistory(user, createBy), connection);
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }

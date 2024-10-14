@@ -13,7 +13,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,9 +24,9 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance().getConnection()); // TODO: 리팩토링
+        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
         this.userRowMapper = new UserRowMapper();
         this.userDao = new UserDao(jdbcTemplate, userRowMapper);
 
