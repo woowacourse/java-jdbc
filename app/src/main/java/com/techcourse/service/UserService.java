@@ -40,7 +40,7 @@ public class UserService {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException exception) {
