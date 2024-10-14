@@ -1,8 +1,6 @@
 package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.exception.TechCourseApplicationException;
 import java.sql.Connection;
@@ -12,13 +10,9 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 public class TxUserService implements UserService {
 
     private final UserService userService;
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
 
-    public TxUserService(UserService userService, UserDao userDao, UserHistoryDao userHistoryDao) {
+    public TxUserService(UserService userService) {
         this.userService = userService;
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
     }
 
     @Override
