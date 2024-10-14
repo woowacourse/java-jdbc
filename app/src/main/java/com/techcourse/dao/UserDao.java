@@ -4,11 +4,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.SqlParameterSource;
+import com.interface21.jdbc.core.mapper.ConstructorRowMapper;
 import com.interface21.jdbc.core.mapper.RowMapper;
 import com.techcourse.domain.User;
 
@@ -18,14 +21,18 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
         final String baseQuery = "INSERT INTO users (account, password, email) VALUES (:account, :password, :email)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(user);
         jdbcTemplate.insert(baseQuery, sqlParameterSource);
+    }
+
+    private ConstructorRowMapper<User> rowMapper() {
+        return new ConstructorRowMapper<>(User.class);
     }
 
     public void update(final User user) {
@@ -41,14 +48,14 @@ public class UserDao {
 
     public List<User> findAll() {
         final String baseQuery = "SELECT * FROM users";
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
         return jdbcTemplate.query(baseQuery, Collections.emptyMap(), rowMapper);
     }
 
     public User findById(final Long id) {
         final String baseQuery = "SELECT id, account, password, email FROM users WHERE id = :id";
         final Map<String, Object> queryParameters = Map.of("id", id);
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
 
         return jdbcTemplate.queryForObject(baseQuery, queryParameters, rowMapper);
     }
@@ -56,7 +63,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final String baseQuery = "SELECT id, account, password, email FROM users WHERE account = :account";
         final Map<String, Object> queryParameters = Map.of("account", account);
-        final RowMapper<User> rowMapper = new RowMapper<>(User.class);
+        final RowMapper<User> rowMapper = rowMapper();
 
         return jdbcTemplate.queryForObject(baseQuery, queryParameters, rowMapper);
     }
