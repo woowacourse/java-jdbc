@@ -28,8 +28,8 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        var conn = DataSourceUtils.getConnection(dataSource);
-        try (var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
@@ -58,8 +58,8 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        var conn = DataSourceUtils.getConnection(dataSource);
-        try (var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
@@ -95,8 +95,8 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        var conn = DataSourceUtils.getConnection(dataSource);
-        try (var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
