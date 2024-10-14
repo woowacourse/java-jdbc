@@ -14,7 +14,7 @@ public class TxUserService implements UserService {
     }
 
     public User findById(long id) {
-        return userService.findById(id);
+        return transactionManager.beginTransaction(() -> userService.findById(id));
     }
 
     public void insert(User user) {
