@@ -31,9 +31,18 @@ public abstract class DataSourceUtils {
         try {
             Connection connection = TransactionSynchronizationManager.getResource(dataSource);
             if (connection.getAutoCommit()) {
-                TransactionSynchronizationManager.unbindResource(dataSource);
                 connection.close();
             }
+        } catch (SQLException ex) {
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    public static void releaseDataSource(DataSource dataSource) {
+        try {
+            Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+            connection.close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }

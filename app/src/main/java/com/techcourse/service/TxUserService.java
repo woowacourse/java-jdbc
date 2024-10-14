@@ -39,7 +39,7 @@ public class TxUserService implements UserService {
             rollbackTransaction(connection);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(dataSource);
+            DataSourceUtils.releaseDataSource(dataSource);
         }
     }
 
