@@ -12,7 +12,12 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(DataSource key) {
-        return null;
+        Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            return null;
+        }
+
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
