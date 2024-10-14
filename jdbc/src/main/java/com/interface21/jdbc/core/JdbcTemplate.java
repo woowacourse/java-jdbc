@@ -31,8 +31,8 @@ public class JdbcTemplate {
         return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()));
     }
 
-    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()), pss);
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        return execute(sql, ps -> extractResults(rowMapper, ps.executeQuery()), pstmtSetter);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -47,8 +47,8 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public <T> T queryForObject(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, pss, rowMapper);
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        List<T> results = query(sql, pstmtSetter, rowMapper);
         if (results.size() == 1) {
             return results.get(0);
         }
@@ -63,8 +63,8 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public int update(String sql, PreparedStatementSetter pss) {
-        return execute(sql, PreparedStatement::executeUpdate, pss);
+    public int update(String sql, PreparedStatementSetter pstmtSetter) {
+        return execute(sql, PreparedStatement::executeUpdate, pstmtSetter);
     }
 
     public int update(String sql, Object... args) {
@@ -72,11 +72,11 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback,
-                          PreparedStatementSetter pss) {
+                          PreparedStatementSetter pstmtSetter) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            pss.setValues(ps);
+            pstmtSetter.setValues(ps);
             return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
