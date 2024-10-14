@@ -29,7 +29,7 @@ class UserDaoTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user, dataSource.getConnection());
+        userDao.insert(user);
 
         System.out.println(userDao.findAll());
     }
