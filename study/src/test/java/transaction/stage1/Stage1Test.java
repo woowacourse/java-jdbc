@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +81,11 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_NONE; // Invalid value "0" for parameter "isolation level"
+//            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // isolation level : 1, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+//            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;  // isolation level : 2, user : null
+//            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // isolation level : 4, user : null
+//            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // isolation level : 8, user : null
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -94,7 +98,7 @@ class Stage1Test {
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
             // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
-            log.info("isolation level : {}, user : {}", isolationLevel, actual);
+            log.error("isolation level : {}, user : {}", isolationLevel, actual);
             assertThat(actual).isNull();
         })).start();
 
@@ -249,8 +253,8 @@ class Stage1Test {
     private static DataSource createH2DataSource() {
         final var jdbcDataSource = new JdbcDataSource();
         // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL;");
+//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
         jdbcDataSource.setUser("sa");
         jdbcDataSource.setPassword("");
         return jdbcDataSource;
