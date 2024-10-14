@@ -28,32 +28,32 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(Connection connection, User user) {
-        jdbcTemplate.execute(connection, ORDERED_SETTER,
+    public void insert(User user) {
+        jdbcTemplate.execute(ORDERED_SETTER,
                 "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection connection, final User user) {
-        jdbcTemplate.execute(connection, ORDERED_SETTER,
+    public void update(User user) {
+        jdbcTemplate.execute(ORDERED_SETTER,
                 "update users set account = ?, password = ?, email = ? where id = ?",
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll(Connection connection) {
-        return jdbcTemplate.getResults(connection, ORDERED_SETTER, "select id, account, password, email from users",
+    public List<User> findAll() {
+        return jdbcTemplate.getResults(ORDERED_SETTER, "select id, account, password, email from users",
                 USER_OBJECT_MAPPER);
     }
 
-    public User findById(Connection connection, Long id) {
-        return jdbcTemplate.getResult(connection, ORDERED_SETTER,
+    public User findById(Long id) {
+        return jdbcTemplate.getResult(ORDERED_SETTER,
                 "select id, account, password, email from users where id = ?",
                 USER_OBJECT_MAPPER,
                 id);
     }
 
-    public User findByAccount(Connection connection, String account) {
-        return jdbcTemplate.getResult(connection, ORDERED_SETTER,
+    public User findByAccount(String account) {
+        return jdbcTemplate.getResult(ORDERED_SETTER,
                 "select id, account, password, email from users where account = ?",
                 USER_OBJECT_MAPPER,
                 account);

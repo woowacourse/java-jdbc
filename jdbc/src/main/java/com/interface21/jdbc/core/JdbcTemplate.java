@@ -7,20 +7,29 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.NoResultFoundException;
 import com.interface21.dao.NotSingleResultException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private final DataSource dataSource;
 
-    public int execute(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public int execute(PreparedStatementSetter preparedStatementSetter, String query,
             Object... parameters
     ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             preparedStatementSetter.setParameters(pstmt, parameters);
 
@@ -33,10 +42,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T getResult(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+    public <T> T getResult(PreparedStatementSetter preparedStatementSetter, String query,
             ObjectMapper<T> objectMapper, Object... parameters
     ) {
-
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             preparedStatementSetter.setParameters(pstmt, parameters);
 
@@ -63,9 +72,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> getResults(Connection connection, PreparedStatementSetter preparedStatementSetter, String query,
+    public <T> List<T> getResults(PreparedStatementSetter preparedStatementSetter, String query,
             ObjectMapper<T> objectMapper, Object... parameters
     ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             preparedStatementSetter.setParameters(pstmt, parameters);
 

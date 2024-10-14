@@ -28,13 +28,13 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate();
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        transactionManager.executeInTransaction(connection ->
-                userDao.insert(connection, user)
+        transactionManager.executeInTransaction(() ->
+                userDao.insert(user)
         );
     }
 
@@ -74,20 +74,19 @@ class UserServiceTest {
     void transactionRollbackTest() {
 
         User previousUser = transactionManager.getResultInTransaction(
-                connection -> userDao.findById(connection, 1L));
+                () -> userDao.findById(1L));
         String newPassword = "newPassword";
-        Function<Connection, Object> function = connection -> {
-            previousUser.changePassword(newPassword);
-            userDao.update(connection, previousUser);
-
-            throw new RuntimeException();
-        };
         assertThatThrownBy(
-                () -> transactionManager.getResultInTransaction(function)
+                () -> transactionManager.getResultInTransaction(() -> {
+                    previousUser.changePassword(newPassword);
+                    userDao.update(previousUser);
+
+                    throw new RuntimeException();
+                })
         ).isInstanceOf(RuntimeException.class);
 
         User afterUser = transactionManager.getResultInTransaction(
-                connection -> userDao.findById(connection, 1L));
+                () -> userDao.findById(1L));
 
         assertThat(afterUser.getPassword()).isNotEqualTo(newPassword);
     }

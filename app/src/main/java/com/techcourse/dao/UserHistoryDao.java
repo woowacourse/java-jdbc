@@ -29,16 +29,16 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserHistory findById(Connection connection, Long id) {
-        return jdbcTemplate.getResult(connection, ORDERED_SETTER, "select * from user_history where id = ?",
+    public UserHistory findById(Long id) {
+        return jdbcTemplate.getResult(ORDERED_SETTER, "select * from user_history where id = ?",
                 HISTORY_OBJECT_MAPPER, id);
     }
 
-    public int log(Connection connection, UserHistory userHistory) {
+    public int log(UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values "
                 + "(?, ?, ?, ?, ?, ?)";
 
-        return jdbcTemplate.execute(connection, ORDERED_SETTER,
+        return jdbcTemplate.execute(ORDERED_SETTER,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),

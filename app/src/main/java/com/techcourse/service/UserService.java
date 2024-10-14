@@ -19,19 +19,19 @@ public class UserService {
     }
 
     public User findById(long id) {
-        return transactionManager.getResultInTransaction(connection -> userDao.findById(connection, id));
+        return transactionManager.getResultInTransaction(() -> userDao.findById( id));
     }
 
     public void insert(User user) {
-        transactionManager.executeInTransaction(connection -> userDao.insert(connection, user));
+        transactionManager.executeInTransaction(() -> userDao.insert( user));
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
-        transactionManager.getResultInTransaction(connection -> {
+        transactionManager.getResultInTransaction(() -> {
             final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            return userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update( user);
+            return userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }
