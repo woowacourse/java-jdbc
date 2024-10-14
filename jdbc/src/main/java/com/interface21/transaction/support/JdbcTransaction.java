@@ -26,7 +26,7 @@ public class JdbcTransaction {
         try {
             connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw exceptionTranslator.translate(e);
         }
     }
 
