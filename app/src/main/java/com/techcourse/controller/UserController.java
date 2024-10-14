@@ -13,7 +13,9 @@ import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JsonView;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.service.AppUserService;
 import com.techcourse.service.UserService;
+import com.techcourse.service.transaction.TxUserService;
 
 @Controller
 public class UserController {
@@ -23,7 +25,7 @@ public class UserController {
     private final UserService userService;
 
     public UserController() {
-        this.userService = new UserService(new UserDao(), new UserHistoryDao());
+        this.userService = new TxUserService(new AppUserService(new UserDao(), new UserHistoryDao()));
     }
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
