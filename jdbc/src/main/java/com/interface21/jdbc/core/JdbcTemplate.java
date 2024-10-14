@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.EmptyResultDataAccessException;
 import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
@@ -26,8 +27,8 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.info("query : {}", sql);
 
             pstmtSetter.setValues(pstmt);
@@ -35,15 +36,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    public void update(Connection conn, String sql, PreparedStatementSetter pstmtSetter) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.info("query : {}", sql);
-
-            pstmtSetter.setValues(pstmt);
-            pstmt.executeUpdate();
         }
     }
 
