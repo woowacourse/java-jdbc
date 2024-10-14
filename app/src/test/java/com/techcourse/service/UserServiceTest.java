@@ -8,7 +8,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.service.transaction.TransactionManager;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
@@ -36,17 +35,6 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-    }
-
-    @AfterEach
-    void tearDown() throws SQLException {
-        if (this.connection != null) {
-            try {
-                this.connection.rollback();
-            } finally {
-                this.connection.close();
-            }
-        }
     }
 
     @Test
