@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +35,14 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(String sql, Connection connection, Object... params) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        StatementParamSetter.setParams(preparedStatement, params);
-        preparedStatement.executeUpdate();
+    public void updateWithSynchronizedTransaction(String sql, Object... params) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        PreparedStatementCreator preparedStatementCreator = con -> {
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            StatementParamSetter.setParams(preparedStatement, params);
+            return preparedStatement;
+        };
+        connect(connection, preparedStatementCreator, PreparedStatement::executeUpdate);
     }
 
     public void update(PreparedStatementCreator creator) {
@@ -78,6 +83,15 @@ public class JdbcTemplate {
     private <R> R connect(PreparedStatementCreator creator, Executor<PreparedStatement, R> executor) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
+            return executor.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private <R> R connect(Connection connection, PreparedStatementCreator creator, Executor<PreparedStatement, R> executor) {
+        try (PreparedStatement preparedStatement = creator.createPreparedStatement(connection)) {
             return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

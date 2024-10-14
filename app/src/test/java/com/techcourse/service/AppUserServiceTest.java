@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -31,13 +31,13 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        appUserService.changePassword(1L, newPassword, createBy);
 
-        final User actual = userService.findById(1L);
+        final User actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -46,13 +46,16 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final TxUserService userService = new TxUserService(appUserService);
 
         final String newPassword = "newPassword";
-        final String createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+        final String createdBy = "gugu";
+
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final User actual = userService.findById(1L);
 
