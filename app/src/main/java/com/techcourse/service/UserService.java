@@ -8,6 +8,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.exception.TechCourseApplicationException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class UserService {
 
@@ -28,7 +29,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = DataSourceConfig.getConnection();
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         try (connection) {
             connection.setAutoCommit(false);
 
