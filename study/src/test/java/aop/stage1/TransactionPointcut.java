@@ -2,6 +2,7 @@ package aop.stage1;
 
 import aop.Transactional;
 import java.lang.reflect.Method;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 /**
@@ -12,12 +13,7 @@ import org.springframework.aop.support.StaticMethodMatcherPointcut;
 public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
-    public boolean matches(final Method method, final Class<?> targetClass) {
-        try {
-            Method targetMethod = targetClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
-            return targetMethod.isAnnotationPresent(Transactional.class);
-        } catch (NoSuchMethodException e) {
-            return false;
-        }
+    public boolean matches(final Method method, final @NotNull Class<?> targetClass) {
+        return method.isAnnotationPresent(Transactional.class);
     }
 }
