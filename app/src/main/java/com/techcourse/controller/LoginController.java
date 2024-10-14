@@ -8,7 +8,7 @@ import com.interface21.webmvc.servlet.view.JspView;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.service.UserService;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -19,10 +19,10 @@ public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
-    private final UserService userService;
+    private final AppUserService appUserService;
 
     public LoginController() {
-        this.userService = new UserService(new UserDao(), new UserHistoryDao());
+        this.appUserService = new AppUserService(new UserDao(), new UserHistoryDao());
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
@@ -41,7 +41,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return userService.findByAccount(request.getParameter("account"))
+        return appUserService.findByAccount(request.getParameter("account"))
                 .map(user -> login(request, user))
                 .orElse(redirect("/401.jsp"));
     }
