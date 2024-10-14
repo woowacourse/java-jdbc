@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -34,15 +35,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... bind) {
-        final LineCallback<Integer> callback = (con, query) -> {
-            final PreparedStatement statement = con.prepareStatement(query);
-            bindParams(bind, statement);
-            return statement.executeUpdate();
-        };
-        queryTemplate(sql, callback);
-    }
-
-    public void update(final Connection connection, final String sql, final Object... bind) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         final LineCallback<Integer> callback = (con, query) -> {
             final PreparedStatement statement = con.prepareStatement(query);
             bindParams(bind, statement);
