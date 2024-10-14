@@ -57,7 +57,7 @@
 - [x] Transaction synchronization 적용하기
     - [x] connection 객체를 가져오는 부분 DataSourceUtils를 사용하도록 수정
     - [x] TransactionSynchronizationManager가 올바르게 작동하도록 수정
-- [ ] 트랜잭션 서비스 추상화하기
-    - [ ] 유저 service에 남아있는 데이터 액세스 로직 제거
+- [x] 트랜잭션 서비스 추상화하기
+    - [x] 유저 service에 남아있는 데이터 액세스 로직 제거
 
 
