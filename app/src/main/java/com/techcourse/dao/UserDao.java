@@ -28,9 +28,9 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final Connection connection, final User user) {
+    public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, () -> {
+        jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -40,9 +40,9 @@ public class UserDao {
         });
     }
 
-    public void update(final Connection connection, final User user) {
+    public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(connection, sql, () -> {
+        jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -72,7 +72,6 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
 
         return jdbcTemplate.queryForObject(sql, () -> {
             final var parameters = new Parameters();
