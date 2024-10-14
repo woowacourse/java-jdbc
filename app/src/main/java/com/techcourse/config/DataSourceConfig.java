@@ -1,11 +1,7 @@
 package com.techcourse.config;
 
-import com.interface21.dao.DataAccessException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import org.h2.jdbcx.JdbcDataSource;
-
 import java.util.Objects;
+import org.h2.jdbcx.JdbcDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,16 +27,6 @@ public class DataSourceConfig {
     }
 
     private DataSourceConfig() {}
-
-    public static Connection getConnection() {
-        try {
-            validateInstanceIsNull();
-            return INSTANCE.getConnection();
-        } catch (SQLException e) {
-            log.info("GET_CONNECTION_EXCEPTION :: {}", e.getMessage(), e);
-            throw new DataAccessException("DB 커넥션을 얻던 중 예외가 발생했습니다.");
-        }
-    }
 
     private static void validateInstanceIsNull() {
         if (Objects.isNull(INSTANCE)) {
