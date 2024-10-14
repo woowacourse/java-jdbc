@@ -14,18 +14,9 @@ public class TransactionExecutor {
 			runnable.run();
 			conn.commit();
 		} catch (Exception e) {
-			try {
-				conn.rollback();
-			} catch (SQLException rollbackException) {
-				throw new DataAccessException(rollbackException);
-			}
-			throw new DataAccessException(e);
+			rollbackWithException(conn, e);
 		} finally {
-			try {
-				conn.setAutoCommit(true);
-			} catch (SQLException e) {
-				throw new DataAccessException(e);
-			}
+			closeConnection(conn);
 		}
 	}
 
@@ -36,11 +27,24 @@ public class TransactionExecutor {
 		} catch (Exception e) {
 			throw new DataAccessException(e);
 		} finally {
-			try {
-				conn.setReadOnly(false);
-			} catch (SQLException e) {
-				throw new DataAccessException(e);
-			}
+			closeConnection(conn);
+		}
+	}
+
+	private static void rollbackWithException(Connection conn, Exception e) {
+		try {
+			conn.rollback();
+		} catch (SQLException rollbackException) {
+			throw new DataAccessException(rollbackException);
+		}
+		throw new DataAccessException(e);
+	}
+
+	private static void closeConnection(Connection conn) {
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			throw new DataAccessException(e);
 		}
 	}
 }
