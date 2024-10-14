@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.EmptyResultDataAccessException;
 import com.interface21.jdbc.exception.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
@@ -27,19 +28,9 @@ public class JdbcTemplate {
 
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
         log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            executeUpdate(preparedStatement, preparedStatementSetter);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter) {
-        log.debug("query : {}", sql);
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             executeUpdate(preparedStatement, preparedStatementSetter);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -55,7 +46,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return executeQuery(rowMapper, preparedStatement);
         } catch (SQLException e) {
@@ -66,22 +57,8 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         log.debug("query : {}", sql);
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setColumns(preparedStatement);
-            List<T> records = executeQuery(rowMapper, preparedStatement);
-            validateDataSize(records);
-            return records.getFirst();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper,
-                                PreparedStatementSetter preparedStatementSetter) {
-        log.debug("query : {}", sql);
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setColumns(preparedStatement);
             List<T> records = executeQuery(rowMapper, preparedStatement);
             validateDataSize(records);
