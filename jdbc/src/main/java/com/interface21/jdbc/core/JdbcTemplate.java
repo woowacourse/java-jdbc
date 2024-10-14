@@ -39,19 +39,12 @@ public class JdbcTemplate {
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             Parameters parameters = parameterSetter.createParameters();
             parameters.setPreparedStatement(pstmt);
-            return getObject(rowMapper, pstmt);
+
+            List<T> result = executeQuery(pstmt, rowMapper);
+            return result.isEmpty() ? null : result.get(0);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
-        }
-    }
-
-    private <T> T getObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
-            }
-            return null;
         }
     }
 
@@ -60,21 +53,20 @@ public class JdbcTemplate {
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameters.setPreparedStatement(pstmt);
 
-            return getObjects(rowMapper, pstmt);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
         }
     }
 
-    private <T> List<T> getObjects(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
-            List<T> objects = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             while (rs.next()) {
-                T object = rowMapper.mapRow(rs);
-                objects.add(object);
+                results.add(rowMapper.mapRow(rs));
             }
-            return objects;
+            return results;
         }
     }
 }
