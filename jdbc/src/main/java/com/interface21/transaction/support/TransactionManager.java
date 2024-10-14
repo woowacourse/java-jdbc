@@ -15,8 +15,9 @@ public class TransactionManager {
     }
 
     public void injectTransaction(Consumer<Connection> action) {
-        try (Connection connection = dataSource.getConnection()) {
-            runTransactionWithAtomicity(action, connection);
+        try (Connection conn = dataSource.getConnection()) {
+            runTransactionWithAtomicity(action, conn);
+            conn.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
         }
