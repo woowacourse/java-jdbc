@@ -1,6 +1,7 @@
 package com.techcourse.service.transaction;
 
 import com.interface21.jdbc.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,7 +30,7 @@ public class TransactionManager {
         Connection connection = null;
 
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             T result = function.apply(connection);
@@ -40,7 +41,7 @@ public class TransactionManager {
             rollback(connection);
             throw new DataAccessException("트랜잭션이 실패했습니다.", exception);
         } finally {
-            closeConnection(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -49,16 +50,6 @@ public class TransactionManager {
             connection.rollback();
         } catch (SQLException exception) {
             throw new DataAccessException("롤백 중 예외가 발생했습니다.", exception);
-        }
-    }
-
-    private void closeConnection(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException exception) {
-                throw new DataAccessException("커넥션을 닫는 중 예외가 발생했습니다.", exception);
-            }
         }
     }
 }
