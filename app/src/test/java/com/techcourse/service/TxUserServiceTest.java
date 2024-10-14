@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -17,11 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
+    private TransactionTemplate transactionTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
         jdbcTemplate.update("DROP TABLE IF EXISTS users");
         jdbcTemplate.update("DROP TABLE IF EXISTS user_history");
@@ -36,7 +39,7 @@ class TxUserServiceTest {
         // given
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         UserService appUserService = new AppUserService(userDao, userHistoryDao);
-        UserService txUserService = new TxUserService(appUserService);
+        UserService txUserService = new TxUserService(appUserService, transactionTemplate);
 
         // when
         String newPassword = "newPassword";
