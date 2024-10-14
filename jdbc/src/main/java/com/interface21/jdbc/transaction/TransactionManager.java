@@ -44,4 +44,10 @@ public class TransactionManager {
             throw new DataAccessException(e.getMessage(), e);
         }
     }
+
+    @FunctionalInterface
+    private interface ThrowingConsumer<T> {
+
+        void accept(T connection) throws SQLException;
+    }
 }
