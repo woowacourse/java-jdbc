@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +33,8 @@ public class JdbcTemplate {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -59,6 +63,8 @@ public class JdbcTemplate {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -94,6 +100,8 @@ public class JdbcTemplate {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -104,5 +112,11 @@ public class JdbcTemplate {
 
     private void debugQuery(String sql) {
         log.debug("query : {}", sql);
+    }
+
+    private void tryRelease(Connection conn) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
     }
 }

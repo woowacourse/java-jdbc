@@ -13,11 +13,17 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> connections = resources.get();
-        if (connections == null) {
-            return null;
+        if (isActualTransactionActive()) {
+            return connections.get(key);
         }
 
-        return connections.get(key);
+        return null;
+    }
+
+    public static boolean isActualTransactionActive() {
+        Map<DataSource, Connection> connections = resources.get();
+
+        return connections != null;
     }
 
     public static void bindResource(DataSource key, Connection value) {
