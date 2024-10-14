@@ -30,13 +30,12 @@ class TransactionManagerTest {
     @DisplayName("트랜잭션 실행 중 예외가 발생하면 롤백된다.")
     void rollbackOnException() throws SQLException {
         // given
-        TransactionManager txManager = new TransactionManager(dataSource);
         TransactionalFunction txFunction = conn -> {
             throw new SQLException();
         };
 
         // when & then
-        assertThatThrownBy(() -> txManager.executeTransactionOf(txFunction))
+        assertThatThrownBy(() -> TransactionManager.executeTransactionOf(txFunction, dataSource))
                 .isInstanceOf(DataAccessException.class);
         verify(connection).rollback();
         verify(connection, never()).commit();
@@ -46,9 +45,8 @@ class TransactionManagerTest {
     @Test
     @DisplayName("예외 없는 트랜잭션은 정상적으로 커밋된다.")
     void commitOnNoException() throws SQLException {
-        TransactionManager txManager = new TransactionManager(dataSource);
         TransactionalFunction txFunction = conn -> {};
-        txManager.executeTransactionOf(txFunction);
+        TransactionManager.executeTransactionOf(txFunction, dataSource);
 
         verify(connection).commit();
         verify(connection, never()).rollback();
