@@ -99,6 +99,30 @@ class JdbcTemplateTest {
         verifyNoInteractions(resultSet);
     }
 
+    @DisplayName("파라미터로 받은 connection을 이용해 update 실행할 때 connection은 close되지 않는다.")
+    @Test
+    void updateWithConnectionParameter() throws SQLException {
+        // given
+        Connection externalConnection = mock(Connection.class);
+        PreparedStatement externalPreparedStatement = mock(PreparedStatement.class);
+        given(externalConnection.prepareStatement(anyString())).willReturn(externalPreparedStatement);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+        };
+
+        // when
+        jdbcTemplate.update("insert into user (account, age, email) values ('pororo', 20, 'proro@zzang.com')",
+                externalConnection,
+                preparedStatementSetter);
+
+        // then
+        verify(externalPreparedStatement, times(0)).setObject(anyInt(), any());
+        verify(externalPreparedStatement).close();
+        verify(externalConnection, times(0)).close();
+        verifyNoInteractions(resultSet);
+    }
+
 
     @DisplayName("query 내에 쿼리문 실행 중 예외가 발생할 경우 관련된 리소스들이 닫혀야 한다.")
     @Test

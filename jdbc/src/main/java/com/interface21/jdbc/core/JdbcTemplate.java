@@ -23,10 +23,17 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        execute(sql, preparedStatementSetter, (preparedStatement -> {
+        execute(sql, preparedStatementSetter, (preparedStatement) -> {
             preparedStatement.executeUpdate();
             return null;
-        }));
+        });
+    }
+
+    public void update(String sql, Connection connection, PreparedStatementSetter preparedStatementSetter) {
+        executeWithExternalConnection(sql, connection, preparedStatementSetter, (preparedStatement) -> {
+            preparedStatement.executeUpdate();
+            return null;
+        });
     }
 
     private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter,
@@ -34,6 +41,17 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return strategy.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeWithExternalConnection(String sql, Connection connection,
+                                                PreparedStatementSetter preparedStatementSetter,
+                                                PreparedStatementStrategy<T> strategy) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             return strategy.execute(preparedStatement);
         } catch (SQLException e) {
