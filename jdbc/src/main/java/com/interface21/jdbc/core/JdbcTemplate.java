@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,8 +34,16 @@ public class JdbcTemplate {
         return executeWithoutConnection(conn -> update(conn, sql, args));
     }
 
+    public int update(String sql, PreparedStatementSetter pss) {
+        return executeWithoutConnection(conn -> update(conn, sql, pss));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return executeWithoutConnection(conn -> query(conn, sql, rowMapper, args));
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        return executeWithoutConnection(conn -> query(conn, sql, pss, rowMapper));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -73,12 +82,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeWithoutConnection(ConnectionCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection()) {
-            return callback.doInConnection(conn);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        return callback.doInConnection(conn);
     }
 
     private <T> T execute(
