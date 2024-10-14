@@ -36,10 +36,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, Object[] args, PreparedStatementCallback<T> callback) {
-        try (
-                Connection conn = DataSourceUtils.getConnection(dataSource);
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("Executing SQL: {}", sql);
             setParameter(pstmt, args);
             return callback.doInPreparedStatement(pstmt);
@@ -61,10 +59,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeInsert(String sql, Object[] args, PreparedStatementCallback<T> callback) {
-        try (
-                Connection conn = DataSourceUtils.getConnection(dataSource);
-                PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);) {
             log.debug("Executing SQL: {}", sql);
             setParameter(pstmt, args);
             return callback.doInPreparedStatement(pstmt);

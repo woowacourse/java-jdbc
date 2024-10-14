@@ -28,7 +28,7 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
         Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-        try (connection) {
+        try {
             connection.setAutoCommit(false);
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
@@ -39,6 +39,8 @@ public class TxUserService implements UserService {
                 throw new TechCourseApplicationException("데이터를 롤백하는 것에 실패했습니다", ex);
             }
             throw new TechCourseApplicationException("비밀번호를 변경하는 것에 실패했습니다", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
         }
     }
 }
