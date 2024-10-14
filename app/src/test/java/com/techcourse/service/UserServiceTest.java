@@ -49,6 +49,25 @@ class UserServiceTest {
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
+    @DisplayName("예외가 발생하면 트랜잭션을 롤백한다.")
+    @Test
+    void testTransactionRollback() {
+        // given
+        UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao);
+
+        // when
+        String newPassword = "newPassword";
+        String createdBy = "gugu";
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, newPassword, createdBy));
+
+        // then
+        User actual = userService.getById(1L);
+
+        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
     @DisplayName("사용자를 찾을 수 없으면 예외가 발생한다.")
     @Test
     void cannotChangePassword() {
@@ -61,26 +80,5 @@ class UserServiceTest {
         String createBy = "gugu";
         assertThatThrownBy(() -> userService.changePassword(2L, newPassword, createBy))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @DisplayName("예외가 발생하면 트랜잭션을 롤백한다.")
-    @Test
-    void testTransactionRollback() {
-        // given
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
-
-        // when
-        String newPassword = "newPassword";
-        String createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
-
-        // then
-        User actual = userService.getById(1L);
-
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }

@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -24,10 +25,6 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int update(Connection connection, String sql, Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -50,21 +47,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> pstmtExecutor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-
-            PreparedStatementResolver.setParameters(pstmt, args);
-
-            return pstmtExecutor.apply(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> pstmtExecutor, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -73,7 +56,7 @@ public class JdbcTemplate {
             return pstmtExecutor.apply(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 

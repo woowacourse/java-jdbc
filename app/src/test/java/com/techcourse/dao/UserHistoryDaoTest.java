@@ -48,7 +48,6 @@ class UserHistoryDaoTest {
         User user = new User(1, "gugu", "password", "hkkang@woowahan.com");
         Connection connection = DataSourceConfig.getInstance().getConnection();
         jdbcTemplate.update(
-                connection,
                 "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(),
                 user.getPassword(),
@@ -57,7 +56,7 @@ class UserHistoryDaoTest {
         UserHistory userHistory = new UserHistory(user, createdBy);
 
         // when
-        userHistoryDao.log(DataSourceConfig.getInstance().getConnection(), userHistory);
+        userHistoryDao.log(userHistory);
 
         // then
         UserHistory result = jdbcTemplate.queryForObject("select * from user_history where user_id = ?", rowMapper, 1);
