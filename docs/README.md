@@ -12,3 +12,10 @@
 ## Step3
 
 * [x] 트랜잭션 경계 설정
+
+## Step4
+
+* [x] Transaction synchronization 적용
+* [x] 트랜잭션 서비스 추상화하기
+* [ ] InMemoryDb 제거하기
+* [ ] 테스트 실패 수정하기
