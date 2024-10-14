@@ -49,7 +49,7 @@ class DataSourceUtilsTest {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         // when
-        DataSourceUtils.releaseConnection(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
         Connection resource = TransactionSynchronizationManager.getResource(dataSource);
 
         // then

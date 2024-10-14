@@ -40,7 +40,7 @@ public class UserDao {
         jdbcTemplate.update(sql);
     }
 
-    public void update(final User user, final Connection connection) {
+    public void update(final User user) {
         String sql = """
                 update 
                     users 
@@ -60,7 +60,7 @@ public class UserDao {
                 ps.setString(3, user.getEmail());
                 ps.setLong(4, user.getId());
             }
-        }, connection);
+        });
     }
 
     public List<User> findAll() {

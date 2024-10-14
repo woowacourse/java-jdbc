@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.NoSingleResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -62,37 +63,17 @@ public class JdbcTemplate {
         throw new NoSingleResultException("조회 결과가 하나가 아닙니다. size: " + results.size());
     }
 
-    public int update(String sql, PreparedStatementSetter pss, Connection connection) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, pss);
+    public int update(String sql, PreparedStatementSetter pss) {
+        return execute(sql, PreparedStatement::executeUpdate, pss);
     }
 
-    public int update(String sql, Connection connection, Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    public int update(String sql, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pss) { //exectue가 4개 있는데 Connection이 내부로 들어와서 그렇습니다. 리팩토링과정에서 줄여보겠습니다.
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            pss.setValues(ps);
-            return callback.doInPreparedStatement(ps);
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
-
-            return callback.doInPreparedStatement(ps);
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback,
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback,
                           PreparedStatementSetter pss) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
             pss.setValues(ps);
@@ -102,9 +83,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback, Object... args) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
-
             return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);

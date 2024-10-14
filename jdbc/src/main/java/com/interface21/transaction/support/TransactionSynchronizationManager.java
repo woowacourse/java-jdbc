@@ -17,10 +17,12 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        System.out.println(key + "의 key = " + value);
         resources.get().put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
+        System.out.println(key + "의 key = " + resources.get().get(key));
         return resources.get().remove(key);
     }
 }
