@@ -19,7 +19,10 @@ public class TransactionSynchronizationManagerTest {
     public void setUp() {
         dataSource = Mockito.mock(DataSource.class);
         connection = Mockito.mock(Connection.class);
+    }
 
+    @AfterEach
+    public void tearDown() {
         TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
