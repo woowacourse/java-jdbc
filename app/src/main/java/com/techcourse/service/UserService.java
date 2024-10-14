@@ -7,6 +7,7 @@ import java.util.function.Function;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -37,7 +38,7 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         executeTransaction(connection -> {
-            final var user = findById(id);
+            final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
@@ -46,7 +47,7 @@ public class UserService {
     }
 
     private <R> R executeTransaction(Function<Connection, R> function) {
-        Connection connection = getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
             R result = function.apply(connection);
@@ -56,15 +57,7 @@ public class UserService {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
-            close(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -73,16 +66,6 @@ public class UserService {
             connection.rollback();
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
-        }
-    }
-
-    private void close(Connection connection) {
-        if(connection != null) {
-            try {
-                connection.close(); // 연결 닫기
-            } catch (SQLException closeEx) {
-                throw new RuntimeException("Connection close failed", closeEx);
-            }
         }
     }
 }
