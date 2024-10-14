@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage0Test {
 
-    private static final String H2_URL = "jdbc:h2:./test";
+    private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 

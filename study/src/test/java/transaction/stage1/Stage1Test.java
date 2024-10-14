@@ -118,9 +118,9 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // isolation level : 1, + user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}
+//        final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // isolation level : 1, + user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}
 //            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;  // isolation level : 2 +, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='qqqq'}
-//            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // isolation level : 4, - user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+            final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // isolation level : 4, - user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
 //        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // isolation level : 8, - user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
 
         // 트랜잭션 격리 레벨을 설정한다.
