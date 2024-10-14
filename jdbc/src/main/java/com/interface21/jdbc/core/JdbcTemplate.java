@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -55,8 +56,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, QueryExecutor<PreparedStatement, T> action, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(this.dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParams(params, preparedStatement);
 
             log.info("SQL : {}", sql);
