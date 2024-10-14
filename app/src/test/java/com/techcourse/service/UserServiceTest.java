@@ -39,7 +39,7 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(connection, 1L, newPassword, createBy);
+        userService.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L).get();
 
@@ -57,7 +57,7 @@ class UserServiceTest {
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
 
         assertThrows(CannotGetJdbcConnectionException.class,
-                () -> userService.changePassword(connection, 1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L).get();
 

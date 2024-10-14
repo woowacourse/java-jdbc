@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.TransactionManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -27,11 +29,12 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(Connection connection, long id, String newPassword, String createBy) {
+    public void changePassword(long id, String newPassword, String createBy) {
+        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         TransactionManager.transaction(connection, () -> {
             User user = findById(id).orElseThrow(NoSuchElementException::new);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
+            userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
         });
     }

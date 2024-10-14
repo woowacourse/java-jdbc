@@ -45,14 +45,6 @@ public class UserDao {
         return rowCount;
     }
 
-    public int update(Connection connection, User user) {
-        String sql = "update users set account=?, password=?, email=? where id=?";
-        int rowCount = jdbcTemplate.executeUpdate(connection, sql,
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-        log.debug("update 성공한 row 개수 : {}", rowCount);
-        return rowCount;
-    }
-
     public List<User> findAll() {
         String sql = "select * from users";
         List<User> result = jdbcTemplate.query(sql, USER_ROW_MAPPER);

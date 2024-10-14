@@ -35,4 +35,12 @@ public abstract class DataSourceUtils {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
+
+    public static boolean isTransactionNotStarted(Connection connection, DataSource dataSource) {
+        Connection startedConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (startedConnection == null) {
+            return false;
+        }
+        return !startedConnection.equals(connection);
+    }
 }

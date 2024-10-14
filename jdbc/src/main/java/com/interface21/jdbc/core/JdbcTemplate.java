@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.JdbcQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,23 +30,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementSetter preparedStatementSetter, Callback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            preparedStatementSetter.setValues(preparedStatement);
-            return callback.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcQueryException("execute 메서드 실패 : " + e.getMessage(), e);
-        }
-    }
-
-    public int executeUpdate(Connection connection, String sql, Object... args) {
-        ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(args);
-        return execute(connection, sql, argumentPreparedStatementSetter, PreparedStatement::executeUpdate);
-    }
-
-    private <T> T execute(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter, Callback<T> callback) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(preparedStatement);
@@ -53,6 +38,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcQueryException("execute 메서드 실패 : " + e.getMessage(), e);
+        } finally {
+            releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void releaseConnection(Connection connection, DataSource dataSource) {
+        if (DataSourceUtils.isTransactionNotStarted(connection, dataSource)) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
