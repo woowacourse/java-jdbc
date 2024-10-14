@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -51,6 +52,7 @@ public class UserService {
             connection.rollback();
         } finally {
             connection.setAutoCommit(true);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
