@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -25,15 +26,8 @@ public class JdbcTemplate {
 	}
 
 	public int update(String sql, PreparedStatementSetter pss) {
-		try {
-			return update(sql, pss, dataSource.getConnection());
-		} catch (SQLException e) {
-			log.error(e.getMessage(), e);
-			throw new DataAccessException("Failed to get Connection", e);
-		}
-	}
+		final Connection conn = DataSourceUtils.getConnection(dataSource);
 
-	public int update(String sql, PreparedStatementSetter pss, Connection conn) {
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pss.setValues(pstmt);
 
@@ -45,18 +39,8 @@ public class JdbcTemplate {
 	}
 
 	public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pss.setValues(pstmt);
+		final Connection conn = DataSourceUtils.getConnection(dataSource);
 
-			return fetchSingleResult(rowMapper, pstmt);
-		} catch (SQLException e) {
-			log.error(e.getMessage(), e);
-			throw new DataAccessException("Failed to execute Query = " + sql, e);
-		}
-	}
-
-	public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss, Connection conn) {
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pss.setValues(pstmt);
 
@@ -68,18 +52,8 @@ public class JdbcTemplate {
 	}
 
 	public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pss.setValues(pstmt);
+		final Connection conn = DataSourceUtils.getConnection(dataSource);
 
-			return fetchResults(rowMapper, pstmt);
-		} catch (SQLException e) {
-			log.error(e.getMessage(), e);
-			throw new DataAccessException("Failed to execute Query = " + sql, e);
-		}
-	}
-
-	public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss, Connection conn) {
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pss.setValues(pstmt);
 

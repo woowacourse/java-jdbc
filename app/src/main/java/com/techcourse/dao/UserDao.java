@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -38,16 +37,6 @@ public class UserDao {
 		});
 	}
 
-	public void insert(final User user, final Connection conn) {
-		final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-		jdbcTemplate.update(sql, pstmt -> {
-			pstmt.setString(1, user.getAccount());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getEmail());
-		}, conn);
-	}
-
 	public void update(final User user) {
 		final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
@@ -59,29 +48,11 @@ public class UserDao {
 		});
 	}
 
-	public void update(final User user, Connection conn) {
-		final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-		jdbcTemplate.update(sql, pstmt -> {
-			pstmt.setString(1, user.getAccount());
-			pstmt.setString(2, user.getPassword());
-			pstmt.setString(3, user.getEmail());
-			pstmt.setLong(4, user.getId());
-		}, conn);
-	}
-
 	public List<User> findAll() {
 		final var sql = "select id, account, password, email from users";
 
 		return jdbcTemplate.query(sql, userRowMapper, pstmt -> {
 		});
-	}
-
-	public List<User> findAll(final Connection conn) {
-		final var sql = "select id, account, password, email from users";
-
-		return jdbcTemplate.query(sql, userRowMapper, pstmt -> {
-		}, conn);
 	}
 
 	public User findById(final Long id) {
@@ -91,24 +62,10 @@ public class UserDao {
 		return jdbcTemplate.queryForObject(sql, userRowMapper, pss);
 	}
 
-	public User findById(final Long id, final Connection conn) {
-		final var sql = "select id, account, password, email from users where id = ?";
-		PreparedStatementSetter pss = pstmt -> pstmt.setLong(1, id);
-
-		return jdbcTemplate.queryForObject(sql, userRowMapper, pss, conn);
-	}
-
 	public User findByAccount(final String account) {
 		final var sql = "select id, account, password, email from users where account = ?";
 		PreparedStatementSetter pss = pstmt -> pstmt.setString(1, account);
 
 		return jdbcTemplate.queryForObject(sql, userRowMapper, pss);
-	}
-
-	public User findByAccount(final String account, final Connection conn) {
-		final var sql = "select id, account, password, email from users where account = ?";
-		PreparedStatementSetter pss = pstmt -> pstmt.setString(1, account);
-
-		return jdbcTemplate.queryForObject(sql, userRowMapper, pss, conn);
 	}
 }
