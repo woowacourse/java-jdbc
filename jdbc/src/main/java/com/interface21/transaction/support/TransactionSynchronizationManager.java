@@ -33,4 +33,9 @@ public abstract class TransactionSynchronizationManager {
         resources.get().remove(key);
         return connection;
     }
+
+    public static boolean isTransactionActive() {
+        Map<DataSource, Connection> connectionMap = resources.get();
+        return connectionMap != null && !connectionMap.isEmpty();
+    }
 }
