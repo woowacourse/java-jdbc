@@ -1,5 +1,6 @@
 package transaction.stage2;
 
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class SecondUserService {
     @Transactional(propagation = Propagation.REQUIRED)
     public String saveSecondTransactionWithRequired() {
         userRepository.save(User.createTest());
+
         logActualTransactionActive();
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
