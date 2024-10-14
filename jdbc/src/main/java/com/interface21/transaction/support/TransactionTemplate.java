@@ -1,6 +1,7 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -22,15 +23,15 @@ public class TransactionTemplate {
     }
 
     public <T> T execute(TransactionCallback<T> action) {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = dataSource.getConnection();
             return transaction(connection, action);
-        } catch (SQLException exception) {
+        } catch (Exception exception) {
             rollbackOnException(connection);
             throw new DataAccessException(exception.getMessage(), exception);
         } finally {
-            processConnectionClose(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -44,21 +45,10 @@ public class TransactionTemplate {
     }
 
     private void rollbackOnException(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackException) {
-                throw new DataAccessException("Failed to rollback transaction", rollbackException);
-            }
-        }
-    }
-
-    private void processConnectionClose(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException ignored) {
-            }
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            throw new DataAccessException("Failed to rollback transaction", rollbackException);
         }
     }
 }

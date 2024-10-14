@@ -12,26 +12,27 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final TransactionTemplate transactionTemplate;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionTemplate transactionTemplate) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao,
+                       final TransactionTemplate transactionTemplate) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.transactionTemplate = transactionTemplate;
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return transactionTemplate.execute((connection) -> userDao.findById(id));
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        transactionTemplate.executeWithoutResult((connection) -> userDao.insert(user));
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionTemplate.executeWithoutResult((connection) -> {
             User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }
