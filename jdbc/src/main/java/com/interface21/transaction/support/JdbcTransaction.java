@@ -49,8 +49,4 @@ public class JdbcTransaction {
             throw exceptionTranslator.translate(e);
         }
     }
-
-    public Connection getConnection() {
-        return connection;
-    }
 }
