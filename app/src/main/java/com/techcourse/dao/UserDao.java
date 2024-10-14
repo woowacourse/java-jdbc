@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ObjectMapper;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -47,18 +46,10 @@ public class UserDao {
         log.debug("query : {}", sql);
     }
 
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        PreparedStatementSetter preparedStatementSetter = getPreparedStatementSetter(
-                user.getAccount(),  user.getPassword(), user.getEmail(), user.getId()
-        );
-        jdbcTemplate.update(connection, sql, preparedStatementSetter);
-        log.debug("query : {}", sql);
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(objectMapper, sql, pstmt -> {});
+        return jdbcTemplate.query(objectMapper, sql, pstmt -> {
+        });
     }
 
     public User findById(final Long id) {
