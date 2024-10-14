@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.service.support;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;

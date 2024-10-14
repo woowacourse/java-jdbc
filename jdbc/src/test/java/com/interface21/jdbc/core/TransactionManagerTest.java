@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -6,13 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
-import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.TransactionManager;
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,53 +17,48 @@ import org.junit.jupiter.api.Test;
 
 class TransactionManagerTest {
 
+    private DataSource dataSource;
     private TransactionManager transactionManager;
-    private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        DatabasePopulatorUtils.execute(dataSource);
-
+        this.dataSource = mock(DataSource.class);
         this.transactionManager = new TransactionManager(dataSource);
-        this.userDao = new UserDao(new JdbcTemplate(dataSource));
     }
 
     @DisplayName("실행을 성공할 경우 커밋한다.")
     @Test
-    void should_commitLogic_when_manageSuccessfully() {
+    void should_commitLogic_when_manageSuccessfully() throws SQLException {
         // given
-        User expected = new User("ever", "password", "ever@woowahan.com");
+        Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        List<String> test = new ArrayList<>();
+        assertThat(test).hasSize(0);
 
         // when
         transactionManager.manage(conn -> {
-            userDao.insert(expected);
+            test.add("new");
         });
 
         // then
-        User actual = userDao.findById(1L);
-        assertThat(actual.getAccount()).isEqualTo(expected.getAccount());
+        assertThat(test).hasSize(1);
     }
 
     @DisplayName("실행을 실패할 경우 롤백한다.")
     @Test
     void should_rollbackLogic_when_manageFail() throws SQLException {
         // given
-        User expected = new User("ever", "password", "ever@woowahan.com");
-
-        DataSource dataSource = mock(DataSource.class);
         when(dataSource.getConnection()).thenThrow(SQLException.class);
-        transactionManager = new TransactionManager(dataSource);
 
-        // when
+        List<String> test = new ArrayList<>();
+
+        // when & then
         assertThatThrownBy(() -> {
             transactionManager.manage(conn -> {
-                userDao.insert(expected);
+                test.add("new");
             });
         }).isInstanceOf(CannotGetJdbcConnectionException.class);
-
-        // then
-        User actual = userDao.findById(1L);
-        assertThat(actual).isNull();
+        assertThat(test).hasSize(0);
     }
 }
