@@ -1,11 +1,11 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.exception.TechCourseApplicationException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 
 public class TxUserService implements UserService {
 

@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,7 +37,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, Object[] args, PreparedStatementCallback<T> callback) {
         try (
-                Connection conn = dataSource.getConnection();
+                Connection conn = DataSourceUtils.getConnection(dataSource);
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             log.debug("Executing SQL: {}", sql);
@@ -61,7 +62,7 @@ public class JdbcTemplate {
 
     private <T> T executeInsert(String sql, Object[] args, PreparedStatementCallback<T> callback) {
         try (
-                Connection conn = dataSource.getConnection();
+                Connection conn = DataSourceUtils.getConnection(dataSource);
                 PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
         ) {
             log.debug("Executing SQL: {}", sql);
