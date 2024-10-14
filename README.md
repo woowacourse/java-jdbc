@@ -32,8 +32,8 @@
 ### 4단계 - Transaction synchronization 적용하기
 
 - [ ] 트랜잭션 동기화 적용(Connection 객체를 따로 보관해두고, DAO에서 호출할 때 저장된 Connection을 가져다 사용하는 방식)
-    - [ ] 서비스와 DAO에서 Connection 객체를 가져오는 부분은 DataSourceUtils를 사용
-    - [ ] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현
+    - [ ] DataSourceUtils를 사용해 DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록 수정
+    - [x] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현
 - [ ] 트랜잭션 서비스 추상화(인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리)
     - [ ] UserService 인터페이스 추가
     - [ ] UserService 인터페이스를 구현한 클래스 2개 추가 (AppUserService, TxUserService)
