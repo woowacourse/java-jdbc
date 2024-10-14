@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -30,13 +29,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
-    }
-
-    @Override
-    public void update(Connection conn, User user) {
-        String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.update(conn, sql, user.getPassword(), user.getId());
+        jdbcTemplate.updateWithActiveConn(sql, user.getPassword(), user.getId());
     }
 
     @Override
@@ -55,11 +48,6 @@ public class UserDaoImpl implements UserDao {
     public Optional<User> findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, this::createUser, account);
-    }
-
-    @Override
-    public DataSource getDataSource() {
-        return jdbcTemplate.getDataSource();
     }
 
     private User createUser(ResultSet rs) throws SQLException {
