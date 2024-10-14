@@ -17,9 +17,8 @@ public class JdbcTemplate {
     }
 
     public int update(PreparedStatementCreator preparedStatementCreator,
-                       PreparedStatementSetter preparedStatementSetter) {
-        try {
-            PreparedStatement ps = preparedStatementCreator.create();
+                      PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement ps = preparedStatementCreator.create()) {
             preparedStatementSetter.setValues(ps);
             return ps.executeUpdate();
         } catch (SQLException e) {
