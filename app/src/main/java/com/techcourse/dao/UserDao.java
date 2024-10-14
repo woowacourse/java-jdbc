@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.extractor.ExtractionRule;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -10,6 +11,13 @@ import java.util.List;
 
 public class UserDao {
 
+    private static final ExtractionRule<User> EXTRACT_RULE
+            = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
@@ -34,16 +42,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForAll(User.class, sql);
+        return jdbcTemplate.query(User.class, sql);
     }
 
     public User findById(Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(User.class, sql, id);
+        return jdbcTemplate.queryOne(EXTRACT_RULE, sql, id);
     }
 
     public User findByAccount(String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(User.class, sql, account);
+        return jdbcTemplate.queryOne(User.class, sql, account);
     }
 }
