@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.lang.reflect.Proxy;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -44,8 +46,11 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                appUserService.getClass().getClassLoader(),
+                appUserService.getClass().getInterfaces(),
+                new TransactionHandler(platformTransactionManager, appUserService));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
