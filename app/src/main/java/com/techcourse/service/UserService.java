@@ -2,7 +2,7 @@ package com.techcourse.service;
 
 import com.techcourse.domain.User;
 
-interface UserService {
+public interface UserService {
 
     User findById(long id);
 
