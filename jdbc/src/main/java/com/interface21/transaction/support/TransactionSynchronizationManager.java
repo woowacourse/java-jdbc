@@ -2,6 +2,7 @@ package com.interface21.transaction.support;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
@@ -20,18 +21,23 @@ public abstract class TransactionSynchronizationManager {
         return null;
     }
 
+    public static void bindResource(DataSource key, Connection value) {
+        Map<DataSource, Connection> connections = Map.of(key, value);
+        resources.set(new HashMap<>(connections));
+    }
+
+    public static Connection unbindResource(DataSource key) {
+        Map<DataSource, Connection> connections = resources.get();
+        if (isActualTransactionActive()) {
+            return connections.remove(key);
+        }
+
+        return null;
+    }
+
     public static boolean isActualTransactionActive() {
         Map<DataSource, Connection> connections = resources.get();
 
         return connections != null;
-    }
-
-    public static void bindResource(DataSource key, Connection value) {
-        resources.set(Map.of(key, value));
-    }
-
-    public static Object unbindResource(DataSource key) {
-        resources.remove();
-        return key;
     }
 }
