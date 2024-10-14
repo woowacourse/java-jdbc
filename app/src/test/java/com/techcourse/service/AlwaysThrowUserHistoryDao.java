@@ -6,9 +6,9 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 
-public class InMemoryUserHistoryDao extends UserHistoryDao {
+public class AlwaysThrowUserHistoryDao extends UserHistoryDao {
 
-    public InMemoryUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public AlwaysThrowUserHistoryDao(final JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
