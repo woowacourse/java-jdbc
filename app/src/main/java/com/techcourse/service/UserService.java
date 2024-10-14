@@ -1,5 +1,13 @@
 package com.techcourse.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -24,9 +32,17 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        DataSource dataSource = DataSourceConfig.getInstance();
+
+        try (Connection conn = DataSourceUtils.getConnection(dataSource)) {
+            conn.setAutoCommit(false);
+            User user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(conn, user);
+            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            conn.commit();
+        } catch (final SQLException e) {
+            throw new DataAccessException();
+        }
     }
 }
