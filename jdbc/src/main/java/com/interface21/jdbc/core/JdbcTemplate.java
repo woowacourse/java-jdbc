@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.ResultNotSingleException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -76,8 +78,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
