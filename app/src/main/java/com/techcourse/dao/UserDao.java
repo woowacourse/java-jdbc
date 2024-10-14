@@ -9,8 +9,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
-import static com.techcourse.config.DataSourceConfig.NO_CONNECTION;
-
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
@@ -29,31 +27,31 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(NO_CONNECTION, sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail()});
+        jdbcTemplate.update(sql, new Object[]{user.getAccount(), user.getPassword(), user.getEmail()});
     }
 
     public void update(final User user) {
         final var sql = "update users set password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(NO_CONNECTION, sql, new Object[]{user.getPassword(), user.getEmail(), user.getId()});
+        jdbcTemplate.update(sql, new Object[]{user.getPassword(), user.getEmail(), user.getId()});
     }
 
     public void update(final Connection connection, final User user) {
         final var sql = "update users set password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(connection, sql, new Object[]{user.getPassword(), user.getEmail(), user.getId()});
+        jdbcTemplate.update(sql, new Object[]{user.getPassword(), user.getEmail(), user.getId()});
     }
 
     public List<User> findAll() {
         final var sql = "select * from users";
-        return jdbcTemplate.query(NO_CONNECTION, sql, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(NO_CONNECTION, sql, new Object[]{id}, rowMapper);
+        return jdbcTemplate.queryForObject(sql, new Object[]{id}, rowMapper);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(NO_CONNECTION, sql, new Object[]{account}, rowMapper);
+        return jdbcTemplate.queryForObject(sql, new Object[]{account}, rowMapper);
     }
 }
