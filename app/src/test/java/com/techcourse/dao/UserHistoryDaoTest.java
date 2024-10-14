@@ -17,9 +17,6 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 class UserHistoryDaoTest {
 
-    private UserHistoryDao userHistoryDao;
-    private JdbcTemplate jdbcTemplate;
-
     private final RowMapper<UserHistory> rowMapper = (resultSet) -> {
         return new UserHistory(
                 resultSet.getLong("id"),
@@ -30,6 +27,8 @@ class UserHistoryDaoTest {
                 resultSet.getString("created_by")
         );
     };
+    private UserHistoryDao userHistoryDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {

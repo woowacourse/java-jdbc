@@ -23,6 +23,14 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private static <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
+    }
+
     public int update(String sql, Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
@@ -58,13 +66,5 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         }
-    }
-
-    private static <T> List<T> mapResults(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(rowMapper.mapRow(rs));
-        }
-        return results;
     }
 }

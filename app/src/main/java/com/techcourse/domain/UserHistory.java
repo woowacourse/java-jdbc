@@ -4,16 +4,13 @@ import java.time.LocalDateTime;
 
 public class UserHistory {
 
-    private Long id;
-
     private final long userId;
     private final String account;
     private final String password;
     private final String email;
-
     private final LocalDateTime createdAt;
-
     private final String createdBy;
+    private Long id;
 
     public UserHistory(final User user, final String createdBy) {
         this(null, user.getId(), user.getAccount(), user.getPassword(), user.getEmail(), createdBy);
