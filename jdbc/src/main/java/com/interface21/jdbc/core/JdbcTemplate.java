@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,8 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        var conn = DataSourceUtils.getConnection(dataSource);
+        try (var pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
@@ -52,7 +54,8 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        var conn = DataSourceUtils.getConnection(dataSource);
+        try (var pstmt = conn.prepareStatement(sql)) {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
@@ -86,7 +89,8 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        var conn = DataSourceUtils.getConnection(dataSource);
+        try (var pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
