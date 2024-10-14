@@ -64,9 +64,23 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) throws DataAccessException {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+            setPreparedStatementArgs(statement, args);
+            return action.doInPreparedStatement(statement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setPreparedStatementArgs(statement, args);
             return action.doInPreparedStatement(statement);
         } catch (SQLException e) {
