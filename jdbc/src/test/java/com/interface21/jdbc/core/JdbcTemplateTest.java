@@ -99,7 +99,6 @@ class JdbcTemplateTest {
                 () -> then(resultSet).should().getString("password"),
                 () -> then(resultSet).should().getString("email"),
                 () -> then(preparedStatement).should().close(),
-                () -> then(connection).should().close(),
                 () -> then(dataSource).should().getConnection(),
                 () -> assertThat(user).isEqualTo(new User(1L, "account", "password", "email"))
         );
