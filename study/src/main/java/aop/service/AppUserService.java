@@ -5,7 +5,11 @@ import aop.domain.User;
 import aop.domain.UserHistory;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
 
+@Primary
+@Service
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
