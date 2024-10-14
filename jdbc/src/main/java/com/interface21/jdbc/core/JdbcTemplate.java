@@ -28,7 +28,6 @@ public class JdbcTemplate {
 
     private void executeUpdate(String sql, Object[] parameters,
                                ConsumerWrapper<PreparedStatement> execution) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = getPreparedStatement(sql, parameters)) {
             log.debug("query : {}", sql);
             execution.accept(pstmt);
@@ -48,7 +47,6 @@ public class JdbcTemplate {
 
     private <T> T executeQuery(String sql, Object[] parameters,
                                FunctionWrapper<ResultSet, T> execution) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = getPreparedStatement(sql, parameters);
              ResultSet rs = pstmt.executeQuery()) {
             log.debug("query : {}", sql);
