@@ -20,7 +20,7 @@ public class JdbcTransactionManager {
         return transaction;
     }
 
-    public void flush(JdbcTransaction transaction) {
+    public void clear(JdbcTransaction transaction) {
         DataSourceUtils.releaseConnection(transaction.getConnection(), dataSource);
         TransactionSynchronizationManager.unbindResource(dataSource);
     }
