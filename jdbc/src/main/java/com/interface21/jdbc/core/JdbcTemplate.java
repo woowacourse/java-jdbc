@@ -21,11 +21,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(QueryConnectionHolder queryConnectionHolder, PreparedStatementSetter preparedStatementSetter) {
+        try {
+            PreparedStatement preparedStatement = queryConnectionHolder.getAsPreparedStatement();
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Update 실패", e);
+        }
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        return update(new QueryConnectionHolder(connection, sql), new PreparedStatementArgumentsSetter(args));
+    }
+
     public int update(String sql, PreparedStatementSetter psSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-            psSetter.setValues(ps);
-            return ps.executeUpdate();
+        try (Connection connection = dataSource.getConnection()) {
+             return update(new QueryConnectionHolder(connection, sql), psSetter);
         } catch (SQLException e) {
             throw new DataAccessException("Update 실패", e);
         }
@@ -33,11 +45,6 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... args) {
         return update(sql, new PreparedStatementArgumentsSetter(args));
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> query = query(sql, rowMapper, args);
-        return query.isEmpty() ? null : query.getLast();
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter psSetter, RowMapper<T> rowMapper) {
@@ -52,6 +59,11 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return query(sql, new PreparedStatementArgumentsSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> query = query(sql, rowMapper, args);
+        return query.isEmpty() ? null : query.getLast();
     }
 
     private <T> List<T> retrieveRow(RowMapper<T> rowMapper, PreparedStatement ps) throws SQLException {
