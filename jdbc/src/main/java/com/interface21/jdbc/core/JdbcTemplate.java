@@ -39,15 +39,6 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(Connection conn, String sql, PreparedStatementSetter pstmtSetter) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.info("query : {}", sql);
-
-            pstmtSetter.setValues(pstmt);
-            pstmt.executeUpdate();
-        }
-    }
-
     public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
         List<T> rows = query(sql, pstmtSetter, rowMapper);
         return extractSingleRow(rows);
