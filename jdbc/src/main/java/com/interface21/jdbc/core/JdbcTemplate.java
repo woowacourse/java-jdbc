@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +24,10 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(String sql, Object... parameters){
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
-
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -44,8 +44,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, Function<ResultSet, T> func , Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
+        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
 

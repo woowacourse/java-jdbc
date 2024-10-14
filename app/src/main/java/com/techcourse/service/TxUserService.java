@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.sql.SQLException;
 public class TxUserService implements UserService {
 
     private final UserService service;
+
     public TxUserService(final UserService userService) {
         this.service = userService;
     }
@@ -17,18 +19,18 @@ public class TxUserService implements UserService {
     @Override
     public User findById(long id) {
         Connection connection = null;
-        User user = null;
         try {
             connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
             connection.setAutoCommit(false);
-            user = service.findById(id);
+            User user = service.findById(id);
             connection.commit();
+            return user;
         } catch (SQLException | RuntimeException e) {
-            rollback(e, connection);
+            rollback(connection);
+            throw new DataAccessException(e);
         } finally {
             closeConnection(connection);
         }
-        return user;
     }
 
     @Override
@@ -40,7 +42,8 @@ public class TxUserService implements UserService {
             service.insert(user);
             connection.commit();
         } catch (SQLException | RuntimeException e) {
-            rollback(e, connection);
+            rollback(connection);
+            throw new DataAccessException(e);
         } finally {
             closeConnection(connection);
         }
@@ -55,13 +58,14 @@ public class TxUserService implements UserService {
             service.changePassword(id, newPassword, createBy);
             connection.commit();
         } catch (SQLException | RuntimeException e) {
-            rollback(e, connection);
+            rollback(connection);
+            throw new DataAccessException(e);
         } finally {
             closeConnection(connection);
         }
     }
 
-    private static void rollback(Exception e, Connection connection) {
+    private static void rollback(Connection connection) {
         if (connection == null) {
             return;
         }
@@ -70,7 +74,6 @@ public class TxUserService implements UserService {
         } catch (SQLException rollbackE) {
             throw new DataAccessException(rollbackE);
         }
-        throw new DataAccessException(e);
     }
 
     private static void closeConnection(Connection connection) {
@@ -78,6 +81,7 @@ public class TxUserService implements UserService {
             return;
         }
         try {
+            TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
             connection.close();
         } catch (SQLException closeE) {
             throw new DataAccessException(closeE);
