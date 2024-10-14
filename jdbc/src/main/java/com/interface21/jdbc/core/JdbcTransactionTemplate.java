@@ -25,7 +25,7 @@ public class JdbcTransactionTemplate {
             wrapConnection(connection, Connection::rollback);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
-            wrapConnection(connection, Connection::close);
+            wrapConnection(connection, conn -> DataSourceUtils.releaseConnection(conn, dataSource));
         }
     }
 
