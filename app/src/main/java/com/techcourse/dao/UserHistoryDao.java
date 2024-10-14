@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
@@ -27,41 +26,28 @@ public class UserHistoryDao {
 
         log.debug("query : {}", sql);
 
-        jdbcTemplate.update(
-                sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
-
-    public void logWithTransaction(final UserHistory userHistory) {
-        Connection conn = getTransactionConnection();
-
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-
-        log.debug("query : {}", sql);
-
-        jdbcTemplate.update(
-                conn,
-                sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
-
-    private Connection getTransactionConnection() {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
-        if (conn == null) {
-            throw new DataAccessException("트랜잭션이 정의되지 않았습니다.");
+        if (conn != null) {
+            jdbcTemplate.update(
+                    conn,
+                    sql,
+                    userHistory.getUserId(),
+                    userHistory.getAccount(),
+                    userHistory.getPassword(),
+                    userHistory.getEmail(),
+                    userHistory.getCreatedAt(),
+                    userHistory.getCreateBy()
+            );
         }
-        return conn;
+
+        jdbcTemplate.update(
+                sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
+        );
     }
 }

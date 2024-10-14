@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.RowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
@@ -39,23 +38,12 @@ public class UserDao {
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ?";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void updateWithTransaction(final User user) {
-        Connection conn = getTransactionConnection();
-
-        String sql = "update users set account = ?, password = ?, email = ?";
-
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    private Connection getTransactionConnection() {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
-        if (conn == null) {
-            throw new DataAccessException("트랜잭션이 정의되지 않았습니다.");
+        if (conn != null) {
+            jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
         }
-        return conn;
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
@@ -69,16 +57,12 @@ public class UserDao {
         String sql = "select id, account, password, email from users where id = ?";
         log.debug("query : {}", sql);
 
+        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
+        if (conn != null) {
+            return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
+        }
+
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-    }
-
-    public User findByIdWithTransaction(final Long id) {
-        Connection conn = getTransactionConnection();
-
-        String sql = "select id, account, password, email from users where id = ?";
-        log.debug("query : {}", sql);
-
-        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
