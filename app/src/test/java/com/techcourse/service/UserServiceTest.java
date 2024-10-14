@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -80,8 +80,8 @@ class UserServiceTest {
         String newPassword = "newPassword";
         String createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createdBy));
+        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createdBy))
+                .isInstanceOf(DataAccessException.class);
 
         User actual = userService.findById(1L);
 
