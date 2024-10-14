@@ -8,15 +8,16 @@ public class JdbcTransactionTemplate {
         this.transactionManager = transactionManager;
     }
 
-    public void execute(JdbcNoResultTransactionCallback noResultAction) {
+    public void execute(JdbcNoResultTransactionCallback action) {
         JdbcTransaction transaction = transactionManager.getTransaction();
-        transaction.begin();
         try {
-            noResultAction.doInTransaction(transaction);
+            action.doInTransaction(transaction);
             transaction.commit();
         } catch (Exception e) {
             transaction.rollback();
             throw e;
+        } finally {
+            transactionManager.clear(transaction);
         }
     }
 }
