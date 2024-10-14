@@ -32,12 +32,13 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(dataSource, userDao, userHistoryDao);
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+
         String newPassword = "qqqqq";
         String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        appUserService.changePassword(1L, newPassword, createBy);
 
-        User actual = userService.findById(1L);
+        User actual = appUserService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -45,11 +46,14 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(dataSource, userDao, userHistoryDao);
+        UserService userService = new AppUserService(userDao, userHistoryDao);
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService txUserService = new TxUserService(dataSource, appUserService);
+
         String newPassword = "newPassword";
         String createBy = "gugu";
 
-        userService.changePassword(1L, newPassword, createBy);
+        txUserService.changePassword(1L, newPassword, createBy);
         String actualPassword = userService.findById(1L).getPassword();
 
         assertThat(actualPassword).isNotEqualTo(newPassword);
