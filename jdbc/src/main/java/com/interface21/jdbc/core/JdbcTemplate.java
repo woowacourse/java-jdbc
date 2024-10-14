@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.exception.JdbcSQLException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -26,10 +27,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(Connection connection, String sql, Object... arguments) {
+    public int update(String sql, Object... arguments) {
         log.debug("update query : {}", sql);
 
-        return execute(connection, sql, PreparedStatement::executeUpdate, arguments);
+        return execute(sql, PreparedStatement::executeUpdate, arguments);
     }
 
     public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... arguments) {
@@ -43,14 +44,7 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... arguments) {
         log.debug("query : {}", sql);
 
-        try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, preparedStatement -> fetchResults(rowMapper, preparedStatement), arguments);
-        } catch (SQLException e) {
-            String errorMessage = String.format("Error executing: %s with arguments: %s", sql,
-                    Arrays.toString(arguments));
-            log.error(errorMessage);
-            throw new JdbcSQLException(errorMessage, e);
-        }
+        return execute(sql, preparedStatement -> fetchResults(rowMapper, preparedStatement), arguments);
     }
 
     private <T> List<T> fetchResults(RowMapper<T> rowMapper, PreparedStatement preparedStatement) throws SQLException {
@@ -63,13 +57,12 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(
-            Connection connection,
             String sql,
             PreparedStatementExecutor<T> preparedStatementExecutor,
             Object... arguments
     ) {
         log.debug("update query : {}", sql);
-
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setArguments(arguments, preparedStatement);
 

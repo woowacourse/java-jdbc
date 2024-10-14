@@ -56,9 +56,9 @@
 
 ## 4단계
 
-- [ ] Transaction synchronization 적용 : DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록
-  - [ ] DataSourceUtils 구현
-  - [ ] TransactionSynchronizationManager 구현
+- [x] Transaction synchronization 적용 : DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록
+  - [x] DataSourceUtils 구현
+  - [x] TransactionSynchronizationManager 구현
 
 - [ ] 트랜잭션 서비스 추상화 : 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직 분리
   - [ ] 인터페이스 구현 

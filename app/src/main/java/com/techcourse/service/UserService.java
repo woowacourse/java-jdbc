@@ -22,16 +22,16 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        TransactionManager.runTransaction((connection) -> userDao.insert(connection, user));
+        TransactionManager.runTransaction(() -> userDao.insert(user));
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        TransactionManager.runTransaction((connection) -> {
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        TransactionManager.runTransaction(() -> {
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 

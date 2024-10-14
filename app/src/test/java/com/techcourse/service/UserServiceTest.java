@@ -3,8 +3,6 @@ package com.techcourse.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.SQLException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,16 +20,14 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
 
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
-            userDao.insert(connection, user);
-        }
+        userDao.insert(user);
     }
 
     @Test
