@@ -45,6 +45,11 @@
                 - [ ] `TxUserService`
     - [ ] `UserServiceTest`가 통과하도록 만들기
         - [ ] `testTransactionRollback()` 테스트 메서드 변경
+    - [x] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
+        - [x] `UserService` 인터페이스 추가
+            - [x] UserService 인터페이스를 구현한 클래스 2개 생성
+                - [x] `AppUserService`
+                - [x] `TxUserService`
 
 ### 학습목표
 
