@@ -1,13 +1,12 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.ObjectMapper;
+import com.interface21.jdbc.core.ResultSetMapper;
 import com.interface21.jdbc.core.OrderedSetter;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.User;
@@ -15,7 +14,7 @@ import com.techcourse.domain.User;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final ObjectMapper<User> USER_OBJECT_MAPPER = (resultSet, rowNum) -> new User(
+    private static final ResultSetMapper<User> USER_OBJECT_MAPPER = (resultSet, rowNum) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),

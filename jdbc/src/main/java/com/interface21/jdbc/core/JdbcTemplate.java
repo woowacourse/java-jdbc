@@ -43,7 +43,7 @@ public class JdbcTemplate {
     }
 
     public <T> T getResult(PreparedStatementSetter preparedStatementSetter, String query,
-            ObjectMapper<T> objectMapper, Object... parameters
+            ResultSetMapper<T> resultSetMapper, Object... parameters
     ) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -54,7 +54,7 @@ public class JdbcTemplate {
             ResultSet resultSet = pstmt.executeQuery();
 
             if (resultSet.next()) {
-                T result = objectMapper.map(resultSet, resultSet.getRow());
+                T result = resultSetMapper.map(resultSet, resultSet.getRow());
                 validateNoRemainResult(resultSet);
                 return result;
             }
@@ -73,7 +73,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> getResults(PreparedStatementSetter preparedStatementSetter, String query,
-            ObjectMapper<T> objectMapper, Object... parameters
+            ResultSetMapper<T> resultSetMapper, Object... parameters
     ) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -84,7 +84,7 @@ public class JdbcTemplate {
             ResultSet resultSet = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
-                results.add(objectMapper.map(resultSet, resultSet.getRow()));
+                results.add(resultSetMapper.map(resultSet, resultSet.getRow()));
             }
             return results;
         } catch (SQLException e) {
