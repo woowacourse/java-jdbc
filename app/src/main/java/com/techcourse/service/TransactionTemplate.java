@@ -2,9 +2,11 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.ConnectionConsumerWrapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import javax.sql.DataSource;
 
 public class TransactionTemplate {
@@ -15,23 +17,22 @@ public class TransactionTemplate {
     }
 
     public static void executeWithTransaction(ServiceLogic logic) {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(DATASOURCE);
         try {
-            connection = DATASOURCE.getConnection();
             validateConnection(connection);
             connection.setAutoCommit(false);
-            logic.execute(connection);
+            logic.execute();
             connection.commit();
         } catch (SQLException e) {
             ConnectionConsumerWrapper.accept(connection, Connection::rollback);
             throw new DataAccessException(e);
         } finally {
-            ConnectionConsumerWrapper.accept(connection, Connection::close);
+            DataSourceUtils.releaseConnection(connection, DATASOURCE);
         }
     }
 
     private static void validateConnection(Connection connection) throws SQLException {
-        if (connection == null) {
+        if (Objects.isNull(connection)) {
             throw new SQLException("Connection 존재하지 않습니다.");
         }
     }
