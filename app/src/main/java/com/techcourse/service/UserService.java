@@ -26,10 +26,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy, final Connection conn) {
-        final var user = findById(id, conn);
-        user.changePassword(newPassword);
-
 		TransactionExecutor.executeInTransaction(conn, () -> {
+			final var user = userDao.findById(id, conn);
+			user.changePassword(newPassword);
 			userDao.update(user, conn);
 			userHistoryDao.log(new UserHistory(user, createBy), conn);
 		});

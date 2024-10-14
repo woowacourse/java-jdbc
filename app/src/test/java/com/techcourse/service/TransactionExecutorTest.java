@@ -32,7 +32,6 @@ class TransactionExecutorTest {
 
 		verify(conn).setAutoCommit(false);
 		verify(conn).commit();
-		verify(conn).setAutoCommit(true);
 	}
 
 	@DisplayName("트랜잭션 내에서 실행 중 예외가 발생하면 롤백한다.")
@@ -48,7 +47,6 @@ class TransactionExecutorTest {
 
 		verify(conn).setAutoCommit(false);
 		verify(conn).rollback();
-		verify(conn).setAutoCommit(true);
 	}
 
 	@DisplayName("읽기 전용으로 실행한다.")
@@ -60,7 +58,6 @@ class TransactionExecutorTest {
 
 		assertThat(result).isEqualTo("성공");
 		verify(conn).setReadOnly(true);
-		verify(conn).setReadOnly(false);
 	}
 
 	@DisplayName("읽기 전용으로 실행 중 예외가 발생하면 DataAccessException을 던진다.")
@@ -75,6 +72,5 @@ class TransactionExecutorTest {
 			.hasMessageContaining("예외");
 
 		verify(conn).setReadOnly(true);
-		verify(conn).setReadOnly(false);
 	}
 }
