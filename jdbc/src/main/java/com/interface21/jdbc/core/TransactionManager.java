@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.ConnectionCloseException;
 import com.interface21.jdbc.exception.TransactionExecutionException;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
 
@@ -49,7 +48,6 @@ public class TransactionManager {
         try {
             if (connection != null && !connection.isClosed()) {
                 DataSourceUtils.releaseConnection(connection, dataSource);
-                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (final SQLException e) {
             throw new ConnectionCloseException("커넥션 종료에 실패했습니다.", e);
