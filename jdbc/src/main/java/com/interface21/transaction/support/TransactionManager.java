@@ -30,7 +30,7 @@ public class TransactionManager {
             log.error(exception.getMessage(), exception);
 
             rollback(connection);
-            throw new DataAccessException(exception);
+            throw new DataAccessException("Failed to perform transaction", exception);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
@@ -48,7 +48,7 @@ public class TransactionManager {
             log.error(exception.getMessage(), exception);
 
             rollback(connection);
-            throw new DataAccessException(exception);
+            throw new DataAccessException("Failed to perform transaction", exception);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
@@ -60,7 +60,7 @@ public class TransactionManager {
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
 
-            throw new DataAccessException("Failed to rollback");
+            throw new DataAccessException("Failed to rollback", exception);
         }
     }
 }
