@@ -15,5 +15,5 @@
 
 ## Step4
 
-* [ ] Transaction synchronization 적용
+* [x] Transaction synchronization 적용
 * [ ] 트랜잭션 서비스 추상화하기
