@@ -12,3 +12,8 @@
 ## Step3
 
 * [x] 트랜잭션 경계 설정
+
+## Step4
+
+* [ ] Transaction synchronization 적용
+* [ ] 트랜잭션 서비스 추상화하기
