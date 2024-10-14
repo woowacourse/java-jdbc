@@ -30,4 +30,8 @@ public abstract class TransactionSynchronizationManager {
     public static void unbindResource(DataSource key) {
         resources.get().remove(key);
     }
+
+    public static boolean doseNotManage(DataSource dataSource) {
+        return getResource(dataSource) == null;
+    }
 }

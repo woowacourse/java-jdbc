@@ -59,7 +59,7 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(String sql, SqlFunction<PreparedStatement, T> action) {
-        boolean isNewConnection = isNewConnection();
+        boolean isNewConnection = TransactionSynchronizationManager.doseNotManage(dataSource);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("Executing query: {}", sql);
@@ -71,10 +71,6 @@ public class JdbcTemplate {
         } finally {
             closeConnection(isNewConnection, connection);
         }
-    }
-
-    private boolean isNewConnection() {
-        return TransactionSynchronizationManager.getResource(dataSource) == null;
     }
 
     private void closeConnection(boolean isNewConnection, Connection connection) {
