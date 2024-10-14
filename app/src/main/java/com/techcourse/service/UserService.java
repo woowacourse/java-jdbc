@@ -43,21 +43,21 @@ public class UserService {
 
             connection.commit();
         } catch (Exception exception) {
-            tryRollBack(connection);
+            tryRollBack(connection, exception);
         } finally {
             closeConnection(connection);
         }
     }
 
-    private void tryRollBack(Connection connection) {
+    private void tryRollBack(Connection connection, Exception exception) {
         if (connection != null) {
             try {
                 connection.rollback();
             } catch (SQLException rollbackException) {
-                throw new TransactionException("롤백 중 오류가 발생했습니다.");
+                throw new TransactionException("롤백 중 오류가 발생했습니다.", rollbackException);
             }
         }
-        throw new TransactionException("실행 중 오류가 발생했습니다.");
+        throw new TransactionException("실행 중 오류가 발생했습니다.", exception);
     }
 
     private void closeConnection(Connection connection) {
@@ -66,7 +66,7 @@ public class UserService {
                 connection.setAutoCommit(true);
                 connection.close();
             } catch (SQLException closeException) {
-                throw new TransactionException("커넥션 닫기 중 오류가 발생했습니다.");
+                throw new TransactionException("커넥션 닫기 중 오류가 발생했습니다.", closeException);
             }
         }
     }
