@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -18,7 +19,8 @@ public class QueryExecutor {
         this.dataSource = dataSource;
     }
 
-    <T> T executeFunction(Connection connection, QueryFunction<PreparedStatement, T> function, String sql, Object... args) {
+    <T> T executeFunction(QueryFunction<PreparedStatement, T> function, String sql, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             this.setParameters(pstmt, args);
@@ -28,7 +30,8 @@ public class QueryExecutor {
         }
     }
 
-    void executeConsumer(Connection connection, QueryConsumer<PreparedStatement> consumer, String sql, Object... args) {
+    void executeConsumer(QueryConsumer<PreparedStatement> consumer, String sql, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             this.setParameters(pstmt, args);
