@@ -6,6 +6,7 @@ import com.interface21.jdbc.exception.QueryExecutionException;
 import com.interface21.jdbc.result.PreparedStatementSetter;
 import com.interface21.jdbc.result.ResultSetConverter;
 import com.interface21.jdbc.result.RowMapper;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -26,16 +27,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void command(final String sql, final Connection connection, final Object... params) {
-        try {
-            executeCommandWithConnection(sql, connection, params);
-        } catch (final SQLException exception) {
-            throw new ConnectionFailException(sql, exception);
-        }
-    }
-
     public void command(final String sql, final Object... params) {
-        try (final Connection connection = DataSourceUtils.getConnection(dataSource)) {
+        try {
+            final Connection connection = DataSourceUtils.getConnection(dataSource);
             executeCommandWithConnection(sql, connection, params);
         } catch (final SQLException exception) {
             throw new ConnectionFailException(sql, exception);
@@ -54,6 +48,8 @@ public class JdbcTemplate {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setter.setValues(pstmt);
             executeCommand(pstmt);
+        } finally {
+            release(connection);
         }
     }
 
@@ -61,6 +57,8 @@ public class JdbcTemplate {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setStatementsWithPOJOType(pstmt, params);
             executeCommand(pstmt);
+        } finally {
+            release(connection);
         }
     }
 
@@ -76,32 +74,17 @@ public class JdbcTemplate {
         return executeQueryTemplate(sql, rowMapper, this::convertToStream, params);
     }
 
-    public <T> Stream<T> queryForStream(final String sql, final Connection connection, final RowMapper<T> rowMapper, final Object... params) {
-        return executeQueryTemplate(sql, rowMapper, this::convertToStream, connection, params);
-    }
-
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return executeQueryTemplate(sql, rowMapper, this::convertToList, params);
-    }
-
-    public <T> List<T> queryForList(final String sql, final Connection connection, final RowMapper<T> rowMapper, final Object... params) {
-        return executeQueryTemplate(sql, rowMapper, this::convertToList, connection, params);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return executeQueryTemplate(sql, rowMapper, this::convertToObject, params);
     }
 
-    public <T> T queryForObject(final String sql, final Connection connection, final RowMapper<T> rowMapper, final Object... params) {
-        return executeQueryTemplate(sql, rowMapper, this::convertToObject, connection, params);
-    }
-
     private <T, R> R executeQueryTemplate(final String sql, final RowMapper<T> rowMapper, final ResultSetConverter<T, R> converter, final Object... params) {
-        try (final Connection connection = dataSource.getConnection()) {
-            return executeQueryTemplate(sql, rowMapper, converter, connection, params);
-        } catch (final SQLException exception) {
-            throw new ConnectionFailException("연결을 실패했습니다", exception);
-        }
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        return executeQueryTemplate(sql, rowMapper, converter, connection, params);
     }
 
     private <T, R> R executeQueryTemplate(final String sql, final RowMapper<T> rowMapper, final ResultSetConverter<T, R> converter, final Connection connection, final Object... params) {
@@ -110,6 +93,8 @@ public class JdbcTemplate {
             return converter.convert(rowMapper, resultSet);
         } catch (final SQLException exception) {
             throw new ConnectionFailException("연결을 실패했습니다", exception);
+        } finally {
+            release(connection);
         }
     }
 
@@ -139,5 +124,12 @@ public class JdbcTemplate {
             }
         }
         return list;
+    }
+
+    private void release(final Connection connection) {
+        if (TransactionSynchronizationManager.isActiveTransaction()) {
+            return;
+        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
