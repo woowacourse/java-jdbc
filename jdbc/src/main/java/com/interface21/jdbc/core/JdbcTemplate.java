@@ -7,11 +7,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 import javax.sql.DataSource;
-
-import org.apache.commons.lang3.function.TriFunction;
 
 import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.mapper.RowMapper;
@@ -26,9 +23,13 @@ public class JdbcTemplate {
     }
 
     public void insert(final String sql, final SqlParameterSource parameters) {
-        final Sql bindingParametersQuery = new Sql(sql, parameters);
-        final BiConsumer<Statement, Sql> insertCallBack = this::execWriteQuery;
-        execute(insertCallBack, bindingParametersQuery);
+        try (final Connection conn = dataSource.getConnection();
+             final Statement stmt = conn.createStatement()) {
+            final Sql bindingParametersQuery = new Sql(sql, parameters);
+            execWriteQuery(stmt, bindingParametersQuery);
+        } catch (final SQLException e) {
+            throw new JdbcException(e.getMessage(), e);
+        }
     }
 
     private void execWriteQuery(final Statement statement, final Sql sql) {
@@ -41,9 +42,13 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Map<String, Object> parameters) {
-        final Sql bindingParametersQuery = new Sql(sql, parameters);
-        final BiConsumer<Statement, Sql> updateCallBack = this::execWriteQuery;
-        execute(updateCallBack, bindingParametersQuery);
+        try (final Connection conn = dataSource.getConnection();
+             final Statement stmt = conn.createStatement()) {
+            final Sql bindingParametersQuery = new Sql(sql, parameters);
+            execWriteQuery(stmt, bindingParametersQuery);
+        } catch (final SQLException e) {
+            throw new JdbcException(e.getMessage(), e);
+        }
     }
 
     public <T> T queryForObject(
@@ -51,13 +56,19 @@ public class JdbcTemplate {
             final Map<String, Object> parameters,
             final RowMapper<T> rowMapper
     ) {
-        final Sql bindingParametersQuery = new Sql(sql, parameters);
-        final TriFunction<Statement, Sql, RowMapper<T>, List<T>> queryForObjectCallBack = (stmt, query, mapper) -> {
-            final ResultSet resultSet = execReadQuery(stmt, query);
-            return List.of(mapper.mapping(resultSet));
-        };
-        final List<T> result = execute(queryForObjectCallBack, bindingParametersQuery, rowMapper);
-        return result.getFirst();
+        try (final Connection conn = dataSource.getConnection();
+             final Statement stmt = conn.createStatement()) {
+            final Sql bindingParametersQuery = new Sql(sql, parameters);
+            final ResultSet resultSet = execReadQuery(stmt, bindingParametersQuery);
+
+            if (resultSet.next()) {
+                return rowMapper.mapping(resultSet);
+            }
+
+            return null;
+        } catch (final SQLException e) {
+            throw new JdbcException(e.getMessage(), e);
+        }
     }
 
     private ResultSet execReadQuery(final Statement stmt, final Sql sql) {
@@ -74,40 +85,17 @@ public class JdbcTemplate {
             final Map<String, Object> parameters,
             final RowMapper<T> rowMapper
     ) {
-        final Sql bindingParametersQuery = new Sql(sql, parameters);
-        final TriFunction<Statement, Sql, RowMapper<T>, List<T>> queryCallBack = (stmt, query, mapper) -> {
-            final ResultSet resultSet = execReadQuery(stmt, query);
-            return parseResult(resultSet, rowMapper);
-        };
+        try (final Connection conn = dataSource.getConnection();
+             final Statement stmt = conn.createStatement()) {
+            final Sql bindingParametersQuery = new Sql(sql, parameters);
+            final ResultSet resultSet = execReadQuery(stmt, bindingParametersQuery);
 
-        return execute(queryCallBack, bindingParametersQuery, rowMapper);
-    }
+            final List<T> result = new ArrayList<>();
+            while (resultSet.next()) {
+                result.add(rowMapper.mapping(resultSet));
+            }
 
-    private <T> List<T> parseResult(final ResultSet resultSet, final RowMapper<T> rowMapper) {
-        final List<T> result = new ArrayList<>();
-        T mappingResult = rowMapper.mapping(resultSet);
-        while (mappingResult != null) {
-            result.add(mappingResult);
-            mappingResult = rowMapper.mapping(resultSet);
-        }
-        return result;
-    }
-
-    private void execute(final BiConsumer<Statement, Sql> callBack, final Sql sql) {
-        try (final Connection conn = dataSource.getConnection(); final Statement stmt = conn.createStatement()) {
-            callBack.accept(stmt, sql);
-        } catch (final SQLException e) {
-            throw new JdbcException(e.getMessage(), e);
-        }
-    }
-
-    private <T> List<T> execute(
-            final TriFunction<Statement, Sql, RowMapper<T>, List<T>> callBack,
-            final Sql sql,
-            final RowMapper<T> rowMapper
-    ) {
-        try (final Connection conn = dataSource.getConnection(); final Statement stmt = conn.createStatement()) {
-            return callBack.apply(stmt, sql, rowMapper);
+            return result;
         } catch (final SQLException e) {
             throw new JdbcException(e.getMessage(), e);
         }
