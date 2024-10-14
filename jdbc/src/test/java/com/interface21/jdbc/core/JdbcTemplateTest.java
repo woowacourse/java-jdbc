@@ -33,7 +33,7 @@ class JdbcTemplateTest {
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
 
-        jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate = new JdbcTemplate(dataSource);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
@@ -50,7 +50,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true);
         when(rowMapper.mapRow(resultSet)).thenReturn(new TestUser(1L));
 
-        Optional<TestUser> testUser = jdbcTemplate.queryForObject(connection, "sql", rowMapper, 1);
+        Optional<TestUser> testUser = jdbcTemplate.queryForObject("sql", rowMapper, 1);
 
         //then
         assertAll(
@@ -69,7 +69,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        Optional<TestUser> testUser = jdbcTemplate.queryForObject(connection, "sql", rowMapper, 1);
+        Optional<TestUser> testUser = jdbcTemplate.queryForObject("sql", rowMapper, 1);
 
         //then
         assertThat(testUser).isEmpty();
@@ -86,7 +86,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn(new TestUser(1L), new TestUser(2L));
 
-        List<TestUser> testUsers = jdbcTemplate.query(connection, "sql", rowMapper);
+        List<TestUser> testUsers = jdbcTemplate.query("sql", rowMapper);
 
         //then
         assertAll(
@@ -106,7 +106,7 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<TestUser> testUsers = jdbcTemplate.query(connection, "sql", rowMapper);
+        List<TestUser> testUsers = jdbcTemplate.query("sql", rowMapper);
 
         //then
         assertThat(testUsers).isEmpty();
@@ -119,7 +119,7 @@ class JdbcTemplateTest {
         Object[] values = new Object[]{1L, "capy"};
 
         //when
-        jdbcTemplate.update(connection, "sql", values);
+        jdbcTemplate.update("sql", values);
 
         //then
         verify(preparedStatement).setObject(1, values[0]);
