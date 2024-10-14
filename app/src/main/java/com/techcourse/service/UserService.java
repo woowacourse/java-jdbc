@@ -57,7 +57,7 @@ public class UserService {
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Throwable e) {
             connection.rollback();
         } finally {
             connection.setAutoCommit(true);
