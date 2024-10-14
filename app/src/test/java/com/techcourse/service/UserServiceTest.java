@@ -1,20 +1,18 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -32,14 +30,14 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao);
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
