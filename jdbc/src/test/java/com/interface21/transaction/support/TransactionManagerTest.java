@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.TransactionRollbackException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -55,7 +56,8 @@ class TransactionManagerTest {
 
         assertAll(
                 () -> assertThatThrownBy(() -> transactionManager.injectTransaction(consumer))
-                        .isInstanceOf(DataAccessException.class),
+                        .isInstanceOf(TransactionRollbackException.class)
+                        .hasCauseInstanceOf(DataAccessException.class),
                 () -> verify(connection).setAutoCommit(false),
                 () -> verify(connection).rollback()
         );

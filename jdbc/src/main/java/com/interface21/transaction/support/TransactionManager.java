@@ -1,6 +1,8 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.RollbackFailedException;
+import com.interface21.dao.TransactionRollbackException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -30,7 +32,7 @@ public class TransactionManager {
             conn.commit();
         } catch (SQLException | DataAccessException e) {
             tryRollBack(conn);
-            throw new DataAccessException("트랜잭션 수행 중 문제가 발생하여 롤백하였습니다.", e);
+            throw new TransactionRollbackException("트랜잭션 수행 중 문제가 발생하여 롤백하였습니다.", e);
         }
     }
 
@@ -38,7 +40,7 @@ public class TransactionManager {
         try {
             connection.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException("롤백 작업 수행 중 문제가 발생하였습니다.", e);
+            throw new RollbackFailedException("롤백 작업 수행 중 문제가 발생하였습니다.", e);
         }
     }
 }
