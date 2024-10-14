@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -64,28 +65,25 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) throws DataAccessException {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setPreparedStatementArgs(statement, args);
-            return action.doInPreparedStatement(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> action,
-                          final Object... args) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setPreparedStatementArgs(statement, args);
             return action.doInPreparedStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        } finally {
+            releaseConnectionIfAutoCommit(connection);
+        }
+    }
+
+    private void releaseConnectionIfAutoCommit(Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+        } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
@@ -94,9 +92,5 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(FIRST_PARAMETER_INDEX + i, args[i]);
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

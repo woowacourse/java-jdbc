@@ -15,7 +15,7 @@ public class TransactionManager {
     }
 
     public void performTransaction(final Consumer<Connection> operation) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             begin(connection);
             operation.accept(connection);
