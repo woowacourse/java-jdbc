@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,17 +26,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... arguments) {
-        try (Connection connection = dataSource.getConnection()) {
-            return queryWithConnection(connection, sql, rowMapper, arguments);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException("An error occurred during the execution of the select query.", e);
-        }
-    }
-
-    public <T> List<T> queryWithConnection(final Connection connection, final String sql,
-                                           final RowMapper<T> rowMapper, final Object... arguments) {
-        validateConnection(connection);
+        Connection connection = connect();
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             statementSetter.setValues(preparedStatement, arguments);
@@ -64,29 +56,8 @@ public class JdbcTemplate {
         return null;
     }
 
-    public <T> T queryForObjectWithConnection(final Connection connection, final String sql,
-                                              final RowMapper<T> rowMapper, final Object... arguments) {
-        List<T> results = queryWithConnection(connection, sql, rowMapper, arguments);
-
-        if (results.size() > SINGLE_RESULT_SIZE) {
-            throw new JdbcException("multiple rows found.");
-        }
-        if (results.size() == SINGLE_RESULT_SIZE) {
-            return results.getFirst();
-        }
-        return null;
-    }
-
     public void update(final String sql, final Object... arguments) {
-        try (Connection connection = dataSource.getConnection()) {
-            updateWithConnection(connection, sql, arguments);
-        } catch (SQLException e) {
-            throw new JdbcException("An error occurred during the execution of the update query.", e);
-        }
-    }
-
-    public void updateWithConnection(final Connection connection, final String sql, final Object... arguments) {
-        validateConnection(connection);
+        Connection connection = connect();
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             statementSetter.setValues(preparedStatement, arguments);
@@ -98,9 +69,16 @@ public class JdbcTemplate {
         }
     }
 
-    private void validateConnection(final Connection connection) {
-        if (connection == null) {
-            throw new JdbcException("connection cannot be null.");
+    private Connection connect() {
+        try {
+            Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+            if (connection == null) {
+                return this.dataSource.getConnection();
+            }
+            return connection;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to connect.", e);
         }
     }
 }
