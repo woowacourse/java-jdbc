@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,15 +21,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error("GET_CONNECTION_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException("Connection을 생성하던 중 오류가 발생했습니다.");
-        }
     }
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql) {
@@ -55,11 +47,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection connection = getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
         ResultSet resultSet = execute(preparedStatement, args);
 
-        try (connection; preparedStatement; resultSet) {
+        try (preparedStatement; resultSet) {
             return extractResults(rowMapper, resultSet);
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
@@ -86,19 +78,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        Connection connection = getConnection();
-        PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
-
-        try (connection; preparedStatement) {
-            PreparedStatementSetter.setValue(preparedStatement, args);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
-            throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
-        }
-    }
-
-    public int update(Connection connection, String sql, Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
         try (preparedStatement) {
