@@ -38,7 +38,7 @@ class UserServiceTest {
     void testChangePassword() throws SQLException {
         //given
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        AppUserService userService = new AppUserService(userDao, userHistoryDao);
 
         //when
         userService.changePassword(1L, NEW_PASSWORD, ACCOUNT_GUGU);
@@ -53,7 +53,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         //given
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        TransactionUserService userService = new TransactionUserService(appUserService);
 
         long id = userDao.findAll()
                 .getLast()
@@ -63,7 +64,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(id, NEW_PASSWORD, ACCOUNT_GUGU));
 
-        User actual = userService.findById(id).get();
+        User actual = appUserService.findById(id).get();
 
         //then
         assertAll(

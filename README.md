@@ -37,19 +37,14 @@
 - [x] 트랜잭션 동기화(Transaction synchronization) 방식 사용
     - [x] 서비스와 DAO에서 DataSourceUtils를 사용해 connection 설정
     - [x] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현
-- [ ] 트랜잭션 서비스 추상화
-    - [ ] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
-        - [ ] `UserService` 인터페이스 추가
-            - [ ] UserService 인터페이스를 구현한 클래스 2개 생성
-                - [ ] `AppUserService`
-                - [ ] `TxUserService`
-    - [ ] `UserServiceTest`가 통과하도록 만들기
-        - [ ] `testTransactionRollback()` 테스트 메서드 변경
+- [x] 트랜잭션 서비스 추상화
     - [x] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
         - [x] `UserService` 인터페이스 추가
             - [x] UserService 인터페이스를 구현한 클래스 2개 생성
                 - [x] `AppUserService`
                 - [x] `TxUserService`
+    - [x] `UserServiceTest`가 통과하도록 만들기
+        - [x] `testTransactionRollback()` 테스트 메서드 변경
 
 ### 학습목표
 
