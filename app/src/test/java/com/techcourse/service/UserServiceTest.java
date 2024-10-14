@@ -1,20 +1,23 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -45,7 +48,7 @@ class UserServiceTest {
     }
 
     @Test
-    void testTransactionRollback() {
+    void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
@@ -56,8 +59,17 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        // userHistoryDao도 같은 커넥션을 사용하면서 롤백이 되었는지 확인한다.
+        final var sql =  "select * from user_history";
+        Connection conn = DataSourceConfig.getInstance().getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        ResultSet userHistory = pstmt.getResultSet();
+        conn.close();
+        pstmt.close();
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        final var userDaoactual = userService.findById(1L);
+
+        assertThat(userDaoactual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(userHistory).isNull();
     }
 }

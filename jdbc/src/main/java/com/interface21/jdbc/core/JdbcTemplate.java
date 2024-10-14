@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.exception.NonReadableResultSetException;
-import com.interface21.jdbc.exception.SQLQueryException;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,12 +30,12 @@ public class JdbcTemplate {
                 if (rs.next()) {
                     return objectMapper.mapToObject(rs);
                 }
-                throw new NonReadableResultSetException("Fail to read result set");
+                throw new DataAccessException("Fail to read result set");
             }
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SQLQueryException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -55,11 +54,11 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SQLQueryException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public void execute(String sql, PreparedStatementSetter preparedStatementSetter) {
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (Connection conn = getDataSource();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -68,7 +67,19 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new SQLQueryException(e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void update(Connection conn, String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            preparedStatementSetter.setValues(pstmt);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
