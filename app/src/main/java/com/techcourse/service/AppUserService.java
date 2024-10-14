@@ -10,12 +10,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
-public class UserServiceImpl implements UserService {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserServiceImpl(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
