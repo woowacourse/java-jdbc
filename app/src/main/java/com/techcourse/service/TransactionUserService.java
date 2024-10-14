@@ -25,43 +25,39 @@ public class TransactionUserService implements UserService {
 
     @Override
     public void save(User user) {
+        executeTransaction(() -> userService.save(user));
+    }
+
+    @Override
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
+        executeTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+    }
+
+    private void executeTransaction(Runnable action) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            connection.setAutoCommit(false);
-            userService.save(user);
-            connection.commit();
+            tryCommit(action, connection);
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException exception) {
-                throw new DataAccessException("트랜잭션 롤백 실패", e);
-            }
+            tryRollback(e, connection);
             throw new DataAccessException("트랜잭션 수행 실패", e);
         } finally {
             DataSourceUtils.releaseConnection(dataSource);
         }
     }
 
-    @Override
-    public void changePassword(final long id, final String newPassword, final String createdBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+    private void tryCommit(Runnable action, Connection connection) throws SQLException {
+        connection.setAutoCommit(false);
+        action.run();
+        connection.commit();
+    }
 
+    private void tryRollback(SQLException e, Connection connection) {
         try {
-            connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createdBy);
-            connection.commit();
-        } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException exception) {
-                throw new DataAccessException("트랜잭션 롤백 실패", e);
-            }
-            throw new DataAccessException("트랜잭션 수행 실패", e);
-        } finally {
-            DataSourceUtils.releaseConnection(dataSource);
+            connection.rollback();
+        } catch (SQLException exception) {
+            throw new DataAccessException("트랜잭션 롤백 실패", e);
         }
     }
 }
