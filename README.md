@@ -49,7 +49,6 @@
 
 ### 4단계 - Transaction synchronization 적용하기
 
-- [ ] connection 객체와 비즈니스 로직 분리
-  - [ ] Transaction synchronization 적용
-  - [ ] 트랜잭션 서비스 추상
-- [ ] aop 학습 테스트
+- [x] connection 객체와 비즈니스 로직 분리
+  - [x] Transaction synchronization 적용
+  - [x] 트랜잭션 서비스 추상화
