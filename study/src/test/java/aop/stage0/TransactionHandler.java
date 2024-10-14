@@ -24,15 +24,14 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         TransactionStatus status = transactionManager.getTransaction(TransactionDefinition.withDefaults());
-        ;
-        Object result;
+
         try {
-            result = method.invoke(target, args);
+            Object result = method.invoke(target, args);
             transactionManager.commit(status);
+            return result;
         } catch (Exception e) {
             transactionManager.rollback(status);
             throw new DataAccessException();
         }
-        return result;
     }
 }

@@ -51,7 +51,6 @@ class Stage0Test {
                 new Class[]{UserService.class},
                 new TransactionHandler(platformTransactionManager, appUserService)
         );
-        ;
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -70,7 +69,6 @@ class Stage0Test {
                 new Class[]{UserService.class},
                 new TransactionHandler(platformTransactionManager, appUserService)
         );
-        ;
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
