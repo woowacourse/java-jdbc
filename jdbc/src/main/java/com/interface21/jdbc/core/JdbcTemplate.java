@@ -22,9 +22,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, ParameterSetter parameterSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    public void update(Connection connection, String sql, ParameterSetter parameterSetter) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             Parameters parameters = parameterSetter.createParameters();
             parameters.setPreparedStatement(pstmt);
             pstmt.executeUpdate();

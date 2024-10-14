@@ -45,7 +45,7 @@ class JdbcTemplateTest {
         TestUser user = new TestUser(1L, "account", "password", "email");
 
         // when
-        jdbcTemplate.update(sql, () -> {
+        jdbcTemplate.update(connection, sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
             parameters.add(2, user.getPassword());
@@ -71,7 +71,7 @@ class JdbcTemplateTest {
     void queryForObject() throws SQLException {
         // given
         TestUser user = new TestUser(1L, "account", "password", "email");
-        jdbcTemplate.update(
+        jdbcTemplate.update(connection,
                 "insert into users (account, password, email) values (?, ?, ?)", () -> {
                     final var parameters = new Parameters();
                     parameters.add(1, user.getAccount());
@@ -106,7 +106,7 @@ class JdbcTemplateTest {
         // given
         String sql = "select * from users";
         TestUser user1 = new TestUser(1L, "account1", "password1", "email1");
-        jdbcTemplate.update(
+        jdbcTemplate.update(connection,
                 "insert into users (account, password, email) values (?, ?, ?)", () -> {
                     final var parameters = new Parameters();
                     parameters.add(1, user1.getAccount());
@@ -116,7 +116,7 @@ class JdbcTemplateTest {
                     return parameters;
                 });
         TestUser user2 = new TestUser(2L, "account2", "password2", "email2");
-        jdbcTemplate.update(
+        jdbcTemplate.update(connection,
                 "insert into users (account, password, email) values (?, ?, ?)", () -> {
                     final var parameters = new Parameters();
                     parameters.add(1, user2.getAccount());
