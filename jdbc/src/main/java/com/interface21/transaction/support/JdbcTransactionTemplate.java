@@ -16,6 +16,8 @@ public class JdbcTransactionTemplate {
         } catch (Exception e) {
             transaction.rollback();
             throw e;
+        } finally {
+            transactionManager.flush();
         }
     }
 }

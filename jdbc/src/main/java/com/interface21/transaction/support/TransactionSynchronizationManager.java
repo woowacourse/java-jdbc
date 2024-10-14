@@ -16,11 +16,11 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
-        dataSourceConnectionMap.put(key, value);
+        resources.set(Map.of(key, value));
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static Object unbindResource(DataSource key) {
+        resources.remove();
+        return key;
     }
 }

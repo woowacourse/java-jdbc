@@ -27,4 +27,8 @@ public class JdbcTransactionManager {
             throw exceptionTranslator.translate(e);
         }
     }
+
+    public void flush() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
 }
