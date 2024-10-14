@@ -33,39 +33,37 @@ class TransactionManagerTest {
 
     @Test
     void testTransactionRollbackWithConsumer() throws SQLException {
-        assertThatThrownBy(() -> transactionManager.performTransaction(this::throwExceptionForConsumer));
+        assertThatThrownBy(() -> transactionManager.performTransaction(this::throwExceptionForRunnable));
 
         verify(connection).rollback();
     }
 
     @Test
     void testTransactionRollbackWithFunction() throws SQLException {
-        assertThatThrownBy(() -> transactionManager.performTransaction(connection -> {
-            return throwExceptionForFunction(connection);
-        }));
+        assertThatThrownBy(() -> transactionManager.performTransaction(() -> throwExceptionForSupplier()));
 
         verify(connection).rollback();
     }
 
-    private void throwExceptionForConsumer(Connection connection) {
+    private void throwExceptionForRunnable() {
         throw new RuntimeException();
     }
 
-    private <T> T throwExceptionForFunction(Connection connection) {
+    private <T> T throwExceptionForSupplier() {
         throw new RuntimeException();
     }
 
     @Test
-    void testTransactionCommitWithConsumer() throws SQLException {
-        transactionManager.performTransaction(conn -> {
+    void testTransactionCommitWithRunnable() throws SQLException {
+        transactionManager.performTransaction(() -> {
         });
 
         verify(connection).commit();
     }
 
     @Test
-    void testTransactionCommitWithFunction() throws SQLException {
-        transactionManager.performTransaction(connection -> null);
+    void testTransactionCommitWithSupplier() throws SQLException {
+        transactionManager.performTransaction(() -> null);
 
         verify(connection).commit();
     }

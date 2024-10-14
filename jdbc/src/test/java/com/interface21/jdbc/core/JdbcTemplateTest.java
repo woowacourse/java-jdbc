@@ -52,7 +52,7 @@ class JdbcTemplateTest {
         String sql = "INSERT INTO users (name) VALUES (?)";
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        assertThat(jdbcTemplate.update(connection, sql, "naknak")).isEqualTo(1);
+        assertThat(jdbcTemplate.update(sql, "naknak")).isEqualTo(1);
     }
 
     @Test
@@ -63,7 +63,7 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, rowMapper, "naknak"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "naknak"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("쿼리 실행 결과가 1개이기를 기대했지만, 0개입니다.");
     }
@@ -77,7 +77,7 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, true, false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, sql, rowMapper, "naknak"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "naknak"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("쿼리 실행 결과가 1개이기를 기대했지만, 2개 이상입니다.");
     }
@@ -91,7 +91,7 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, false);
 
-        User actual = jdbcTemplate.queryForObject(connection, sql, rowMapper, "naknak");
+        User actual = jdbcTemplate.queryForObject(sql, rowMapper, "naknak");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -106,7 +106,7 @@ class JdbcTemplateTest {
 
         when(resultSet.next()).thenReturn(true, true, false);
 
-        List<User> actual = jdbcTemplate.query(connection, sql, rowMapper);
+        List<User> actual = jdbcTemplate.query(sql, rowMapper);
 
         assertThat(actual).containsExactlyElementsOf(expected);
     }
