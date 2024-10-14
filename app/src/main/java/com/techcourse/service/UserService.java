@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -29,15 +30,14 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final User user = findById(id);
         user.changePassword(newPassword);
 
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            userDao.update(user, connection);
-            userHistoryDao.log(new UserHistory(user, createBy), connection);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (Throwable e) {
             try {
@@ -47,11 +47,7 @@ public class UserService {
             }
             throw new RuntimeException(e);
         } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
