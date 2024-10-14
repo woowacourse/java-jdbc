@@ -6,6 +6,7 @@ import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import aop.service.AppUserService;
+import aop.service.TxUserService;
 import aop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.lang.reflect.Proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,6 +40,9 @@ class Stage0Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    @Autowired
+    private DataSource dataSource;
+
     @BeforeEach
     void setUp() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -44,8 +51,12 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                UserService.class.getClassLoader(),
+                new Class[]{UserService.class},
+                new TransactionHandler(platformTransactionManager, appUserService)
+        );
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -59,7 +70,7 @@ class Stage0Test {
     @Test
     void testTransactionRollback() {
         final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
+        final UserService userService = new TxUserService(platformTransactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
