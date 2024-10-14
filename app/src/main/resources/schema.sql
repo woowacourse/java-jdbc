@@ -5,7 +5,6 @@ create table if not exists users (
     email varchar(100) not null,
     primary key(id)
 );
-
 create table if not exists user_history (
     id bigint auto_increment,
     user_id bigint not null,

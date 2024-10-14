@@ -11,6 +11,7 @@ spring:
       username: sa
       password:
 
+
 # 스프링에서 출력하는 트랜잭션 로그를 직접 보고 싶으면 아래 주석 해제
 logging:
   level:
