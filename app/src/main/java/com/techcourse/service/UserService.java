@@ -52,6 +52,7 @@ public class UserService {
             try {
                 assert connection != null;
                 connection.rollback();
+                connection.close();
             } catch (SQLException rollbackEx) {
                 throw new DataAccessException("Failed to rollback transaction", rollbackEx);
             }
