@@ -16,4 +16,6 @@
 ## Step4
 
 * [x] Transaction synchronization 적용
-* [ ] 트랜잭션 서비스 추상화하기
+* [x] 트랜잭션 서비스 추상화하기
+* [ ] InMemoryDb 제거하기
+* [ ] 테스트 실패 수정하기
