@@ -30,6 +30,13 @@ public class JdbcTemplate {
         }, args);
     }
 
+    public void write(Connection connection, String sql, Object... args) {
+        executeQuery(connection, sql, preparedStatement -> {
+            preparedStatement.executeUpdate();
+            return null;
+        }, args);
+    }
+
     public <T> Optional<T> read(String sql, RowMapper<T> rowMapper, Object... args) {
         return executeQuery(sql, preparedStatement -> {
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -47,6 +54,15 @@ public class JdbcTemplate {
     private <T> T executeQuery(String sql, QueryExecution<PreparedStatement, T> query, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            parameterBinder.bindAllParameters(preparedStatement, args);
+            return query.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException("쿼리 실행 도중 에러가 발생했습니다.", e);
+        }
+    }
+
+    private <T> T executeQuery(Connection connection, String sql, QueryExecution<PreparedStatement, T> query, Object... args) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             parameterBinder.bindAllParameters(preparedStatement, args);
             return query.execute(preparedStatement);
         } catch (SQLException e) {
