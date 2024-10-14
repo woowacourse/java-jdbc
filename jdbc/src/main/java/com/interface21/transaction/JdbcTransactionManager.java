@@ -1,6 +1,8 @@
 package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
@@ -17,7 +19,7 @@ public class JdbcTransactionManager implements TransactionManager {
     public void doInTransaction(Consumer<Connection> action) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             action.accept(connection);
@@ -44,12 +46,8 @@ public class JdbcTransactionManager implements TransactionManager {
 
     private void closeConnection(Connection connection) {
         if (connection != null) {
-            try {
-                connection.setAutoCommit(true);
-                connection.close();
-            } catch (Exception e) {
-                throw new DataAccessException("커넥션 닫기에 실패했습니다.", e);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

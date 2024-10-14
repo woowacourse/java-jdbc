@@ -31,7 +31,7 @@ class UserHistoryDaoTest {
                 "tester"
         );
 
-        userHistoryDao.log(DATA_SOURCE.getConnection(), userHistory);
+        userHistoryDao.log(userHistory);
     }
 
     @Test
@@ -61,7 +61,7 @@ class UserHistoryDaoTest {
                 "tester"
         );
 
-        userHistoryDao.log(DATA_SOURCE.getConnection(), newUserHistory);
+        userHistoryDao.log(newUserHistory);
 
         final var actual = userHistoryDao.findById(2L);
         assertThat(actual.getAccount()).isEqualTo(account);
