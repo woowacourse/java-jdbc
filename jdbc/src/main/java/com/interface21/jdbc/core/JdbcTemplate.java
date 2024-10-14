@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,26 +57,9 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(String sql, Connection connection, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, connection, args);
-    }
-
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Connection connection, Object... args) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
-            parameterSetter.setValues(pstmt);
-
-            return callback.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             PreparedStatementSetter parameterSetter = new ArgumentPreparedStatementSetter(args);
             parameterSetter.setValues(pstmt);

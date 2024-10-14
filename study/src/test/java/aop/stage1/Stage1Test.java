@@ -1,20 +1,22 @@
 package aop.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -41,7 +43,12 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        ProxyFactory proxyFactory = new ProxyFactory();
+        proxyFactory.addAdvisor(new TransactionAdvisor(platformTransactionManager));
+        proxyFactory.setTarget(appUserService);
+
+        AppUserService userService = (AppUserService) proxyFactory.getProxy();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +61,12 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        ProxyFactory proxyFactory = new ProxyFactory();
+        proxyFactory.addAdvisor(new TransactionAdvisor(platformTransactionManager));
+        proxyFactory.setTarget(appUserService);
+
+        AppUserService userService = (AppUserService) proxyFactory.getProxy();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
