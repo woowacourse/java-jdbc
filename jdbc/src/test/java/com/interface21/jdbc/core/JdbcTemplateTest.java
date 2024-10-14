@@ -16,8 +16,11 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import com.interface21.jdbc.exception.SqlExecutionException;
 
 class JdbcTemplateTest {
 
@@ -55,6 +58,26 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).setObject(2, 1),
                 () -> verify(preparedStatement).executeUpdate(),
                 () -> verify(connection).close(),
+                () -> verify(preparedStatement).close()
+        );
+    }
+
+    @Test
+    @DisplayName("트랜잭션 있는 업데이트")
+    void update_with_tx() throws SQLException {
+        //given
+        final String sql = "UPDATE users SET name = ? WHERE id = ?";
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        //when
+        final int result = jdbcTemplate.update(connection, sql, "Redddy", 1);
+
+        //then
+        assertAll(
+                () -> assertThat(result).isEqualTo(1),
+                () -> verify(preparedStatement).setObject(1, "Redddy"),
+                () -> verify(preparedStatement).setObject(2, 1),
+                () -> verify(preparedStatement).executeUpdate(),
                 () -> verify(preparedStatement).close()
         );
     }
