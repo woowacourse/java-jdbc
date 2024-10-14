@@ -27,8 +27,6 @@ public class JdbcTransaction {
             connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            release();
         }
     }
 
@@ -37,16 +35,10 @@ public class JdbcTransaction {
             connection.rollback();
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
-        } finally {
-            release();
         }
     }
 
-    private void release() {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw exceptionTranslator.translate(e);
-        }
+    public Connection getConnection() {
+        return connection;
     }
 }

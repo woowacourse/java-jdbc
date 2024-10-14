@@ -17,7 +17,7 @@ public class JdbcTransactionTemplate {
             transaction.rollback();
             throw e;
         } finally {
-            transactionManager.flush();
+            transactionManager.flush(transaction);
         }
     }
 }
