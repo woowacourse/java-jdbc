@@ -41,6 +41,7 @@ public class UserDao {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         if (conn != null) {
             jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
+            return;
         }
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
