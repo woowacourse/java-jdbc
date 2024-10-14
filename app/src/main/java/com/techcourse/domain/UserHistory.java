@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 public class UserHistory {
 
     private Long id;
-
     private final long userId;
     private final String account;
     private final String password;

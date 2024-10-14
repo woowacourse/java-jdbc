@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,12 +14,16 @@ public class TxManager {
     private TxManager() {
     }
 
-    public static <T> T run(Function<Connection, T> function) {
+    public static <T> T run(Function<Connection, T> function) throws SQLException {
         DataSource dataSource = DataSourceConfig.getInstance();
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = dataSource.getConnection();
+        try {
             return doRun(function, connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            Connection connection1 = TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
