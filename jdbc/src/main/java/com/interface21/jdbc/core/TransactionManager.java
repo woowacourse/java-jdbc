@@ -23,7 +23,7 @@ public class TransactionManager {
         Connection connection = null;
 
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
