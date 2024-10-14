@@ -39,8 +39,8 @@ public class JdbcTemplate {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    public <T> List<T> query(String sql, Parameters parameters, RowMapper<T> rowMapper) {
-        return executeQueryWithParams(sql, parameters, rowMapper);
+    public <T> List<T> query(String sql, ParameterSetter parameterSetter, RowMapper<T> rowMapper) {
+        return executeQueryWithParams(sql, parameterSetter.createParameters(), rowMapper);
     }
 
     private <T> List<T> executeQueryWithParams(String sql, Parameters parameters, RowMapper<T> rowMapper) {

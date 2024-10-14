@@ -129,7 +129,7 @@ class JdbcTemplateTest {
         when(rowMapper.mapRow(any())).thenReturn(user1, user2);
 
         // when
-        List<TestUser> users = jdbcTemplate.query(sql, new Parameters(), rowMapper);
+        List<TestUser> users = jdbcTemplate.query(sql, Parameters::new, rowMapper);
 
         // then
         assertThat(users).hasSize(2);
