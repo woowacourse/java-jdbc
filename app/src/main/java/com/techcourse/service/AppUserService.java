@@ -31,6 +31,5 @@ public class AppUserService implements UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
-
     }
 }
