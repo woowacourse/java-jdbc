@@ -10,6 +10,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +35,7 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void testChangePassword() throws SQLException {
         //given
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         UserService userService = new UserService(userDao, userHistoryDao);
