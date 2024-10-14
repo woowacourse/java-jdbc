@@ -1,4 +1,4 @@
-package com.techcourse.support;
+package com.interface21.jdbc.support;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.SQLException;
