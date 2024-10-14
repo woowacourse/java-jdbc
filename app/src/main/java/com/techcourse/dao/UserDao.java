@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -25,11 +24,6 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final User user) {
