@@ -28,10 +28,15 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
+
         try {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
     }
 }
