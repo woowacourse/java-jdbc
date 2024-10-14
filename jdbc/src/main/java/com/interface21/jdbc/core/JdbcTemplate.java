@@ -35,28 +35,23 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, ParameterSetter parameterSetter, RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            Parameters parameters = parameterSetter.createParameters();
-            parameters.setPreparedStatement(pstmt);
-
-            List<T> result = executeQuery(pstmt, rowMapper);
-            return result.isEmpty() ? null : result.get(0);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
-        }
+        List<T> result = executeQueryWithParams(sql, parameterSetter.createParameters(), rowMapper);
+        return result.isEmpty() ? null : result.get(0);
     }
 
     public <T> List<T> query(String sql, Parameters parameters, RowMapper<T> rowMapper) {
+        return executeQueryWithParams(sql, parameters, rowMapper);
+    }
+
+    private <T> List<T> executeQueryWithParams(String sql, Parameters parameters, RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
             parameters.setPreparedStatement(pstmt);
-
             return executeQuery(pstmt, rowMapper);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new JdbcTemplateException("Cannot access database and connection or invalid sql query : " + sql, exception);
+            throw new JdbcTemplateException(
+                    "Cannot access database and connection or invalid SQL query: " + sql, exception);
         }
     }
 
