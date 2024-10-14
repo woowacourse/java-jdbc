@@ -39,7 +39,7 @@ public class TxUserService implements UserService {
         } catch (Exception exception) {
             tryRollBack(connection, exception);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection);
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }

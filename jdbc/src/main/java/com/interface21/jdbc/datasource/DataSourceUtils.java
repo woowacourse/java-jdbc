@@ -26,7 +26,7 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(Connection connection) {
         try {
             if (connection != null) {
                 connection.close();
