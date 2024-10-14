@@ -7,12 +7,12 @@ import com.techcourse.domain.UserHistory;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public MockUserHistoryDao(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void log(final UserHistory userHistory) {
+    public void log(UserHistory userHistory) {
         throw new DataAccessException();
     }
 }
