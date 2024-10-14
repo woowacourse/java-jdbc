@@ -72,7 +72,6 @@ class Stage0Test {
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-//        userService.changePassword(1L, newPassword, createBy);
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
