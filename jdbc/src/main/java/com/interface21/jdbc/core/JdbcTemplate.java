@@ -39,6 +39,10 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public int update(Connection connection, String sql, Object... params) {
+        return executeQuery(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return executeQuery(sql, preparedStatement -> {
             List<T> instances = new ArrayList<>();
@@ -53,6 +57,18 @@ public class JdbcTemplate {
 
     private <T> T executeQuery(String sql, QueryExecutor<PreparedStatement, T> action, Object... params) {
         Connection connection = DataSourceUtils.getConnection(this.dataSource);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            setParams(params, preparedStatement);
+
+            log.info("SQL : {}", sql);
+            return action.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error("SQL error: {}", e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeQuery(Connection connection, String sql, QueryExecutor<PreparedStatement, T> action, Object... params) {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             setParams(params, preparedStatement);
 
