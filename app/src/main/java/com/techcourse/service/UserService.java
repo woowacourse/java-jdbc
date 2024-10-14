@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -30,29 +31,26 @@ public class UserService {
     }
 
     public void changePassword(long id, String newPassword, String createBy) {
-        Connection conn = null;
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
 
         try {
-            DataSource dataSource = DataSourceConfig.getInstance();
-            conn = dataSource.getConnection();
             conn.setAutoCommit(false);
-
-            changePassword(conn, id, newPassword, createBy);
-
+            change(id, newPassword, createBy);
             conn.commit();
         } catch (SQLException e) {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            close(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    private void changePassword(Connection conn, long id, String newPassword, String createBy) throws SQLException {
+    private void change(long id, String newPassword, String createBy) {
         User user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(conn, user);
-        userHistoryDao.log(conn, new UserHistory(user, createBy));
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 
     private void rollback(Connection conn) {
@@ -60,14 +58,7 @@ public class UserService {
             if (conn != null) {
                 conn.rollback();
             }
-        } catch (SQLException ignored) {}
-    }
-
-    private void close(Connection conn) {
-        try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException ignored) {}
+        } catch (SQLException ignored) {
+        }
     }
 }
