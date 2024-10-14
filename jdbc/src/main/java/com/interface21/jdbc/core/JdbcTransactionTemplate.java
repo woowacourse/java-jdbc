@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -16,7 +17,7 @@ public class JdbcTransactionTemplate {
     public void executeTransactional(TransactionalCallback callback) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             callback.executeAsTransactional(connection);
             connection.commit();
