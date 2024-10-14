@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.TransactionRollbackException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -27,6 +28,7 @@ class TransactionManagerTest {
         DataSource dataSource = Mockito.mock(DataSource.class);
         connection = Mockito.mock(Connection.class);
         given(dataSource.getConnection()).willReturn(connection);
+        given(DataSourceUtils.getConnection(dataSource)).willReturn(connection);
         transactionManager = new TransactionManager(dataSource);
     }
 
