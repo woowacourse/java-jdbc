@@ -16,7 +16,7 @@ public class TxUserService implements UserService {
     private final DataSource dataSource;
     private final UserService userService;
 
-    public TxUserService(DataSource dataSource, UserService userService) {
+    public TxUserService(DataSource dataSource, AppUserService userService) {
         this.dataSource = dataSource;
         this.userService = userService;
     }
