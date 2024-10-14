@@ -115,8 +115,10 @@ public class JdbcTemplate {
     }
 
     private void tryRelease(Connection conn) {
-        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            return;
         }
+
+        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }
