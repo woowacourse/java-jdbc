@@ -46,7 +46,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> T getObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> T getObject(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -67,7 +67,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static <T> List<T> getObjects(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> getObjects(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             List<T> objects = new ArrayList<>();
             while (rs.next()) {
