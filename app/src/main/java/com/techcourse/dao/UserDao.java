@@ -1,8 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementArgumentsSetter;
-import com.interface21.jdbc.core.QueryConnectionHolder;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -40,11 +38,7 @@ public class UserDao {
     public void updateUsingExplicitConnection(User user, Connection connection) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? where id = ?";
         logSql(sql);
-        QueryConnectionHolder queryConnectionHolder = new QueryConnectionHolder(connection, sql);
-        PreparedStatementArgumentsSetter argumentsSetter = new PreparedStatementArgumentsSetter(
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
-        );
-        jdbcTemplate.update(queryConnectionHolder, argumentsSetter);
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final User user) {

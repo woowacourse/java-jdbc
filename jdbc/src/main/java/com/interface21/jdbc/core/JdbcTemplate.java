@@ -31,6 +31,10 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(Connection connection, String sql, Object... args) {
+        return update(new QueryConnectionHolder(connection, sql), new PreparedStatementArgumentsSetter(args));
+    }
+
     public int update(String sql, PreparedStatementSetter psSetter) {
         try (Connection connection = dataSource.getConnection()) {
              return update(new QueryConnectionHolder(connection, sql), psSetter);

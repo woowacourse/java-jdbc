@@ -1,8 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementArgumentsSetter;
-import com.interface21.jdbc.core.QueryConnectionHolder;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
@@ -46,12 +44,11 @@ public class UserHistoryDao {
     public void logUsingExplicitConnection(UserHistory userHistory, Connection connection) {
         String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
         logSql(sql);
-        QueryConnectionHolder queryConnectionHolder = new QueryConnectionHolder(connection, sql);
-        PreparedStatementArgumentsSetter argumentsSetter = new PreparedStatementArgumentsSetter(
+        jdbcTemplate.update(
+                connection, sql,
                 userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
                 userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy()
         );
-        jdbcTemplate.update(queryConnectionHolder, argumentsSetter);
     }
 
     public UserHistory findById(Long id) {
