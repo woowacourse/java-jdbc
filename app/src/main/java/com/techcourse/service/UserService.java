@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import java.sql.SQLException;
+
 import com.techcourse.domain.User;
 
 public interface UserService {
@@ -8,5 +10,5 @@ public interface UserService {
 
 	void insert(final User user);
 
-	void changePassword(final long id, final String newPassword, final String createBy);
+	void changePassword(final long id, final String newPassword, final String createBy) throws SQLException;
 }
