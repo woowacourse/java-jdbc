@@ -13,7 +13,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.dao.rowmapper.UserRowMapper;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,9 +24,9 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance().getConnection()); // TODO: 리팩토링
+        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
         this.userRowMapper = new UserRowMapper();
         this.userDao = new UserDao(jdbcTemplate, userRowMapper);
 
@@ -38,11 +37,12 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final TxUserService userService = new TxUserService(transactionManager, appUserService);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
-        userService.changePasswordWithTransaction(1L, newPassword, createBy);
+        userService.changePassword(1L, newPassword, createBy);
 
         final User actual = userService.getById(1L);
 
@@ -53,13 +53,14 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final TxUserService userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePasswordWithTransaction(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.getById(1L);
 
