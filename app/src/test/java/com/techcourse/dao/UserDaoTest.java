@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.SQLException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +56,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
