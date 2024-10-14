@@ -39,35 +39,35 @@ class Stage0Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = createProxyUserService(appUserService);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = createProxyUserService(appUserService);
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = createProxyUserService(appUserService);
+        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        UserService userService = createProxyUserService(appUserService);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
