@@ -7,7 +7,7 @@ public class SQLExceptionConsumer {
     public static <R> R execute(CheckedExceptionExecutor<R, SQLException> exceptionExecutor, String errorMessage) {
         try {
             return exceptionExecutor.execute();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             throw new DataAccessException(errorMessage);
         }
     }
