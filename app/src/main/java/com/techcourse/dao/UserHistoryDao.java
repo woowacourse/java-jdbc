@@ -1,7 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,14 +16,13 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final String sql =
                 """
                         insert into user_history (user_id, account, password, email, created_at, created_by)
                         values (?, ?, ?, ?, ?, ?)
                         """;
         jdbcTemplate.update(
-                connection,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
