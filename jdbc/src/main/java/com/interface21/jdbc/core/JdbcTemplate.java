@@ -10,6 +10,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -19,28 +20,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final Connection connection, final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try(PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             return mapResultSetToList(rowMapper, pstmt).getFirst();
         } catch (SQLException e) {
@@ -59,8 +51,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return mapResultSetToList(rowMapper, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);

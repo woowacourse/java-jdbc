@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -54,17 +53,6 @@ public class UserDao {
             pstmt.setLong(4, user.getId());
         };
         jdbcTemplate.update(sql, preparedStatementSetter);
-    }
-
-    public void update(Connection connection, User user) {
-        String sql = "update users set account = ?, password = ?, email = ? WHERE id = ?";
-        final PreparedStatementSetter preparedStatementSetter = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-        };
-        jdbcTemplate.update(connection, sql, preparedStatementSetter);
     }
 
     public List<User> findAll() {
