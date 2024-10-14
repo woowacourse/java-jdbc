@@ -28,6 +28,7 @@ public class JdbcTemplate {
 		try {
 			return update(sql, pss, dataSource.getConnection());
 		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
 			throw new DataAccessException("Failed to get Connection", e);
 		}
 	}
