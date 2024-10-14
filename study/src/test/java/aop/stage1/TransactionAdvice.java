@@ -37,7 +37,7 @@ public class TransactionAdvice implements MethodInterceptor {
             log.error("실패! rollback");
             throw new DataAccessException(e);
         } finally {
-            log.info("-- 트랜잭션 종료");
+            log.info("-- 트랜잭션 종료 : " + invocation.getMethod().getName());
         }
     }
 }
