@@ -71,4 +71,8 @@ public class JdbcTemplate {
         }
         return results.getFirst();
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 }
