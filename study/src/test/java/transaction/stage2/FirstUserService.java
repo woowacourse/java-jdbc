@@ -1,5 +1,10 @@
 package transaction.stage2;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,12 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class FirstUserService {
@@ -121,6 +120,8 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
+    // Set은 중복을 허용하지 않기 때문에, 부모 트랜잭션을 사용하는 경우 size는 1이 됨
+    // transactionName은 {패키지 경로를 포함한 클래스명}.{메서드명}
     private Set<String> of(final String firstTransactionName, final String secondTransactionName) {
         return Stream.of(firstTransactionName, secondTransactionName)
                 .filter(transactionName -> !Objects.isNull(transactionName))
@@ -128,8 +129,8 @@ public class FirstUserService {
     }
 
     private void logActualTransactionActive() {
-        final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
-        final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        final var currentTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();   // 논리 트랜잭션명
+        final var actualTransactionActive = TransactionSynchronizationManager.isActualTransactionActive();  // 물리 트랜잭션 실행 여부
         final var emoji = actualTransactionActive ? "✅" : "❌";
         log.info("\n{} is Actual Transaction Active : {} {}", currentTransactionName, emoji, actualTransactionActive);
     }

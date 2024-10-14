@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private DataSource dataSource = DataSourceConfig.getInstance();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, new PreparedStatementSetter());
+    private JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     @BeforeEach
     void setUp() {
@@ -149,6 +149,18 @@ class JdbcTemplateTest {
 
         // then
         assertThat(user.password).isEqualTo("newPassword");
+    }
+
+    @DisplayName("Connection 객체가 null인 경우 예외가 발생한다.")
+    @Test
+    void invalidConnection() {
+        // given
+        String insertSql = "insert into users (account, password, email) values (?, ?, ?)";
+        Object[] arguments = new String[]{"ddang", "password", "ddang@email.com"};
+
+        assertThatThrownBy(() -> jdbcTemplate.updateWithConnection(null, insertSql, arguments))
+                .isExactlyInstanceOf(JdbcException.class)
+                .hasMessage("connection cannot be null.");
     }
 
     class User {
