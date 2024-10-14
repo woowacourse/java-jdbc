@@ -43,9 +43,9 @@ public class TransactionUserService implements UserService {
             tryRollback(e, connection);
             throw new DataAccessException("트랜잭션 수행 실패", e);
         } finally {
-            setAutoCommitTrue(connection);
             DataSourceUtils.releaseConnection(dataSource);
         }
+        setAutoCommitTrue(connection);
     }
 
     private void tryCommit(Runnable action, Connection connection) throws SQLException {
@@ -63,10 +63,6 @@ public class TransactionUserService implements UserService {
     }
 
     private void setAutoCommitTrue(Connection connection) {
-        try {
-            connection.setAutoCommit(true);
-        } catch (SQLException e) {
-            throw new DataAccessException("auto-commit 설정 실패", e);
-        }
+
     }
 }
