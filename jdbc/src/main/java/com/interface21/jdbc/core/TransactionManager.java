@@ -6,8 +6,10 @@ import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.ConnectionCloseException;
 import com.interface21.jdbc.exception.TransactionExecutionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
 
@@ -19,11 +21,9 @@ public class TransactionManager {
 
     public void execute(final Consumer<Connection> consumer) {
         Connection connection = null;
-        boolean originalAutoCommit = true;
 
         try {
-            connection = dataSource.getConnection();
-            originalAutoCommit = connection.getAutoCommit();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
@@ -31,7 +31,7 @@ public class TransactionManager {
             rollback(connection);
             throw new TransactionExecutionException("트랜잭션 실행에 실패하였습니다.", e);
         } finally {
-            closeConnection(connection, originalAutoCommit);
+            closeConnection(connection);
         }
     }
 
@@ -45,14 +45,14 @@ public class TransactionManager {
         }
     }
 
-    private void closeConnection(final Connection connection, final boolean originalAutoCommit) {
+    private void closeConnection(final Connection connection) {
         try {
             if (connection != null && !connection.isClosed()) {
-                connection.setAutoCommit(originalAutoCommit);
-                connection.close();
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (final SQLException e) {
-            throw new ConnectionCloseException("커넥션 종료에 실패하였습니다.", e);
+            throw new ConnectionCloseException("커넥션 종료에 실패했습니다.", e);
         }
     }
 }
