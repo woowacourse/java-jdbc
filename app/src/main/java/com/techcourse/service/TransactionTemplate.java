@@ -1,8 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.ConnectionConsumerWrapper;
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.ConnectionConsumerWrapper;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
