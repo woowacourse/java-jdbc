@@ -8,7 +8,9 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
@@ -30,16 +32,20 @@ public class TxUserService implements UserService {
 		appUserService.insert(user);
 	}
 
-	public void changePassword(final long id, final String newPassword, final String createBy) throws SQLException {
+	public void changePassword(final long id, final String newPassword, final String createBy) {
 		Connection connection = DataSourceUtils.getConnection(dataSource);
 		try {
 			connection.setAutoCommit(false);
 			appUserService.changePassword(id, newPassword, createBy);
 			connection.commit();
-			connection.setAutoCommit(true);
-		} catch (SQLException e) {
-			connection.rollback();
-			throw new RuntimeException("비밀번호 변경중 오류가 발생했습니다.", e);
+		} catch (Exception e) {
+			try {
+				connection.rollback();
+			} catch (SQLException ignored) {}
+			throw new DataAccessException("Failed to change password", e);
+		} finally {
+			DataSourceUtils.releaseConnection(connection, dataSource);
+			TransactionSynchronizationManager.unbindResource(dataSource);
 		}
 	}
 }

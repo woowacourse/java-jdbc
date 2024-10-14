@@ -31,7 +31,7 @@ public class AppUserService implements UserService{
 	}
 
 	public void changePassword(final long id, final String newPassword, final String createBy) {
-		log.info("[AppUserService] changePassword: id={}, newPassword={}, createBy={}", id, newPassword, createBy);
+		log.info("changePassword id={}, newPassword={}, createBy={}", id, newPassword, createBy);
 		final User user = findById(id);
 		user.changePassword(newPassword);
 		userDao.update(user);
