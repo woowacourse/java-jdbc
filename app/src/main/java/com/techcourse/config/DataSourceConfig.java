@@ -1,13 +1,11 @@
 package com.techcourse.config;
 
-import java.sql.Connection;
 import java.util.Objects;
 import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
     private static javax.sql.DataSource INSTANCE;
-    public static Connection NO_CONNECTION = null;
 
     public static javax.sql.DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
