@@ -32,7 +32,7 @@ public class StatementSetter {
             final Method method = findMethodWithPOJO(param);
             method.invoke(pstmt, index + START_INDEX, param);
         } catch (final InvocationTargetException | IllegalAccessException e) {
-            throw new StatementSetException(String.format("%d 번째 %s 에 대한 파라미터 설정을 실패했습니다.", index, param), e);
+            throw new StatementSetException(index, param, e);
         }
     }
 

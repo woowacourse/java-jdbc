@@ -5,6 +5,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.ConnectionEvent;
+import javax.sql.PooledConnection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,13 +30,26 @@ class Stage1Test {
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
+        // Connection Pool - DataSource 를 가지고 있음
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
+
+        //    private final Queue<PooledConnection> recycledConnections = new ConcurrentLinkedQueue<>();
+        // Queue 에서 pool 을 통해 하나를 뺌
+        // ActiveConnection 개수를 판단해서 감지
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
+
+        // connection 이 닫힐때 재활용 함수 호출
+//        public void connectionClosed(ConnectionEvent event) {
+//            PooledConnection pc = (PooledConnection) event.getSource();
+//            pc.removeConnectionEventListener(this);
+//            recycleConnection(pc);
+//        }
+
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
         jdbcConnectionPool.dispose();
@@ -65,10 +80,17 @@ class Stage1Test {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(5);
+        // PrepareStatement Cache 할지
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+        // Cache 할 PrepareStatement SQL 문 개수
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+        // PrepareStatement 길이가 2048(문자수) 이하일때만 허용
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
+        // connection-time : 기본 30초 , 최소 0.25초
+        // idle-time : 커넥션 풀에서 유휴 상태로 대기할 수 있는 시간, 기본 10분 (600,000ms), 0으로 설정하면 유휴 상태에서도 연결이 제거 X
+        // keep-alive-time : DB 에 요청을 보내 커넥션을 살리는 주기 시간, 0 (사용 안 함), 30초 (30,000ms), 권장 범위는 분 단위
+        //  maxLifetime : 연결이 풀에서 사용 가능한 최대 시간, 기본값: 30분 (1,800,000ms), 최소 허용값: 30초 (30,000ms)
         final var dataSource = new HikariDataSource(hikariConfig);
         final var properties = dataSource.getDataSourceProperties();
 

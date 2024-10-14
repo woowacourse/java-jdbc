@@ -81,7 +81,11 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            // TRANSACTION_NONE 은 사용할 수 없는 것 ( 단순 명시 )
+            // TRANSACTION_READ_COMMITED 부터 해결이 된다.
+            // 전체 테스트는 통과하나 스레드의 테스트가 실패한다.
+
+            final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -89,11 +93,12 @@ class Stage1Test {
             // ❗️gugu 객체는 connection에서 아직 커밋하지 않은 상태다.
             // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다.
             // 사용자B가 사용자A가 커밋하지 않은 데이터를 조회하는게 적절할까?
-            final var actual = userDao.findByAccount(subConnection, "gugu");
 
+            final var actual = userDao.findByAccount(subConnection, "gugu");
             // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
             // 어떤 격리 레벨일 때 다른 연결의 커밋 전 데이터를 조회할 수 있을지 찾아보자.
             // 다른 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+            // READ_COMMITTED 부터 COMMIT 되지 않는 값을 읽지 않는다.
             log.info("isolation level : {}, user : {}", isolationLevel, actual);
             assertThat(actual).isNull();
         })).start();
@@ -130,7 +135,9 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+
+        // REPEATABLE_READ : 반복적 읽기 작업시 똑같은 값 반환
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -159,6 +166,7 @@ class Stage1Test {
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+        // B가 변경했어도 A 는 똑같은 값을 받는다.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
         assertThat(actual.getPassword()).isEqualTo("password");
 
@@ -197,7 +205,8 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // SERIALIZABLE 를 통해 완벽한 일관성을 보장할 수 있다.
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -230,6 +239,7 @@ class Stage1Test {
 
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
+        // 커밋된 값이 갍이 포함이 되어서 에러가 발생했다.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
         assertThat(actual).hasSize(1);
 
@@ -239,7 +249,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
