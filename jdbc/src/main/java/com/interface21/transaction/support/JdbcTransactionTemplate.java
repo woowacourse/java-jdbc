@@ -10,7 +10,6 @@ public class JdbcTransactionTemplate {
 
     public void execute(JdbcNoResultTransactionCallback noResultAction) {
         JdbcTransaction transaction = transactionManager.getTransaction();
-        transaction.begin();
         try {
             noResultAction.doInTransaction(transaction);
             transaction.commit();

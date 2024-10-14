@@ -18,7 +18,11 @@ public class JdbcTransactionManager {
     public JdbcTransaction getTransaction() {
         try {
             Connection connection = dataSource.getConnection();
-            return new JdbcTransaction(connection);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            JdbcTransaction transaction = new JdbcTransaction(connection);
+            transaction.begin();
+
+            return transaction;
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
         }
