@@ -25,8 +25,16 @@ public class JdbcTemplate {
 	}
 
 	public int update(String sql, PreparedStatementSetter pss) {
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		try {
+			return update(sql, pss, dataSource.getConnection());
+		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
+			throw new DataAccessException("Failed to get Connection", e);
+		}
+	}
+
+	public int update(String sql, PreparedStatementSetter pss, Connection conn) {
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pss.setValues(pstmt);
 
 			return pstmt.executeUpdate();
@@ -48,9 +56,31 @@ public class JdbcTemplate {
 		}
 	}
 
+	public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss, Connection conn) {
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pss.setValues(pstmt);
+
+			return fetchSingleResult(rowMapper, pstmt);
+		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
+			throw new DataAccessException("Failed to execute Query = " + sql, e);
+		}
+	}
+
 	public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pss.setValues(pstmt);
+
+			return fetchResults(rowMapper, pstmt);
+		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
+			throw new DataAccessException("Failed to execute Query = " + sql, e);
+		}
+	}
+
+	public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss, Connection conn) {
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pss.setValues(pstmt);
 
 			return fetchResults(rowMapper, pstmt);

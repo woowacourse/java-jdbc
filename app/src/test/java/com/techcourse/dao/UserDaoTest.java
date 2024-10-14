@@ -2,6 +2,10 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,15 +19,17 @@ class UserDaoTest {
 
     private UserDao userDao;
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(user, dataSource.getConnection());
 
         System.out.println(userDao.findAll());
     }
