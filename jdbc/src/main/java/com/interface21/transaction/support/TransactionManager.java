@@ -20,26 +20,8 @@ public class TransactionManager {
     }
 
     public void performTransaction(Runnable runnable) {
-        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
-            performTransaction(connection, runnable);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-            throw new DataAccessException(exception);
-        }
-    }
-
-    public <T> T performTransaction(Supplier<T> supplier) {
-        try (Connection connection = dataSource.getConnection()) {
-            return performTransaction(connection, supplier);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-
-            throw new DataAccessException(exception);
-        }
-    }
-
-    private void performTransaction(Connection connection, Runnable runnable) throws SQLException {
         try {
             connection.setAutoCommit(false);
             runnable.run();
@@ -47,22 +29,38 @@ public class TransactionManager {
         } catch (Exception exception) {
             log.error(exception.getMessage(), exception);
 
-            connection.rollback();
+            rollback(connection);
             throw new DataAccessException(exception);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    private <T> T performTransaction(Connection connection, Supplier<T> supplier) throws SQLException {
+    public <T> T performTransaction(Supplier<T> supplier) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try {
             connection.setAutoCommit(false);
             T result = supplier.get();
             connection.commit();
             return result;
-        } catch (Exception exception) {
+        } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
 
-            connection.rollback();
+            rollback(connection);
             throw new DataAccessException(exception);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+
+            throw new DataAccessException("Failed to rollback");
         }
     }
 }
