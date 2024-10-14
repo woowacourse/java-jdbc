@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplateException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionManager;
@@ -29,9 +30,9 @@ class UserServiceTest {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(user); // 커넥션 새로 생성한 채로 남아있음
     }
 
     @Test
