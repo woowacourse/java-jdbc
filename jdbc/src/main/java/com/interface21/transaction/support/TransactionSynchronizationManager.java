@@ -20,7 +20,6 @@ public abstract class TransactionSynchronizationManager {
     public static void bindResource(DataSource key, Connection value) {
         Map<DataSource, Connection> binds = resources.get();
         binds.put(key, value);
-        resources.set(binds);
     }
 
     public static Connection unbindResource(DataSource key) {
