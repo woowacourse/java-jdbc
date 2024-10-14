@@ -28,18 +28,26 @@ public class UserHistoryDao {
 
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         if (conn != null) {
-            jdbcTemplate.update(
-                    conn,
-                    sql,
-                    userHistory.getUserId(),
-                    userHistory.getAccount(),
-                    userHistory.getPassword(),
-                    userHistory.getEmail(),
-                    userHistory.getCreatedAt(),
-                    userHistory.getCreateBy()
-            );
+            updateUserHistory(userHistory, conn, sql);
         }
 
+        updateUserHistory(userHistory, sql);
+    }
+
+    private void updateUserHistory(UserHistory userHistory, Connection conn, String sql) {
+        jdbcTemplate.update(
+                conn,
+                sql,
+                userHistory.getUserId(),
+                userHistory.getAccount(),
+                userHistory.getPassword(),
+                userHistory.getEmail(),
+                userHistory.getCreatedAt(),
+                userHistory.getCreateBy()
+        );
+    }
+
+    private void updateUserHistory(UserHistory userHistory, String sql) {
         jdbcTemplate.update(
                 sql,
                 userHistory.getUserId(),
