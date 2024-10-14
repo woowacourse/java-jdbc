@@ -16,13 +16,13 @@ class RowMapperTest {
     void mapRow() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
 
-        when(resultSet.getInt("id")).thenReturn(1);
+        when(resultSet.getLong("id")).thenReturn(1L);
         when(resultSet.getString("name")).thenReturn("John Doe");
 
         RowMapper<TestUser> rowMapper = new TestUserRowMapper();
         TestUser testUser = rowMapper.mapRow(resultSet, 1);
 
-        assertThat(testUser.getId()).isEqualTo(1);
+        assertThat(testUser.getId()).isEqualTo(1L);
         assertThat(testUser.getName()).isEqualTo("John Doe");
     }
 }
