@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,7 +48,8 @@ public class JdbcTemplate {
         pstmt.executeUpdate();
     }
 
-    public void update(final Connection conn, final String sql, final Object... parameters) throws DataAccessException {
+    public void updateWithConnection(final String sql, final Object... parameters) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         executeWithConnection(conn, sql, createPreparedStatementSetter(parameters));
     }
 

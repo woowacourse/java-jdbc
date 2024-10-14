@@ -1,23 +1,31 @@
 package aop.stage1;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.PointcutAdvisor;
 
 /**
- * 어드바이저(advisor). 포인트컷과 어드바이스를 하나씩 갖고 있는 객체.
- * AOP의 애스팩트(aspect)에 해당되는 클래스다.
+ * 어드바이저(advisor). 포인트컷과 어드바이스를 하나씩 갖고 있는 객체. AOP의 애스팩트(aspect)에 해당되는 클래스다.
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
-    @Override
-    public Pointcut getPointcut() {
-        return null;
+    private final TransactionPointcut pointcut;
+    private final TransactionAdvice advice;
+
+    public TransactionAdvisor(TransactionPointcut pointcut, TransactionAdvice advice) {
+        this.pointcut = pointcut;
+        this.advice = advice;
     }
 
     @Override
-    public Advice getAdvice() {
-        return null;
+    public @NotNull Pointcut getPointcut() {
+        return pointcut;
+    }
+
+    @Override
+    public @NotNull Advice getAdvice() {
+        return advice;
     }
 
     @Override
