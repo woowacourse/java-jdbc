@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +24,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection connection, String sql, ParameterSetter parameterSetter) {
+    public void update(String sql, ParameterSetter parameterSetter) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             Parameters parameters = parameterSetter.createParameters();
             parameters.setPreparedStatement(pstmt);

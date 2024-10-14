@@ -1,9 +1,8 @@
-package aop.service;
+package com.techcourse.service;
 
+import com.techcourse.domain.User;
 
-import aop.domain.User;
-
-public interface UserService {
+public interface UserServiceInterface {
 
     User findById(final long id);
 

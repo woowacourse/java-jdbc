@@ -6,8 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.lang.module.Configuration;
 import java.sql.Connection;
 
 public class UserHistoryDao {
@@ -20,10 +18,10 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        jdbcTemplate.update(connection, sql, () -> {
+        jdbcTemplate.update(sql, () -> {
             Parameters parameters = new Parameters();
             parameters.add(1, userHistory.getUserId());
             parameters.add(2, userHistory.getAccount());
