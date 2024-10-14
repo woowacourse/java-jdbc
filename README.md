@@ -46,6 +46,9 @@
     - [x] `UserServiceTest`가 통과하도록 만들기
         - [x] `testTransactionRollback()` 테스트 메서드 변경
 
+    - [x] 3단계 피드백 반영
+        - [x] 트랜잭션 끝날 때 `autoCommit=true`로 복원
+
 ### 학습목표
 
 - JDBC 라이브러리를 구현하는 경험을 함으로써 중복을 제거하는 연습을 한다.
