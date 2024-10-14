@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.core.ConnectionManager;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
@@ -20,29 +20,31 @@ import org.junit.jupiter.api.Test;
 
 class ConnectionManagerTest {
 
-    ConnectionManager connectionManager;
-    UserDao userDao;
+    private ConnectionManager connectionManager;
+    private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        connectionManager = new ConnectionManager(DataSourceConfig.getInstance());
-        userDao = new UserDao(new JdbcTemplate());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+
+        this.connectionManager = new ConnectionManager(dataSource);
+        this.userDao = new UserDao(new JdbcTemplate(dataSource));
     }
 
     @DisplayName("파라미터로 전달한 로직을 성공적으로 실행한다.")
     @Test
-    void success() throws SQLException {
+    void success() {
         // given
         User expected = new User("ever", "password", "ever@woowahan.com");
 
         // when
         connectionManager.manage(conn -> {
-            userDao.insert(conn, expected);
+            userDao.insert(expected);
         });
 
         // then
-        User actual = userDao.findById(DataSourceConfig.getInstance().getConnection(), 1L);
+        User actual = userDao.findById(1L);
         assertThat(actual.getAccount()).isEqualTo(expected.getAccount());
     }
 
@@ -59,8 +61,8 @@ class ConnectionManagerTest {
         // when & then
         assertThatThrownBy(() -> {
             connectionManager.manage(conn -> {
-                userDao.insert(conn, expected);
+                userDao.insert(expected);
             });
-        }).isInstanceOf(DataAccessException.class);
+        }).isInstanceOf(CannotGetJdbcConnectionException.class);
     }
 }

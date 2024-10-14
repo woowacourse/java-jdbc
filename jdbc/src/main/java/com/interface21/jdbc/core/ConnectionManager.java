@@ -1,8 +1,8 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.sql.DataSource;
@@ -16,18 +16,22 @@ public class ConnectionManager {
     }
 
     public void manage(final Consumer<Connection> execution) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             execution.accept(conn);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
     public <T> T manage(final Function<Connection, T> execution) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execution.apply(conn);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

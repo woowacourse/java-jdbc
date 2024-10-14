@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
@@ -20,29 +20,31 @@ import org.junit.jupiter.api.Test;
 
 class TransactionManagerTest {
 
-    TransactionManager transactionManager;
-    UserDao userDao;
+    private TransactionManager transactionManager;
+    private UserDao userDao;
 
     @BeforeEach
-    void setup() throws SQLException {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        transactionManager = new TransactionManager(DataSourceConfig.getInstance());
-        userDao = new UserDao(new JdbcTemplate());
+    void setup() {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+
+        this.transactionManager = new TransactionManager(dataSource);
+        this.userDao = new UserDao(new JdbcTemplate(dataSource));
     }
 
     @DisplayName("실행을 성공할 경우 커밋한다.")
     @Test
-    void should_commitLogic_when_manageSuccessfully() throws SQLException {
+    void should_commitLogic_when_manageSuccessfully() {
         // given
         User expected = new User("ever", "password", "ever@woowahan.com");
 
         // when
         transactionManager.manage(conn -> {
-            userDao.insert(conn, expected);
+            userDao.insert(expected);
         });
 
         // then
-        User actual = userDao.findById(DataSourceConfig.getInstance().getConnection(), 1L);
+        User actual = userDao.findById(1L);
         assertThat(actual.getAccount()).isEqualTo(expected.getAccount());
     }
 
@@ -59,12 +61,12 @@ class TransactionManagerTest {
         // when
         assertThatThrownBy(() -> {
             transactionManager.manage(conn -> {
-                userDao.insert(conn, expected);
+                userDao.insert(expected);
             });
-        }).isInstanceOf(DataAccessException.class);
+        }).isInstanceOf(CannotGetJdbcConnectionException.class);
 
         // then
-        User actual = userDao.findById(DataSourceConfig.getInstance().getConnection(), 1L);
+        User actual = userDao.findById(1L);
         assertThat(actual).isNull();
     }
 }

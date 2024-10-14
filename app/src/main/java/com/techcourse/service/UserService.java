@@ -21,22 +21,22 @@ public class UserService {
 
     public User findById(final long id) {
         return transactionManager.manage(conn -> {
-            return userDao.findById(conn, id);
+            return userDao.findById(id);
         });
     }
 
     public void insert(final User user) {
         transactionManager.manage(conn -> {
-            userDao.insert(conn, user);
+            userDao.insert(user);
         });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionManager.manage(conn -> {
-            final var user = findById(id);
+            User user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }

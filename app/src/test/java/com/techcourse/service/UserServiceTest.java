@@ -10,7 +10,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,13 +20,13 @@ class UserServiceTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(jdbcTemplate);
+    void setUp() {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(DataSourceConfig.getInstance().getConnection(), user);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
     @Test
