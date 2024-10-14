@@ -6,8 +6,6 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.SQLException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -54,13 +52,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(DataSourceConfig.getInstance()
-                .getConnection(), user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 

@@ -5,7 +5,6 @@ import com.interface21.jdbc.result.PreparedStatementSetter;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -19,7 +18,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
         final PreparedStatementSetter setter = pstmt -> {
             pstmt.setLong(1, userHistory.getUserId());
@@ -29,6 +28,6 @@ public class UserHistoryDao {
             pstmt.setObject(5, userHistory.getCreatedAt());
             pstmt.setString(6, userHistory.getCreateBy());
         };
-        jdbcTemplate.commandWithSetter(sql, connection, setter);
+        jdbcTemplate.commandWithSetter(sql,setter);
     }
 }

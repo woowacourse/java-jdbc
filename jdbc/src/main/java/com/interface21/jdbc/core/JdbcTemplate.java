@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.ConnectionFailException;
 import com.interface21.jdbc.exception.QueryExecutionException;
 import com.interface21.jdbc.result.PreparedStatementSetter;
@@ -34,17 +35,16 @@ public class JdbcTemplate {
     }
 
     public void command(final String sql, final Object... params) {
-        try (final Connection connection = dataSource.getConnection()) {
+        try (final Connection connection = DataSourceUtils.getConnection(dataSource)) {
             executeCommandWithConnection(sql, connection, params);
         } catch (final SQLException exception) {
             throw new ConnectionFailException(sql, exception);
         }
     }
 
-    public void commandWithSetter(final String sql, final Connection connection, final PreparedStatementSetter setter) {
+    public void commandWithSetter(final String sql, final PreparedStatementSetter setter) {
         try {
-            executeCommandWithConnection(sql, connection, setter);
-
+            executeCommandWithConnection(sql, DataSourceUtils.getConnection(dataSource), setter);
         } catch (final SQLException exception) {
             throw new ConnectionFailException(sql, exception);
         }
