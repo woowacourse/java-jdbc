@@ -45,8 +45,8 @@ public class UserService {
         transactionManager.beginTransaction(dataSource, connection -> {
             final User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.create(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.create(new UserHistory(user, createBy));
         });
     }
 }
