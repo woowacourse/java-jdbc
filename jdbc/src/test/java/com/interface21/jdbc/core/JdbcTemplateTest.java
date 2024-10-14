@@ -25,9 +25,9 @@ class JdbcTemplateTest {
     DataSource dataSource = mock(DataSource.class);
     Connection conn = mock(Connection.class);
     PreparedStatement preparedStatement = mock(PreparedStatement.class);
-    JdbcTemplate jdbcTemplate = new JdbcTemplate();
     TransactionManager transactionManager = new TransactionManager(dataSource);
     PreparedStatementSetter preparedStatementSetter = new OrderedSetter();
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     @BeforeEach
     void init() throws SQLException {
@@ -46,8 +46,8 @@ class JdbcTemplateTest {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true).thenReturn(true);
 
-            assertThatThrownBy(() -> transactionManager.getResultInTransaction(conn ->
-                    jdbcTemplate.getResult(conn, preparedStatementSetter, "query", (rs, rowNum) -> new Object()))
+            assertThatThrownBy(() -> transactionManager.getResultInTransaction(() ->
+                    jdbcTemplate.getResult(preparedStatementSetter, "query", (rs, rowNum) -> new Object()))
             ).isInstanceOf(NotSingleResultException.class);
         }
 
@@ -60,7 +60,7 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(false);
 
             assertThatThrownBy(() -> transactionManager.getResultInTransaction(
-                    conn -> jdbcTemplate.getResult(conn, preparedStatementSetter, "query",
+                    () -> jdbcTemplate.getResult(preparedStatementSetter, "query",
                             (rs, rowNum) -> new Object())))
                     .isInstanceOf(NoResultFoundException.class);
         }
