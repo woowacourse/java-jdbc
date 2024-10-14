@@ -1,19 +1,16 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.transaction.TransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import javax.sql.DataSource;
 
-public class AppUserService extends TransactionManager implements UserService {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
-        super(dataSource);
+    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
