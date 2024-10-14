@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,10 +27,6 @@ public class JdbcTemplate {
 
     public void executeQuery(String sql, Object... params) {
         execute(sql, params, PreparedStatement::executeUpdate);
-    }
-
-    public void executeQuery(Connection connection, String sql, Object... params) {
-        execute(connection, sql, params, PreparedStatement::executeUpdate);
     }
 
     public <T> Optional<T> executeQueryForObject(String sql, ObjectMaker<T> maker, Object... params) {
@@ -62,7 +60,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, Object[] params, PreparedStatementExecutor<T> executor) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = getConnection(dataSource);
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             setParams(preparedStatement, params);
@@ -75,24 +73,17 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(Connection connection, String sql, Object[] params, PreparedStatementExecutor<T> executor) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setParams(preparedStatement, params);
-            log.debug("query : {}", sql);
-
-            return executor.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다.", e);
-        }
-    }
-
-
     private void setParams(PreparedStatement preparedStatement, Object... params) throws SQLException {
         for (int index = 0; index < params.length; index++) {
             preparedStatement.setObject(index + SQL_PARAMETER_INDEX_OFFSET, params[index]);
         }
+    }
+
+    private Connection getConnection(DataSource dataSource) throws SQLException {
+        if (TransactionSynchronizationManager.isTransactionActive()) {
+            return DataSourceUtils.getConnection(dataSource);
+        }
+        return dataSource.getConnection();
     }
 
     @FunctionalInterface
