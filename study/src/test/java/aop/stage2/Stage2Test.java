@@ -1,6 +1,8 @@
 package aop.stage2;
 
-import aop.DataAccessException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.StubUserHistoryDao;
 import aop.domain.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,9 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import transaction.stage1.jdbc.DataAccessException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage2Test {
