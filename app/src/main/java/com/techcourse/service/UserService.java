@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -10,10 +11,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionManager transactionManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
@@ -26,9 +29,11 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        User changedUser = user.changePassword(newPassword);
-        userDao.update(changedUser);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        transactionManager.injectTransaction(conn -> {
+            User user = findById(id);
+            User changedUser = user.changePassword(newPassword);
+            userDao.update(conn, changedUser);
+            userHistoryDao.log(conn, new UserHistory(user, createBy));
+        });
     }
 }

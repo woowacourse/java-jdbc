@@ -5,14 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,16 +21,15 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private UserHistoryDao userHistoryDao;
-    private UserService userService;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        transactionManager = new TransactionManager(dataSource);
+        DatabasePopulatorUtils.execute(dataSource);
         userDao = new UserDao(jdbcTemplate);
-        userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        userService = new UserService(userDao, userHistoryDao);
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -43,6 +43,8 @@ class UserServiceTest {
     @DisplayName("유저 정보를 조회한다.")
     @Test
     void findById() {
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
         String account = "daon";
         userDao.insert(new User(account, "1234", "test@test.com"));
 
@@ -51,32 +53,34 @@ class UserServiceTest {
         assertThat(result.account()).isEqualTo(account);
     }
 
-    @Disabled
+    @DisplayName("비밀번호가 올바르게 변경된다.")
     @Test
     void testChangePassword() {
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
+        String newPassword = "qqqqq";
+        String createdBy = "gugu";
+        userService.changePassword(1L, newPassword, createdBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.password()).isEqualTo(newPassword);
     }
 
-    @Disabled
+    @DisplayName("트랜잭션 도중 예외가 발생하면 데이터 변경이 롤백된다.")
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        UserService userService = new UserService(userDao, userHistoryDao, transactionManager);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.password()).isNotEqualTo(newPassword);
     }

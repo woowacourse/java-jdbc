@@ -50,6 +50,25 @@ public class JdbcTemplate {
     }
 
     /**
+     * 쓰기 쿼리를 사용하는 경우 메서드를 사용합니다.
+     *
+     * @param conn    데이터베이스와의 연결을 나타내는 Connection 객체
+     * @param query   실행할 SQL 쿼리
+     * @param objects 쿼리에 사용할 파라미터 값
+     */
+    public void update(Connection conn, String query, Object... objects) {
+        handleQuery(
+                conn,
+                query,
+                pstmt -> {
+                    pstmt.executeUpdate();
+                    return null;
+                },
+                objects
+        );
+    }
+
+    /**
      * 생성된 키를 즉시 사용해야 할 경우 이 메서드를 사용합니다.
      *
      * @param query     실행할 SQL 쿼리
@@ -134,8 +153,20 @@ public class JdbcTemplate {
             PreparedStatementExecutor<T> preparedStatementExecutor,
             Object... objects
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return handleQuery(conn, query, preparedStatementExecutor, objects);
+        } catch (SQLException e) {
+            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
+        }
+    }
+
+    private <T> T handleQuery(
+            Connection conn,
+            String query,
+            PreparedStatementExecutor<T> preparedStatementExecutor,
+            Object... objects
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             log.debug("query : {}", query);
             STATEMENT_SETTER.setValues(pstmt, objects);
             return preparedStatementExecutor.execute(pstmt);
