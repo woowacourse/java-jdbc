@@ -1,33 +1,41 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.sql.Connection;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate();
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        transactionManager.executeInTransaction(connection ->
+                userDao.insert(connection, user)
+        );
     }
 
     @Test
@@ -59,5 +67,28 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    @Disabled
+    void transactionRollbackTest() {
+
+        User previousUser = transactionManager.getResultInTransaction(
+                connection -> userDao.findById(connection, 1L));
+        String newPassword = "newPassword";
+        Function<Connection, Object> function = connection -> {
+            previousUser.changePassword(newPassword);
+            userDao.update(connection, previousUser);
+
+            throw new RuntimeException();
+        };
+        assertThatThrownBy(
+                () -> transactionManager.getResultInTransaction(function)
+        ).isInstanceOf(RuntimeException.class);
+
+        User afterUser = transactionManager.getResultInTransaction(
+                connection -> userDao.findById(connection, 1L));
+
+        assertThat(afterUser.getPassword()).isNotEqualTo(newPassword);
     }
 }

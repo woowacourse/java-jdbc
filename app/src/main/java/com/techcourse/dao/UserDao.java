@@ -1,20 +1,15 @@
 package com.techcourse.dao;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ObjectMapper;
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.jdbc.core.OrderedSetter;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -25,37 +20,41 @@ public class UserDao {
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email"));
+    private static final PreparedStatementSetter ORDERED_SETTER = new OrderedSetter();
 
     private final JdbcTemplate jdbcTemplate;
-
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        jdbcTemplate.execute("insert into users (account, password, email) values (?, ?, ?)",
+    public void insert(Connection connection, User user) {
+        jdbcTemplate.execute(connection, ORDERED_SETTER,
+                "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        jdbcTemplate.execute("update users set account = ?, password = ?, email = ? where id = ?",
+    public void update(Connection connection, final User user) {
+        jdbcTemplate.execute(connection, ORDERED_SETTER,
+                "update users set account = ?, password = ?, email = ? where id = ?",
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        return jdbcTemplate.getResults("select id, account, password, email from users",
+    public List<User> findAll(Connection connection) {
+        return jdbcTemplate.getResults(connection, ORDERED_SETTER, "select id, account, password, email from users",
                 USER_OBJECT_MAPPER);
     }
 
-    public User findById(final Long id) {
-        return jdbcTemplate.getResult("select id, account, password, email from users where id = ?",
+    public User findById(Connection connection, Long id) {
+        return jdbcTemplate.getResult(connection, ORDERED_SETTER,
+                "select id, account, password, email from users where id = ?",
                 USER_OBJECT_MAPPER,
                 id);
     }
 
-    public User findByAccount(final String account) {
-        return jdbcTemplate.getResult("select id, account, password, email from users where account = ?",
+    public User findByAccount(Connection connection, String account) {
+        return jdbcTemplate.getResult(connection, ORDERED_SETTER,
+                "select id, account, password, email from users where account = ?",
                 USER_OBJECT_MAPPER,
                 account);
     }
