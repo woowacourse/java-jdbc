@@ -27,7 +27,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        String sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
@@ -39,7 +39,7 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, () -> {
             final var parameters = new Parameters();
             parameters.add(1, user.getAccount());
