@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -33,7 +35,7 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             final var user = findById(id);
@@ -45,7 +47,8 @@ public class UserService {
         } catch (Exception exception) {
             tryRollBack(connection, exception);
         } finally {
-            closeConnection(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -58,16 +61,5 @@ public class UserService {
             }
         }
         throw new TransactionException("실행 중 오류가 발생했습니다.", exception);
-    }
-
-    private void closeConnection(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.setAutoCommit(true);
-                connection.close();
-            } catch (SQLException closeException) {
-                throw new TransactionException("커넥션 닫기 중 오류가 발생했습니다.", closeException);
-            }
-        }
     }
 }
