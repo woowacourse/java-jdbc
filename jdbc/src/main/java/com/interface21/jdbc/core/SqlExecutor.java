@@ -28,8 +28,8 @@ public class SqlExecutor {
     }
 
     private <T> T executeWithoutTransaction(String sql, PreparedStatementExecutor<T> executor) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return executor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
