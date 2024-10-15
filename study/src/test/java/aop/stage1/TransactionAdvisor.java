@@ -30,6 +30,6 @@ public class TransactionAdvisor implements PointcutAdvisor {
 
     @Override
     public boolean isPerInstance() {
-        return true;
+        return false;
     }
 }

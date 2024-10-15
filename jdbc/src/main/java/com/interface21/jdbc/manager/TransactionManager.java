@@ -33,7 +33,6 @@ public class TransactionManager {
 
     public static void start(Connection connection, Runnable runnable, DataSource dataSource) {
         try {
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
