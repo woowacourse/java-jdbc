@@ -18,7 +18,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static void bindResource(DataSource key, Connection value) {
         if (resources.get().containsKey(key)) {
-            throw new DataAccessException("이미 존재하는 Connection 입니다");
+            throw new DataAccessException("이미 존재하는 DataSource 입니다");
         }
         resources.get().put(key, value);
     }
