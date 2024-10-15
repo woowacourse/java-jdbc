@@ -1,9 +1,12 @@
 package com.interface21.jdbc.core;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +14,15 @@ public class TransactionTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
 
-    public <T> T execute(Connection con, Supplier<T> supplier) {
+    private final DataSource datasource;
+
+    public TransactionTemplate(DataSource datasource) {
+        this.datasource = datasource;
+    }
+
+    public <T> T execute(Supplier<T> supplier) {
+        Connection con = DataSourceUtils.getConnection(datasource);
+
         try {
             con.setAutoCommit(false);
             T result = supplier.get();
@@ -26,8 +37,8 @@ public class TransactionTemplate {
         }
     }
 
-    public void executeWithoutResult(Connection con, Runnable runnable) {
-        execute(con, () -> {
+    public void executeWithoutResult(Runnable runnable) {
+        execute(() -> {
             runnable.run();
             return null;
         });
@@ -45,7 +56,7 @@ public class TransactionTemplate {
         if (con != null) {
             try {
                 con.setAutoCommit(true);
-                con.close();
+                DataSourceUtils.releaseConnection(con, datasource);
             } catch (Exception e) {
                 log.info("release error", e);
             }

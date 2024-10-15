@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.UserHistoryDao;
@@ -13,7 +12,7 @@ public class MockUserHistoryDao extends UserHistoryDao {
     }
 
     @Override
-    public void log(Connection con, UserHistory userHistory) throws DataAccessException {
+    public void log(UserHistory userHistory) throws DataAccessException {
         throw new DataAccessException();
     }
 }
