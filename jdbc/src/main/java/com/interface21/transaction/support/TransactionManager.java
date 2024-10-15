@@ -29,7 +29,7 @@ public class TransactionManager {
 
             return result;
 
-        } catch (SQLException | RuntimeException e) {
+        } catch (SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
 
