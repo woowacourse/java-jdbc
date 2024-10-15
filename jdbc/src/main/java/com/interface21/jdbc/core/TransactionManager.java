@@ -10,26 +10,14 @@ import javax.sql.DataSource;
 
 public class TransactionManager {
 
-    public static void doInTransaction(DataSource dataSource, Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            TransactionManager.startTransaction(connection);
-            runnable.run();
-            TransactionManager.commitTransaction(connection);
-        } catch (Exception e) {
-            TransactionManager.rollbackTransaction(connection);
-            throw e;
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
+    private TransactionManager() {
     }
 
-    public static <T> T doInTransaction(DataSource dataSource, Callable<T> callable) {
+    public static <T> T doInTransaction(DataSource dataSource, Callable<T> task) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             TransactionManager.startTransaction(connection);
-            T result = callable.call();
+            T result = task.call();
             TransactionManager.commitTransaction(connection);
             return result;
         } catch (Exception e) {
@@ -39,6 +27,13 @@ public class TransactionManager {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
+    }
+
+    public static void doInTransaction(DataSource dataSource, Runnable task) {
+        doInTransaction(dataSource, () -> {
+            task.run();
+            return null;
+        });
     }
 
     private static void startTransaction(Connection connection) {
@@ -52,6 +47,7 @@ public class TransactionManager {
     private static void commitTransaction(Connection connection) {
         try {
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
@@ -60,6 +56,7 @@ public class TransactionManager {
     private static void rollbackTransaction(Connection connection) {
         try {
             connection.rollback();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
