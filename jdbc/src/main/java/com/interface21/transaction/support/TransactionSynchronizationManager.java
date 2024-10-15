@@ -3,6 +3,7 @@ package com.interface21.transaction.support;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
@@ -12,6 +13,7 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
+    @Nullable
     public static Connection getResource(DataSource key) {
         return getConnectionMap().get(key);
     }
@@ -20,6 +22,7 @@ public abstract class TransactionSynchronizationManager {
         getConnectionMap().put(key, value);
     }
 
+    @Nullable
     public static Connection unbindResource(DataSource key) {
         return getConnectionMap().remove(key);
     }
