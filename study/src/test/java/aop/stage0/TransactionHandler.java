@@ -1,5 +1,6 @@
 package aop.stage0;
 
+import aop.Transactional;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -17,6 +18,9 @@ public class TransactionHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        if (!method.isAnnotationPresent(Transactional.class)) {
+            return method.invoke(target, args);
+        }
         var status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
