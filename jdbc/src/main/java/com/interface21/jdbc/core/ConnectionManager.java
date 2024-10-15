@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,7 +20,6 @@ public class ConnectionManager {
             execution.accept(conn);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -31,7 +29,6 @@ public class ConnectionManager {
             return execution.apply(conn);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
