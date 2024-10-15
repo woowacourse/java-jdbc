@@ -8,9 +8,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-/**
- * @Transactional 어노테이션이 존재하는 메서드만 트랜잭션 기능을 적용하도록 만들어보자.
- */
+import aop.Transactional;
 
 public class TransactionHandler implements InvocationHandler {
 
@@ -24,8 +22,11 @@ public class TransactionHandler implements InvocationHandler {
 
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        if (isNotTransactionMethod(method)) {
+            return method.invoke(target, args);
+        }
 
+        final TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             final Object result = method.invoke(target, args);
             transactionManager.commit(transactionStatus);
@@ -37,6 +38,9 @@ public class TransactionHandler implements InvocationHandler {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
+    }
 
+    private boolean isNotTransactionMethod(Method method) {
+        return method.getAnnotation(Transactional.class) == null;
     }
 }
