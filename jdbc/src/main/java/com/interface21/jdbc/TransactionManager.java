@@ -34,6 +34,9 @@ public class TransactionManager {
     }
 
     private ThrowingConnectionConsumer releaseConnection() {
-        return connection -> DataSourceUtils.releaseConnection(connection, dataSource);
+        return connection -> {
+            connection.setAutoCommit(false);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        };
     }
 }
