@@ -1,7 +1,6 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.DataAccessException.RunAndThrowable;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,11 +12,6 @@ public final class TransactionSynchronizationManager {
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {}
-
-    public static void bindAndStartTransaction(DataSource key) {
-        Connection connection = getResource(key);
-        execute(() -> connection.setAutoCommit(false));
-    }
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> dataSourceConnectionMap = getDataSourceConnectionMap();
@@ -31,20 +25,6 @@ public final class TransactionSynchronizationManager {
 
     private static <T> T executeAndReturn(Callable<T> callable) {
         return DataAccessException.executeAndConvertException(callable);
-    }
-
-    public static void unbindAndCommit(DataSource key) {
-        Connection connection = unbindResource(key);
-        execute(connection::commit);
-    }
-
-    private static void execute(RunAndThrowable runAndThrowable) {
-        DataAccessException.executeAndConvertException(runAndThrowable);
-    }
-
-    public static void unbindAndRollback(DataSource key) {
-        Connection connection = unbindResource(key);
-        execute(connection::rollback);
     }
 
     private static Map<DataSource, Connection> getDataSourceConnectionMap() {
