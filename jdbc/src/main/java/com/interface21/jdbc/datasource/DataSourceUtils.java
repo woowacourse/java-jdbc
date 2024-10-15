@@ -36,11 +36,11 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static boolean isTransactionalConnection(Connection connection, DataSource dataSource) {
+    public static boolean isNotTransactionalConnection(Connection connection, DataSource dataSource) {
         Connection resource = TransactionSynchronizationManager.getResource(dataSource);
         if (resource == null) {
-            return false;
+            return true;
         }
-        return resource.equals(connection);
+        return !resource.equals(connection);
     }
 }

@@ -90,7 +90,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            if (!DataSourceUtils.isTransactionalConnection(conn, dataSource)) {
+            if (DataSourceUtils.isNotTransactionalConnection(conn, dataSource)) {
                 DataSourceUtils.releaseConnection(conn, dataSource);
             }
         }
