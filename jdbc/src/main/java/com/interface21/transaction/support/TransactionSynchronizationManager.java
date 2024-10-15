@@ -1,5 +1,6 @@
 package com.interface21.transaction.support;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,9 @@ public abstract class TransactionSynchronizationManager {
 
     public static void bindResource(DataSource key, Connection value) {
         Map<DataSource, Connection> localResources = resources.get();
+        if (localResources.containsKey(key)) {
+            throw new DataAccessException("DataSource " + key + " 에 대한 Connection이 이미 존재합니다.");
+        }
         localResources.put(key, value);
     }
 

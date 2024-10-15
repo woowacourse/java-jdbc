@@ -1,8 +1,10 @@
 package com.interface21.transaction.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +44,18 @@ class TransactionSynchronizationManagerTest {
 
         // then
         assertThat(retrievedConnection).isSameAs(connection);
+    }
+
+    @Test
+    @DisplayName("Connection 객체가 이미 존재하면 바인딩시 예외가 발생한다.")
+    void bindExistingResource() {
+        // given
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        Connection newConnection = mock(Connection.class);
+
+        // when & then
+        assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, newConnection))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
