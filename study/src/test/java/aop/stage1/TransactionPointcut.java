@@ -1,5 +1,8 @@
 package aop.stage1;
 
+import aop.Transactional;
+import aop.service.AppUserService;
+import java.util.Arrays;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
@@ -14,6 +17,14 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
+        try {
+            Method tagetMethod = targetClass.getMethod(method.getName(), method.getParameterTypes());
+            if (tagetMethod.isAnnotationPresent(Transactional.class)) {
+                return true;
+            }
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
         return false;
     }
 }
