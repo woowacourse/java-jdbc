@@ -1,8 +1,6 @@
 package aop.stage1;
 
 import aop.Transactional;
-import aop.service.AppUserService;
-import aop.stage2.UserService;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
@@ -17,10 +15,6 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return method.isAnnotationPresent(Transactional.class) & sameClass(targetClass);
-    }
-
-    private boolean sameClass(Class<?> targetClass) {
-        return targetClass == AppUserService.class || targetClass == UserService.class;
+        return method.isAnnotationPresent(Transactional.class);
     }
 }

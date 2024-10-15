@@ -6,7 +6,6 @@ import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import aop.service.AppUserService;
-import aop.service.TxUserService;
 import aop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,8 +68,12 @@ class Stage0Test {
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = new TxUserService(platformTransactionManager, appUserService);
+        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                UserService.class.getClassLoader(),
+                new Class[]{UserService.class},
+                new TransactionHandler(platformTransactionManager, appUserService)
+        );
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
