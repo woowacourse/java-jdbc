@@ -26,6 +26,12 @@ public abstract class DataSourceUtils {
         }
     }
 
+    public static void releaseJdbcConnection(Connection connection, DataSource dataSource) {
+        if (!TransactionSynchronizationManager.isTransactionActive(dataSource)) {
+            releaseConnection(connection, dataSource);
+        }
+    }
+
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
             connection.close();

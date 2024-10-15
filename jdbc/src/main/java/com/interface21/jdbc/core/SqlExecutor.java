@@ -29,6 +29,8 @@ public class SqlExecutor {
         } catch (SQLException e) {
             log.error("쿼리 실행에 실패했습니다: {}", sql, e);
             throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseJdbcConnection(connection, dataSource);
         }
     }
 

@@ -69,4 +69,27 @@ class TransactionSynchronizationManagerTest {
         // then
         assertThat(actual).isNull();
     }
+
+    @DisplayName("특정 데이터 소스에 대해 트랜잭션이 활성화되어 있으면 true를 리턴한다.")
+    @Test
+    void isTransactionActive_true() {
+        // given
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        // when
+        boolean actual = TransactionSynchronizationManager.isTransactionActive(dataSource);
+
+        // then
+        assertThat(actual).isTrue();
+    }
+
+    @DisplayName("특정 데이터 소스에 대해 트랜잭션이 활성화되어있지 않으면 false를 리턴한다.")
+    @Test
+    void isTransactionActive_false() {
+        // when
+        boolean actual = TransactionSynchronizationManager.isTransactionActive(dataSource);
+
+        // then
+        assertThat(actual).isFalse();
+    }
 }
