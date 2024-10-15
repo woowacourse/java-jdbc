@@ -29,8 +29,6 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        TransactionManager.doInTransaction(dataSource, () -> {
-            userService.changePassword(id, newPassword, createBy);
-        });
+        TransactionManager.doInTransaction(dataSource, () -> userService.changePassword(id, newPassword, createBy));
     }
 }
