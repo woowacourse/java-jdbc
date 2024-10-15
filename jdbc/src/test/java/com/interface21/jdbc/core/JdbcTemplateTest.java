@@ -32,6 +32,7 @@ class JdbcTemplateTest {
     void setup() throws Exception {
         given(this.dataSource.getConnection()).willReturn(this.connection);
         given(this.connection.prepareStatement(anyString())).willReturn(this.preparedStatement);
+        given(this.connection.getAutoCommit()).willReturn(true);
         given(this.preparedStatement.executeQuery()).willReturn(this.resultSet);
         given(this.preparedStatement.executeQuery(anyString())).willReturn(this.resultSet);
         given(this.preparedStatement.getConnection()).willReturn(this.connection);
@@ -98,31 +99,6 @@ class JdbcTemplateTest {
         verify(connection).close();
         verifyNoInteractions(resultSet);
     }
-
-    @DisplayName("파라미터로 받은 connection을 이용해 update 실행할 때 connection은 close되지 않는다.")
-    @Test
-    void updateWithConnectionParameter() throws SQLException {
-        // given
-        Connection externalConnection = mock(Connection.class);
-        PreparedStatement externalPreparedStatement = mock(PreparedStatement.class);
-        given(externalConnection.prepareStatement(anyString())).willReturn(externalPreparedStatement);
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
-        };
-
-        // when
-        jdbcTemplate.update("insert into user (account, age, email) values ('pororo', 20, 'proro@zzang.com')",
-                externalConnection,
-                preparedStatementSetter);
-
-        // then
-        verify(externalPreparedStatement, times(0)).setObject(anyInt(), any());
-        verify(externalPreparedStatement).close();
-        verify(externalConnection, times(0)).close();
-        verifyNoInteractions(resultSet);
-    }
-
 
     @DisplayName("query 내에 쿼리문 실행 중 예외가 발생할 경우 관련된 리소스들이 닫혀야 한다.")
     @Test
@@ -330,6 +306,30 @@ class JdbcTemplateTest {
         verify(this.resultSet).close();
         verify(this.connection).close();
         verify(this.preparedStatement).close();
+    }
+
+    @DisplayName("connection.setAutoCommit이 false일 경우 close되지 않는다.")
+    @Test
+    void notClosedWhenSetAutoCommitIsFalse() throws SQLException {
+        // given
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        given(connection.getAutoCommit()).willReturn(false);
+        PreparedStatementSetter preparedStatementSetter = (preparedStatement) -> {
+            preparedStatement.setString(1, "pororo");
+            preparedStatement.setString(2, "poke");
+        };
+        SQLException sqlException = new SQLException("업데이트 중 예외 발생");
+        given(this.preparedStatement.executeUpdate()).willThrow(sqlException);
+
+        // when
+        assertThatExceptionOfType(DataAccessException.class)
+                .isThrownBy(() -> jdbcTemplate.update("update error", preparedStatementSetter))
+                .withCause(sqlException);
+
+        // then
+        verify(preparedStatement).close();
+        verify(connection, times(0)).close();
+        verifyNoInteractions(resultSet);
     }
 
     record TestUser(String account, String password) {
