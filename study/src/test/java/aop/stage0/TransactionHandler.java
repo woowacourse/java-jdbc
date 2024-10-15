@@ -32,14 +32,16 @@ public class TransactionHandler implements InvocationHandler {
         return method.invoke(target, args);
     }
 
-    private Object invokeInTransaction(Method method, Object[] args) {
+    private Object invokeInTransaction(Method method, Object[] args) throws Throwable {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object ret = method.invoke(target, args);
             transactionManager.commit(transactionStatus);
             return ret;
-        } catch (InvocationTargetException | IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
             transactionManager.rollback(transactionStatus);
+            throw e.getTargetException();
+        } catch (IllegalAccessException e) {
             throw new DataAccessException(e);
         }
     }
