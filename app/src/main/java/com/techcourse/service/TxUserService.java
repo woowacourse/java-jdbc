@@ -18,47 +18,31 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        User user = null;
-        try {
-            conn.setAutoCommit(false);
-            user = userService.findById(id);
-            conn.commit();
-        } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException rollbackEx) {
-                throw new DataAccessException("Rollback failed", rollbackEx);
-            }
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
-        return user;
+        User[] user = new User[1];
+        doTransaction(() -> user[0] = userService.findById(id));
+        return user[0];
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
+        doTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+    }
+
+    private void doTransaction(Runnable runnable) {
         DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createdBy);
-            conn.commit();
-        } catch (SQLException e) {
+        try (Connection conn = DataSourceUtils.getConnection(dataSource)) {
             try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException rollbackEx) {
-                throw new DataAccessException("Rollback failed", rollbackEx);
+                conn.setAutoCommit(false);
+                runnable.run();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw new DataAccessException(e);
+            } finally {
+                DataSourceUtils.releaseConnection(conn, dataSource);
             }
+        } catch (SQLException e) {
             throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }
