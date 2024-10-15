@@ -11,7 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.support.TestUser;
+import com.interface21.jdbc.helper.TestUser;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

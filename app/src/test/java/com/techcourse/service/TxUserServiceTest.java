@@ -9,7 +9,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.service.support.MockUserHistoryDao;
+import com.techcourse.service.helper.MockUserHistoryDao;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-package com.interface21.jdbc.support;
+package com.interface21.jdbc.helper;
 
 import java.util.Objects;
 
