@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import aop.domain.UserHistory;
 
-@Primary
+//@Primary
 @Repository
 public class UserHistoryDao {
 

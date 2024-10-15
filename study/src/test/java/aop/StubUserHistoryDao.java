@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import aop.domain.UserHistory;
 import aop.repository.UserHistoryDao;
 
-//@Primary
+@Primary
 @Repository
 public class StubUserHistoryDao extends UserHistoryDao {
 
