@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionManager;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -16,9 +17,11 @@ public class TxUserService implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
+    private final TransactionManager transactionManager;
     private final UserService userService;
 
-    public TxUserService(UserService userService) {
+    public TxUserService(TransactionManager transactionManager, UserService userService) {
+        this.transactionManager = transactionManager;
         this.userService = userService;
     }
 
@@ -34,29 +37,10 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-
-        try {
-            connection.setAutoCommit(false);
+        // 트랜잭션 관리 자체를 람다식이나 함수형 인터페이스로 처리하여 try-catch를 제거
+        transactionManager.executeInTransaction(() -> {
             userService.changePassword(id, newPassword, createdBy);
-            connection.commit();
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            rollback(connection);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
-    }
-
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-            System.out.println("롤백 완료");
-        } catch (SQLException e) {
-            log.error(e.getMessage());
-            throw new DataAccessException(e);
-        }
+        });
     }
 }
+
