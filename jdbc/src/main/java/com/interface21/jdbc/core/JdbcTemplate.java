@@ -32,6 +32,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -44,14 +52,23 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL error during queryForObject: {}", e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         List<T> result = new ArrayList<>();
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 T row = rowMapper.mapRow(resultSet, resultSet.getRow());
                 result.add(row);
@@ -60,6 +77,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return result;
