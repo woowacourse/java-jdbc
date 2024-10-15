@@ -1,5 +1,6 @@
 package com.interface21.jdbc.datasource;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import javax.sql.DataSource;
@@ -36,6 +37,18 @@ public abstract class DataSourceUtils {
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
+        }
+    }
+
+    public static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return false;
+        }
+
+        try {
+            return !connection.isClosed() && connection.getMetaData().getURL().equals(dataSource.getConnection().getMetaData().getURL());
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to determine if the connection is transactional", e);
         }
     }
 }

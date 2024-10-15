@@ -2,13 +2,17 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.TestUser;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,6 +21,10 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,7 +49,11 @@ public class JdbcTemplateTest {
         MockitoAnnotations.openMocks(this); // Initialize mocks
         jdbcTemplate = new JdbcTemplate(dataSource);
         when(dataSource.getConnection()).thenReturn(connection);
+        DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(databaseMetaData);
+        when(databaseMetaData.getURL()).thenReturn("jdbc");
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
     }
 
     @Test
