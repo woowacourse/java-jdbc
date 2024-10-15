@@ -44,8 +44,8 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        UserService userService = new AppUserService(userDao, userHistoryDao);
-//        UserService userService = new TxUserService(platformTransactionManager, appUserService);
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = TransactionHandler.createProxy(appUserService, platformTransactionManager);
 
         String newPassword = "qqqqq";
         String createBy = "gugu";
@@ -58,8 +58,7 @@ class Stage0Test {
 
     @Test
     void testTransactionRollback() {
-        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
-//        UserService userService = new TxUserService(platformTransactionManager, appUserService);
+        UserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
         UserService userService = TransactionHandler.createProxy(appUserService, platformTransactionManager);
 
         String newPassword = "newPassword";

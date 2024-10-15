@@ -34,8 +34,21 @@ class Stage1Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    private TransactionPointcut transactionPointcut;
+    private TransactionAdvice transactionAdvice;
+    private TransactionAdvisor transactionAdvisor;
+    private ProxyFactoryBean proxyFactoryBean;
+
     @BeforeEach
     void setUp() {
+        this.transactionPointcut = new TransactionPointcut();
+        this.transactionAdvice = new TransactionAdvice(platformTransactionManager);
+        this.transactionAdvisor = new TransactionAdvisor(transactionPointcut, transactionAdvice);
+        this.proxyFactoryBean = new ProxyFactoryBean();
+
+        this.proxyFactoryBean.addAdvisor(transactionAdvisor);
+        this.proxyFactoryBean.setProxyTargetClass(false);
+
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -43,12 +56,15 @@ class Stage1Test {
     @Test
     void testChangePassword() {
         UserService userService = new UserService(userDao, userHistoryDao);
+        proxyFactoryBean.setTarget(userService);
+
+        UserService proxyUserService = (UserService) proxyFactoryBean.getObject();
 
         String newPassword = "qqqqq";
         String createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        proxyUserService.changePassword(1L, newPassword, createBy);
 
-        User actual = userService.findById(1L);
+        User actual = proxyUserService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -56,21 +72,13 @@ class Stage1Test {
     @Test
     void testTransactionRollback() {
         UserService userService = new UserService(userDao, stubUserHistoryDao);
-        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(userService);
-        proxyFactoryBean.setProxyTargetClass(false);
-
-        TransactionPointcut transactionPointcut = new TransactionPointcut();
-        TransactionAdvice transactionAdvice = new TransactionAdvice(platformTransactionManager);
-        TransactionAdvisor transactionAdvisor = new TransactionAdvisor(transactionPointcut, transactionAdvice);
-        proxyFactoryBean.addAdvisor(transactionAdvisor);
 
         UserService proxyUserService = (UserService) proxyFactoryBean.getObject();
 
         String newPassword = "newPassword";
         String createBy = "gugu";
-        assertThrows(DataAccessException.class,
-                () -> proxyUserService.changePassword(1L, newPassword, createBy));
+        assertThrows(DataAccessException.class, () -> proxyUserService.changePassword(1L, newPassword, createBy));
 
         User actual = proxyUserService.findById(1L);
 
