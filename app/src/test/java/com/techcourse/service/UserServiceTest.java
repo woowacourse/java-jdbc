@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.transaction.TransactionManager;
 import com.interface21.jdbc.transaction.TransactionProxy;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -18,14 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
 
-    private TransactionManager transactionManager;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.transactionManager = new TransactionManager();
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), transactionManager);
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DataSource dataSource = DataSourceConfig.getInstance();
@@ -38,10 +35,9 @@ class UserServiceTest {
     void testChangePassword() {
         UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         UserService userService = TransactionProxy.createProxy(
-                new UserServiceImpl(userDao, userHistoryDao),
+                new AppUserService(userDao, userHistoryDao),
                 UserService.class,
-                DataSourceConfig.getInstance(),
-                transactionManager
+                DataSourceConfig.getInstance()
         );
 
         String newPassword = "qqqqq";
@@ -57,12 +53,11 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserServiceImpl userServiceImpl = new UserServiceImpl(userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
         UserService userService = TransactionProxy.createProxy(
-                userServiceImpl,
+                appUserService,
                 UserService.class,
-                DataSourceConfig.getInstance(),
-                transactionManager
+                DataSourceConfig.getInstance()
         );
 
         String newPassword = "newPassword";
