@@ -24,6 +24,9 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void unbindResource(DataSource key) {
+        if (!resources.get().containsKey(key)) {
+            throw new DataAccessException("존재하지 않는 DataSource 입니다");
+        }
         resources.get().remove(key);
     }
 }
