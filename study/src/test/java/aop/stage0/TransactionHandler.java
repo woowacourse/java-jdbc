@@ -1,6 +1,7 @@
 package aop.stage0;
 
 import aop.DataAccessException;
+import aop.Transactional;
 import aop.service.UserService;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionException;
@@ -27,6 +28,10 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        if (!method.getClass().isAnnotationPresent(Transactional.class)) {
+            return method.invoke(target, args);
+        }
+
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
