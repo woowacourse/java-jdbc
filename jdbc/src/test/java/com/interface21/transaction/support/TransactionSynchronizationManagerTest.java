@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 
 import java.sql.Connection;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -65,6 +66,7 @@ public class TransactionSynchronizationManagerTest {
         final DataSource dataSource = mock(DataSource.class);
         final Connection connection = mock(Connection.class);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
+        assert Objects.nonNull(TransactionSynchronizationManager.getResource(dataSource));
 
         // when
         TransactionSynchronizationManager.unbindResource(dataSource);
