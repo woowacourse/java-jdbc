@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class TxUserService implements UserService{
+public class TxUserService implements UserService {
 
     private final UserService userService;
 
