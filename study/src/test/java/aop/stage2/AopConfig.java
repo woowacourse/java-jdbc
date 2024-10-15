@@ -4,7 +4,6 @@ import aop.stage1.TransactionAdvice;
 import aop.stage1.TransactionAdvisor;
 import aop.stage1.TransactionPointcut;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -12,16 +11,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class AopConfig {
 
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
     @Bean
     public TransactionPointcut transactionPointcut() {
         return new TransactionPointcut();
     }
 
     @Bean
-    public TransactionAdvice transactionAdvice() {
+    public TransactionAdvice transactionAdvice(PlatformTransactionManager transactionManager) {
         return new TransactionAdvice(transactionManager);
     }
 
