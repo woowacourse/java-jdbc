@@ -21,7 +21,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        if (getResource(key) != null) {
+        if (resources.get().containsKey(key)) {
             throw new DataAccessException("Transaction already started for this datasource");
         }
         resources.get().put(key, value);
@@ -31,7 +31,7 @@ public abstract class TransactionSynchronizationManager {
         resources.get().remove(key);
     }
 
-    public static boolean doesNotManage(DataSource dataSource) {
-        return getResource(dataSource) == null;
+    public static boolean doesNotManage(DataSource key) {
+        return !resources.get().containsKey(key);
     }
 }
