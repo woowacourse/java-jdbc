@@ -9,7 +9,7 @@ public class DataAccessException extends RuntimeException {
     public static <T> T executeAndConvertException(Callable<T> callable) {
         try {
             return callable.call();
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new DataAccessException(e);
         }
     }
@@ -17,7 +17,7 @@ public class DataAccessException extends RuntimeException {
     public static void executeAndConvertException(RunAndThrowable runAndThrowable) {
         try {
             runAndThrowable.run();
-        }catch (Throwable t) {
+        } catch (Throwable t) {
             throw new DataAccessException(t);
         }
     }
