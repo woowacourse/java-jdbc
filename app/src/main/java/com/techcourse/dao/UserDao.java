@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,17 +48,6 @@ public class UserDao {
                 "id", user.getId()
         );
         jdbcTemplate.update(baseQuery, parameters);
-    }
-
-    public void update(final Connection connection, final User user) {
-        final String baseQuery = "UPDATE users SET account = :account, password = :password, email = :email WHERE id = :id";
-        final Map<String, Object> parameters = Map.of(
-                "account", user.getAccount(),
-                "password", user.getPassword(),
-                "email", user.getEmail(),
-                "id", user.getId()
-        );
-        jdbcTemplate.update(connection, baseQuery, parameters);
     }
 
     public List<User> findAll() {

@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.mapper.RowMapper;
 import com.interface21.jdbc.core.sql.Sql;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,17 +24,10 @@ public class JdbcTemplate {
     }
 
     public void insert(final String sql, final SqlParameterSource parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final Statement stmt = conn.createStatement()) {
-            final Sql bindingParametersQuery = new Sql(sql, parameters);
-            execWriteQuery(stmt, bindingParametersQuery);
-        } catch (final SQLException e) {
-            throw new JdbcException(e.getMessage(), e);
-        }
-    }
-
-    public void insert(final Connection connection, final String sql, final SqlParameterSource parameters) {
-        try (final Statement stmt = connection.createStatement()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Statement stmt = null;
+        try {
+            stmt = connection.createStatement();
             final Sql bindingParametersQuery = new Sql(sql, parameters);
             execWriteQuery(stmt, bindingParametersQuery);
         } catch (final SQLException e) {
@@ -51,17 +45,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Map<String, Object> parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final Statement stmt = conn.createStatement()) {
-            final Sql bindingParametersQuery = new Sql(sql, parameters);
-            execWriteQuery(stmt, bindingParametersQuery);
-        } catch (final SQLException e) {
-            throw new JdbcException(e.getMessage(), e);
-        }
-    }
-
-    public void update(final Connection connection, final String sql, final Map<String, Object> parameters) {
-        try (final Statement stmt = connection.createStatement()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Statement stmt = null;
+        try {
+            stmt = connection.createStatement();
             final Sql bindingParametersQuery = new Sql(sql, parameters);
             execWriteQuery(stmt, bindingParametersQuery);
         } catch (final SQLException e) {

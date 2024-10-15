@@ -1,7 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
-
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
@@ -25,10 +23,10 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         final String baseQuery = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) "
                 + "VALUES (:userId, :account, :password, :email, :createdAt, :createdBy)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(userHistory);
-        jdbcTemplate.insert(connection, baseQuery, sqlParameterSource);
+        jdbcTemplate.insert(baseQuery, sqlParameterSource);
     }
 }

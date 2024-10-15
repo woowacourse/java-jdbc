@@ -33,16 +33,19 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         DataSource dataSource = DataSourceConfig.getInstance();
-
-        try (Connection conn = DataSourceUtils.getConnection(dataSource)) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
             conn.setAutoCommit(false);
             User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             conn.commit();
         } catch (final SQLException e) {
             throw new DataAccessException();
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }
