@@ -78,7 +78,8 @@ class DataSourceUtilsTest {
     @DisplayName("커넥션을 닫는 도중에 예외가 발생하면 CannotGetJdbcConnectionException을 던져야 한다.")
     @Test
     public void failToCloseConnection() throws SQLException {
-        doThrow(new SQLException("닫기 실패")).when(connection).close();
+        doThrow(new SQLException("닫기 실패"))
+                .when(connection).close();
 
         assertThatThrownBy(() -> DataSourceUtils.releaseConnection(connection, dataSource))
                 .isInstanceOf(CannotGetJdbcConnectionException.class)
