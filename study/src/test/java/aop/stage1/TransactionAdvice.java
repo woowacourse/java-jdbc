@@ -1,9 +1,10 @@
 package aop.stage1;
 
 import aop.DataAccessException;
-import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -13,12 +14,12 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  */
 public class TransactionAdvice implements MethodInterceptor {
 
-    private final PlatformTransactionManager platformTransactionManager;
-    private final Object target;
+    private static final Logger log = LoggerFactory.getLogger(TransactionAdvice.class);
 
-    public TransactionAdvice(PlatformTransactionManager platformTransactionManager, Object target) {
+    private final PlatformTransactionManager platformTransactionManager;
+
+    public TransactionAdvice(PlatformTransactionManager platformTransactionManager) {
         this.platformTransactionManager = platformTransactionManager;
-        this.target = target;
     }
 
     @Override
@@ -26,13 +27,14 @@ public class TransactionAdvice implements MethodInterceptor {
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
-            Method method = invocation.getMethod();
-            Object[] args = invocation.getArguments();
-            Object ret = method.invoke(target, args);
+            Object ret = invocation.proceed();
+            log.info("proceed: {}", invocation.getMethod().getName());
             platformTransactionManager.commit(transactionStatus);
+            log.info("transaction commit: {}", invocation.getMethod().getName());
             return ret;
         } catch (Exception e) {
             platformTransactionManager.rollback(transactionStatus);
+            log.info("transaction roll back: {}", invocation.getMethod().getName());
             throw new DataAccessException(e);
         }
     }

@@ -80,7 +80,7 @@ class Stage1Test {
         proxyFactoryBean.setTarget(target);
         proxyFactoryBean.setProxyTargetClass(true); // JDK Proxy -> CGLIB
 
-        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager, target);
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
         TransactionPointcut pointcut = new TransactionPointcut();
         TransactionAdvisor advisor = new TransactionAdvisor(advice, pointcut);
         proxyFactoryBean.addAdvisor(advisor);
