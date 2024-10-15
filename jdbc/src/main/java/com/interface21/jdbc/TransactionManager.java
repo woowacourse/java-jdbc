@@ -20,9 +20,8 @@ public class TransactionManager {
     }
 
     public void execute(Runnable runnable) {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             runnable.run();
             connection.commit();
