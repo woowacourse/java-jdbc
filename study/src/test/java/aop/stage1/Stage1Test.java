@@ -42,8 +42,8 @@ class Stage1Test {
         userDao.insert(user);
 
         proxyFactoryBean = new ProxyFactoryBean();
-        proxyFactoryBean.setProxyTargetClass(true);
 
+        //실제로 다 생성해서 넣어주고 빈 등록까지 하기 때문에 setProxyTargetClass(true)안 해줘도 됨
         TransactionPointcut pointcut = new TransactionPointcut();
         TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
         proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
