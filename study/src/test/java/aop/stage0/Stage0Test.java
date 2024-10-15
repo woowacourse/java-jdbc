@@ -7,6 +7,7 @@ import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import aop.service.AppUserService;
 import aop.service.UserService;
+import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -45,7 +46,11 @@ class Stage0Test {
     @Test
     void testChangePassword() {
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        final UserService userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(platformTransactionManager, new AppUserService(userDao, userHistoryDao))
+        );
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -59,7 +64,11 @@ class Stage0Test {
     @Test
     void testTransactionRollback() {
         final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
+        final UserService userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(platformTransactionManager, appUserService)
+        );
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
