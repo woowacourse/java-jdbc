@@ -35,7 +35,6 @@ public class TransactionManager {
             throw new DataAccessException("Transaction failed: " + e.getMessage(), e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
