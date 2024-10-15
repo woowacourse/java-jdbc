@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 public class JdbcTemplate {
 
@@ -86,6 +87,18 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            close(connection);
+        }
+    }
+
+    private void close(Connection connection) {
+        try {
+            if(!connection.equals(TransactionSynchronizationManager.getResource(dataSource))) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
