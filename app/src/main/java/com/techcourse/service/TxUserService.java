@@ -35,16 +35,16 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         try {
-            final Connection conn = DataSourceUtils.getConnection(dataSource);
-            conn.setAutoCommit(false);
-
-            changePasswordWithTransaction(id, newPassword, createdBy, conn);
+            changePasswordWithTransaction(id, newPassword, createdBy);
         } catch (SQLException e) {
             throw new IllegalStateException("패스워드 변경 실패: 데이터베이스 연결 오류가 발생했습니다.", e);
         }
     }
 
-    private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy, final Connection conn) throws SQLException {
+    private void changePasswordWithTransaction(final long id, final String newPassword, final String createBy) throws SQLException {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        conn.setAutoCommit(false);
+
         try {
             appUserService.changePassword(id, newPassword, createBy);
             conn.commit();
