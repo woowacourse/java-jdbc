@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.exception.TransactionFailedException;
 import com.techcourse.config.DataSourceConfig;
@@ -45,7 +44,7 @@ class UserServiceTest {
     void testChangePassword() {
         // given
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final UserService userService = new AppUserService(userDao, userHistoryDao);
 
         // when
         userService.changePassword(USER_ID, NEW_PASSWORD, CREATED_BY);
@@ -61,7 +60,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // given
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao);
+        final UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService);
 
         // when
         assertThrows(TransactionFailedException.class,
