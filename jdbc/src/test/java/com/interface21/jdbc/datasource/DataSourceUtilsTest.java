@@ -36,7 +36,7 @@ class DataSourceUtilsTest {
 
     @DisplayName("이미 커넥션이 존재하는 경우 기존 커넥션을 사용한다.")
     @Test
-    public void getConnectionAlreadyExist() throws SQLException {
+    public void getConnectionAlreadyExist() {
         Connection result = DataSourceUtils.getConnection(dataSource);
 
         assertThat(result).isEqualTo(connection);
