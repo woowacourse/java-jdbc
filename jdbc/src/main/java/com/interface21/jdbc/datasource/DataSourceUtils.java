@@ -31,16 +31,18 @@ public abstract class DataSourceUtils {
             if (connection == null) {
                 return;
             }
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            closeConnection(connection);
+            Connection unbindedConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+            closeConnection(unbindedConnection, connection);
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
 
-    private static void closeConnection(Connection connection) throws SQLException {
-        if (!connection.isClosed()) {
-            connection.close();
+    private static void closeConnection(Connection... connections) throws SQLException {
+        for (Connection connection : connections) {
+            if (connection!= null &&!connection.isClosed()) {
+                connection.close();
+            }
         }
     }
 }
