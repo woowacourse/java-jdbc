@@ -18,12 +18,13 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeTransaction(Runnable function) {
+    public void executeTransaction(Runnable runnable) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            function.run();
+            runnable.run();
             connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
