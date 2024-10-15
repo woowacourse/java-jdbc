@@ -43,6 +43,18 @@ public class JdbcTemplate implements JdbcOperations {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            try {
+                releaseConnectionIfAutoCommit(connection);
+            } catch (SQLException e) {
+                log.error("Failed to release connection", e);
+            }
+        }
+    }
+
+    private void releaseConnectionIfAutoCommit(Connection connection) throws SQLException {
+        if (connection != null && connection.getAutoCommit()) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
