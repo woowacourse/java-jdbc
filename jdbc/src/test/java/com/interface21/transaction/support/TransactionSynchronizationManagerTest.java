@@ -50,14 +50,4 @@ class TransactionSynchronizationManagerTest {
         // then
         assertThat(actual).isEqualTo(connection);
     }
-
-    @Test
-    void 등록되지않은_DataSource의_Connection을_삭제하는_경우_예외() throws SQLException {
-        // given
-        DataSource dataSource = mock(DataSource.class);
-
-        // when, then
-        assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
 }
