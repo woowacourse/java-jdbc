@@ -76,7 +76,7 @@ class Stage0Test {
     private @NotNull Object createUserServiceProxy(AppUserService appUserService) {
         return Proxy.newProxyInstance(
                 getClass().getClassLoader(),
-                new Class[]{UserService.class},
+                new Class[]{UserService.class},  // JDK Dynamic Proxy는 인터페이스 기반 프록시만 생성 가능
                 new TransactionHandler(platformTransactionManager, appUserService)
         );
     }
