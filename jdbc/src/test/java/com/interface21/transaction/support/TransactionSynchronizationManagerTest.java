@@ -24,6 +24,22 @@ class TransactionSynchronizationManagerTest {
         assertThat(bindedConnection).isNotNull();
     }
 
+    @DisplayName("데이터소스에 맞는 커넥션이 있다면 반환한다.")
+    @Test
+    void bindResource() {
+        DataSource otherDataSource = mock(DataSource.class);
+
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        TransactionSynchronizationManager.bindResource(otherDataSource, connection);
+
+        Connection bindedConnection1 = TransactionSynchronizationManager.getResource(dataSource);
+        Connection bindedConnection2 = TransactionSynchronizationManager.getResource(otherDataSource);
+
+        assertThat(dataSource).isNotEqualTo(otherDataSource);
+        assertThat(bindedConnection1).isNotNull();
+        assertThat(bindedConnection2).isNotNull();
+    }
+
     @DisplayName("데이터소스에 맞는 커넥션이 없다면 null을 반환한다.")
     @Test
     void getResource_without_connection() {
