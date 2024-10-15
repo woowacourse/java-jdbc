@@ -13,6 +13,15 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return targetClass.isAnnotationPresent(Transactional.class) || method.isAnnotationPresent(Transactional.class);
+        return existsTransaction(method,targetClass);
+    }
+
+    private boolean existsTransaction(Method method, Class<?> targetClass) {
+        try {
+            Method targerMethod = targetClass.getMethod(method.getName(), method.getParameterTypes());
+            return targerMethod.isAnnotationPresent(Transactional.class);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 }

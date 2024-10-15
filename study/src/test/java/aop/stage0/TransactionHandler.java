@@ -24,24 +24,23 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        if (isNotExistsTransaction(method, args)) {
+        if (isNotExistsTransaction(method)) {
             return method.invoke(target, args);
         }
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(
                 new DefaultTransactionDefinition());
-        Object result = null;
         try {
-            result = method.invoke(target, args);
+            Object result = method.invoke(target, args);
             platformTransactionManager.commit(transactionStatus);
+            return result;
         } catch (InvocationTargetException e) {
             platformTransactionManager.rollback(transactionStatus);
             throw new DataAccessException(e.getTargetException());
         }
-        return result;
     }
 
-    private boolean isNotExistsTransaction(Method method, Object[] args) throws NoSuchMethodException {
-        Method targerMethod = target.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes());
+    private boolean isNotExistsTransaction(Method method) throws NoSuchMethodException {
+        Method targerMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
         return !targerMethod.isAnnotationPresent(Transactional.class);
     }
 

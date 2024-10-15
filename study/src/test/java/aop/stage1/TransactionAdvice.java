@@ -23,14 +23,13 @@ public class TransactionAdvice implements MethodInterceptor {
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(
                 new DefaultTransactionDefinition());
 
-        Object result = null;
         try {
-            result  = invocation.proceed();
+            Object result  = invocation.proceed();
             platformTransactionManager.commit(transactionStatus);
+            return result;
         } catch (RuntimeException e) {
             platformTransactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
-        return result;
     }
 }
