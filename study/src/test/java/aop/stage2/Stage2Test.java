@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -59,12 +58,5 @@ class Stage2Test {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
-    }
-
-    @Test
-    void abstractAutoProxyCreator() {
-        AbstractAutoProxyCreator bean = applicationContext.getBean(AbstractAutoProxyCreator.class);
-
-        System.out.println(bean);
     }
 }
