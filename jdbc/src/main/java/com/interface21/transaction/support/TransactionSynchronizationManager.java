@@ -3,6 +3,7 @@ package com.interface21.transaction.support;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
+    @Nullable
     public static Connection getResource(DataSource key) {
         log.info("get resource: {}", key);
         return resources.get().get(key);
