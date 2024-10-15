@@ -2,8 +2,6 @@ package com.interface21.transaction.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.*;
@@ -64,12 +62,12 @@ public class TransactionSynchronizationManagerTest {
     public void dataSourceManaged() {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        assertFalse(TransactionSynchronizationManager.doesNotManage(dataSource));
+        assertThat(TransactionSynchronizationManager.doesNotManage(dataSource)).isFalse();
     }
 
     @DisplayName("커넥션이 존재하지 않을 때 관리되지 않는다고 판단한다.")
     @Test
     public void dataSourceNotManaged() {
-        assertTrue(TransactionSynchronizationManager.doesNotManage(dataSource));
+        assertThat(TransactionSynchronizationManager.doesNotManage(dataSource)).isTrue();
     }
 }
