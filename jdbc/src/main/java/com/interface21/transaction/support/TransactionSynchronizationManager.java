@@ -7,17 +7,12 @@ import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
-        if (dataSourceConnectionMap == null) {
-            resources.set(new HashMap<>());
-            dataSourceConnectionMap = resources.get();
-        }
-        return dataSourceConnectionMap.get(key);
+        return resources.get().get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {

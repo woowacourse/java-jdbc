@@ -24,10 +24,6 @@ public class AppUserService implements UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        changePasswordLogic(id, newPassword, createBy);
-    }
-
-    private void changePasswordLogic(long id, String newPassword, String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
