@@ -52,7 +52,7 @@ public class JdbcTemplateTest {
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        int rowsAffected = jdbcTemplate.queryAndGetUpdateRowsCount(connection, sql, params);
+        int rowsAffected = jdbcTemplate.queryAndGetUpdateRowsCount(sql, params);
 
         assertThat(rowsAffected).isEqualTo(1);
 
@@ -74,7 +74,7 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        List<User> users = jdbcTemplate.queryAndGetResults(connection, sql, parser, params);
+        List<User> users = jdbcTemplate.queryAndGetResults(sql, parser, params);
 
         assertThat(users).isNotNull().hasSize(1);
         assertThat(users.getFirst().getName()).isEqualTo("John");
@@ -97,7 +97,7 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        User user = jdbcTemplate.queryAndGetResult(connection, sql, parser, params);
+        User user = jdbcTemplate.queryAndGetResult(sql, parser, params);
 
         assertThat(user).isNotNull();
         assertThat(user.getName()).isEqualTo("John");
@@ -122,7 +122,7 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(connection, sql, parser, params))
+        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(sql, parser, params))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("여러개의 행이 조회되었습니다.");
 
@@ -141,7 +141,7 @@ public class JdbcTemplateTest {
 
         ResultSetParser<User> parser = userResultSetParser();
 
-        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(connection, sql, parser, params))
+        assertThatThrownBy(() -> jdbcTemplate.queryAndGetResult(sql, parser, params))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessage("행이 하나도 조회되지 않았습니다.");
 
