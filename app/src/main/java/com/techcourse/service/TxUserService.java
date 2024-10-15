@@ -16,22 +16,16 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return transactionTemplate.executeTransaction(connection -> userService.findById(id));
+        return userService.findById(id);
     }
 
     @Override
     public void save(User user) {
-        transactionTemplate.executeTransaction(connection -> {
-            userService.save(user);
-            return null;
-        });
+        transactionTemplate.executeTransaction(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        transactionTemplate.executeTransaction(connection -> {
-            userService.changePassword(id, newPassword, createdBy);
-            return null;
-        });
+        transactionTemplate.executeTransaction(() -> userService.changePassword(id, newPassword, createdBy));
     }
 }

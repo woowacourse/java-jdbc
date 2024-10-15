@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
@@ -17,13 +18,12 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public <R> R executeTransaction(Function<Connection, R> function) {
+    public void executeTransaction(Runnable function) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            R result = function.apply(connection);
+            function.run();
             connection.commit();
-            return result;
         } catch (SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
