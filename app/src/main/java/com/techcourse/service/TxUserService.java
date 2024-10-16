@@ -5,12 +5,17 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final UserService userService;
 
@@ -37,7 +42,9 @@ public class TxUserService implements UserService {
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             rollback(connection);
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
