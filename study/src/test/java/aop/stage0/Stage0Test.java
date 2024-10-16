@@ -14,16 +14,12 @@ import aop.service.UserService;
 import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class Stage0Test {
-
-    private static final Logger log = LoggerFactory.getLogger(Stage0Test.class);
 
     @Autowired
     private UserDao userDao;
@@ -35,7 +31,7 @@ class Stage0Test {
     private StubUserHistoryDao stubUserHistoryDao;
 
     @Autowired
-    private PlatformTransactionManager platformTransactionManager;
+    private PlatformTransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +45,7 @@ class Stage0Test {
         final UserService userService = (UserService) Proxy.newProxyInstance(
                 appUserService.getClass().getClassLoader(),
                 new Class[]{UserService.class},
-                new TransactionHandler(appUserService, platformTransactionManager)
+                new TransactionHandler(appUserService, transactionManager)
         );
 
         final var newPassword = "qqqqq";
@@ -67,7 +63,7 @@ class Stage0Test {
         final UserService userService = (UserService) Proxy.newProxyInstance(
                 appUserService.getClass().getClassLoader(),
                 new Class[]{UserService.class},
-                new TransactionHandler(appUserService, platformTransactionManager)
+                new TransactionHandler(appUserService, transactionManager)
         );
 
         final var newPassword = "newPassword";

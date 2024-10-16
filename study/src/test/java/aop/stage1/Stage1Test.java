@@ -1,5 +1,8 @@
 package aop.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
@@ -7,20 +10,13 @@ import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
-
-    private static final Logger log = LoggerFactory.getLogger(Stage1Test.class);
 
     @Autowired
     private UserDao userDao;
@@ -32,7 +28,7 @@ class Stage1Test {
     private StubUserHistoryDao stubUserHistoryDao;
 
     @Autowired
-    private PlatformTransactionManager platformTransactionManager;
+    private PlatformTransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
@@ -45,7 +41,7 @@ class Stage1Test {
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
         proxyFactoryBean.setProxyTargetClass(true);
-        proxyFactoryBean.addAdvisors(new TransactionAdvisor(platformTransactionManager));
+        proxyFactoryBean.addAdvisors(new TransactionAdvisor(transactionManager));
 
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
@@ -63,7 +59,7 @@ class Stage1Test {
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(new UserService(userDao, stubUserHistoryDao));
         proxyFactoryBean.setProxyTargetClass(true);
-        proxyFactoryBean.addAdvisors(new TransactionAdvisor(platformTransactionManager));
+        proxyFactoryBean.addAdvisors(new TransactionAdvisor(transactionManager));
 
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
