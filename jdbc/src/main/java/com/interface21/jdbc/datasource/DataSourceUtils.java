@@ -28,8 +28,8 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try { // connection 종료하고 ThreadLocal에 dataSource와 connection 제거.
-            connection.close();
             TransactionSynchronizationManager.unbindResource(dataSource);
+            connection.close();
         } catch (SQLException | NullPointerException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
