@@ -11,7 +11,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 /**
  * 어드바이스(advice). 부가기능을 담고 있는 클래스
  */
-public class TransactionAdvice  implements MethodInterceptor {
+public class TransactionAdvice implements MethodInterceptor {
 
     private final PlatformTransactionManager transactionManager;
 
@@ -21,8 +21,7 @@ public class TransactionAdvice  implements MethodInterceptor {
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
-        Transactional transactional = invocation.getMethod().getAnnotation(Transactional.class);
-        if (transactional == null) {
+        if (!invocation.getMethod().isAnnotationPresent(Transactional.class)) {
             return invocation.proceed();
         }
 
