@@ -24,7 +24,6 @@ class SqlExecutorTest {
 
     private SqlExecutor sqlExecutor;
     private DataSource dataSource;
-    private Connection connection;
     private PreparedStatement preparedStatement;
     private ParameterMetaData parameterMetaData;
 
@@ -32,7 +31,7 @@ class SqlExecutorTest {
     void setUp() throws SQLException {
         sqlExecutor = new SqlExecutor();
         dataSource = mock(DataSource.class);
-        connection = mock(Connection.class);
+        Connection connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         parameterMetaData = mock(ParameterMetaData.class);
 
@@ -61,7 +60,6 @@ class SqlExecutorTest {
         assertThat(actual).isEqualTo(user);
         verify(preparedStatement).setObject(1, 1);
         verify(preparedStatement).execute();
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -80,7 +78,6 @@ class SqlExecutorTest {
         assertThatThrownBy(() -> sqlExecutor.execute(sql, dataSource, statementExecutor, parameters))
                 .isInstanceOf(DataAccessException.class);
         verify(preparedStatement).setObject(1, 1);
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 
@@ -97,7 +94,6 @@ class SqlExecutorTest {
         assertThatThrownBy(() -> sqlExecutor.execute(sql, dataSource, statementExecutor, parameters))
                 .isInstanceOf(IncorrectParameterCountException.class);
         verify(preparedStatement, never()).execute();
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 }

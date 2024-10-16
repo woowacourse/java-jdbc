@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectParameterCountException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -19,22 +20,7 @@ public class SqlExecutor {
             String sql, DataSource dataSource, PreparedStatementExecutor<T> statementExecutor, Object... parameters) {
         log.debug("실행 쿼리: {}", sql);
         log.debug("파라미터: {}", Arrays.toString(parameters));
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            setParameters(preparedStatement, parameters);
-            return statementExecutor.execute(preparedStatement);
-
-        } catch (SQLException e) {
-            log.error("쿼리 실행에 실패했습니다: {}", sql, e);
-            throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
-        }
-    }
-
-    public <T> T execute(
-            Connection connection, String sql, PreparedStatementExecutor<T> statementExecutor, Object... parameters) {
-        log.debug("실행 쿼리: {}", sql);
-        log.debug("파라미터: {}", Arrays.toString(parameters));
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             setParameters(preparedStatement, parameters);
@@ -43,6 +29,8 @@ public class SqlExecutor {
         } catch (SQLException e) {
             log.error("쿼리 실행에 실패했습니다: {}", sql, e);
             throw new DataAccessException("쿼리 실행에 실패했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseJdbcConnection(connection, dataSource);
         }
     }
 
