@@ -42,9 +42,10 @@ public class TransactionHandler implements InvocationHandler {
 
     private Object handleTransaction(Method method, Object[] args) throws Throwable {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        Object object = null;
         try {
-            object = method.invoke(target, args);
+            Object object = method.invoke(target, args);
+            transactionManager.commit(transactionStatus);
+            return object;
         } catch (InvocationTargetException e) {
             transactionManager.rollback(transactionStatus);
             throw e.getTargetException();
@@ -52,7 +53,5 @@ public class TransactionHandler implements InvocationHandler {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
-        transactionManager.commit(transactionStatus);
-        return object;
     }
 }
