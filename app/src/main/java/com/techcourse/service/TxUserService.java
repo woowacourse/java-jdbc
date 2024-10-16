@@ -1,13 +1,16 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
+    private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(final UserService userService) {
+    public TxUserService(final UserService userService, TransactionTemplate transactionTemplate) {
         this.userService = userService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -22,6 +25,6 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TransactionTemplate.executeWithTransaction(() -> userService.changePassword(id,newPassword,createBy));
+        transactionTemplate.executeWithTransaction(() -> userService.changePassword(id,newPassword,createBy));
     }
 }

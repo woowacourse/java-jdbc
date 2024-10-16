@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -18,6 +19,7 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() {
@@ -25,6 +27,7 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
+        this.transactionTemplate = new TransactionTemplate(dataSource);
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -50,7 +53,7 @@ class UserServiceTest {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
 
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService,transactionTemplate);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

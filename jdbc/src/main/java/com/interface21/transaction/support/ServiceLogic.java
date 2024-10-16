@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core;
+package com.interface21.transaction.support;
 
 @FunctionalInterface
 public interface ServiceLogic {
