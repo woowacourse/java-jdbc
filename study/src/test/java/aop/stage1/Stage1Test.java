@@ -44,11 +44,11 @@ class Stage1Test {
 
         TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
         TransactionPointcut pointcut = new TransactionPointcut();
-        proxyFactoryBean.addAdvisor(new TransactionAdvisor(advice, pointcut));
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
 
         userDao.insert(user);
     }
- 
+
     @Test
     void testChangePassword() {
 
