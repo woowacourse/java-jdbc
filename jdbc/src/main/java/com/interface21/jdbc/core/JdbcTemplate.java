@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +23,11 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(String sql, Object... parameters){
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public int executeUpdate(String sql, Object... parameters) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try(PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
-
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -44,13 +44,12 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, Function<ResultSet, T> func , Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql);
              ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
 
             return func.apply(rs);
-
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcTemplateException(e);
