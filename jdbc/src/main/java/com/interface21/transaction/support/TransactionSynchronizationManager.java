@@ -13,18 +13,19 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(DataSource key) {
-        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
-        return dataSourceConnectionMap.get(key);
+        Map<DataSource, Connection> resource = resources.get();
+        return resource.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
+        Map<DataSource, Connection> resource = resources.get();
+        resource.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        Map<DataSource, Connection> resourceMap = resources.get();
-        Connection connection = resourceMap.remove(key);
-        if (resourceMap.isEmpty()) {
+        Map<DataSource, Connection> resource = resources.get();
+        Connection connection = resource.remove(key);
+        if (resource.isEmpty()) {
             resources.remove();
         }
         return connection;
