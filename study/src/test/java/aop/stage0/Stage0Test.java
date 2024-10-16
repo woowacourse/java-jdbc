@@ -65,7 +65,7 @@ class Stage0Test {
     @Test
     void testTransactionRollback() {
         final var userService = (UserService) Proxy.newProxyInstance(
-                UserService.class.getClassLoader(),
+                getClass().getClassLoader(),
                 new Class<?>[]{UserService.class},
                 new TransactionHandler(new AppUserService(userDao, stubUserHistoryDao), platformTransactionManager)
         );
