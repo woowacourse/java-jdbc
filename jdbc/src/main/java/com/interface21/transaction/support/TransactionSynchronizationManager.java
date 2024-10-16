@@ -32,4 +32,8 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(DataSource key) {
         return resources.get().remove(key);
     }
+
+    public static boolean isNotActiveTransaction(DataSource key){
+        return getResource(key) == null;
+    }
 }

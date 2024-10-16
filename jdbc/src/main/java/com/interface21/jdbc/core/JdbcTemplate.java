@@ -96,12 +96,8 @@ public class JdbcTemplate {
     }
 
     private void releaseIfNotTransaction(Connection connection) {
-        if(isNotTransaction()) {
+        if(TransactionSynchronizationManager.isNotActiveTransaction(dataSource)) {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
-    }
-
-    private boolean isNotTransaction() {
-        return TransactionSynchronizationManager.getResource(dataSource) == null;
     }
 }
