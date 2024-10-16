@@ -49,7 +49,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-        jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Nested
@@ -65,7 +65,6 @@ class JdbcTemplateTest {
 
             // when
             List<User> users = jdbcTemplate.query(
-                    connection,
                     "select * from users where age = ?",
                     ROW_MAPPER,
                     18
@@ -73,7 +72,7 @@ class JdbcTemplateTest {
 
             // then
             verify(preparedStatement).executeQuery();
-            verify(preparedStatement).setObject(1, 18);
+            verify(preparedStatement).setInt(1, 18);
             assertThat(users).hasSize(2);
             assertThat(users.get(0).getAge()).isEqualTo(20);
             assertThat(users.get(1).getAge()).isEqualTo(25);
@@ -89,7 +88,6 @@ class JdbcTemplateTest {
 
             // when
             List<User> users = jdbcTemplate.query(
-                    connection,
                     "select * from users",
                     ROW_MAPPER
             );
@@ -116,7 +114,6 @@ class JdbcTemplateTest {
 
             // when
             User user = jdbcTemplate.queryForObject(
-                    connection,
                     "select * from users where id = ?",
                     ROW_MAPPER,
                     1
@@ -124,7 +121,7 @@ class JdbcTemplateTest {
 
             // then
             verify(preparedStatement).executeQuery();
-            verify(preparedStatement).setObject(1, 1);
+            verify(preparedStatement).setInt(1, 1);
             assertThat(user.getName()).isEqualTo("user 1");
         }
 
@@ -138,7 +135,6 @@ class JdbcTemplateTest {
 
             // when
             User user = jdbcTemplate.queryForObject(
-                    connection,
                     "select * from users where id = 1",
                     ROW_MAPPER
             );
@@ -159,7 +155,7 @@ class JdbcTemplateTest {
 
             // when & then
             assertThatThrownBy(
-                    () -> jdbcTemplate.queryForObject(connection, "select * from users where id = ?", ROW_MAPPER, 1))
+                    () -> jdbcTemplate.queryForObject("select * from users where id = ?", ROW_MAPPER, 1))
                     .isInstanceOf(IncorrectResultSizeException.class)
                     .hasMessage("Expected: 1, but actual: 2");
         }
@@ -174,7 +170,6 @@ class JdbcTemplateTest {
 
         // when
         jdbcTemplate.update(
-                connection,
                 "insert into users (account, password, email) values (?, ?, ?)",
                 "account",
                 "password",
@@ -182,9 +177,9 @@ class JdbcTemplateTest {
 
         // then
         verify(preparedStatement).executeUpdate();
-        verify(preparedStatement).setObject(1, "account");
-        verify(preparedStatement).setObject(2, "password");
-        verify(preparedStatement).setObject(3, "email@email.com");
+        verify(preparedStatement).setString(1, "account");
+        verify(preparedStatement).setString(2, "password");
+        verify(preparedStatement).setString(3, "email@email.com");
     }
 
     private static class User {
