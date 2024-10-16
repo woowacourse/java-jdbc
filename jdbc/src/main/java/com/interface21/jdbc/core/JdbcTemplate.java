@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DataNotFoundException;
 import com.interface21.dao.DataSizeNotMatchedException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,25 +41,6 @@ public class JdbcTemplate {
      */
     public void update(String query, Object... objects) {
         handleQuery(
-                query,
-                pstmt -> {
-                    pstmt.executeUpdate();
-                    return null;
-                },
-                objects
-        );
-    }
-
-    /**
-     * 쓰기 쿼리를 사용하는 경우 메서드를 사용합니다.
-     *
-     * @param conn    데이터베이스와의 연결을 나타내는 Connection 객체
-     * @param query   실행할 SQL 쿼리
-     * @param objects 쿼리에 사용할 파라미터 값
-     */
-    public void update(Connection conn, String query, Object... objects) {
-        handleQuery(
-                conn,
                 query,
                 pstmt -> {
                     pstmt.executeUpdate();
@@ -153,25 +135,29 @@ public class JdbcTemplate {
             PreparedStatementExecutor<T> preparedStatementExecutor,
             Object... objects
     ) {
-        try (Connection conn = dataSource.getConnection()) {
-            return handleQuery(conn, query, preparedStatementExecutor, objects);
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
-        }
-    }
-
-    private <T> T handleQuery(
-            Connection conn,
-            String query,
-            PreparedStatementExecutor<T> preparedStatementExecutor,
-            Object... objects
-    ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             log.debug("query : {}", query);
             STATEMENT_SETTER.setValues(pstmt, objects);
             return preparedStatementExecutor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
+        } finally {
+            checkReleaseConnection(conn);
+        }
+    }
+
+    private void checkReleaseConnection(Connection conn) {
+        if (isAutoCommit(conn)) {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private boolean isAutoCommit(Connection conn) {
+        try {
+            return conn.getAutoCommit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }

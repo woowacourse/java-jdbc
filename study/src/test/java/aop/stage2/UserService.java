@@ -5,8 +5,10 @@ import aop.domain.User;
 import aop.domain.UserHistory;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Service;
 
+@Aspect
 @Service
 public class UserService {
 

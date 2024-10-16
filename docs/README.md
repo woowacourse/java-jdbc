@@ -24,3 +24,9 @@
 - [x] `changePassword()` 내 커넥션을 공유하도록 변경하기 
 - [x] 트랜잭션 도중 원자성을 보장
 - [x] 리팩토링 고민하기
+
+## 4단계 - Transaction synchronization 적용하기
+
+- [x] Transaction synchronization 적용하기
+- [x] 트랜잭션 서비스 추상화하기
+- [x] 리팩토링할 요소 고민하고 적용하기
