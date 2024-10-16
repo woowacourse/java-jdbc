@@ -6,7 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.springframework.transaction.annotation.Transactional;
 
-public class AppUserService implements UserServiceInterface {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;

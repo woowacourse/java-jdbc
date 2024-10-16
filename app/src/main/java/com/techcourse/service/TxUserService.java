@@ -5,12 +5,12 @@ import com.interface21.jdbc.core.JdbcTemplateException;
 import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.domain.User;
 
-public class TxUserService implements UserServiceInterface {
+public class TxUserService implements UserService {
 
     private final TransactionManager transactionManager;
-    private final UserServiceInterface userService;
+    private final UserService userService;
 
-    public TxUserService(final TransactionManager transactionManager, final UserServiceInterface userService) {
+    public TxUserService(final TransactionManager transactionManager, final UserService userService) {
         this.transactionManager = transactionManager;
         this.userService = userService;
     }
