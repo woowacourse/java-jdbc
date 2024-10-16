@@ -67,13 +67,16 @@ class AppUserServiceTest {
         final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final AppUserService userService = new AppUserService(userDao, userHistoryDao);
 
+        final User user = new User("potato", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+
         final String newPassword = "newPassword";
-        final String createdBy = "gugu";
+        final String createdBy = "potato";
 
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createdBy));
+                () -> userService.changePassword(2L, newPassword, createdBy));
 
-        final User actual = userService.findById(1L);
+        final User actual = userService.findById(2L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
