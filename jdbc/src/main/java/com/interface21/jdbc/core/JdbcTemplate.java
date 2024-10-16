@@ -24,8 +24,8 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(String sql, Object... parameters){
-        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
             return pstmt.executeUpdate();
@@ -44,8 +44,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(String sql, Function<ResultSet, T> func , Object... parameters) {
-        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
-        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = executeQuery(pstmt, parameters)) {
             log.debug("query : {}", sql);
 
@@ -97,5 +97,13 @@ public class JdbcTemplate {
             results.add(rowMapper.doMapping(rs));
         }
         return results;
+    }
+
+    private Connection getConnection() throws SQLException {
+        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
+        if (conn != null) {
+            return conn;
+        }
+        return dataSource.getConnection();
     }
 }
