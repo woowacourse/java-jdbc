@@ -21,8 +21,12 @@ public class LoginController {
 
     private final UserService userService;
 
+    public LoginController(UserService userService) {
+        this.userService = userService;
+    }
+
     public LoginController() {
-        userService = ServiceFactory.createUserService();
+        this(ServiceFactory.createUserService());
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)

@@ -16,8 +16,12 @@ public class RegisterController {
 
     private final UserService userService;
 
+    public RegisterController(UserService userService) {
+        this.userService = userService;
+    }
+
     public RegisterController() {
-        userService = ServiceFactory.createUserService();
+        this(ServiceFactory.createUserService());
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)

@@ -20,8 +20,12 @@ public class UserController {
 
     private final UserService userService;
 
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
     public UserController() {
-        userService = ServiceFactory.createUserService();
+        this(ServiceFactory.createUserService());
     }
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
