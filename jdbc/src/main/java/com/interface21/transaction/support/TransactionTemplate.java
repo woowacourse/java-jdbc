@@ -1,64 +1,25 @@
 package com.interface21.transaction.support;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
-import com.interface21.transaction.TransactionException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
+import com.interface21.transaction.PlatformTransactionManager;
 
 public class TransactionTemplate {
 
-    private final DataSource dataSource;
+    private final PlatformTransactionManager transactionManager;
 
-    public TransactionTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public TransactionTemplate(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 
     public <T> T execute(TransactionCallback<T> action) {
-        Connection connection = getConnection();
+        TransactionHolder transaction = transactionManager.startTransaction();
+        T result;
         try {
-            T result = action.doInTransaction(connection);
-            commit(connection);
-            return result;
+            result = action.doInTransaction();
         } catch (RuntimeException e) {
-            rollback(connection);
+            transactionManager.rollback(transaction);
             throw e;
-        } finally {
-            releaseConnection(connection);
         }
-    }
-
-    private Connection getConnection() {
-        try {
-            Connection connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            return connection;
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
-        }
-    }
-
-    private void commit(Connection connection) {
-        try {
-            connection.commit();
-        } catch (SQLException e) {
-            throw new TransactionException("JDBC commit failed", e);
-        }
-    }
-
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new TransactionException("JDBC rollback failed", e);
-        }
-    }
-
-    private void releaseConnection(Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", e);
-        }
+        transactionManager.commit(transaction);
+        return result;
     }
 }

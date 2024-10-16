@@ -27,11 +27,11 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(connection -> {
+        transactionTemplate.execute(() -> {
             User user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             return null;
         });
     }
