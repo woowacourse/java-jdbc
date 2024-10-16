@@ -34,7 +34,6 @@ public class TransactionManager {
         } finally {
             revertTransactionAutocommit(conn);
             DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
