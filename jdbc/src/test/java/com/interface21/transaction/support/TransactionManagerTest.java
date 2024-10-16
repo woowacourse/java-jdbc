@@ -24,10 +24,9 @@ class TransactionManagerTest {
     private Connection connection;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         DataSource dataSource = Mockito.mock(DataSource.class);
         connection = Mockito.mock(Connection.class);
-        given(dataSource.getConnection()).willReturn(connection);
         given(DataSourceUtils.getConnection(dataSource)).willReturn(connection);
         transactionManager = new TransactionManager(dataSource);
     }
