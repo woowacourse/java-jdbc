@@ -61,4 +61,20 @@ class AppUserServiceTest {
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
+
+    @Test
+    void testWithoutTransaction() {
+        final MockUserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final AppUserService userService = new AppUserService(userDao, userHistoryDao);
+
+        final String newPassword = "newPassword";
+        final String createdBy = "gugu";
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, newPassword, createdBy));
+
+        final User actual = userService.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
 }

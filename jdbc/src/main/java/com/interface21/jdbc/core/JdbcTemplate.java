@@ -28,14 +28,6 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        update(con -> {
-            PreparedStatement ps = con.prepareStatement(sql);
-            StatementParamSetter.setParams(ps, params);
-            return ps;
-        });
-    }
-
-    public void updateWithSynchronizedTransaction(String sql, Object... params) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatementCreator preparedStatementCreator = con -> {
             PreparedStatement preparedStatement = con.prepareStatement(sql);
