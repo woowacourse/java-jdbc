@@ -72,6 +72,6 @@ class UserServiceTest {
                 () -> userService.changePassword(1L, newPassword, createdBy));
 
         // then
-        assertThat(userService.findById(1L)).isNotEqualTo(newPassword);
+        assertThat(userService.findById(1L).getPassword()).isNotEqualTo(newPassword);
     }
 }
