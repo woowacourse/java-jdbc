@@ -24,6 +24,8 @@ public class AopConfig {
 
     @Bean
     DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
-        return new DefaultAdvisorAutoProxyCreator();
+        DefaultAdvisorAutoProxyCreator proxyCreator = new DefaultAdvisorAutoProxyCreator();
+        proxyCreator.setProxyTargetClass(true);
+        return proxyCreator;
     }
 }
