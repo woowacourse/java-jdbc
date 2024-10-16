@@ -23,6 +23,7 @@ import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
+    private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
@@ -30,17 +31,19 @@ class JdbcTemplateTest {
     @BeforeEach
     void setup() throws SQLException {
         DataSource dataSource = Mockito.mock(DataSource.class);
-        Connection connection = Mockito.mock(Connection.class);
+        connection = Mockito.mock(Connection.class);
         preparedStatement = Mockito.mock(PreparedStatement.class);
         resultSet = Mockito.mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(any(), anyInt())).willReturn(preparedStatement);
+        given(connection.getAutoCommit()).willReturn(true);
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @AfterEach
     void tearDown() throws SQLException {
+        verify(connection).close();
         verify(preparedStatement).close();
     }
 

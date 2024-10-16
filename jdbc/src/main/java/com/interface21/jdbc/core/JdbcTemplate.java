@@ -142,6 +142,22 @@ public class JdbcTemplate {
             return preparedStatementExecutor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("데이터 접근 과정에서 문제가 발생하였습니다.", e);
+        } finally {
+            checkReleaseConnection(conn);
+        }
+    }
+
+    private void checkReleaseConnection(Connection conn) {
+        if (isAutoCommit(conn)) {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private boolean isAutoCommit(Connection conn) {
+        try {
+            return conn.getAutoCommit();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
