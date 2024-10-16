@@ -85,13 +85,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new SQLExecuteException("SQL을 실행할 수 없습니다.", e);
         } finally {
-            try {
-                if (connection.getAutoCommit()) {
-                    DataSourceUtils.releaseConnection(connection, dataSource);
-                }
-            } catch (SQLException e) {
-                throw new SQLExecuteException("컨낵션을 닫을 수 없습니다.", e);
+            releaseConnection(connection);
+        }
+    }
+
+    private void releaseConnection(Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
+        } catch (SQLException e) {
+            throw new SQLExecuteException("커낵션을 닫을 수 없습니다.", e);
         }
     }
 

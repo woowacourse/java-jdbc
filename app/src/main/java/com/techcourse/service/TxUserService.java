@@ -38,12 +38,16 @@ public class TxUserService implements UserService {
 
             connection.commit();
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {}
+            rollback(connection);
             throw new SQLExecuteException(e.getMessage(), e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {}
     }
 }
