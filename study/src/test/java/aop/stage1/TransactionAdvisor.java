@@ -1,6 +1,7 @@
 package aop.stage1;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -31,6 +32,6 @@ public class TransactionAdvisor implements PointcutAdvisor {
 
     @Override
     public boolean isPerInstance() {
-        return true;
+        return false;
     }
 }
