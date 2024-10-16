@@ -11,6 +11,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -47,6 +48,18 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @DisplayName("같은 트랜잭션 서비스를 참조한다면 오류를 발생한다.")
+    @Test
+    void throwWhenSelfReference() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+
+        TransactionManager transactionManager = new TransactionManager(DataSourceUtils.getConnection(dataSource));
+        var txUserService = new TxUserService(transactionManager, userService);
+        assertThrows(IllegalArgumentException.class,
+                () -> new TxUserService(transactionManager, txUserService));
     }
 
     @Test

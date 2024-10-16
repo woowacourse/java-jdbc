@@ -11,6 +11,9 @@ public class TxUserService implements UserService {
     private final UserService userService;
 
     public TxUserService(final TransactionManager transactionManager, final UserService userService) {
+        if (userService instanceof TxUserService) {
+            throw new IllegalArgumentException("트랜잭션 서비스는 자신을 참조할 수 없습니다.");
+        }
         this.transactionManager = transactionManager;
         this.userService = userService;
     }
