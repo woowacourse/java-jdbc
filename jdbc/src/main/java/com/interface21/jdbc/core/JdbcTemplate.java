@@ -22,7 +22,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
-        try(PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -30,17 +30,23 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
-            return mapResultSetToList(rowMapper, pstmt).getFirst();
+            List<T> result = mapResultSetToList(rowMapper, pstmt);
+            if (result.size() != 1) {
+                throw new DataAccessException();
+            }
+            return result.getFirst();
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    private <T> List<T> mapResultSetToList(final RowMapper<T> rowMapper, final PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> mapResultSetToList(final RowMapper<T> rowMapper, final PreparedStatement pstmt)
+            throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             List<T> queryResult = new ArrayList<>();
             while (rs.next()) {
