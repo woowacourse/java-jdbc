@@ -7,12 +7,11 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 
 import aop.DataAccessException;
-import aop.service.AppUserService;
 
 /**
  * 어드바이스(advice). 부가기능을 담고 있는 클래스
  */
-public class TransactionAdvice  implements MethodInterceptor {
+public class TransactionAdvice implements MethodInterceptor {
 
     private final PlatformTransactionManager transactionManager;
 
