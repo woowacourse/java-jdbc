@@ -31,7 +31,7 @@ public class TransactionAdvice implements MethodInterceptor {
             return result;
         } catch (InvocationTargetException | DataAccessException e) {
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
+            throw new DataAccessException("트랜잭션 수행 중 예외가 발생해 롤백합니다.", e);
         }
     }
 }

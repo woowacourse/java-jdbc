@@ -43,7 +43,7 @@ public class TransactionHandler implements InvocationHandler {
             return result;
         } catch (InvocationTargetException e) {
             transactionManager.rollback(transactionStatus);
-            throw new DataAccessException(e);
+            throw new DataAccessException("트랜잭션 수행 중 예외가 발생해 롤백합니다.", e);
         }
     }
 }
