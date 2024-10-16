@@ -12,11 +12,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class TransactionAdvisor implements PointcutAdvisor {
 
     private final PlatformTransactionManager platformTransactionManager;
-    private final Object target;
 
-    public TransactionAdvisor(PlatformTransactionManager platformTransactionManager, Object target) {
+    public TransactionAdvisor(final PlatformTransactionManager platformTransactionManager) {
         this.platformTransactionManager = platformTransactionManager;
-        this.target = target;
     }
 
     @Override
