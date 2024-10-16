@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,13 +18,6 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... params) {
         sqlExecutor.execute(sql, preparedStatement -> {
-            PreparedStatementParameterBinder.bindStatementParameters(preparedStatement, params);
-            return preparedStatement.executeUpdate();
-        });
-    }
-
-    public void update(Connection connection, String sql, Object... params) {
-        sqlExecutor.execute(connection, sql, preparedStatement -> {
             PreparedStatementParameterBinder.bindStatementParameters(preparedStatement, params);
             return preparedStatement.executeUpdate();
         });
