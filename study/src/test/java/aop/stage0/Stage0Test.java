@@ -23,8 +23,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class Stage0Test {
 
-    private static final Logger log = LoggerFactory.getLogger(Stage0Test.class);
-
     @Autowired
     private UserDao userDao;
 
