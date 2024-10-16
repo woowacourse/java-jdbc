@@ -24,7 +24,7 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         if (!method.isAnnotationPresent(Transactional.class)) {
-            return method.invoke(args);
+            return method.invoke(service, args);
         }
 
         /* ===== 트랜잭션 영역 ===== */
