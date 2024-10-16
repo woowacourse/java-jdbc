@@ -24,6 +24,11 @@ public class TransactionUserService implements UserService {
     }
 
     @Override
+    public Optional<User> findByAccount(String account) {
+        return userService.findByAccount(account);
+    }
+
+    @Override
     public void save(User user) {
         executeTransaction(() -> userService.save(user));
     }

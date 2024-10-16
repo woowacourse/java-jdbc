@@ -1,14 +1,20 @@
 package com.techcourse.controller;
 
-import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import com.interface21.webmvc.servlet.view.JspView;
-import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.context.stereotype.Controller;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
+import com.interface21.webmvc.servlet.ModelAndView;
+import com.interface21.webmvc.servlet.view.JspView;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.domain.User;
+import com.techcourse.service.AppUserService;
+import com.techcourse.service.TransactionUserService;
+import com.techcourse.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +22,16 @@ import org.slf4j.LoggerFactory;
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+
+    private final UserService userService;
+
+    public LoginController() {
+        userService = new TransactionUserService(
+                new AppUserService(
+                        new UserDao(new JdbcTemplate(DataSourceConfig.getInstance())),
+                        new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance()))
+                ));
+    }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
@@ -33,7 +49,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
+        return userService.findByAccount(request.getParameter("account"))
                 .map(user -> {
                     log.info("User : {}", user);
                     return login(request, user);

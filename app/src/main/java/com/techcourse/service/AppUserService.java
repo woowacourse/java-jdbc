@@ -17,14 +17,22 @@ public class AppUserService implements UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
+    @Override
     public Optional<User> findById(final long id) {
         return userDao.findById(id);
     }
 
+    @Override
+    public Optional<User> findByAccount(String account) {
+        return userDao.findByAccount(account);
+    }
+
+    @Override
     public void save(final User user) {
         userDao.insert(user);
     }
 
+    @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         User user = findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저:" + id));
