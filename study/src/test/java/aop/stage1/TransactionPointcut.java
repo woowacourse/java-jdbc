@@ -4,6 +4,8 @@ import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
 
+import aop.Transactional;
+
 /**
  * 포인트컷(pointcut). 어드바이스를 적용할 조인 포인트를 선별하는 클래스.
  * TransactionPointcut 클래스는 메서드를 대상으로 조인 포인트를 찾는다.
@@ -14,6 +16,14 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
+        if (method.isAnnotationPresent(Transactional.class)) {
+            return true;
+        }
+
+        if (targetClass.isAnnotationPresent(Transactional.class)) {
+            return true;
+        }
+
         return false;
     }
 }

@@ -2,7 +2,6 @@ package aop.stage0;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -26,15 +25,14 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) {
-        TransactionStatus status = transactionManager.getTransaction(TransactionDefinition.withDefaults());;
-        Object result;
+        TransactionStatus status = transactionManager.getTransaction(TransactionDefinition.withDefaults());
         try {
-            result = method.invoke(target, args);
+            Object result = method.invoke(target, args);
             transactionManager.commit(status);
+            return result;
         } catch (Exception e) {
             transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
-        return result;
     }
 }
