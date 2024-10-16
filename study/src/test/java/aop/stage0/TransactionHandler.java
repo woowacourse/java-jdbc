@@ -46,8 +46,7 @@ public class TransactionHandler implements InvocationHandler {
     }
 
     private boolean isTransactionalMethod(Method method) {
-        return Arrays.stream(method.getAnnotations())
-                .anyMatch(annotation -> annotation.annotationType() == Transactional.class);
+        return method.isAnnotationPresent(Transactional.class);
     }
 
     private Object invokeWithoutTransaction(Method method, Object[] args) {
