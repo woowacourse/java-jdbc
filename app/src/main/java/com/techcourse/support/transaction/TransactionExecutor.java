@@ -20,7 +20,7 @@ public class TransactionExecutor {
             rollback(e, connection);
             throw new DataAccessException("트랜잭션 수행 실패", e);
         } finally {
-            DataSourceUtils.releaseConnection(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
             setAutoCommitTrue(connection);
         }
     }
