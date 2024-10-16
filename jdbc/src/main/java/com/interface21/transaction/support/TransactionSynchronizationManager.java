@@ -16,6 +16,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        System.out.println("bind = " + key);
         resources.get().put(key, value);
     }
 
