@@ -16,10 +16,7 @@ public abstract class TransactionSynchronizationManager {
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> connections = resources.get();
 
-        if (connections.containsKey(key)) {
-            return connections.get(key);
-        }
-        return null;
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
@@ -32,13 +29,13 @@ public abstract class TransactionSynchronizationManager {
         Map<DataSource, Connection> connections = resources.get();
         if (connections.containsKey(key)) {
             Connection removedConnection = connections.remove(key);
-            resourcesCleanUp(connections);
+            clearUp(connections);
             return removedConnection;
         }
         throw new NoSuchElementException("존재하지 않는 연결입니다.");
     }
 
-    private static void resourcesCleanUp(Map<DataSource, Connection> connections) {
+    private static void clearUp(Map<DataSource, Connection> connections) {
         if (connections.isEmpty()) {
             resources.remove();
         }

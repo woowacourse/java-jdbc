@@ -69,7 +69,7 @@ public class TransactionSynchronizationManagerTest {
         ).getMessage();
 
         //then
-        assertThat(message).contains("존재");
+        assertThat(message).contains("존재하지 않는");
     }
 
     @Test
