@@ -17,13 +17,16 @@ public abstract class TransactionSynchronizationManager {
         if(Objects.isNull(connections)){
             return null;
         }
-        return resources.get().get(key);
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> connections = new HashMap<>();
-        connections.put(key,value);
-        resources.set(connections);
+        if(Objects.isNull(resources.get())){
+            Map<DataSource, Connection> connections = new HashMap<>();
+            connections.put(key,value);
+            resources.set(connections);
+        }
+        resources.get().put(key,value);
     }
 
     public static Connection unbindResource(DataSource key) {
