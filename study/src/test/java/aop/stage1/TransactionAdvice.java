@@ -3,6 +3,7 @@ package aop.stage1;
 import aop.DataAccessException;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -20,10 +21,10 @@ public class TransactionAdvice implements MethodInterceptor {
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
+    public Object invoke(@NotNull MethodInvocation invocation) {
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            Object result = invocation.getMethod().invoke(invocation.getThis(), invocation.getArguments());
+            Object result = invocation.proceed();
             platformTransactionManager.commit(transactionStatus);
             return result;
         } catch (Throwable e) {
