@@ -28,7 +28,6 @@ public class TransactionHandler implements InvocationHandler {
             return method.invoke(target, args);
         }
 
-        System.out.println("Transation 있음");
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
