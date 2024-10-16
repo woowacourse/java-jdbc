@@ -32,6 +32,23 @@
 - [x] 2단계 피드백 반영
     - [x] `parameter` 개수 검증 로직 추가 후 터지던 `JdbcTemplate` 테스트 수정
 
+### 4단계 요구사항(트랜잭션 동기화)
+
+- [x] 트랜잭션 동기화(Transaction synchronization) 방식 사용
+    - [x] 서비스와 DAO에서 DataSourceUtils를 사용해 connection 설정
+    - [x] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현
+- [x] 트랜잭션 서비스 추상화
+    - [x] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
+        - [x] `UserService` 인터페이스 추가
+            - [x] UserService 인터페이스를 구현한 클래스 2개 생성
+                - [x] `AppUserService`
+                - [x] `TxUserService`
+    - [x] `UserServiceTest`가 통과하도록 만들기
+        - [x] `testTransactionRollback()` 테스트 메서드 변경
+
+    - [x] 3단계 피드백 반영
+        - [x] 트랜잭션 끝날 때 `autoCommit=true`로 복원
+
 ### 학습목표
 
 - JDBC 라이브러리를 구현하는 경험을 함으로써 중복을 제거하는 연습을 한다.

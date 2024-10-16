@@ -24,26 +24,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
  * ❗phantom reads는 docker를 실행한 상태에서 테스트를 실행한다.
  * ❗phantom reads는 MySQL로 확인한다. H2 데이터베이스에서는 발생하지 않는다.
- *
+ * <p>
  * 참고 링크
  * https://en.wikipedia.org/wiki/Isolation_(database_systems)
- *
+ * <p>
  * 각 테스트에서 어떤 현상이 발생하는지 직접 경험해보고 아래 표를 채워보자.
  * + : 발생
  * - : 발생하지 않음
- *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
+ * Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |          +           |       +
+ * Read Committed   |      -      |          +           |       +
+ * Repeatable Read  |      -      |          -           |       +
+ * Serializable     |      -      |          -           |       -
  */
 class Stage1Test {
 
     private static final Logger log = LoggerFactory.getLogger(Stage1Test.class);
     private DataSource dataSource;
     private UserDao userDao;
+
+    private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
+        final var config = new HikariConfig();
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
+        config.setUsername(container.getUsername());
+        config.setPassword(container.getPassword());
+        config.setDriverClassName(container.getDriverClassName());
+        return new HikariDataSource(config);
+    }
+
+    private static DataSource createH2DataSource() {
+        final var jdbcDataSource = new JdbcDataSource();
+        // h2 로그를 확인하고 싶을 때 사용
+//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
+        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
+        jdbcDataSource.setUser("sa");
+        jdbcDataSource.setPassword("");
+        return jdbcDataSource;
+    }
 
     private void setUp(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -55,13 +74,15 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Dirty reads
+     * Read phenomena | Dirty reads
+     * 다른 트랜잭션이 커밋하지 않은 값도 읽어와서 처리함
+     * 아래에서는 user가 null이 아니면 안됨
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +102,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -108,13 +129,15 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Non-repeatable reads
+     * Read phenomena | Non-repeatable reads
+     * 같은 데이터를 한 트랜잭션에서 읽더라도 값이 달라지는 현상(다른 트랜잭션의 커밋)
+     * 아래에서는 gugu의 패스워드가 바뀌면 안됨
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +153,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -170,13 +193,15 @@ class Stage1Test {
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
-     *   Read phenomena | Phantom reads
+     * Read phenomena | Phantom reads
+     * 한 트랜잭션에서 같은 조건으로 2번 조회했을 때 2번의 결과가 다름 (없던 데이터가 생김)
+     * 아래에서는 bird 유저가 조회되면 안 됨
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -197,7 +222,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -235,25 +260,6 @@ class Stage1Test {
 
         connection.rollback();
         mysql.close();
-    }
-
-    private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
-        final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
-        config.setUsername(container.getUsername());
-        config.setPassword(container.getPassword());
-        config.setDriverClassName(container.getDriverClassName());
-        return new HikariDataSource(config);
-    }
-
-    private static DataSource createH2DataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
-        jdbcDataSource.setUser("sa");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
     }
 
     private void sleep(double seconds) {

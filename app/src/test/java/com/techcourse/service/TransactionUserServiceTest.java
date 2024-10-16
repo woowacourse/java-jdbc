@@ -4,7 +4,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,18 +13,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class TransactionUserServiceTest {
 
     private static final String ACCOUNT_GUGU = "gugu";
     private static final String INITIAL_PASSWORD = "password";
     private static final String NEW_PASSWORD = "newPassword";
+
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private MockUserHistoryDao mockUserHistoryDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
+        mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         User user = new User(ACCOUNT_GUGU, INITIAL_PASSWORD, "hkkang@woowahan.com");
@@ -33,25 +35,34 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() {
+    void testTransactionRollback_save() {
         //given
-        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        userDao = new MockUserDao(jdbcTemplate);
+        AppUserService appUserService = new AppUserService(userDao, mockUserHistoryDao);
+        TransactionUserService userService = new TransactionUserService(appUserService);
 
         //when
-        userService.changePassword(1L, NEW_PASSWORD, ACCOUNT_GUGU);
+        assertThrows(DataAccessException.class,
+                () -> userService.save(new User("Ash", "password", "ash@techcourse.com")));
 
-        User actual = userService.findById(1L).get();
+        long id = userDao.findAll()
+                .getLast()
+                .getId();
+
+        User actual = userService.findById(id).get();
 
         //then
-        assertThat(actual.getPassword()).isEqualTo(NEW_PASSWORD);
+        assertAll(
+                () -> assertThat(actual.getAccount()).isEqualTo(ACCOUNT_GUGU),
+                () -> assertThat(actual.getAccount()).isNotEqualTo("Ash")
+        );
     }
 
     @Test
-    void testTransactionRollback() {
+    void testTransactionRollback_changePassword() {
         //given
-        UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        UserService userService = new UserService(userDao, userHistoryDao);
+        AppUserService appUserService = new AppUserService(userDao, mockUserHistoryDao);
+        TransactionUserService userService = new TransactionUserService(appUserService);
 
         long id = userDao.findAll()
                 .getLast()

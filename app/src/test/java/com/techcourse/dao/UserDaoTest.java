@@ -6,8 +6,6 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.sql.DataSource;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,7 +71,7 @@ class UserDaoTest {
 
         //when
         userDao.insert(user);
-        Optional<User> optionalUser = userDao.findById(2L);
+        Optional<User> optionalUser = userDao.findById(userDao.findAll().getLast().getId());
 
         //then
         assertAll(
@@ -83,16 +81,15 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         //given
-        DataSource dataSource = DataSourceConfig.getInstance();
         String newPassword = "password99";
         Optional<User> user = userDao.findById(1L);
         User initialUser = user.get();
 
         //when
         initialUser.changePassword(newPassword);
-        userDao.update(dataSource.getConnection(), initialUser);
+        userDao.update(initialUser);
 
         Optional<User> optionalUser = userDao.findById(1L);
 

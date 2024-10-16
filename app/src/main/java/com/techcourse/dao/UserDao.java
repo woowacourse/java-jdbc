@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,10 +38,10 @@ public class UserDao {
         log.info("등록 완료: " + user);
     }
 
-    public void update(final Connection connection, final User user) {
+    public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
         log.info("업데이트 완료: " + user);
     }
 

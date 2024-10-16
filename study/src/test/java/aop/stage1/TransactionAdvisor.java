@@ -10,16 +10,25 @@ import org.springframework.aop.PointcutAdvisor;
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
+    private final TransactionPointcut pointcut;
+    private final TransactionAdvice transactionAdvice;
+
+    public TransactionAdvisor(TransactionPointcut pointcut, TransactionAdvice transactionAdvice) {
+        this.pointcut = pointcut;
+        this.transactionAdvice = transactionAdvice;
+    }
+
     @Override
     public Pointcut getPointcut() {
-        return null;
+        return pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return transactionAdvice;
     }
 
+    //모든 대상 객체에 대해 동일한 인스턴스를 재사용
     @Override
     public boolean isPerInstance() {
         return false;

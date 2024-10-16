@@ -159,8 +159,7 @@ class JdbcTemplateTest {
 
     private void verifyConnectionClosed() {
         assertAll(
-                () -> verify(preparedStatement).close(),
-                () -> verify(connection).close()
+                () -> verify(preparedStatement).close()
         );
     }
 
