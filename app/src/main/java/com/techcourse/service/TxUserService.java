@@ -37,12 +37,18 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
+        executeWithTransaction(() -> {
+            userService.changePassword(id, newPassword, createdBy);
+        });
+    }
+
+    private void executeWithTransaction(Runnable action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
             connection.setAutoCommit(false);
 
-            userService.changePassword(id, newPassword, createdBy);
+            action.run();
 
             connection.commit();
         } catch (SQLException | DataAccessException e) {
