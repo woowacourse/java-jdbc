@@ -10,14 +10,22 @@ import org.springframework.aop.PointcutAdvisor;
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
-    @Override
-    public Pointcut getPointcut() {
-        return null;
+    private Advice advice;
+    private Pointcut pointcut;
+
+    public TransactionAdvisor(Advice advice, Pointcut pointcut) {
+        this.advice = advice;
+        this.pointcut = pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return advice;
+    }
+
+    @Override
+    public Pointcut getPointcut() {
+        return pointcut;
     }
 
     @Override

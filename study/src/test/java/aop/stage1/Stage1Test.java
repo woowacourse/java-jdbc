@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,15 +34,26 @@ class Stage1Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    private ProxyFactoryBean proxyFactoryBean;
+
     @BeforeEach
     void setUp() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        TransactionPointcut pointcut = new TransactionPointcut();
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(advice, pointcut));
+
         userDao.insert(user);
     }
-
+ 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+
+        proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +66,8 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        proxyFactoryBean.setTarget(new UserService(userDao, stubUserHistoryDao));
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
