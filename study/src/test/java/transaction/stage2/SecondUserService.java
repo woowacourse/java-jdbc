@@ -25,6 +25,7 @@ public class SecondUserService {
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
+    // 이미 트랜잭션이 있다면 무시하고 새로운 트랜잭션을 사용한다.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String saveSecondTransactionWithRequiresNew() {
         userRepository.save(User.createTest());
