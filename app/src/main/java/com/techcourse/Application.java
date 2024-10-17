@@ -15,16 +15,7 @@ public class Application {
     private static final int DEFAULT_PORT = 8080;
 
     public static void main(String[] args) throws Exception {
-        final int port = defaultPortIfNull(args);
-
-        final var tomcat = new Tomcat();
-        tomcat.setConnector(createConnector(port));
-        final var docBase = new File("app/src/main/webapp/").getAbsolutePath();
-        tomcat.addWebapp("", docBase);
-        log.info("configuring app with basedir: {}", docBase);
-
-        tomcat.start();
-        tomcat.getServer().await();
+        System.out.println("안녕");
     }
 
     private static Connector createConnector(final int port) {

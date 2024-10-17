@@ -32,7 +32,7 @@ class AppUserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new AppUserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";

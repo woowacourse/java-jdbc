@@ -5,22 +5,15 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import javax.sql.DataSource;
 
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
-
-    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
 
     public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        this.userDao = userDao;
+        this.userHistoryDao = userHistoryDao;
     }
 
     @Override
