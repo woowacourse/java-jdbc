@@ -1,12 +1,9 @@
 package aop.stage0;
 
-import aop.DataAccessException;
-import aop.StubUserHistoryDao;
-import aop.domain.User;
-import aop.repository.UserDao;
-import aop.repository.UserHistoryDao;
-import aop.service.AppUserService;
-import aop.service.UserService;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -15,9 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import aop.DataAccessException;
+import aop.StubUserHistoryDao;
+import aop.domain.User;
+import aop.repository.UserDao;
+import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
+import aop.service.TxUserService;
+import aop.service.UserService;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class Stage0Test {
@@ -44,8 +46,7 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        final UserService userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -59,7 +60,7 @@ class Stage0Test {
     @Test
     void testTransactionRollback() {
         final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
+        final UserService userService = new TxUserService(platformTransactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
