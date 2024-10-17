@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.ConnectionConsumerWrapper;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Objects;
 import javax.sql.DataSource;
 
 public class TransactionTemplate {
@@ -19,7 +18,6 @@ public class TransactionTemplate {
     public void executeWithTransaction(ServiceLogic logic) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            validateConnection(connection);
             connection.setAutoCommit(false);
             logic.execute();
             connection.commit();
@@ -28,12 +26,6 @@ public class TransactionTemplate {
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-        }
-    }
-
-    private static void validateConnection(Connection connection) throws SQLException {
-        if (Objects.isNull(connection)) {
-            throw new SQLException("Connection 존재하지 않습니다.");
         }
     }
 }
