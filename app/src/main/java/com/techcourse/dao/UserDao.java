@@ -31,17 +31,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(User user, Connection connection) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        PreparedStatementSetter preparedStatementSetter = preparedStatement -> {
-            preparedStatement.setString(1, user.getAccount());
-            preparedStatement.setString(2, user.getPassword());
-            preparedStatement.setString(3, user.getEmail());
-            preparedStatement.setLong(4, user.getId());
-        };
-        jdbcTemplate.update(sql, preparedStatementSetter, connection);
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, ROW_MAPPER);
@@ -55,9 +44,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account).orElseThrow(AccountNotExistException::new);
-    }
-
-    public Connection getConnection() {
-        return jdbcTemplate.getConnection();
     }
 }
