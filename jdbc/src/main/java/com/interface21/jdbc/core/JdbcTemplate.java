@@ -56,6 +56,7 @@ public class JdbcTemplate {
             pss.setObject(pstmt);
             return pstmt.executeUpdate();
         });
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor) {
