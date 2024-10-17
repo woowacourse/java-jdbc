@@ -44,13 +44,14 @@ class UserServiceTest {
     void testChangePassword() {
         // given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
 
         // when
-        userService.changePasswordWithTransaction(1L, newPassword, createBy);
+        userService.changePassword(1L, newPassword, createBy);
 
         // then
         assertThat(userService.findById(1L).getPassword()).isEqualTo(newPassword);
@@ -61,14 +62,15 @@ class UserServiceTest {
     void testTransactionRollback() {
         // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
 
         // when
         assertThrows(DataAccessException.class,
-                () -> userService.changePasswordWithTransaction(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         // then
         assertThat(userService.findById(1L).getPassword()).isNotEqualTo(newPassword);
