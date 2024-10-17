@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             int rows = executeUpdate(preparedStatementSetter, statement);
@@ -39,30 +40,9 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            executeUpdate(preparedStatementSetter, statement);
-        } catch (SQLException e) {
-            log.error("error : {}", e.getMessage(), e);
-            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
-        }
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
-            preparedStatementSetter.setValues(statement);
-            ResultSet resultSet = statement.executeQuery();
-            return extractData(resultSet, rowMapper);
-        } catch (SQLException e) {
-            log.error("error : {}", e.getMessage(), e);
-            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
-        }
-    }
-
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             preparedStatementSetter.setValues(statement);
             ResultSet resultSet = statement.executeQuery();
@@ -75,11 +55,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         List<T> data = query(sql, rowMapper, preparedStatementSetter);
-        return makeSingleResult(data);
-    }
-
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        List<T> data = query(connection, sql, rowMapper, preparedStatementSetter);
         return makeSingleResult(data);
     }
 
