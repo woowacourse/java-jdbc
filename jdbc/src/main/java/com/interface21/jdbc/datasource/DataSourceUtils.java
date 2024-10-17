@@ -28,7 +28,7 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if (connection == null) {
+        if (connection == null || isConnectionTransactional(connection, dataSource)) {
             return;
         }
 
@@ -40,7 +40,7 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
+    private static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
         if (connection == null) {
             return false;
         }

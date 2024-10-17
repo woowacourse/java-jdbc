@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 class TransactionManagerTest {
@@ -24,6 +25,9 @@ class TransactionManagerTest {
         connection = mock(Connection.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
+        DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(databaseMetaData);
+        when(databaseMetaData.getURL()).thenReturn("jdbc");
 
         transactionManager = new TransactionManager(dataSource);
     }

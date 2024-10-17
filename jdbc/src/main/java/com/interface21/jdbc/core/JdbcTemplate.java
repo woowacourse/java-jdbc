@@ -47,7 +47,6 @@ public class JdbcTemplate {
 
     private <T> T executeStatement(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        boolean isTransactionActive = DataSourceUtils.isConnectionTransactional(connection, dataSource);
 
         try (PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
             log.debug("Executing query: {}", sql);
@@ -56,9 +55,7 @@ public class JdbcTemplate {
             log.error("Error executing statement: {}", e.getMessage(), e);
             throw new DataAccessException("Failed to execute statement", e);
         } finally {
-            if (!isTransactionActive) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
