@@ -3,10 +3,10 @@ package aop.stage0;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import aop.DataAccessException;
+import aop.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 
 public class TransactionHandler implements InvocationHandler {
 

@@ -63,7 +63,7 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
+        proxyFactoryBean.setTarget(new UserService(userDao, stubUserHistoryDao));
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
