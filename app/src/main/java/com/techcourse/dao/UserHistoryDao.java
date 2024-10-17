@@ -24,7 +24,8 @@ public class UserHistoryDao {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) "
                 + "values (?, ?, ?, ?, ?, ?)";
         log.debug("query : {}", sql);
-        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
-                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+        jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(),
+                userHistory.getPassword(), userHistory.getEmail(), userHistory.getCreatedAt(),
+                userHistory.getCreateBy());
     }
 }

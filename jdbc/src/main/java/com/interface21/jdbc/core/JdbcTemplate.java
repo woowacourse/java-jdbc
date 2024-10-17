@@ -1,10 +1,10 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
 import com.interface21.jdbc.IncorrectBindingSizeDataAccessException;
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,7 +19,7 @@ public class JdbcTemplate implements JdbcOperations {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected final DataSource dataSource;
+    private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -36,12 +36,25 @@ public class JdbcTemplate implements JdbcOperations {
         });
     }
 
-    protected <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <T> T executeQuery(String sql, PreparedStatementCallBack<T> callBack) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             return callBack.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            try {
+                releaseConnectionIfAutoCommit(connection);
+            } catch (SQLException e) {
+                log.error("Failed to release connection", e);
+            }
+        }
+    }
+
+    private void releaseConnectionIfAutoCommit(Connection connection) throws SQLException {
+        if (connection != null && connection.getAutoCommit()) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -97,12 +110,7 @@ public class JdbcTemplate implements JdbcOperations {
         executeQuery(sql, PreparedStatement::execute);
     }
 
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
-        }
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
