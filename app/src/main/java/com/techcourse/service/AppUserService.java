@@ -2,16 +2,14 @@ package com.techcourse.service;
 
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Inject;
-import com.interface21.jdbc.TransactionManager;
+import com.techcourse.UserService;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.util.function.Consumer;
 
 @Component
-public class UserService {
+public class AppUserService implements UserService {
 
     @Inject
     private UserDao userDao;
@@ -19,37 +17,33 @@ public class UserService {
     @Inject
     private UserHistoryDao userHistoryDao;
 
-    @Inject
-    private TransactionManager transactionManager;
+    private AppUserService() {}
 
-    private UserService() {
-    }
-
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
+    public AppUserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = transactionManager;
     }
 
+    @Override
     public User findById(long id) {
         return userDao.findById(id);
     }
 
+    @Override
     public User findByAccount(String account) {
         return userDao.findByAccount(account);
     }
 
-    public void insert(User user) {
+    @Override
+    public void save(User user) {
         userDao.insert(user);
     }
 
+    @Override
     public void changePassword(long id, String newPassword, String createBy) {
         User user = findById(id);
         user.changePassword(newPassword);
-        Consumer<Connection> consumer = (connection) -> {
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-        };
-        transactionManager.execute(consumer);
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 }

@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.context.stereotype.Component;
 import com.interface21.context.stereotype.Inject;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,19 +30,8 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        execute(connection, sql, preparedStatement -> {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
-    }
-
     public void update(String sql, Object ... args) {
         update(sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public void update(Connection connection, String sql, Object ... args) {
-        update(connection, sql, new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T query(String sql, ResultSetExtractor<T> resultSetExtractor, PreparedStatementSetter preparedStatementSetter) {
@@ -57,26 +47,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
-        List<T> query = query(sql, rowMapper, args);
-        if (query.isEmpty()) {
-            throw new DataAccessException("결과가 존재하지 않습니다");
-        }
-        if (query.size() > 1) {
-            throw new DataAccessException("2개 이상의 결과가 조회되었습니다");
-        }
-        return query.getFirst();
+        return query(sql, new SingleResultSetExtractor<>(rowMapper), new ArgumentPreparedStatementSetter(args));
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return preparedStatementExecutor.execute(preparedStatement);
-        } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    private <T> T execute(Connection connection, String sql, PreparedStatementExecutor<T> preparedStatementExecutor) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
