@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package com.interface21.jdbc.core;
 
 
 import com.interface21.dao.DataAccessException;
