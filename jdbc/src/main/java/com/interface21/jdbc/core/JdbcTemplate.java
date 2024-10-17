@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,11 +32,6 @@ public class JdbcTemplate {
         return Optional.ofNullable(result).orElse(0);
     }
 
-    public int update(String sql, Connection connection, Object... args) {
-        Integer result = execute(sql, PreparedStatement::executeUpdate, connection, args);
-        return Optional.ofNullable(result).orElse(0);
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, statement -> {
             List<T> results = new ArrayList<>();
@@ -63,15 +59,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, SqlExecutor<T> executor, Object... args) {
-        try (Connection connection = dataSource.getConnection();) {
-            return execute(sql, executor, connection, args);
-        } catch (SQLException e) {
-            throw sqlExceptionTranslator.translate("execute", sql, e);
-        }
-    }
-
-    private <T> T execute(String sql, SqlExecutor<T> executor, Connection connection, Object... args) {
         log.debug("query : {}", sql);
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             assignArgsToStatement(args, statement);
