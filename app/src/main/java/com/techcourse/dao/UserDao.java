@@ -5,8 +5,6 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -31,12 +29,6 @@ public class UserDao {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(final Connection connection, final User user) throws SQLException {
-        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.update(sql, connection, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final User user) {
