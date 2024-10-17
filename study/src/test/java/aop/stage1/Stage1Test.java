@@ -6,6 +6,7 @@ import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import aop.service.AppUserService;
+import aop.service.TxUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -35,9 +36,6 @@ class Stage1Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
-    @Autowired
-    private ProxyFactoryBean proxyFactoryBean;
-
     @BeforeEach
     void setUp() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -46,6 +44,9 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(new AppUserService(userDao, userHistoryDao));
+        proxyFactoryBean.setProxyTargetClass(true);
         final var userService = (AppUserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
@@ -59,7 +60,10 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(new TxUserService(platformTransactionManager, new AppUserService(userDao, stubUserHistoryDao)));
+        proxyFactoryBean.setProxyTargetClass(true);
+        final var userService = (TxUserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
