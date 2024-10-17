@@ -16,12 +16,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement pstmt;
     private ResultSet rs;
@@ -29,7 +31,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -54,7 +56,8 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertEquals("expected", result),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close()
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 
@@ -70,7 +73,8 @@ class JdbcTemplateTest {
                         pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close()
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 
@@ -86,7 +90,8 @@ class JdbcTemplateTest {
                         pss -> pss.setLong(1, 1L)
                 )).isInstanceOf(DataAccessException.class),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close()
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 
@@ -106,7 +111,8 @@ class JdbcTemplateTest {
                 () -> assertEquals("value1", result.get(0)),
                 () -> assertEquals("value2", result.get(1)),
                 () -> verify(this.rs).close(),
-                () -> verify(this.pstmt).close()
+                () -> verify(this.pstmt).close(),
+                () -> verify(this.connection).close()
         );
     }
 
@@ -114,6 +120,8 @@ class JdbcTemplateTest {
     @DisplayName("업데이트 테스트")
     void update() throws SQLException {
         when(pstmt.executeUpdate()).thenReturn(1);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        when(DataSourceUtils.getConnection(dataSource)).thenReturn(conn);
 
         String sql = "update users set column = ? where id = ?";
         jdbcTemplate.update(sql, pstmt -> {
@@ -125,7 +133,8 @@ class JdbcTemplateTest {
                 () -> verify(pstmt, times(1)).executeUpdate(),
                 () -> verify(pstmt).setObject(1, "value"),
                 () -> verify(pstmt).setObject(2, 1),
-                () -> verify(this.pstmt).close()
+                () -> verify(this.pstmt).close(),
+                () -> verify(conn).close()
         );
     }
 }
