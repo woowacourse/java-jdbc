@@ -17,9 +17,6 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 class UserHistoryDaoTest {
 
-    private UserHistoryDao userHistoryDao;
-    private JdbcTemplate jdbcTemplate;
-
     private final RowMapper<UserHistory> rowMapper = (resultSet) -> {
         return new UserHistory(
                 resultSet.getLong("id"),
@@ -30,6 +27,8 @@ class UserHistoryDaoTest {
                 resultSet.getString("created_by")
         );
     };
+    private UserHistoryDao userHistoryDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
@@ -48,7 +47,6 @@ class UserHistoryDaoTest {
         User user = new User(1, "gugu", "password", "hkkang@woowahan.com");
         Connection connection = DataSourceConfig.getInstance().getConnection();
         jdbcTemplate.update(
-                connection,
                 "insert into users (account, password, email) values (?, ?, ?)",
                 user.getAccount(),
                 user.getPassword(),
@@ -57,7 +55,7 @@ class UserHistoryDaoTest {
         UserHistory userHistory = new UserHistory(user, createdBy);
 
         // when
-        userHistoryDao.log(DataSourceConfig.getInstance().getConnection(), userHistory);
+        userHistoryDao.log(userHistory);
 
         // then
         UserHistory result = jdbcTemplate.queryForObject("select * from user_history where user_id = ?", rowMapper, 1);

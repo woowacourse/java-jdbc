@@ -1,6 +1,5 @@
 package aop.stage1;
 
-import org.aopalliance.aop.Advice;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.PointcutAdvisor;
 
@@ -10,18 +9,26 @@ import org.springframework.aop.PointcutAdvisor;
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
-    @Override
-    public Pointcut getPointcut() {
-        return null;
+    private final Pointcut pointcut;
+    private final TransactionAdvice advice;
+
+    public TransactionAdvisor(Pointcut pointcut, TransactionAdvice advice) {
+        this.pointcut = pointcut;
+        this.advice = advice;
     }
 
     @Override
-    public Advice getAdvice() {
-        return null;
+    public Pointcut getPointcut() {
+        return pointcut;
+    }
+
+    @Override
+    public org.aopalliance.aop.Advice getAdvice() {
+        return advice;
     }
 
     @Override
     public boolean isPerInstance() {
-        return false;
+        return true;
     }
 }

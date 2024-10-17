@@ -88,7 +88,7 @@ class UserDaoTest {
 
         // when
         Connection connection = DataSourceConfig.getInstance().getConnection();
-        userDao.update(connection, user);
+        userDao.update(user);
 
         // then
         Optional<User> result = userDao.findById(1L);
