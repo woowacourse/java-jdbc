@@ -22,7 +22,7 @@ public class TransactionHandler implements InvocationHandler {
 
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        if (isNotTransactionMethod(method)) {
+        if (method.isAnnotationPresent(Transactional.class)) {
             return method.invoke(target, args);
         }
 
@@ -38,9 +38,5 @@ public class TransactionHandler implements InvocationHandler {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-    }
-
-    private boolean isNotTransactionMethod(Method method) {
-        return method.getAnnotation(Transactional.class) == null;
     }
 }
