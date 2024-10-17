@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -10,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    public static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
@@ -28,6 +27,7 @@ public class UserDao {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
+
     public void update(User user) {
         String sql = "update users set account=?, password=?, email=? where id=?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
