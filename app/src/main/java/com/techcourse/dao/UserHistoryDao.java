@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import javax.sql.DataSource;
@@ -32,17 +33,7 @@ public class UserHistoryDao {
 
     public void log(UserHistory userHistory) {
         String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
-        logSql(sql);
-
-        jdbcTemplate.update(
-                sql,
-                userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
-                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy()
-        );
-    }
-
-    public void logUsingExplicitConnection(UserHistory userHistory, Connection connection) {
-        String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
+        Connection connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         logSql(sql);
         jdbcTemplate.update(
                 connection, sql,

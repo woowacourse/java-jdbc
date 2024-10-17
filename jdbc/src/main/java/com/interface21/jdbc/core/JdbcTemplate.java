@@ -17,7 +17,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -37,7 +37,7 @@ public class JdbcTemplate {
 
     public int update(String sql, PreparedStatementSetter psSetter) {
         try (Connection connection = dataSource.getConnection()) {
-             return update(new QueryConnectionHolder(connection, sql), psSetter);
+            return update(new QueryConnectionHolder(connection, sql), psSetter);
         } catch (SQLException e) {
             throw new DataAccessException("Update 실패", e);
         }
@@ -74,5 +74,9 @@ public class JdbcTemplate {
             }
         }
         return results;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
