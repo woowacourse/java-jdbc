@@ -16,7 +16,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
-class UserAppServiceTest {
+class UserTxServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
