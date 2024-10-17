@@ -59,22 +59,6 @@ class UserHistoryDaoTest {
         assertThat(savedUserHistory.getCreateBy()).isEqualTo(createdBy);
     }
 
-    @Test
-    void logWithConnection() throws SQLException {
-        // given
-        String createdBy = "createdBy";
-        UserHistory userHistory = new UserHistory(user, createdBy);
-
-        // when
-        Connection connection = DataSourceConfig.getInstance().getConnection();
-        userHistoryDao.log(connection, userHistory);
-
-        // then
-        String sql = "select * from user_history where user_id = ?";
-        UserHistory savedUserHistory = jdbcTemplate.queryForObject(sql, rowMapper, 1);
-        assertThat(savedUserHistory.getCreateBy()).isEqualTo(createdBy);
-    }
-
     private void insertUser() {
         user = new User(1, "gugu", "password", "hkkang@woowahan.com");
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
