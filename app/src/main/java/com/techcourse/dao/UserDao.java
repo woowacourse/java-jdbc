@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,15 +40,6 @@ public class UserDao {
         PreparedStatementSetter setter = getPreparedStatementSetter(objects);
 
         jdbcTemplate.update(sql, setter);
-    }
-
-    public void update(Connection connection, final User user) {
-        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final Object[] objects = new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
-
-        PreparedStatementSetter setter = getPreparedStatementSetter(objects);
-
-        jdbcTemplate.update(connection, sql, setter);
     }
 
     private PreparedStatementSetter getPreparedStatementSetter(Object[] objects) {
