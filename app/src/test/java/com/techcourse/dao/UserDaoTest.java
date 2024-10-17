@@ -73,18 +73,4 @@ class UserDaoTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
-
-    @Test
-    void updateWithConnection() throws SQLException {
-        String newPassword = "password99";
-        User user = userDao.findById(1L);
-        user.changePassword(newPassword);
-        Connection connection = DataSourceConfig.getInstance().getConnection();
-
-        userDao.update(connection, user);
-
-        User actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
-    }
 }

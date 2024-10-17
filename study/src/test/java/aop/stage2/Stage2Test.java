@@ -26,17 +26,17 @@ class Stage2Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userService.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -45,12 +45,12 @@ class Stage2Test {
     void testTransactionRollback() {
         userService.setUserHistoryDao(stubUserHistoryDao);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

@@ -16,16 +16,19 @@ public class AppUserService implements UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
+    @Override
     @Transactional
     public User findById(final long id) {
         return userDao.findById(id);
     }
 
+    @Override
     @Transactional
     public void insert(final User user) {
         userDao.insert(user);
     }
 
+    @Override
     @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);

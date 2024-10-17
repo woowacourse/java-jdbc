@@ -30,10 +30,9 @@ class UserHistoryDaoTest {
         UserHistory userHistory =
                 new UserHistory(1L, 1L, "daon", "daon1", "daon@wooteco.com", "liv");
 
-        userHistoryDao.log(connection, userHistory);
+        userHistoryDao.log(userHistory);
 
         verify(jdbcTemplate).update(
-                connection,
                 "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
                 userHistory.getUserId(),
                 userHistory.getAccount(),
