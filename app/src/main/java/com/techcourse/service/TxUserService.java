@@ -29,18 +29,13 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(User user) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            Connection connection = DataSourceUtils.getConnection(dataSource);
-            try {
-                connection.setAutoCommit(false);
-                userService.insert(user);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw new DataAccessException("datasource접근 과정에서 예외가 발생했습니다.", e);
-            }
+            connection.setAutoCommit(false);
+            userService.insert(user);
+            connection.commit();
         } catch (SQLException e) {
-            throw new DataAccessException("롤백 과정에서 예외가 발생했습니다", e);
+            rollback(connection);
         }
     }
 
@@ -48,18 +43,21 @@ public class TxUserService implements UserService {
     public void changePassword(long id, String newPassword, String createBy) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            try {
-                connection.setAutoCommit(false);
-                userService.changePassword(id, newPassword, createBy);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw new DataAccessException("datasource접근 과정에서 예외가 발생했습니다.", e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("롤백 과정에서 예외가 발생했습니다", e);
+            connection.setAutoCommit(false);
+            userService.changePassword(id, newPassword, createBy);
+            connection.commit();
+        } catch (Exception e) {
+            rollback(connection);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException("datasource접근 과정에서 예외가 발생했습니다.", e);
         }
     }
 }
