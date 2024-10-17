@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,7 +23,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection conn, String sql, Object... params){
+    public void update(String sql, Object... params){
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)){
             PreparedStatementSetter pss = createPreparedStatementSetter(params);
             pss.setValues(pstmt);
@@ -31,27 +32,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    public void update(String sql, Object... params){
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-            PreparedStatementSetter pss = createPreparedStatementSetter(params);
-            pss.setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private Connection getConnection(){
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
         }
     }
 
@@ -64,8 +44,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             PreparedStatementSetter pss = createPreparedStatementSetter(params);
             pss.setValues(pstmt);
             ResultSet rs = pstmt.executeQuery();
