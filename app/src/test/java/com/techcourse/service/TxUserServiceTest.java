@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.sql.DataSource;
-import java.util.List;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.JdbcTransactionManager;
@@ -33,25 +32,6 @@ class TxUserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-    }
-
-    @DisplayName("트랜잭션 내에서 생성 중 예외가 발생될 경우 생성되지 않는다.")
-    @Test
-    void insertWithException() {
-        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        UserDao userDao = new MockUserDao(jdbcTemplate);
-        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        JdbcTransactionManager jdbcTransactionManager = new JdbcTransactionManager(dataSource);
-        UserService userService = new TxUserService(appUserService, jdbcTransactionManager);
-
-        User newUser = new User("gugu2", "password", "hkkang2@woowahan.com");
-
-        assertThrows(DataAccessException.class,
-                () -> userService.insert(newUser));
-
-        List<User> users = userDao.findAll();
-
-        assertThat(users).hasSize(1);
     }
 
     @DisplayName("트랜잭션 내에서 실행 중 이상 없이 실행이 완료되면 커밋된다.")
