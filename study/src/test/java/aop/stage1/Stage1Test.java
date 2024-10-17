@@ -45,19 +45,19 @@ class Stage1Test {
     @Test
     void testChangePassword() {
         // given
-        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        UserService userService = new UserService(userDao, userHistoryDao);
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.addAdvisor(new TransactionAdvisor(platformTransactionManager));
         proxyFactoryBean.setProxyTargetClass(true);
-        proxyFactoryBean.setTarget(appUserService);
+        proxyFactoryBean.setTarget(userService);
 
         // when
-        AppUserService userService = (AppUserService) proxyFactoryBean.getObject();
+        UserService bean = (UserService) proxyFactoryBean.getObject();
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        Objects.requireNonNull(userService).changePassword(1L, newPassword, createBy);
+        Objects.requireNonNull(bean).changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = bean.findById(1L);
 
         // then
         assertThat(actual.getPassword()).isEqualTo(newPassword);
@@ -66,20 +66,20 @@ class Stage1Test {
     @Test
     void testTransactionRollback() {
         // given
-        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        UserService userService = new UserService(userDao, stubUserHistoryDao);
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.addAdvisor(new TransactionAdvisor(platformTransactionManager));
         proxyFactoryBean.setProxyTargetClass(true);
-        proxyFactoryBean.setTarget(appUserService);
+        proxyFactoryBean.setTarget(userService);
 
         // when
-        AppUserService userService = (AppUserService) proxyFactoryBean.getObject();
+        UserService bean = (UserService) proxyFactoryBean.getObject();
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         assertThrows(DataAccessException.class,
-                () -> Objects.requireNonNull(userService).changePassword(1L, newPassword, createBy));
+                () -> Objects.requireNonNull(bean).changePassword(1L, newPassword, createBy));
 
-        final var actual = Objects.requireNonNull(userService).findById(1L);
+        final var actual = Objects.requireNonNull(bean).findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
