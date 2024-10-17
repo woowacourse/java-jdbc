@@ -16,17 +16,13 @@ public class JdbcTransactionManager {
     }
 
     public void execute(Runnable runnable) {
-        executeInTransaction(() -> {
+        execute(() -> {
             runnable.run();
             return null;
         });
     }
 
-    public <T> T execute(Supplier<T> supplier) {
-        return executeInTransaction(supplier);
-    }
-
-    private <T> T executeInTransaction(Supplier<T> supplier) {
+    public  <T> T execute(Supplier<T> supplier) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
