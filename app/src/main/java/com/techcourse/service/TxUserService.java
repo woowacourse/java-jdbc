@@ -29,22 +29,19 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(User user) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            connection.setAutoCommit(false);
-            userService.insert(user);
-            connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
-        }
+        executeWithAutoCommitFalse(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
+        executeWithAutoCommitFalse(() -> userService.changePassword(id, newPassword, createBy));
+    }
+
+    private void executeWithAutoCommitFalse(Runnable runnable) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createBy);
+            runnable.run();
             connection.commit();
         } catch (Exception e) {
             rollback(connection);
