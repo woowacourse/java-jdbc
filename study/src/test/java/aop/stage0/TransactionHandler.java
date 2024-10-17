@@ -28,7 +28,8 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        if (!method.getClass().isAnnotationPresent(Transactional.class)) {
+        Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
+        if (!targetMethod.isAnnotationPresent(Transactional.class)) {
             return method.invoke(target, args);
         }
 
