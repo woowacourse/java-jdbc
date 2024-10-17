@@ -51,7 +51,7 @@ class TxUserServiceTest {
 
         List<User> users = userDao.findAll();
 
-        assertThat(users.size()).isEqualTo(1);
+        assertThat(users).hasSize(1);
     }
 
     @DisplayName("트랜잭션 내에서 실행 중 이상 없이 실행이 완료되면 커밋된다.")
