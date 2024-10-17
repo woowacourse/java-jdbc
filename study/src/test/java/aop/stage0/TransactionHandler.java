@@ -35,7 +35,6 @@ public class TransactionHandler implements InvocationHandler {
             transactionManager.commit(status);
             return result;
         } catch (IllegalAccessException | InvocationTargetException e) {
-            transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
     }

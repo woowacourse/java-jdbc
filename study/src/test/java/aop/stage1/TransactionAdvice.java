@@ -26,7 +26,6 @@ public class TransactionAdvice  implements MethodInterceptor {
             transactionManager.commit(status);
             return result;
         } catch (Exception e) {
-            transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
     }
