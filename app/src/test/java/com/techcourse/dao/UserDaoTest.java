@@ -3,8 +3,6 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -16,28 +14,19 @@ class UserDaoTest {
 
     private UserDao userDao;
     private final DataSource dataSource = DataSourceConfig.getInstance();
-    private final Connection connection = getConnection();
 
     @BeforeEach
     void setup() {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         DatabasePopulatorUtils.execute(dataSource);
-        jdbcTemplate.update(connection, "truncate table users", pss -> {
+        jdbcTemplate.update("truncate table users", pss -> {
         });
-        jdbcTemplate.update(connection, "alter table users alter column id restart with 1", pss -> {
+        jdbcTemplate.update("alter table users alter column id restart with 1", pss -> {
         });
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        userDao.insert(user);
     }
 
     @Test
@@ -66,7 +55,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
@@ -79,7 +68,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection, user);
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
