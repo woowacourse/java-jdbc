@@ -24,17 +24,18 @@ public class TransactionAdvice implements MethodInterceptor {
 
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
+        String methodName = invocation.getMethod().getName();
         TransactionStatus transactionStatus = platformTransactionManager.getTransaction(
                 new DefaultTransactionDefinition());
         try {
             Object ret = invocation.proceed();
-            log.info("proceed: {}", invocation.getMethod().getName());
+            log.info("proceed: {}", methodName);
             platformTransactionManager.commit(transactionStatus);
-            log.info("transaction commit: {}", invocation.getMethod().getName());
+            log.info("transaction commit: {}", methodName);
             return ret;
         } catch (Exception e) {
             platformTransactionManager.rollback(transactionStatus);
-            log.info("transaction roll back: {}", invocation.getMethod().getName());
+            log.info("transaction roll back: {}", methodName);
             throw new DataAccessException(e);
         }
     }
