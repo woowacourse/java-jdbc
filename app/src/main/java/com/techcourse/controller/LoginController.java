@@ -5,15 +5,12 @@ import com.interface21.web.bind.annotation.RequestMapping;
 import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JspView;
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.ServiceFactory;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +21,12 @@ public class LoginController {
 
     private final UserService userService;
 
+    public LoginController(UserService userService) {
+        this.userService = userService;
+    }
+
     public LoginController() {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        UserDao userDao = new UserDao(dataSource);
-        UserHistoryDao userHistoryDao = new UserHistoryDao(dataSource);
-        this.userService = new UserService(userDao, userHistoryDao);
+        this(ServiceFactory.createUserService());
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
@@ -39,6 +37,10 @@ public class LoginController {
                     return redirect("/index.jsp");
                 })
                 .orElse(new ModelAndView(new JspView("/login.jsp")));
+    }
+
+    private ModelAndView redirect(final String path) {
+        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
@@ -63,9 +65,5 @@ public class LoginController {
         } else {
             return redirect("/401.jsp");
         }
-    }
-
-    private ModelAndView redirect(final String path) {
-        return new ModelAndView(new JspView(JspView.REDIRECT_PREFIX + path));
     }
 }
