@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -15,17 +16,19 @@ class TransactionManagerTest {
 
     private Connection connection;
     private Runnable runnable;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
         this.connection = mock(Connection.class);
         this.runnable = mock(Runnable.class);
+        this.dataSource = mock(DataSource.class);
     }
 
     @Test
     @DisplayName("예외가 발생되지 않는 경우 정상적으로 작동 후 commit 한다.")
     void start_WhenSuccess() throws SQLException {
-        TransactionManager.start(connection, runnable);
+        TransactionManager.start(connection, runnable, dataSource);
 
         verify(connection).setAutoCommit(false);
         verify(runnable).run();
@@ -40,7 +43,7 @@ class TransactionManagerTest {
                 .when(runnable).run();
 
         assertThrows(DataAccessException.class, () ->
-                TransactionManager.start(connection, runnable)
+                TransactionManager.start(connection, runnable, dataSource)
         );
 
         verify(runnable).run();
