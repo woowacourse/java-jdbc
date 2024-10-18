@@ -20,7 +20,8 @@ public class TxUserService implements UserService {
 
     @Override
     public void insert(User user) {
-        appUserService.insert(user);
+        DataSource dataSource = DataSourceConfig.getInstance();
+        TransactionManager.execute(dataSource,() -> appUserService.insert(user));
     }
 
     @Override
