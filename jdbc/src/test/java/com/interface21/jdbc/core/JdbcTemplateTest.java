@@ -58,7 +58,7 @@ class JdbcTemplateTest {
             when(connection.prepareStatement(sql)).thenReturn(statement);
 
             // when
-            var actual = jdbcTemplate.update(connection, sql, ACCOUNT, PASSWORD, EMAIL);
+            var actual = jdbcTemplate.update(sql, ACCOUNT, PASSWORD, EMAIL);
 
             // then
             assertAll(
@@ -79,7 +79,7 @@ class JdbcTemplateTest {
             when(connection.prepareStatement(sql)).thenReturn(statement);
 
             // when
-            var actual = jdbcTemplate.update(connection, sql, ACCOUNT, PASSWORD, EMAIL);
+            var actual = jdbcTemplate.update(sql, ACCOUNT, PASSWORD, EMAIL);
 
             // then
             assertAll(
