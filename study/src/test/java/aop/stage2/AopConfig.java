@@ -16,11 +16,6 @@ public class AopConfig {
     private PlatformTransactionManager transactionManager;
 
     @Bean
-    public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
-        return new DefaultAdvisorAutoProxyCreator();
-    }
-
-    @Bean
     public TransactionAdvice transactionAdvice() {
         return new TransactionAdvice(transactionManager);
     }
