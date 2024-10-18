@@ -62,7 +62,7 @@ class Stage1Test {
     @Test
     void testTransactionRollback() {
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
-        proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
+        proxyFactoryBean.setTarget(new UserService(userDao, stubUserHistoryDao));
         proxyFactoryBean.setProxyTargetClass(true);
         proxyFactoryBean.addAdvisors(new TransactionAdvisor(platformTransactionManager));
 

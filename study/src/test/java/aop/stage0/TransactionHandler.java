@@ -28,7 +28,6 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try {
             Object result = method.invoke(target, args);
             transactionManager.commit(transactionStatus);
