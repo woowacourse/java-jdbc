@@ -2,8 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.concurrent.Callable;
 
 import javax.sql.DataSource;
 
@@ -21,15 +20,41 @@ public class TransactionTemplate {
     public void executeTransaction(Runnable runnable) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            setAutoCommit(connection, false);
             runnable.run();
             connection.commit();
-            connection.setAutoCommit(true);
         } catch (SQLException e) {
             rollback(connection);
             throw new DataAccessException(e);
         } finally {
+            setAutoCommit(connection, true);
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    public <R> R executeTransaction(Callable<R> callable) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            setAutoCommit(connection, false);
+            R result = callable.call();
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            rollback(connection);
+            throw new DataAccessException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            setAutoCommit(connection, true);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void setAutoCommit(Connection connection, boolean b) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
