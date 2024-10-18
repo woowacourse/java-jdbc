@@ -42,7 +42,7 @@ class DataAccessWrapperTest {
     @AfterEach
     void tearDown() {
         while (TransactionSynchronizationManager.isTransactionActive()) {
-            TransactionSynchronizationManager.decreaseDepth();
+            TransactionSynchronizationManager.popConnection();
         }
     }
 
@@ -63,7 +63,7 @@ class DataAccessWrapperTest {
         Object dummy = new Object();
         ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
 
-        TransactionSynchronizationManager.increaseDepth();
+        TransactionSynchronizationManager.pushConnection(mock(Connection.class));
         accessWrapper.apply("dummySql", function);
 
         verify(connection, never()).close();

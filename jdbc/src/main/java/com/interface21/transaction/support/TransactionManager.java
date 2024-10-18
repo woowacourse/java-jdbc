@@ -51,15 +51,16 @@ public class TransactionManager {
     }
 
     private Connection getConnection() {
-        TransactionSynchronizationManager.increaseDepth();
-        return DataSourceUtils.getConnection(dataSource);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.pushConnection(connection);
+        return connection;
     }
 
     private void releaseConnection(Connection connection) {
         if (TransactionSynchronizationManager.getTransactionDepth() == 1) {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
-        TransactionSynchronizationManager.decreaseDepth();
+        TransactionSynchronizationManager.popConnection();
     }
 
     private void beginTransaction(Connection connection) throws SQLException {

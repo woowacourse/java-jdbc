@@ -6,11 +6,11 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class TransactionSynchronizationManager {
+public class TransactionSynchronizationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionSynchronizationManager.class);
     private static final ThreadMap<DataSource, Connection> resources = new ThreadMap<>();
-    private static final ThreadLocal<AtomicLong> transactionDepth = ThreadLocal.withInitial(AtomicLong::new);
+    private static final ThreadConnections threadConnections = new ThreadConnections();
 
     private TransactionSynchronizationManager() {
     }
@@ -30,18 +30,18 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static boolean isTransactionActive() {
-        return getTransactionDepth() > 0;
+        return threadConnections.isTransactionActive();
     }
 
-    public static void increaseDepth() {
-        transactionDepth.get().incrementAndGet();
+    public static void pushConnection(Connection connection) {
+        threadConnections.pushConnection(connection);
     }
 
-    public static void decreaseDepth() {
-        transactionDepth.get().decrementAndGet();
+    public static Connection popConnection() {
+        return threadConnections.popConnection();
     }
 
     public static long getTransactionDepth() {
-        return transactionDepth.get().get();
+        return threadConnections.size();
     }
 }
