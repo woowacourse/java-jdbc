@@ -47,7 +47,6 @@ public class JdbcTransactionManager implements TransactionManager {
     private void closeConnection(Connection connection) {
         if (connection != null) {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
