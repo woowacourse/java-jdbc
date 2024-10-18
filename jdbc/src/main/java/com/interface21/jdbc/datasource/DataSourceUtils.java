@@ -40,10 +40,10 @@ public abstract class DataSourceUtils {
     }
 
     private static void closeResources(Connection connection, Connection value) throws SQLException {
-        if (connection != null) {
+        if (connection != null && !connection.isClosed()) {
             connection.close();
         }
-        if (value != null && value != connection) {
+        if (value != null && !value.isClosed() && connection != value) {
             value.close();
         }
     }
