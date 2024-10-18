@@ -48,6 +48,10 @@ class Stage0Test {
      *
      * Using a DataSource Object to Make a Connection
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
+     *
+     * DataSource가 DriverManager에 비해 선호되는 이유
+     * - datasource properties에 변화에 유동적이다 > application code를 data단 변화에 따라 변동하지 않아도 된다
+     * - connection/statement pooling + 분산 트랜잭션이 가능하다
      */
     @Test
     void dataSource() throws SQLException {
