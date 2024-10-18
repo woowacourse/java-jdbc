@@ -7,8 +7,7 @@ import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -18,8 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
-
-    private static final Logger log = LoggerFactory.getLogger(Stage1Test.class);
 
     @Autowired
     private UserDao userDao;
@@ -39,9 +36,24 @@ class Stage1Test {
         userDao.insert(user);
     }
 
+    private ProxyFactoryBean setUpProxyFactoryBean(Object target) {
+        final var proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(target);
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        final var transactionPointcut = new TransactionPointcut();
+        final var transactionAdvice = new TransactionAdvice(platformTransactionManager);
+        final var transactionAdvisor = new TransactionAdvisor(transactionAdvice, transactionPointcut);
+
+        proxyFactoryBean.addAdvisor(transactionAdvisor);
+        return proxyFactoryBean;
+    }
+
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        final UserService target = new UserService(userDao, userHistoryDao);
+        final var proxyFactoryBean = setUpProxyFactoryBean(target);
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +66,9 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        final UserService target = new UserService(userDao, stubUserHistoryDao);
+        final var proxyFactoryBean = setUpProxyFactoryBean(target);
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -65,4 +79,5 @@ class Stage1Test {
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
+
 }
