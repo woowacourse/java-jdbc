@@ -1,6 +1,7 @@
 package com.interface21.jdbc.datasource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -30,7 +31,7 @@ public class DataAccessWrapper {
 
     private void closeUnActiveTransactionConnection(Connection connection) {
         try {
-            if (!DataSourceUtils.isTransactionActive()) {
+            if (!TransactionSynchronizationManager.isTransactionActive()) {
                 connection.close();
             }
         } catch (SQLException e) {

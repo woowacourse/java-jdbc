@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,16 +39,11 @@ class DataAccessWrapperTest {
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
     }
 
-    @DisplayName("트랜잭션이 열린 커넥션의 경우 connection을 닫지 않는다.")
-    @Test
-    void notCloseConnection_When_TransactionIsUnactive() throws SQLException {
-        Object dummy = new Object();
-        ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
-
-        TransactionSynchronizationManager.setTransactionActive(true);
-        accessWrapper.apply("dummySql", function);
-
-        verify(connection, never()).close();
+    @AfterEach
+    void tearDown() {
+        while (TransactionSynchronizationManager.isTransactionActive()) {
+            TransactionSynchronizationManager.decreaseDepth();
+        }
     }
 
     @DisplayName("트랜잭션이 열리지 않은 커넥션의 경우 connection을 닫는다")
@@ -56,10 +52,21 @@ class DataAccessWrapperTest {
         Object dummy = new Object();
         ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
 
-        TransactionSynchronizationManager.setTransactionActive(false);
         accessWrapper.apply("dummySql", function);
 
         verify(connection, times(1)).close();
+    }
+
+    @DisplayName("트랜잭션이 열린 커넥션의 경우 connection을 닫지 않는다.")
+    @Test
+    void notCloseConnection_When_TransactionIsUnactive() throws SQLException {
+        Object dummy = new Object();
+        ThrowingFunction<PreparedStatement, Object, Exception> function = (pstmt) -> dummy;
+
+        TransactionSynchronizationManager.increaseDepth();
+        accessWrapper.apply("dummySql", function);
+
+        verify(connection, never()).close();
     }
 
     @DisplayName("에러가 발생할 경우 DataAccessException으로 전환된다.")

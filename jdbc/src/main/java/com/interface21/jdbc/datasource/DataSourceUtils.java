@@ -40,14 +40,6 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void setTransactionActive(boolean active) {
-        TransactionSynchronizationManager.setTransactionActive(active);
-    }
-
-    public static boolean isTransactionActive() {
-        return TransactionSynchronizationManager.isTransactionActive();
-    }
-
     private static Connection getConnectionFromDataSource(DataSource dataSource) {
         try {
             return dataSource.getConnection();

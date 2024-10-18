@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 public class TransactionManager {
     private static final Logger logger = LoggerFactory.getLogger(TransactionManager.class);
 
-    private final ThreadLocal<AtomicLong> transactionDepth = new ThreadLocal<>();
     private final DataSource dataSource;
 
     public TransactionManager(DataSource dataSource) {
@@ -52,23 +51,15 @@ public class TransactionManager {
     }
 
     private Connection getConnection() {
-        DataSourceUtils.setTransactionActive(true);
-        getTransactionDepth().incrementAndGet();
+        TransactionSynchronizationManager.increaseDepth();
         return DataSourceUtils.getConnection(dataSource);
     }
 
-    private AtomicLong getTransactionDepth() {
-        if (transactionDepth.get() == null) {
-            transactionDepth.set(new AtomicLong(0));
-        }
-        return transactionDepth.get();
-    }
-
     private void releaseConnection(Connection connection) {
-        if (getTransactionDepth().get() == 1) {
+        if (TransactionSynchronizationManager.getTransactionDepth() == 1) {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
-        getTransactionDepth().decrementAndGet();
+        TransactionSynchronizationManager.decreaseDepth();
     }
 
     private void beginTransaction(Connection connection) throws SQLException {
@@ -77,7 +68,7 @@ public class TransactionManager {
     }
 
     private void endTransaction(Connection connection) throws SQLException {
-        if (getTransactionDepth().get() == 1) {
+        if (TransactionSynchronizationManager.getTransactionDepth() == 1) {
             connection.commit();
             connection.setAutoCommit(true);
             logger.info("commit transaction : {}", connection);

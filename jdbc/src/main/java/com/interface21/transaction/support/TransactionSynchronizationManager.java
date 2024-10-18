@@ -1,6 +1,7 @@
 package com.interface21.transaction.support;
 
 import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ public abstract class TransactionSynchronizationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionSynchronizationManager.class);
     private static final ThreadMap<DataSource, Connection> resources = new ThreadMap<>();
-    private static final ThreadLocal<Boolean> transactionActive = new ThreadLocal<>();
+    private static final ThreadLocal<AtomicLong> transactionDepth = ThreadLocal.withInitial(AtomicLong::new);
 
     private TransactionSynchronizationManager() {
     }
@@ -29,10 +30,18 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static boolean isTransactionActive() {
-        return transactionActive.get();
+        return getTransactionDepth() > 0;
     }
 
-    public static void setTransactionActive(boolean active) {
-        transactionActive.set(active);
+    public static void increaseDepth() {
+        transactionDepth.get().incrementAndGet();
+    }
+
+    public static void decreaseDepth() {
+        transactionDepth.get().decrementAndGet();
+    }
+
+    public static long getTransactionDepth() {
+        return transactionDepth.get().get();
     }
 }
