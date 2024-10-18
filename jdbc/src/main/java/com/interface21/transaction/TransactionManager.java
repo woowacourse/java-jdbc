@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class TransactionManager {
 
@@ -24,25 +25,18 @@ public class TransactionManager {
     }
 
     public void beginTransaction(final DataSource dataSource, final Consumer<Connection> consumer) {
-        final Connection connection = getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         setAutoCommit(connection, false);
 
         try {
             consumer.accept(connection);
+            commit(connection);
         } catch (Exception e) {
             rollback(connection);
             log.info("로직 처리 중 에러가 발생했습니다. 롤백합니다.");
             throw new DataAccessException("로직 처리 중 에러가 발생했습니다. 롤백합니다.", e);
-        }
-
-        commit(connection);
-    }
-
-    private Connection getConnection(final DataSource dataSource) {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException("데이터베이스 커넥션을 가져오는 도중 에러가 발생했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
