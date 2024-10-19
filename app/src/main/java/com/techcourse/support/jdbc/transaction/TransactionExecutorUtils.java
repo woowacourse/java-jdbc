@@ -2,7 +2,6 @@ package com.techcourse.support.jdbc.transaction;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -44,11 +43,7 @@ public class TransactionExecutorUtils {
     }
 
     public static void releaseActiveConn() {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection activeConn = TransactionSynchronizationManager.getResource(dataSource);
-        if (activeConn != null) {
-            DataSourceUtils.releaseConnection(activeConn, dataSource);
-        }
+        DataSourceUtils.releaseActiveConnection(DataSourceConfig.getInstance());
     }
 
     private static void rollback(Connection conn) {
