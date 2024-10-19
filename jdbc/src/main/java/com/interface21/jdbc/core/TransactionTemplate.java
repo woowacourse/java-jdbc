@@ -27,26 +27,15 @@ public class TransactionTemplate {
     public <R> R executeTransaction(Callable<R> callable) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            setAutoCommit(connection, false);
+            connection.setAutoCommit(false);
             R result = callable.call();
             connection.commit();
             return result;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollback(connection);
             throw new DataAccessException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
-            setAutoCommit(connection, true);
             DataSourceUtils.releaseConnection(connection, dataSource);
-        }
-    }
-
-    private void setAutoCommit(Connection connection, boolean autoCommit) {
-        try {
-            connection.setAutoCommit(autoCommit);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
