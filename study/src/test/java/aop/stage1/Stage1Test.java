@@ -31,7 +31,7 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        UserService userService = getUserService(new UserService(userDao, userHistoryDao));
+        UserService userService = getProxyUserService(new UserService(userDao, userHistoryDao));
 
         User gugu = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(gugu);
@@ -48,7 +48,7 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        UserService userService = getUserService(new UserService(userDao, stubUserHistoryDao));
+        UserService userService = getProxyUserService(new UserService(userDao, stubUserHistoryDao));
 
         User jojo = new User("jojo", "password", "jojo@woowahan.com");
         userDao.insert(jojo);
@@ -64,7 +64,7 @@ class Stage1Test {
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 
-    private UserService getUserService(UserService target) {
+    private UserService getProxyUserService(UserService target) {
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(target);
         proxyFactoryBean.setProxyTargetClass(true);
