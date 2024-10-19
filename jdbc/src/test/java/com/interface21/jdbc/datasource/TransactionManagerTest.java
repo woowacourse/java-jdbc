@@ -10,10 +10,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TestService;
+import com.interface21.transaction.support.TransactionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,23 +23,36 @@ import org.junit.jupiter.api.Test;
 class TransactionManagerTest {
 
     private TransactionManager transactionManager;
+    private DataSource mockDataSource;
     private Connection mockConnection;
 
     @BeforeEach
-    void setUp() {
-        ConnectionManager connectionManager = mock(ConnectionManager.class);
+    void setUp() throws SQLException {
+        mockDataSource = mock(DataSource.class);
         mockConnection = mock(Connection.class);
-        transactionManager = new TransactionManager(connectionManager);
-
-        doReturn(mockConnection).when(connectionManager).getConnection();
+        transactionManager = new TransactionManager(mockDataSource);
+        doReturn(mockConnection).when(mockDataSource).getConnection();
     }
 
-    @DisplayName("오류가 발생하지 않는 function의 경우 commit된다")
+    @DisplayName("depth가 2인 transaction의 경우 commit되지 않고 기존 transaction이 전파된다")
     @Test
-    void transactionFunctionSuccess() throws SQLException {
-        Function<Connection, String> validFunction = connection -> "success";
+    void transactionPropagationIsRequired() {
+        TestService testService = new TestService(transactionManager);
 
-        String actual = transactionManager.transaction(validFunction);
+        testService.depthTwoValidMethod();
+
+        assertAll(
+                () -> verify(mockConnection, times(1)).commit(),
+                () -> verify(mockConnection, never()).rollback()
+        );
+    }
+
+    @DisplayName("오류가 발생하지 않는 Supplier의 경우 commit된다")
+    @Test
+    void transactionSupplierSuccess() throws SQLException {
+        Supplier<String> validSupplier = () -> "success";
+
+        String actual = transactionManager.transaction(validSupplier);
 
         assertAll(
                 () -> assertThat(actual).isEqualTo("success"),
@@ -46,15 +61,15 @@ class TransactionManagerTest {
         );
     }
 
-    @DisplayName("오류가 발생하는 function의 경우 rollback된다")
+    @DisplayName("오류가 발생하는 Supplier의 경우 rollback된다")
     @Test
-    void transactionConsumerFail() throws SQLException {
-        Consumer<Connection> exceptionConsumer = (connection) -> {
+    void transactionSupplierFail() {
+        Supplier<Void> exceptionFunction = () -> {
             throw new RuntimeException("exception");
         };
 
         assertAll(
-                () -> assertThatThrownBy(() -> transactionManager.transaction(exceptionConsumer))
+                () -> assertThatThrownBy(() -> transactionManager.transaction(exceptionFunction))
                         .isInstanceOf(DataAccessException.class)
                         .hasMessage("exception"),
                 () -> verify(mockConnection, never()).commit(),
@@ -62,32 +77,33 @@ class TransactionManagerTest {
         );
     }
 
-    @DisplayName("오류가 발생하지 않는 consumer의 경우 commit된다")
+    @DisplayName("오류가 발생하는 runnable의 경우 rollback된다")
     @Test
-    void transactionConsumerSuccess() throws SQLException {
-        Consumer<Connection> validConsumer = mock(Consumer.class);
+    void transactionRunnableFail() {
+        Runnable exceptionRunnable = () -> {
+            throw new RuntimeException("exception");
+        };
+
+        assertAll(
+                () -> assertThatThrownBy(() -> transactionManager.transaction(exceptionRunnable))
+                        .isInstanceOf(DataAccessException.class)
+                        .hasMessage("exception"),
+                () -> verify(mockConnection, never()).commit(),
+                () -> verify(mockConnection, times(1)).rollback()
+        );
+    }
+
+    @DisplayName("오류가 발생하지 않는 runnable의 경우 commit된다")
+    @Test
+    void transactionRunnableSuccess() {
+        Runnable validConsumer = () -> {
+        };
 
         transactionManager.transaction(validConsumer);
 
         assertAll(
                 () -> verify(mockConnection, times(1)).commit(),
                 () -> verify(mockConnection, never()).rollback()
-        );
-    }
-
-    @DisplayName("오류가 발생하는 function의 경우 rollback된다")
-    @Test
-    void transactionFunctionFail() throws SQLException {
-        Function<Connection, Void> exceptionFunction = (connection) -> {
-            throw new RuntimeException("exception");
-        };
-
-        assertAll(
-                ()-> assertThatThrownBy(()->transactionManager.transaction(exceptionFunction))
-                        .isInstanceOf(DataAccessException.class)
-                        .hasMessage("exception"),
-                () -> verify(mockConnection, never()).commit(),
-                () -> verify(mockConnection, times(1)).rollback()
         );
     }
 }

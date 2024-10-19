@@ -23,8 +23,8 @@ public class JdbcTemplate {
         this.preparedStatementResolver = preparedStatementResolver;
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> results = query(connection, sql, rowMapper, parameters);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = query(sql, rowMapper, parameters);
         validateResultsLength(results);
         return results.getFirst();
     }
@@ -40,9 +40,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return dataAccessWrapper.apply(
-                connection,
                 sql,
                 (pstmt) -> makeQueryResultForList(rowMapper, parameters, pstmt)
         );
@@ -63,8 +62,8 @@ public class JdbcTemplate {
         return results;
     }
 
-    public int queryForUpdate(Connection connection, String sql, Object... parameters) {
-        return dataAccessWrapper.apply(connection, sql, (pstmt) -> executeUpdateQuery(parameters, pstmt));
+    public int queryForUpdate(String sql, Object... parameters) {
+        return dataAccessWrapper.apply(sql, (pstmt) -> executeUpdateQuery(parameters, pstmt));
     }
 
     private int executeUpdateQuery(Object[] parameters, PreparedStatement pstmt) throws SQLException {
