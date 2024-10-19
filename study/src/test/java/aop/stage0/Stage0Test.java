@@ -1,7 +1,7 @@
 package aop.stage0;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
 import aop.DataAccessException;
@@ -68,8 +68,8 @@ class Stage0Test {
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createBy))
+                .isInstanceOf(DataAccessException.class);
 
         final var actual = userService.findById(1L);
 
