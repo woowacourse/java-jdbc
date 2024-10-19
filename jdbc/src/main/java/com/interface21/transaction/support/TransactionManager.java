@@ -20,20 +20,10 @@ public class TransactionManager {
     }
 
     public void performTransaction(Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-
-        try {
-            connection.setAutoCommit(false);
+        performTransaction(() -> {
             runnable.run();
-            connection.commit();
-        } catch (Exception exception) {
-            log.error(exception.getMessage(), exception);
-
-            rollback(connection);
-            throw new DataAccessException("Failed to perform transaction", exception);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+            return null;
+        });
     }
 
     public <T> T performTransaction(Supplier<T> supplier) {
