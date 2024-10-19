@@ -9,9 +9,9 @@ public class JdbcTransaction {
     private final Connection connection;
     private final H2SQLExceptionTranslator exceptionTranslator;
 
-    public JdbcTransaction(Connection connection) {
+    public JdbcTransaction(Connection connection, H2SQLExceptionTranslator exceptionTranslator) {
         this.connection = connection;
-        this.exceptionTranslator = new H2SQLExceptionTranslator();
+        this.exceptionTranslator = exceptionTranslator;
     }
 
     public void begin() {

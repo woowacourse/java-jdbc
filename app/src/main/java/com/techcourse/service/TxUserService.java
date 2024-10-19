@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import javax.sql.DataSource;
+import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
 import com.interface21.transaction.support.JdbcTransactionManager;
 import com.interface21.transaction.support.JdbcTransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
@@ -18,7 +19,7 @@ public class TxUserService implements UserService {
 
     private JdbcTransactionTemplate createTransactionTemplate() {
         DataSource dataSource = DataSourceConfig.getInstance();
-        return new JdbcTransactionTemplate(new JdbcTransactionManager(dataSource));
+        return new JdbcTransactionTemplate(new JdbcTransactionManager(dataSource, new H2SQLExceptionTranslator()));
     }
 
     @Override
