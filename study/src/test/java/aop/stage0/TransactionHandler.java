@@ -31,7 +31,7 @@ public class TransactionHandler implements InvocationHandler {
         Object result = null;
         try {
             result = method.invoke(target, args);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
         }
