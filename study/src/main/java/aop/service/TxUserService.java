@@ -3,6 +3,7 @@ package aop.service;
 import aop.DataAccessException;
 import aop.domain.User;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 public class TxUserService implements UserService {
@@ -28,7 +29,7 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         /* ===== 트랜잭션 영역 ===== */
-        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
         /* ===== 트랜잭션 영역 ===== */
