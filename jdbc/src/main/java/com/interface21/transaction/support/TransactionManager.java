@@ -44,7 +44,7 @@ public class TransactionManager {
             T result = supplier.get();
             connection.commit();
             return result;
-        } catch (SQLException exception) {
+        } catch (Exception exception) {
             log.error(exception.getMessage(), exception);
 
             rollback(connection);
