@@ -43,7 +43,9 @@ class Stage1Test {
     @Test
     void testChangePassword() {
         final UserService appUserService = new UserService(userDao, userHistoryDao);
-        final TransactionAdvisor transactionAdvisor = new TransactionAdvisor(platformTransactionManager);
+        final TransactionAdvice transactionAdvice = new TransactionAdvice(platformTransactionManager);
+        final TransactionPointcut transactionPointcut = new TransactionPointcut();
+        final TransactionAdvisor transactionAdvisor = new TransactionAdvisor(transactionAdvice, transactionPointcut);
         final ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(appUserService);
         proxyFactoryBean.addAdvisor(transactionAdvisor);
@@ -62,7 +64,9 @@ class Stage1Test {
     @Test
     void testTransactionRollback() {
         final UserService appUserService = new UserService(userDao, stubUserHistoryDao);
-        final TransactionAdvisor transactionAdvisor = new TransactionAdvisor(platformTransactionManager);
+        final TransactionAdvice transactionAdvice = new TransactionAdvice(platformTransactionManager);
+        final TransactionPointcut transactionPointcut = new TransactionPointcut();
+        final TransactionAdvisor transactionAdvisor = new TransactionAdvisor(transactionAdvice, transactionPointcut);
         final ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(appUserService);
         proxyFactoryBean.addAdvisor(transactionAdvisor);
