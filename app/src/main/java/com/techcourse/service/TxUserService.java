@@ -21,11 +21,12 @@ public class TxUserService implements UserService {
 
     @Override
     public void save(User user) {
-        transactionTemplate.executeTransaction(() -> userService.save(user));
+        transactionTemplate.executeTransactionWithoutResult(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        transactionTemplate.executeTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+        transactionTemplate.executeTransactionWithoutResult(
+                () -> userService.changePassword(id, newPassword, createdBy));
     }
 }

@@ -17,19 +17,11 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeTransaction(Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            setAutoCommit(connection, false);
+    public void executeTransactionWithoutResult(Runnable runnable) {
+        executeTransaction(() -> {
             runnable.run();
-            connection.commit();
-        } catch (SQLException e) {
-            rollback(connection);
-            throw new DataAccessException(e);
-        } finally {
-            setAutoCommit(connection, true);
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+            return null;
+        });
     }
 
     public <R> R executeTransaction(Callable<R> callable) {
@@ -50,9 +42,9 @@ public class TransactionTemplate {
         }
     }
 
-    private void setAutoCommit(Connection connection, boolean b) {
+    private void setAutoCommit(Connection connection, boolean autoCommit) {
         try {
-            connection.setAutoCommit(true);
+            connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
