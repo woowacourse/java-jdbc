@@ -29,7 +29,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
-        jdbcTemplate.updateWithActiveConn(sql, user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     @Override

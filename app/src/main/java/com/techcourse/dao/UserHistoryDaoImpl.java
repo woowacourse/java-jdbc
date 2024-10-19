@@ -19,7 +19,7 @@ public class UserHistoryDaoImpl implements UserHistoryDao {
     @Override
     public void log(final UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.updateWithActiveConn(
+        jdbcTemplate.update(
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),

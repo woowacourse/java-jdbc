@@ -13,22 +13,17 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        User user = appUserService.findById(id);
-        TransactionExecutorUtils.releaseActiveConn();
-        return user;
+        return appUserService.findById(id);
     }
 
     @Override
     public User findByAccount(final String account) {
-        User user = appUserService.findByAccount(account);
-        TransactionExecutorUtils.releaseActiveConn();
-        return user;
+        return appUserService.findByAccount(account);
     }
 
     @Override
     public void insert(final User user) {
         appUserService.insert(user);
-        TransactionExecutorUtils.releaseActiveConn();
     }
 
     @Override
