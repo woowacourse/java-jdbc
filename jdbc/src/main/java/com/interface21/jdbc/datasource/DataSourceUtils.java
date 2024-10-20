@@ -27,13 +27,17 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            Connection resource = TransactionSynchronizationManager.getResource(dataSource);
-            if (resource != null) {
+            if (isTransactionConnectionExist(dataSource)) {
                 return;
             }
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    public static boolean isTransactionConnectionExist(DataSource dataSource) {
+        Connection resource = TransactionSynchronizationManager.getResource(dataSource);
+        return resource != null;
     }
 }
