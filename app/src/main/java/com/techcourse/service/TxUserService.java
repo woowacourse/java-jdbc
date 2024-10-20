@@ -33,14 +33,18 @@ public class TxUserService implements UserService {
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new TechCourseApplicationException("데이터를 롤백하는 것에 실패했습니다", ex);
-            }
+            rollback(connection);
             throw new TechCourseApplicationException("비밀번호를 변경하는 것에 실패했습니다", e);
         } finally {
             DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new TechCourseApplicationException("데이터를 롤백하는 것에 실패했습니다", ex);
         }
     }
 }
