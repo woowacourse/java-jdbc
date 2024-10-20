@@ -1,9 +1,12 @@
 package aop.repository;
 
-import aop.domain.UserHistory;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import aop.domain.UserHistory;
+
+@Primary
 @Repository
 public class UserHistoryDao {
 

@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core.sql;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +85,11 @@ public class Sql {
         final String value = convertStringValue(parameterValue);
         if (parameterValue instanceof String) {
             return sql.replace(":" + parameterName, "'" + value + "'");
+        }
+
+        if (parameterValue instanceof final LocalDateTime dateTime) {
+            final String dateTimeValue = "'" + Timestamp.valueOf(dateTime) + "'";
+            return sql.replace(":" + parameterName, dateTimeValue);
         }
 
         return sql.replace(":" + parameterName, value);
