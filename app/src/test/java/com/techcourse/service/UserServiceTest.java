@@ -46,16 +46,12 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        // 애플리케이션 서비스
         final var appUserService = new AppUserServiceImpl(userDao, userHistoryDao);
-        // 트랜잭션 서비스 추상화
         final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createdBy));
 
