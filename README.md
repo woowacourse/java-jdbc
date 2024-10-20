@@ -52,3 +52,12 @@
 - [x] 비밀번호 변경 시 누가 언제 어떤 비밀번호로 바꿨는지 이력을 남긴다.
 - [x] 비밀번호 변경 기능이 원자성을 가지도록 트랜잭션 적용
 
+### STEP4 - 기능 요구 사항
+
+- [x] Transaction synchronization 적용하기
+    - [x] connection 객체를 가져오는 부분 DataSourceUtils를 사용하도록 수정
+    - [x] TransactionSynchronizationManager가 올바르게 작동하도록 수정
+- [x] 트랜잭션 서비스 추상화하기
+    - [x] 유저 service에 남아있는 데이터 액세스 로직 제거
+
+

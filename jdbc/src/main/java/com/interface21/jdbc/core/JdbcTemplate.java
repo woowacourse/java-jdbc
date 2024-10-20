@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -35,15 +36,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, Object[] args, PreparedStatementCallback<T> callback) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("Executing SQL: {}", sql);
             setParameter(pstmt, args);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -60,15 +61,15 @@ public class JdbcTemplate {
     }
 
     private <T> T executeInsert(String sql, Object[] args, PreparedStatementCallback<T> callback) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);) {
             log.debug("Executing SQL: {}", sql);
             setParameter(pstmt, args);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
