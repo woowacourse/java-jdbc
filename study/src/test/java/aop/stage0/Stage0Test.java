@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
+import java.lang.reflect.Proxy;
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class Stage0Test {
 
@@ -44,8 +46,13 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        final TransactionHandler transactionHandler = new TransactionHandler(platformTransactionManager,
+                new AppUserService(userDao, userHistoryDao));
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                transactionHandler
+        );
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -58,9 +65,13 @@ class Stage0Test {
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
-
+        final TransactionHandler transactionHandler = new TransactionHandler(platformTransactionManager,
+                new AppUserService(userDao, stubUserHistoryDao));
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[]{UserService.class},
+                transactionHandler
+        );
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         assertThrows(DataAccessException.class,
