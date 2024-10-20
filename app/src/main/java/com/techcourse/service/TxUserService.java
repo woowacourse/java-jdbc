@@ -13,7 +13,6 @@ import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
 
-    private final DataSource dataSource = DataSourceConfig.getInstance();
     private final AppUserService appUserService;
 
     public TxUserService(final AppUserService appUserService) {
@@ -32,6 +31,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final Long userId, final String newPassword, final String createdBy) {
+        final DataSource dataSource = DataSourceConfig.getInstance();
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
