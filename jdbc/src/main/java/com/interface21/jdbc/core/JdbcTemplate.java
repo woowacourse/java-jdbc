@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -21,10 +22,6 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public void update(final Connection connection, final String sql, final Object... args) {
-        execute(connection, sql, args, PreparedStatement::executeUpdate);
     }
 
     public void update(final String sql, final Object... args) {
@@ -46,18 +43,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final Object[] args, final QueryExecutor<T> executor) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
-            QueryExecutor.setArguments(args, statement);
-            log.info("query : {}", sql);
-            return executor.execute(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection connection, final String sql, final Object[] args, final QueryExecutor<T> executor) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             QueryExecutor.setArguments(args, statement);
             log.info("query : {}", sql);
