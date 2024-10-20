@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class TxUserService implements UserService{
+public class TxUserService implements UserService {
 
     private final AppUserService appUserService;
 
@@ -34,7 +34,8 @@ public class TxUserService implements UserService{
         changePasswordWithLog(id, newPassword, createBy, connection, dataSource);
     }
 
-    private void changePasswordWithLog(long id, String newPassword, String createBy, Connection connection, DataSource dataSource) {
+    private void changePasswordWithLog(long id, String newPassword, String createBy, Connection connection,
+                                       DataSource dataSource) {
         try {
             connection.setAutoCommit(false);
             appUserService.changePassword(id, newPassword, createBy);
