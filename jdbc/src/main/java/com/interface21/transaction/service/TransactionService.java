@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.Callable;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,24 @@ public class TransactionService {
             connection.setAutoCommit(false);
             method.run();
             connection.commit();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            rollback(connection);
+            throw new DataAccessException("Failed to commit transaction.", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    public static <T> T executeWithTransaction(final Callable<T> method, final DataSource dataSource) {
+        Connection connection = connect(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        try (connection) {
+            connection.setAutoCommit(false);
+            T result = method.call();
+            connection.commit();
+            return result;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             rollback(connection);

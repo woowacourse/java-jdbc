@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.Callable;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,5 +49,21 @@ class TransactionServiceTest {
                 .isExactlyInstanceOf(DataAccessException.class)
                 .hasMessage("Failed to commit transaction.");
         verify(connection, times(1)).rollback();
+    }
+
+    @DisplayName("리턴 값이 있는 메서드도 트랜잭션을 사용할 수 있다.")
+    @Test
+    void methodWithReturnValueTransaction() throws SQLException {
+        // given
+        DataSource dataSource = Mockito.mock(DataSource.class);
+        Connection connection = Mockito.mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // when
+        Callable methodWithReturnValue = () -> "hello world";
+        TransactionService.executeWithTransaction(methodWithReturnValue, dataSource);
+
+        // then
+        verify(connection, times(1)).commit();
     }
 }
