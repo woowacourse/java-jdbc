@@ -115,14 +115,18 @@ public class JdbcTemplate {
             }
             return conn.getConnection();
         } catch (NullPointerException nullPointerException) {
-            try {
-                Connection conn = dataSource.getConnection();
-                ConnectionContext.conn.set(new com.interface21.jdbc.datasource.Connection(conn));
+            return createNewConnection();
+        }
+    }
 
-                return conn;
-            } catch (SQLException sqlException) {
-                throw new DataAccessException(sqlException);
-            }
+    private Connection createNewConnection() {
+        try {
+            Connection conn = dataSource.getConnection();
+            ConnectionContext.conn.set(new com.interface21.jdbc.datasource.Connection(conn));
+
+            return conn;
+        } catch (SQLException sqlException) {
+            throw new DataAccessException(sqlException);
         }
     }
 }
