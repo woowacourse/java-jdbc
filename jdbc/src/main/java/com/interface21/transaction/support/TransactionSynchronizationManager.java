@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
     private TransactionSynchronizationManager() {
     }
@@ -25,10 +25,6 @@ public abstract class TransactionSynchronizationManager {
     }
 
     private static Map<DataSource, Connection> getCurrentThreadResource() {
-        if (resources.get() == null) {
-            resources.set(new HashMap<>());
-        }
-
         return resources.get();
     }
 }
