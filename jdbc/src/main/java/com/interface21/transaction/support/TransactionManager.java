@@ -40,6 +40,7 @@ public class TransactionManager {
             rollback(connection);
             throw new DataAccessException("Failed to perform transaction", exception);
         } finally {
+            setAutoCommit(connection, true);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
@@ -51,6 +52,16 @@ public class TransactionManager {
             log.error(exception.getMessage(), exception);
 
             throw new DataAccessException("Failed to rollback", exception);
+        }
+    }
+
+    private void setAutoCommit(Connection connection, boolean autoCommit) {
+        try {
+            connection.setAutoCommit(autoCommit);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+
+            throw new DataAccessException("Failed to set auto commit", exception);
         }
     }
 }

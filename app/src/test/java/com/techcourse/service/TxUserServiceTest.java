@@ -28,9 +28,10 @@ class TxUserServiceTest {
         transactionManager = new TransactionManager(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        
         jdbcTemplate.execute("truncate table users restart identity");
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
