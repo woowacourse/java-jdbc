@@ -23,18 +23,18 @@ public class AopConfig {
     private PlatformTransactionManager transactionManager;
 
     @Bean
-    public Pointcut pointcut() {
+    public Pointcut transactionPointcut() {
         return new TransactionPointcut();
     }
 
     @Bean
-    public Advice advice() {
+    public Advice transactionAdvice() {
         return new TransactionAdvice(transactionManager);
     }
 
     @Bean
-    public Advisor advisor() {
-        return new TransactionAdvisor(pointcut(), advice());
+    public Advisor transactionAdvisor() {
+        return new TransactionAdvisor(transactionPointcut(), transactionAdvice());
     }
 
     @Bean
