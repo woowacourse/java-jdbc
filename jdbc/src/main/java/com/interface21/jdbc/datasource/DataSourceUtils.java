@@ -7,7 +7,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
     private DataSourceUtils() {}
@@ -29,9 +28,10 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("JDBC Connection을 닫지 못했습니다.");
         }
     }
 }
