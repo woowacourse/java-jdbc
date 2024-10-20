@@ -31,11 +31,6 @@ public class TxUserService implements UserService {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        changePasswordWithLog(id, newPassword, createBy, connection, dataSource);
-    }
-
-    private void changePasswordWithLog(long id, String newPassword, String createBy, Connection connection,
-                                       DataSource dataSource) {
         try {
             connection.setAutoCommit(false);
             appUserService.changePassword(id, newPassword, createBy);
